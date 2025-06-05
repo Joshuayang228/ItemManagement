@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="margin_normal">16dp</dimen>
+    <dimen name="margin_small">8dp</dimen>
+    <dimen name="padding_normal">8dp</dimen>
+    <dimen name="field_label_width">120dp</dimen>
+    <dimen name="chip_min_height">32dp</dimen>
+    <dimen name="input_min_width">80dp</dimen>
+</resources>

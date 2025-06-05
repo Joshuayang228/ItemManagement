@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.itemmanagement.ui.home.HomeFragment"
+        android:label="主页">
+        <action
+            android:id="@+id/action_navigation_home_to_addItemFragment"
+            app:destination="@id/addItemFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_warehouse"
+        android:name="com.example.itemmanagement.ui.warehouse.WarehouseFragment"
+        android:label="仓库" />
+
+    <fragment
+        android:id="@+id/navigation_statistics"
+        android:name="com.example.itemmanagement.ui.statistics.StatisticsFragment"
+        android:label="统计" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.itemmanagement.ui.profile.ProfileFragment"
+        android:label="我的" />
+
+    <fragment
+        android:id="@+id/nav_category"
+        android:name="com.example.itemmanagement.ui.category.CategoryFragment"
+        android:label="分类管理" />
+
+    <fragment
+        android:id="@+id/nav_settings"
+        android:name="com.example.itemmanagement.ui.setting.SettingFragment"
+        android:label="设置" />
+
+    <fragment
+        android:id="@+id/addItemFragment"
+        android:name="com.example.itemmanagement.ui.add.AddItemFragment"
+        android:label="添加物品" />
+</navigation>
