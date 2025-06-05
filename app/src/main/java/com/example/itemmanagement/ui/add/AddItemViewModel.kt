@@ -161,6 +161,14 @@ class AddItemViewModel : ViewModel() {
             isCustomizable = true
         ))
 
+        // 总价字段
+        setFieldProperties("总价", FieldProperties(
+            validationType = ValidationType.NUMBER,
+            hint = "请输入总价",
+            unitOptions = listOf("元", "美元", "日元", "欧元"),
+            isCustomizable = true
+        ))
+
         // 添加日期字段
         setFieldProperties("添加日期", FieldProperties(
             validationType = ValidationType.DATE,

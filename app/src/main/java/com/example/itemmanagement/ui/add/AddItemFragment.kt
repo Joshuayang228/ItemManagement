@@ -168,6 +168,8 @@ class AddItemFragment : Fragment() {
                     setIsIndicator(false)
                     numStars = 5
                     stepSize = 1f
+                    scaleX = 0.7f
+                    scaleY = 0.7f
                 }
                 inputContainer.gravity = Gravity.CENTER // Center the WRAP_CONTENT RatingBar in its container
                 inputContainer.addView(input)
@@ -211,6 +213,7 @@ class AddItemFragment : Fragment() {
                 1f
             )
             orientation = RadioGroup.HORIZONTAL
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
 
             addView(RadioButton(context).apply {
                 id = View.generateViewId()
@@ -233,7 +236,17 @@ class AddItemFragment : Fragment() {
     }
 
     private fun createTagSelector(context: Context, properties: AddItemViewModel.FieldProperties): View {
-        val container = FlowLayout(context).apply {
+        // 创建主容器（垂直布局）
+        val mainContainer = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
+        // 已选标签容器
+        val selectedTagsContainer = FlowLayout(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -242,109 +255,178 @@ class AddItemFragment : Fragment() {
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
         }
 
-        val selectedTags = mutableSetOf<String>()
-
-        properties.options?.forEach { option ->
-            val chip = Chip(context).apply {
-                text = option
-                isCheckable = true
-                isChecked = false
-                textSize = 14f
-                chipMinHeight = resources.getDimensionPixelSize(R.dimen.chip_min_height).toFloat()
-                setOnCheckedChangeListener { _, isChecked ->
-                    if (isChecked) {
-                        selectedTags.add(option)
-                    } else {
-                        selectedTags.remove(option)
-                    }
-                }
-            }
-            container.addView(chip)
-        }
-
-        if (properties.isCustomizable) {
-            val addChip = Chip(context).apply {
-                text = "添加"
-                chipIcon = ContextCompat.getDrawable(context, R.drawable.ic_add)
-                textSize = 14f
-                chipMinHeight = resources.getDimensionPixelSize(R.dimen.chip_min_height).toFloat()
-                setOnClickListener {
-                    showAddTagDialog(context, container, selectedTags)
-                }
-            }
-            container.addView(addChip)
-        }
-
-        return container
-    }
-
-    private fun createRatingBar(context: Context): RatingBar {
-        return RatingBar(context, null, android.R.attr.ratingBarStyleSmall).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            numStars = 5
-            stepSize = 1f
-        }
-    }
-
-    private fun createPeriodSelector(context: Context, properties: AddItemViewModel.FieldProperties): View {
-        val container = LinearLayout(context).apply {
+        // 标签选择按钮容器
+        val tagSelectorContainer = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = resources.getDimensionPixelSize(R.dimen.margin_small)
+            }
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
         }
 
-        val numberSpinner = Spinner(context).apply {
+        // 添加已选标签容器和标签选择按钮容器到主容器
+        mainContainer.addView(selectedTagsContainer)
+        mainContainer.addView(tagSelectorContainer)
+
+        val selectedTags = mutableSetOf<String>()
+        val defaultTags = properties.options?.toMutableList() ?: mutableListOf()
+        val customTags = mutableListOf<String>()
+        val allTags = mutableListOf<String>()
+
+        // 更新所有标签列表
+        fun updateAllTags() {
+            allTags.clear()
+            allTags.addAll(defaultTags)
+            allTags.addAll(customTags)
+        }
+
+        // 初始化标签列表
+        updateAllTags()
+
+        // 添加标签到已选容器
+        fun addTagToSelectedContainer(tagName: String) {
+            // 如果标签已经被选中，不重复添加
+            if (selectedTags.contains(tagName)) {
+                return
+            }
+
+            val chip = Chip(context).apply {
+                text = tagName
+                isCheckable = false
+                isCloseIconVisible = true
+                textSize = 14f
+                chipMinHeight = resources.getDimensionPixelSize(R.dimen.chip_min_height).toFloat()
+
+                // 点击关闭图标移除标签
+                setOnCloseIconClickListener {
+                    selectedTagsContainer.removeView(this)
+                    selectedTags.remove(tagName)
+                }
+
+                // 长按编辑或删除标签
+                setOnLongClickListener {
+                    val items = arrayOf("编辑", "删除")
+                    MaterialAlertDialogBuilder(context)
+                        .setTitle("标签操作")
+                        .setItems(items) { dialog, which ->
+                            when (which) {
+                                0 -> { // 编辑
+                                    showEditTagDialog(context, tagName, this, selectedTags, defaultTags, customTags, allTags)
+                                }
+                                1 -> { // 删除
+                                    MaterialAlertDialogBuilder(context)
+                                        .setTitle("删除标签")
+                                        .setMessage("是否删除标签\"${tagName}\"？")
+                                        .setPositiveButton("删除") { _, _ ->
+                                            selectedTagsContainer.removeView(this)
+                                            selectedTags.remove(tagName)
+                                            Toast.makeText(context, "已从选中标签中移除\"${tagName}\"", Toast.LENGTH_SHORT).show()
+                                        }
+                                        .setNegativeButton("取消", null)
+                                        .show()
+                                }
+                            }
+                        }
+                        .show()
+                    true
+                }
+            }
+            selectedTagsContainer.addView(chip)
+            selectedTags.add(tagName)
+        }
+
+        // 创建标签选择按钮（只用图标）
+        val tagSelectorButton = ImageButton(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-            adapter = ArrayAdapter(
-                context,
-                R.layout.spinner_item,
-                (properties.periodRange ?: 1..36).toList()
-            ).apply {
-                setDropDownViewResource(R.layout.spinner_dropdown_item)
+            setImageResource(R.drawable.ic_arrow_drop_down)
+            background = null
+            setPadding(
+                resources.getDimensionPixelSize(R.dimen.padding_normal),
+                resources.getDimensionPixelSize(R.dimen.padding_normal),
+                resources.getDimensionPixelSize(R.dimen.padding_normal),
+                resources.getDimensionPixelSize(R.dimen.padding_normal)
+            )
+
+            // 点击显示标签选择对话框
+            setOnClickListener {
+                showTagSelectionDialog(
+                    context,
+                    selectedTags,
+                    defaultTags,
+                    customTags,
+                    allTags
+                ) { selectedTag ->
+                    addTagToSelectedContainer(selectedTag)
+                }
             }
         }
 
-        val unitSpinner = Spinner(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                marginStart = resources.getDimensionPixelSize(R.dimen.margin_small)
-            }
-            adapter = ArrayAdapter(
-                context,
-                R.layout.spinner_item,
-                properties.periodUnits ?: listOf("年", "月", "日")
-            ).apply {
-                setDropDownViewResource(R.layout.spinner_dropdown_item)
-            }
-        }
+        // 添加按钮到按钮容器
+        tagSelectorContainer.addView(tagSelectorButton)
 
-        container.addView(numberSpinner)
-        container.addView(unitSpinner)
-        return container
+        return mainContainer
     }
 
-    private fun createLocationSelector(context: Context): View {
-        // TODO: 实现三级位置选择器
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
+    // 显示编辑标签对话框
+    private fun showEditTagDialog(
+        context: Context,
+        tagName: String,
+        chip: Chip,
+        selectedTags: MutableSet<String>,
+        defaultTags: MutableList<String>,
+        customTags: MutableList<String>,
+        allTags: MutableList<String>
+    ) {
+        val editText = EditText(context).apply {
             layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             )
+            setText(tagName)
+            setSelection(tagName.length)
         }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("编辑标签")
+            .setView(editText)
+            .setPositiveButton("确定") { _, _ ->
+                val newTagName = editText.text.toString().trim()
+                if (newTagName.isNotEmpty() && newTagName != tagName) {
+                    // 检查新名称是否已存在
+                    if (!defaultTags.contains(newTagName) && !customTags.contains(newTagName) && !selectedTags.contains(newTagName)) {
+                        // 更新标签名称
+                        if (defaultTags.contains(tagName)) {
+                            defaultTags[defaultTags.indexOf(tagName)] = newTagName
+                        } else if (customTags.contains(tagName)) {
+                            customTags[customTags.indexOf(tagName)] = newTagName
+                        }
+
+                        // 更新选中集合
+                        selectedTags.remove(tagName)
+                        selectedTags.add(newTagName)
+
+                        // 更新标签UI
+                        chip.text = newTagName
+
+                        // 更新所有标签列表
+                        allTags.clear()
+                        allTags.addAll(defaultTags)
+                        allTags.addAll(customTags)
+
+                        Toast.makeText(context, "标签已更新", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "该标签名称已存在", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     private fun createNumberWithUnitInput(context: Context, properties: AddItemViewModel.FieldProperties): View {
@@ -373,80 +455,569 @@ class AddItemFragment : Fragment() {
             minWidth = resources.getDimensionPixelSize(R.dimen.input_min_width)
         }
 
-        val unitSpinner = Spinner(context).apply {
+        // 获取默认单位和自定义单位
+        val defaultUnits = properties.unitOptions?.toMutableList() ?: mutableListOf()
+        val customUnits = mutableListOf<String>()
+        val allUnits = mutableListOf<String>()
+
+        // 更新所有单位列表
+        fun updateAllUnits() {
+            allUnits.clear()
+            allUnits.addAll(defaultUnits)
+            allUnits.addAll(customUnits)
+        }
+
+        // 初始化单位列表
+        updateAllUnits()
+
+        // 创建自适应宽度的单位选择器
+        val unitTextView = TextView(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 marginStart = resources.getDimensionPixelSize(R.dimen.margin_small)
             }
+            textSize = 14f
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setPadding(8, 8, 8, 8)
 
-            val items = (properties.unitOptions?.toMutableList() ?: mutableListOf()).apply {
-                if (properties.isCustomizable) {
-                    add("添加自定义...")
-                }
-            }
+            // 设置默认值
+            text = defaultUnits.firstOrNull() ?: "个"
 
-            adapter = ArrayAdapter(
-                context,
-                R.layout.spinner_item,
-                items
-            ).apply {
-                setDropDownViewResource(R.layout.spinner_dropdown_item)
-            }
+            // 添加下拉箭头图标
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
+            compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.margin_small)
 
-            if (properties.isCustomizable) {
-                onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                        if (position == items.size - 1) {
-                            showAddCustomOptionDialog(context, this@apply, items)
-                            setSelection(0)
+            // 点击事件处理
+            setOnClickListener { view ->
+                showUnitSelectionDialog(
+                    context = context,
+                    title = "选择单位",
+                    units = allUnits,
+                    defaultUnits = defaultUnits,
+                    customUnits = customUnits,
+                    isCustomizable = properties.isCustomizable,
+                    currentTextView = this,
+                    onUnitSelected = { selectedUnit ->
+                        text = selectedUnit
+                    },
+                    onEditUnit = { unit, newUnit ->
+                        // 编辑单位
+                        if (defaultUnits.contains(unit)) {
+                            defaultUnits[defaultUnits.indexOf(unit)] = newUnit
+                        } else if (customUnits.contains(unit)) {
+                            customUnits[customUnits.indexOf(unit)] = newUnit
                         }
+                        updateAllUnits()
+                        if (text == unit) {
+                            text = newUnit
+                        }
+                    },
+                    onDeleteUnit = { unit ->
+                        // 删除单位
+                        if (defaultUnits.contains(unit)) {
+                            defaultUnits.remove(unit)
+                        } else if (customUnits.contains(unit)) {
+                            customUnits.remove(unit)
+                        }
+                        updateAllUnits()
+                        if (text == unit && allUnits.isNotEmpty()) {
+                            text = allUnits[0]
+                        }
+                    },
+                    onAddUnit = { newUnit ->
+                        // 添加单位
+                        customUnits.add(newUnit)
+                        updateAllUnits()
+                        text = newUnit
                     }
-
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
-                }
+                )
             }
         }
 
         container.addView(input)
-        container.addView(unitSpinner)
+        container.addView(unitTextView)
         return container
     }
 
-    private fun showAddTagDialog(context: Context, container: ViewGroup, selectedTags: MutableSet<String>) {
+    // 显示单位选择对话框
+    private fun showUnitSelectionDialog(
+        context: Context,
+        title: String,
+        units: List<String>,
+        defaultUnits: MutableList<String>,
+        customUnits: MutableList<String>,
+        isCustomizable: Boolean,
+        currentTextView: TextView,
+        onUnitSelected: (String) -> Unit,
+        onEditUnit: (String, String) -> Unit,
+        onDeleteUnit: (String) -> Unit,
+        onAddUnit: (String) -> Unit
+    ) {
+        val items = units.toTypedArray()
+
+        // 使用AlertDialog代替PopupMenu，这样可以添加长按监听
+        val builder = MaterialAlertDialogBuilder(context)
+            .setTitle(title)
+            .setItems(items) { dialog, which ->
+                onUnitSelected(items[which])
+                dialog.dismiss()
+            }
+
+        val dialog = builder.create()
+
+        // 设置列表项长按监听
+        dialog.listView?.setOnItemLongClickListener { parent, itemView, position, id ->
+            val selectedItem = items[position]
+            dialog.dismiss()
+
+            // 显示操作选项（编辑/删除）
+            val options = arrayOf("编辑", "删除")
+            MaterialAlertDialogBuilder(context)
+                .setTitle("单位操作")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> { // 编辑
+                            showEditUnitDialogWithCallback(
+                                context = context,
+                                unit = selectedItem,
+                                defaultUnits = defaultUnits,
+                                customUnits = customUnits,
+                                onUnitEdited = { oldUnit, newUnit ->
+                                    onEditUnit(oldUnit, newUnit)
+                                }
+                            )
+                        }
+                        1 -> { // 删除
+                            showDeleteUnitDialogWithCallback(
+                                context = context,
+                                unit = selectedItem,
+                                onUnitDeleted = {
+                                    onDeleteUnit(selectedItem)
+                                }
+                            )
+                        }
+                    }
+                }
+                .show()
+
+            true
+        }
+
+        // 如果支持自定义，添加"添加"按钮到对话框右上角
+        if (isCustomizable) {
+            dialog.setOnShowListener {
+                // 添加菜单按钮到对话框标题栏
+                val decorView = dialog.window?.decorView as? ViewGroup
+                val titleBar = decorView?.findViewById<ViewGroup>(androidx.appcompat.R.id.title_template)
+
+                titleBar?.let { titleBarView ->
+                    // 创建添加按钮
+                    val addButton = ImageButton(context).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+                        setImageResource(R.drawable.ic_add)
+                        background = null
+                        setPadding(
+                            resources.getDimensionPixelSize(R.dimen.padding_normal),
+                            resources.getDimensionPixelSize(R.dimen.padding_normal),
+                            resources.getDimensionPixelSize(R.dimen.padding_normal),
+                            resources.getDimensionPixelSize(R.dimen.padding_normal)
+                        )
+
+                        // 点击添加自定义单位
+                        setOnClickListener {
+                            showAddCustomUnitDialogWithCallback(
+                                context = context,
+                                defaultUnits = defaultUnits,
+                                customUnits = customUnits,
+                                onUnitAdded = { newUnit ->
+                                    onAddUnit(newUnit)
+                                    dialog.dismiss()
+                                }
+                            )
+                        }
+                    }
+
+                    // 将按钮添加到标题栏
+                    titleBarView.addView(addButton)
+                }
+            }
+        }
+
+        dialog.show()
+    }
+
+    // 显示添加自定义单位对话框（带回调）
+    private fun showAddCustomUnitDialogWithCallback(
+        context: Context,
+        defaultUnits: List<String>,
+        customUnits: List<String>,
+        onUnitAdded: (String) -> Unit
+    ) {
         val editText = EditText(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-            hint = "请输入标签名称"
+            hint = "请输入自定义单位"
         }
 
-        AlertDialog.Builder(context)
-            .setTitle("添加标签")
+        MaterialAlertDialogBuilder(context)
+            .setTitle("添加自定义单位")
             .setView(editText)
             .setPositiveButton("确定") { _, _ ->
-                val tagName = editText.text.toString().trim()
-                if (tagName.isNotEmpty()) {
-                    val chip = Chip(context).apply {
-                        text = tagName
-                        isCheckable = true
-                        isChecked = true
-                        setOnCheckedChangeListener { _, isChecked ->
-                            if (isChecked) {
-                                selectedTags.add(tagName)
-                            } else {
-                                selectedTags.remove(tagName)
-                            }
-                        }
+                val newUnit = editText.text.toString().trim()
+                if (newUnit.isNotEmpty()) {
+                    // 检查是否已存在
+                    if (!defaultUnits.contains(newUnit) && !customUnits.contains(newUnit)) {
+                        onUnitAdded(newUnit)
+                    } else {
+                        Toast.makeText(context, "该单位已存在", Toast.LENGTH_SHORT).show()
                     }
-                    container.addView(chip, container.childCount - 1)
-                    selectedTags.add(tagName)
                 }
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    // 显示编辑单位对话框（带回调）
+    private fun showEditUnitDialogWithCallback(
+        context: Context,
+        unit: String,
+        defaultUnits: List<String>,
+        customUnits: List<String>,
+        onUnitEdited: (String, String) -> Unit
+    ) {
+        val editText = EditText(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setText(unit)
+            setSelection(unit.length)
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("编辑单位")
+            .setView(editText)
+            .setPositiveButton("确定") { _, _ ->
+                val newUnit = editText.text.toString().trim()
+                if (newUnit.isNotEmpty() && newUnit != unit) {
+                    // 检查是否已存在
+                    if (!defaultUnits.contains(newUnit) && !customUnits.contains(newUnit)) {
+                        onUnitEdited(unit, newUnit)
+                        Toast.makeText(context, "单位已更新", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "该单位已存在", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    // 显示删除单位确认对话框（带回调）
+    private fun showDeleteUnitDialogWithCallback(
+        context: Context,
+        unit: String,
+        onUnitDeleted: () -> Unit
+    ) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle("删除单位")
+            .setMessage("是否删除单位\"${unit}\"？")
+            .setPositiveButton("删除") { _, _ ->
+                onUnitDeleted()
+                Toast.makeText(context, "已删除单位\"${unit}\"", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun createPeriodSelector(context: Context, properties: AddItemViewModel.FieldProperties): View {
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+        }
+
+        // 数字选择器
+        val numberSelector = TextView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            textSize = 14f
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setPadding(8, 8, 8, 8)
+
+            // 设置默认值
+            text = (properties.periodRange?.first ?: 1).toString()
+
+            // 添加下拉箭头图标
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
+            compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.margin_small)
+
+            // 点击事件处理
+            setOnClickListener { view ->
+                val numbers = (properties.periodRange ?: 1..36).toList().map { it.toString() }.toTypedArray()
+
+                // 使用AlertDialog代替PopupMenu
+                MaterialAlertDialogBuilder(context)
+                    .setTitle("选择数字")
+                    .setItems(numbers) { dialog, which ->
+                        text = numbers[which]
+                        dialog.dismiss()
+                    }
+                    .show()
+            }
+        }
+
+        // 获取默认单位和自定义单位
+        val defaultUnits = properties.periodUnits?.toMutableList() ?: mutableListOf("年", "月", "日")
+        val customUnits = mutableListOf<String>()
+        val allUnits = mutableListOf<String>()
+
+        // 更新所有单位列表
+        fun updateAllUnits() {
+            allUnits.clear()
+            allUnits.addAll(defaultUnits)
+            allUnits.addAll(customUnits)
+        }
+
+        // 初始化单位列表
+        updateAllUnits()
+
+        // 单位选择器
+        val periodUnitTextView = TextView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                marginStart = resources.getDimensionPixelSize(R.dimen.margin_small)
+            }
+            textSize = 14f
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setPadding(8, 8, 8, 8)
+
+            // 设置默认值
+            text = defaultUnits.firstOrNull() ?: "月"
+
+            // 添加下拉箭头图标
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
+            compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.margin_small)
+
+            // 点击事件处理
+            setOnClickListener { view ->
+                showUnitSelectionDialog(
+                    context = context,
+                    title = "选择单位",
+                    units = allUnits,
+                    defaultUnits = defaultUnits,
+                    customUnits = customUnits,
+                    isCustomizable = true,
+                    currentTextView = this,
+                    onUnitSelected = { selectedUnit ->
+                        text = selectedUnit
+                    },
+                    onEditUnit = { unit, newUnit ->
+                        // 编辑单位
+                        if (defaultUnits.contains(unit)) {
+                            defaultUnits[defaultUnits.indexOf(unit)] = newUnit
+                        } else if (customUnits.contains(unit)) {
+                            customUnits[customUnits.indexOf(unit)] = newUnit
+                        }
+                        updateAllUnits()
+                        if (text == unit) {
+                            text = newUnit
+                        }
+                    },
+                    onDeleteUnit = { unit ->
+                        // 删除单位
+                        if (defaultUnits.contains(unit)) {
+                            defaultUnits.remove(unit)
+                        } else if (customUnits.contains(unit)) {
+                            customUnits.remove(unit)
+                        }
+                        updateAllUnits()
+                        if (text == unit && allUnits.isNotEmpty()) {
+                            text = allUnits[0]
+                        }
+                    },
+                    onAddUnit = { newUnit ->
+                        // 添加单位
+                        customUnits.add(newUnit)
+                        updateAllUnits()
+                        text = newUnit
+                    }
+                )
+            }
+        }
+
+        container.addView(numberSelector)
+        container.addView(periodUnitTextView)
+        return container
+    }
+
+    private fun createSpinner(context: Context, properties: AddItemViewModel.FieldProperties): View {
+        return TextView(context).apply {
+            val spinnerTextView = this // Capture the TextView instance
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            textSize = 14f
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
+            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setPadding(8, 8, 8, 8)
+
+            // 设置默认值
+            spinnerTextView.text = properties.options?.firstOrNull() ?: ""
+
+            // 添加下拉箭头图标
+            setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
+            compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.margin_small)
+
+            // 获取默认选项和自定义选项
+            val defaultOptions = properties.options?.toMutableList() ?: mutableListOf()
+            val customOptions = mutableListOf<String>()
+            val allOptions = mutableListOf<String>()
+
+            // 更新所有选项列表
+            fun updateAllOptions() {
+                allOptions.clear()
+                allOptions.addAll(defaultOptions)
+                allOptions.addAll(customOptions)
+            }
+
+            // 初始化选项列表
+            updateAllOptions()
+
+            // 点击事件处理
+            setOnClickListener { view ->
+                val items = allOptions.toTypedArray()
+
+                // 使用AlertDialog代替PopupMenu，这样可以添加长按监听
+                val builder = MaterialAlertDialogBuilder(context)
+                    .setTitle("选择选项")
+                    .setItems(items) { dialog, which ->
+                        text = items[which]
+                        dialog.dismiss()
+                    }
+
+                val dialog = builder.create()
+
+                // 设置列表项长按监听
+                dialog.listView?.setOnItemLongClickListener { parent, itemView, position, id ->
+                    val selectedItem = items[position]
+                    dialog.dismiss()
+
+                    // 显示操作选项（编辑/删除）
+                    val options = arrayOf("编辑", "删除")
+                    MaterialAlertDialogBuilder(context)
+                        .setTitle("选项操作")
+                        .setItems(options) { _, which ->
+                            when (which) {
+                                0 -> { // 编辑
+                                    showEditOptionDialog(context, selectedItem, this, defaultOptions, customOptions, allOptions)
+                                }
+                                1 -> { // 删除
+                                    showDeleteOptionDialog(context, selectedItem, this, defaultOptions, customOptions, allOptions)
+                                }
+                            }
+                        }
+                        .show()
+
+                    true
+                }
+
+                // 如果支持自定义，添加"添加"按钮到对话框右上角
+                if (properties.isCustomizable) {
+                    dialog.setOnShowListener {
+                        // 添加菜单按钮到对话框标题栏
+                        val decorView = dialog.window?.decorView as? ViewGroup
+                        val titleBar = decorView?.findViewById<ViewGroup>(androidx.appcompat.R.id.title_template)
+
+                        titleBar?.let {
+                            // 创建添加按钮
+                            val addButton = ImageButton(context).apply {
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                )
+                                setImageResource(R.drawable.ic_add)
+                                background = null
+                                setPadding(
+                                    resources.getDimensionPixelSize(R.dimen.padding_normal),
+                                    resources.getDimensionPixelSize(R.dimen.padding_normal),
+                                    resources.getDimensionPixelSize(R.dimen.padding_normal),
+                                    resources.getDimensionPixelSize(R.dimen.padding_normal)
+                                )
+
+                                // 点击添加自定义选项
+                                setOnClickListener {
+                                    val editText = EditText(context).apply {
+                                        layoutParams = LinearLayout.LayoutParams(
+                                            LinearLayout.LayoutParams.MATCH_PARENT,
+                                            LinearLayout.LayoutParams.WRAP_CONTENT
+                                        )
+                                        hint = "请输入自定义选项"
+                                    }
+
+                                    val targetTextView = spinnerTextView  // Capture the reference
+
+                                    MaterialAlertDialogBuilder(context)
+                                        .setTitle("添加自定义选项")
+                                        .setView(editText)
+                                        .setPositiveButton("确定") { _, _ ->
+                                            val newOption = editText.text.toString().trim()
+                                            if (newOption.isNotEmpty()) {
+                                                // 检查是否已存在
+                                                if (!defaultOptions.contains(newOption) && !customOptions.contains(newOption)) {
+                                                    customOptions.add(newOption)
+                                                    // 更新所有选项列表
+                                                    allOptions.clear()
+                                                    allOptions.addAll(defaultOptions)
+                                                    allOptions.addAll(customOptions)
+
+                                                    // 更新文本
+                                                    targetTextView.text = newOption
+
+                                                    // 关闭原对话框
+                                                    dialog.dismiss()
+                                                } else {
+                                                    Toast.makeText(context, "该选项已存在", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        }
+                                        .setNegativeButton("取消", null)
+                                        .show()
+                                }
+                            }
+
+                            // 将按钮添加到标题栏
+                            it.addView(addButton)
+                        }
+                    }
+                }
+
+                dialog.show()
+            }
+        }
     }
 
     private fun createTextInput(context: Context, properties: AddItemViewModel.FieldProperties): EditText {
@@ -504,64 +1075,29 @@ class AddItemFragment : Fragment() {
         }
     }
 
-    private fun createSpinner(context: Context, properties: AddItemViewModel.FieldProperties): Spinner {
-        return Spinner(context).apply {
+    private fun createLocationSelector(context: Context): View {
+        // TODO: 实现三级位置选择器
+        return LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        }
+    }
+
+    private fun createRatingBar(context: Context): RatingBar {
+        return RatingBar(context, null, android.R.attr.ratingBarStyle).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-
-            val items = (properties.options?.toMutableList() ?: mutableListOf()).apply {
-                if (properties.isCustomizable) {
-                    add("添加自定义...")
-                }
-            }
-
-            adapter = ArrayAdapter(
-                context,
-                R.layout.spinner_item,
-                items
-            ).apply {
-                setDropDownViewResource(R.layout.spinner_dropdown_item)
-            }
-
-            if (properties.isCustomizable) {
-                onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                        if (position == items.size - 1) {
-                            showAddCustomOptionDialog(context, this@apply, items)
-                            setSelection(0)
-                        }
-                    }
-
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
-                }
-            }
+            numStars = 5
+            stepSize = 1f
+            scaleX = 0.7f
+            scaleY = 0.7f
         }
-    }
-
-    private fun showAddCustomOptionDialog(context: Context, spinner: Spinner, items: MutableList<String>) {
-        val editText = EditText(context).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            hint = "请输入自定义选项"
-        }
-
-        AlertDialog.Builder(context)
-            .setTitle("添加自定义选项")
-            .setView(editText)
-            .setPositiveButton("确定") { _, _ ->
-                val newOption = editText.text.toString().trim()
-                if (newOption.isNotEmpty()) {
-                    items.add(items.size - 1, newOption)
-                    (spinner.adapter as ArrayAdapter<String>).notifyDataSetChanged()
-                    spinner.setSelection(items.indexOf(newOption))
-                }
-            }
-            .setNegativeButton("取消", null)
-            .show()
     }
 
     private fun showDatePicker(textView: TextView) {
@@ -670,5 +1206,289 @@ class AddItemFragment : Fragment() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    // 显示标签选择对话框
+    private fun showTagSelectionDialog(
+        context: Context,
+        selectedTags: MutableSet<String>,
+        defaultTags: MutableList<String>,
+        customTags: MutableList<String>,
+        allTags: MutableList<String>,
+        onTagSelected: (String) -> Unit
+    ) {
+        // 更新所有标签列表
+        allTags.clear()
+        allTags.addAll(defaultTags)
+        allTags.addAll(customTags)
+
+        // 创建多选对话框
+        val items = allTags.toTypedArray()
+        val checkedItems = BooleanArray(items.size) { i -> selectedTags.contains(items[i]) }
+
+        val builder = MaterialAlertDialogBuilder(context)
+            .setTitle("选择标签")
+            .setMultiChoiceItems(items, checkedItems) { dialog, which, isChecked ->
+                val tagName = items[which]
+                if (isChecked) {
+                    onTagSelected(tagName)
+                } else {
+                    // 如果取消选中，从已选标签中移除
+                    selectedTags.remove(tagName)
+                    // 这里需要刷新已选标签的UI，但由于我们无法直接访问selectedTagsContainer，
+                    // 所以这个功能需要在对话框关闭后手动处理
+                }
+            }
+            .setPositiveButton("确定", null)
+            .setNeutralButton("管理标签") { _, _ ->
+                showManageTagsDialog(context, defaultTags, customTags, allTags, selectedTags)
+            }
+
+        val dialog = builder.create()
+
+        // 添加"添加标签"按钮到对话框右上角
+        dialog.setOnShowListener {
+            // 添加菜单按钮到对话框标题栏
+            val decorView = dialog.window?.decorView as? ViewGroup
+            val titleBar = decorView?.findViewById<ViewGroup>(androidx.appcompat.R.id.title_template)
+
+            titleBar?.let {
+                // 创建添加按钮
+                val addButton = ImageButton(context).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    setImageResource(R.drawable.ic_add)
+                    background = null
+                    setPadding(
+                        resources.getDimensionPixelSize(R.dimen.padding_normal),
+                        resources.getDimensionPixelSize(R.dimen.padding_normal),
+                        resources.getDimensionPixelSize(R.dimen.padding_normal),
+                        resources.getDimensionPixelSize(R.dimen.padding_normal)
+                    )
+
+                    // 点击添加新标签
+                    setOnClickListener {
+                        showAddNewTagDialog(context, selectedTags, defaultTags, customTags, allTags) { newTag ->
+                            onTagSelected(newTag)
+                            // 刷新对话框列表
+                            dialog.dismiss()
+                            showTagSelectionDialog(context, selectedTags, defaultTags, customTags, allTags, onTagSelected)
+                        }
+                    }
+                }
+
+                // 将按钮添加到标题栏
+                it.addView(addButton)
+            }
+        }
+
+        dialog.show()
+    }
+
+    // 显示管理标签对话框
+    private fun showManageTagsDialog(
+        context: Context,
+        defaultTags: MutableList<String>,
+        customTags: MutableList<String>,
+        allTags: MutableList<String>,
+        selectedTags: MutableSet<String>
+    ) {
+        // 更新所有标签列表
+        allTags.clear()
+        allTags.addAll(defaultTags)
+        allTags.addAll(customTags)
+
+        // 创建用于批量操作的列表
+        val items = allTags.toTypedArray()
+        val checkedItems = BooleanArray(items.size) { false }
+        val selectedForOperation = mutableSetOf<String>()
+
+        val builder = MaterialAlertDialogBuilder(context)
+            .setTitle("管理标签")
+            .setMultiChoiceItems(items, checkedItems) { _, which, isChecked ->
+                val tagName = items[which]
+                if (isChecked) {
+                    selectedForOperation.add(tagName)
+                } else {
+                    selectedForOperation.remove(tagName)
+                }
+            }
+            .setPositiveButton("删除选中项") { _, _ ->
+                if (selectedForOperation.isNotEmpty()) {
+                    MaterialAlertDialogBuilder(context)
+                        .setTitle("批量删除")
+                        .setMessage("确定要删除选中的 ${selectedForOperation.size} 个标签吗？")
+                        .setPositiveButton("确定") { _, _ ->
+                            // 从所有列表中删除选中的标签
+                            defaultTags.removeAll(selectedForOperation)
+                            customTags.removeAll(selectedForOperation)
+                            selectedTags.removeAll(selectedForOperation)
+
+                            // 更新所有标签列表
+                            allTags.clear()
+                            allTags.addAll(defaultTags)
+                            allTags.addAll(customTags)
+
+                            Toast.makeText(context, "已删除 ${selectedForOperation.size} 个标签", Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("取消", null)
+                        .show()
+                } else {
+                    Toast.makeText(context, "请先选择要删除的标签", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .setNeutralButton("添加新标签") { _, _ ->
+                showAddNewTagDialog(context, selectedTags, defaultTags, customTags, allTags) { newTag ->
+                    // 不自动选中新添加的标签
+                }
+            }
+
+        val dialog = builder.create()
+        dialog.show()
+    }
+
+    // 显示添加新标签对话框
+    private fun showAddNewTagDialog(
+        context: Context,
+        selectedTags: MutableSet<String>,
+        defaultTags: MutableList<String>,
+        customTags: MutableList<String>,
+        allTags: MutableList<String>,
+        onTagAdded: (String) -> Unit
+    ) {
+        val editText = EditText(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            hint = "请输入标签名称"
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("添加新标签")
+            .setView(editText)
+            .setPositiveButton("确定") { _, _ ->
+                val tagName = editText.text.toString().trim()
+                if (tagName.isNotEmpty()) {
+                    // 检查标签是否已存在
+                    if (!defaultTags.contains(tagName) && !customTags.contains(tagName)) {
+                        customTags.add(tagName)
+                        allTags.add(tagName)
+                        onTagAdded(tagName)
+                    } else {
+                        // 如果标签已存在但未选中，则选中它
+                        if (!selectedTags.contains(tagName)) {
+                            onTagAdded(tagName)
+                        } else {
+                            Toast.makeText(context, "该标签已存在且已选中", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    // 显示编辑选项对话框
+    private fun showEditOptionDialog(
+        context: Context,
+        currentOption: String,
+        textView: TextView,
+        defaultOptions: MutableList<String>,
+        customOptions: MutableList<String>,
+        allOptions: MutableList<String>
+    ) {
+        val editText = EditText(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            setText(currentOption)
+            setSelection(currentOption.length)
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle("编辑选项")
+            .setView(editText)
+            .setPositiveButton("确定") { _, _ ->
+                val newOption = editText.text.toString().trim()
+                if (newOption.isNotEmpty() && newOption != currentOption) {
+                    // 检查是否已存在
+                    if (!defaultOptions.contains(newOption) && !customOptions.contains(newOption)) {
+                        // 从相应列表中更新
+                        if (defaultOptions.contains(currentOption)) {
+                            val index = defaultOptions.indexOf(currentOption)
+                            defaultOptions[index] = newOption
+                        } else if (customOptions.contains(currentOption)) {
+                            val index = customOptions.indexOf(currentOption)
+                            customOptions[index] = newOption
+                        }
+
+                        // 如果当前显示的是被编辑的选项，更新显示
+                        if (textView.text == currentOption) {
+                            textView.text = newOption
+                        }
+
+                        // 更新所有选项列表
+                        allOptions.clear()
+                        allOptions.addAll(defaultOptions)
+                        allOptions.addAll(customOptions)
+
+                        Toast.makeText(context, "选项已更新", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "该选项已存在", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    // 显示删除选项确认对话框
+    private fun showDeleteOptionDialog(
+        context: Context,
+        option: String,
+        textView: TextView,
+        defaultOptions: MutableList<String>,
+        customOptions: MutableList<String>,
+        allOptions: MutableList<String>
+    ) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle("删除选项")
+            .setMessage("是否删除选项\"${option}\"？")
+            .setPositiveButton("删除") { _, _ ->
+                // 从相应列表中删除
+                if (defaultOptions.contains(option)) {
+                    defaultOptions.remove(option)
+                } else if (customOptions.contains(option)) {
+                    customOptions.remove(option)
+                }
+
+                // 如果当前显示的是被删除的选项，则重置为第一个选项
+                if (textView.text == option) {
+                    // 更新所有选项列表
+                    allOptions.clear()
+                    allOptions.addAll(defaultOptions)
+                    allOptions.addAll(customOptions)
+
+                    textView.text = if (allOptions.isNotEmpty()) {
+                        allOptions[0]
+                    } else {
+                        ""
+                    }
+                } else {
+                    // 更新所有选项列表
+                    allOptions.clear()
+                    allOptions.addAll(defaultOptions)
+                    allOptions.addAll(customOptions)
+                }
+
+                Toast.makeText(context, "已删除选项\"${option}\"", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 }
