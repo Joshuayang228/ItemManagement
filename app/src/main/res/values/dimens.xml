@@ -6,4 +6,5 @@
     <dimen name="field_label_width">120dp</dimen>
     <dimen name="chip_min_height">32dp</dimen>
     <dimen name="input_min_width">80dp</dimen>
+    <dimen name="rating_bar_width">200dp</dimen>
 </resources>

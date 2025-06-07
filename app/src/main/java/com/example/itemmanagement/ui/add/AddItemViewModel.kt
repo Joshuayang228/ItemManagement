@@ -2,14 +2,15 @@ package com.example.itemmanagement.ui.add
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.itemmanagement.data.model.Item
 import kotlinx.coroutines.launch
 
-class AddItemViewModel : ViewModel() {
+class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
 
-    private val _selectedFields = MutableLiveData<Set<Field>>(setOf())
+    private val _selectedFields = savedStateHandle.getLiveData<Set<Field>>("selected_fields", setOf())
     val selectedFields: LiveData<Set<Field>> = _selectedFields
 
     private val _saveResult = MutableLiveData<Boolean>()
@@ -17,6 +18,18 @@ class AddItemViewModel : ViewModel() {
 
     private val _errorMessage = MutableLiveData<String>()
     val errorMessage: LiveData<String> = _errorMessage
+
+    // 用于保存字段值的映射
+    private var fieldValues: MutableMap<String, Any?> = savedStateHandle.get<MutableMap<String, Any?>>("field_values") ?: mutableMapOf()
+
+    // 用于保存每个字段的自定义选项
+    private var customOptionsMap: MutableMap<String, MutableList<String>> = savedStateHandle.get<MutableMap<String, MutableList<String>>>("custom_options") ?: mutableMapOf()
+
+    // 用于保存每个字段的自定义单位
+    private var customUnitsMap: MutableMap<String, MutableList<String>> = savedStateHandle.get<MutableMap<String, MutableList<String>>>("custom_units") ?: mutableMapOf()
+
+    // 用于保存每个字段的自定义标签
+    private var customTagsMap: MutableMap<String, MutableList<String>> = savedStateHandle.get<MutableMap<String, MutableList<String>>>("custom_tags") ?: mutableMapOf()
 
     // 字段属性定义
     data class FieldProperties(
@@ -58,17 +71,16 @@ class AddItemViewModel : ViewModel() {
         val currentFields = _selectedFields.value?.toMutableSet() ?: mutableSetOf()
 
         if (isSelected) {
-            // 如果已存在同名字段，先移除
             currentFields.removeAll { it.name == field.name }
             currentFields.add(field)
         } else {
-            // 不允许取消选择"名称"字段
             if (field.name == "名称") {
                 return
             }
             currentFields.removeAll { it.name == field.name }
         }
 
+        savedStateHandle["selected_fields"] = currentFields
         _selectedFields.value = currentFields
     }
 
@@ -84,6 +96,34 @@ class AddItemViewModel : ViewModel() {
     // 获取字段属性
     fun getFieldProperties(fieldName: String): FieldProperties {
         return fieldProperties[fieldName] ?: FieldProperties()
+    }
+
+    // 保存字段值
+    fun saveFieldValue(fieldName: String, value: Any?) {
+        fieldValues[fieldName] = value
+        savedStateHandle["field_values"] = fieldValues
+    }
+
+    // 获取字段值
+    fun getFieldValue(fieldName: String): Any? {
+        return fieldValues[fieldName]
+    }
+
+    // 获取所有字段值
+    fun getAllFieldValues(): Map<String, Any?> {
+        return fieldValues.toMap()
+    }
+
+    // 清除字段值
+    fun clearFieldValue(fieldName: String) {
+        fieldValues.remove(fieldName)
+        savedStateHandle["field_values"] = fieldValues
+    }
+
+    // 清除所有字段值
+    fun clearAllFieldValues() {
+        fieldValues.clear()
+        savedStateHandle["field_values"] = fieldValues
     }
 
     // 初始化默认字段属性
@@ -242,6 +282,99 @@ class AddItemViewModel : ViewModel() {
             validationType = ValidationType.TEXT,
             hint = "请输入序列号"
         ))
+    }
+
+    // 获取字段的自定义选项
+    fun getCustomOptions(fieldName: String): MutableList<String> {
+        if (!customOptionsMap.containsKey(fieldName)) {
+            customOptionsMap[fieldName] = mutableListOf()
+            savedStateHandle["custom_options"] = customOptionsMap
+        }
+        return customOptionsMap[fieldName]!!
+    }
+
+    // 设置字段的自定义选项
+    fun setCustomOptions(fieldName: String, options: MutableList<String>) {
+        customOptionsMap[fieldName] = options
+        savedStateHandle["custom_options"] = customOptionsMap
+    }
+
+    // 添加字段的自定义选项
+    fun addCustomOption(fieldName: String, option: String) {
+        val options = getCustomOptions(fieldName)
+        if (!options.contains(option)) {
+            options.add(option)
+            setCustomOptions(fieldName, options)
+        }
+    }
+
+    // 删除字段的自定义选项
+    fun removeCustomOption(fieldName: String, option: String) {
+        val options = getCustomOptions(fieldName)
+        options.remove(option)
+        setCustomOptions(fieldName, options)
+    }
+
+    // 获取字段的自定义单位
+    fun getCustomUnits(fieldName: String): MutableList<String> {
+        if (!customUnitsMap.containsKey(fieldName)) {
+            customUnitsMap[fieldName] = mutableListOf()
+            savedStateHandle["custom_units"] = customUnitsMap
+        }
+        return customUnitsMap[fieldName]!!
+    }
+
+    // 设置字段的自定义单位
+    fun setCustomUnits(fieldName: String, units: MutableList<String>) {
+        customUnitsMap[fieldName] = units
+        savedStateHandle["custom_units"] = customUnitsMap
+    }
+
+    // 添加字段的自定义单位
+    fun addCustomUnit(fieldName: String, unit: String) {
+        val units = getCustomUnits(fieldName)
+        if (!units.contains(unit)) {
+            units.add(unit)
+            setCustomUnits(fieldName, units)
+        }
+    }
+
+    // 删除字段的自定义单位
+    fun removeCustomUnit(fieldName: String, unit: String) {
+        val units = getCustomUnits(fieldName)
+        units.remove(unit)
+        setCustomUnits(fieldName, units)
+    }
+
+    // 获取字段的自定义标签
+    fun getCustomTags(fieldName: String): MutableList<String> {
+        if (!customTagsMap.containsKey(fieldName)) {
+            customTagsMap[fieldName] = mutableListOf()
+            savedStateHandle["custom_tags"] = customTagsMap
+        }
+        return customTagsMap[fieldName]!!
+    }
+
+    // 设置字段的自定义标签
+    fun setCustomTags(fieldName: String, tags: MutableList<String>) {
+        customTagsMap[fieldName] = tags
+        savedStateHandle["custom_tags"] = customTagsMap
+    }
+
+    // 添加字段的自定义标签
+    fun addCustomTag(fieldName: String, tag: String) {
+        val tags = getCustomTags(fieldName)
+        if (!tags.contains(tag)) {
+            tags.add(tag)
+            setCustomTags(fieldName, tags)
+        }
+    }
+
+    // 删除字段的自定义标签
+    fun removeCustomTag(fieldName: String, tag: String) {
+        val tags = getCustomTags(fieldName)
+        tags.remove(tag)
+        setCustomTags(fieldName, tags)
     }
 
     fun saveItem(item: Item) {
