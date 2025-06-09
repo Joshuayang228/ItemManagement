@@ -5,6 +5,7 @@ import android.app.DatePickerDialog
 import android.content.Context
 import android.text.InputType
 import android.util.TypedValue
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -647,14 +648,51 @@ class FieldViewFactory(
     }
 
     private fun createLocationSelector(): View {
-        // TODO: 实现三级位置选择器
-        return LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-            )
+        try {
+            // 创建位置选择器
+            val locationSelectorView = LocationSelectorView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+
+                // 创建并初始化位置管理器
+                val locationManager = LocationManager(context, viewModel)
+
+                // 初始化位置选择器
+                initialize(locationManager, viewModel)
+
+                // 设置位置选择监听器
+                setOnLocationSelectedListener { area, container, sublocation ->
+                    // 保存选择的值到 ViewModel
+                    if (area != null) {
+                        viewModel.saveFieldValue("位置_area", area)
+
+                        if (container != null) {
+                            viewModel.saveFieldValue("位置_container", container)
+
+                            if (sublocation != null) {
+                                viewModel.saveFieldValue("位置_sublocation", sublocation)
+                            } else {
+                                viewModel.clearFieldValue("位置_sublocation")
+                            }
+                        } else {
+                            viewModel.clearFieldValue("位置_container")
+                            viewModel.clearFieldValue("位置_sublocation")
+                        }
+                    } else {
+                        viewModel.clearFieldValue("位置_area")
+                        viewModel.clearFieldValue("位置_container")
+                        viewModel.clearFieldValue("位置_sublocation")
+                    }
+                }
+            }
+
+            return locationSelectorView
+
+        } catch (e: Exception) {
+            // 创建失败时返回一个空的视图
+            return View(context)
         }
     }
 

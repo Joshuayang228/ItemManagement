@@ -17,9 +17,9 @@
         app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/action_save"
-        android:icon="@drawable/ic_save"
-        android:title="保存"
+        android:id="@+id/action_clear"
+        android:icon="@drawable/ic_clear"
+        android:title="清除"
         app:iconTint="@android:color/white"
         app:showAsAction="ifRoom" />
 </menu>

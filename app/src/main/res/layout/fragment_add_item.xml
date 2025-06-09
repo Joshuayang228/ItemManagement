@@ -19,19 +19,25 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/photoCard"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="8dp"
                 app:cardBackgroundColor="#F5F5F5">
 
-                <ImageView
-                    android:id="@+id/itemPhotoView"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
-                    android:layout_gravity="center"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_add_photo"
-                    app:tint="@android:color/darker_gray" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/photoRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:padding="8dp"/>
+
+                </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 

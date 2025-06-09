@@ -10,11 +10,23 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.lifecycle.SavedStateHandle
 import android.util.Log
+import android.widget.Spinner
+import android.widget.TextView
+import android.widget.EditText
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import android.widget.RatingBar
+import android.widget.LinearLayout
+import android.content.Context
 
 /**
  * 负责管理字段值的保存和恢复
  */
-class FieldValueManager(private val viewModel: AddItemViewModel) {
+class FieldValueManager(
+    private val context: Context,
+    private val viewModel: AddItemViewModel,
+    private val dialogFactory: DialogFactory
+) {
     companion object {
         private val DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         private const val SPINNER_TAG = "spinner_textview"
@@ -43,7 +55,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                             }
                             if (tags.isNotEmpty()) {
                                 viewModel.saveFieldValue(fieldName, tags)
-                                Log.d("FieldValueManager", "保存标签字段 $fieldName: $tags")
                             }
                         }
                     }
@@ -51,7 +62,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                         val ratingBar = findRatingBarInView(view)
                         if (ratingBar != null && ratingBar.rating > 0) {
                             viewModel.saveFieldValue(fieldName, ratingBar.rating)
-                            Log.d("FieldValueManager", "保存评分字段 $fieldName: ${ratingBar.rating}")
                         }
                     }
                     AddItemViewModel.DisplayStyle.PERIOD_SELECTOR -> {
@@ -64,12 +74,7 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                             ) {
                                 val value = Pair(numberTextView.text.toString(), unitTextView.text.toString())
                                 viewModel.saveFieldValue(fieldName, value)
-                                Log.d("FieldValueManager", "保存期限字段 $fieldName: $value")
-                            } else {
-                                Log.d("FieldValueManager", "期限字段 $fieldName 未保存，number=${numberTextView?.text}, unit=${unitTextView?.text}")
                             }
-                        } else {
-                            Log.d("FieldValueManager", "期限字段 $fieldName 视图不是 LinearLayout")
                         }
                     }
                     else -> {
@@ -80,7 +85,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                                     dateTextView.text != "点击选择日期" &&
                                     dateTextView.text != fieldName) {
                                     viewModel.saveFieldValue(fieldName, dateTextView.text.toString())
-                                    Log.d("FieldValueManager", "保存日期字段 $fieldName: ${dateTextView.text}")
                                 }
                             }
                             properties.options != null -> {
@@ -89,48 +93,37 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                                     spinnerTextView.text != properties.options.firstOrNull() &&
                                     spinnerTextView.text != fieldName) {
                                     viewModel.saveFieldValue(fieldName, spinnerTextView.text.toString())
-                                    Log.d("FieldValueManager", "保存选项字段 $fieldName: ${spinnerTextView.text}")
                                 }
                             }
                             properties.unitOptions != null -> {
-                                Log.d("FieldValueManager", "处理带单位字段 $fieldName")
                                 if (view !is LinearLayout) {
-                                    Log.d("FieldValueManager", "带单位字段 $fieldName 视图不是 LinearLayout")
                                     return@forEach
                                 }
 
                                 val editText = findEditTextInView(view)
                                 val unitTextView = findTextViewInView(view, "unit_textview")
 
-                                Log.d("FieldValueManager", "带单位字段 $fieldName 找到控件: editText=${editText != null}, unitTextView=${unitTextView != null}")
-
                                 if (editText == null || unitTextView == null) return@forEach
 
                                 val value = editText.text.toString()
                                 val unit = unitTextView.text.toString()
 
-                                Log.d("FieldValueManager", "带单位字段 $fieldName 值: value=$value, unit=$unit")
-
                                 // 保存 value 和 unit 值，移除过滤条件，即使是默认值也保存
                                 if (value.isNotEmpty()) {
                                     viewModel.saveFieldValue(fieldName, value)
-                                    Log.d("FieldValueManager", "保存带单位字段值 $fieldName: $value")
                                 } else {
                                     // 如果为空，设置默认值为0或1
                                     val defaultValue = properties.defaultValue ?: "0"
                                     viewModel.saveFieldValue(fieldName, defaultValue)
-                                    Log.d("FieldValueManager", "保存带单位字段默认值 $fieldName: $defaultValue")
                                 }
 
                                 // 即使是默认单位也保存
                                 if (unit.isNotEmpty()) {
                                     viewModel.saveFieldValue("${fieldName}_unit", unit)
-                                    Log.d("FieldValueManager", "保存带单位字段单位 ${fieldName}_unit: $unit")
                                 } else if (properties.unitOptions?.isNotEmpty() == true) {
                                     // 如果单位为空，使用第一个可选单位
                                     val defaultUnit = properties.unitOptions.first()
                                     viewModel.saveFieldValue("${fieldName}_unit", defaultUnit)
-                                    Log.d("FieldValueManager", "保存带单位字段默认单位 ${fieldName}_unit: $defaultUnit")
                                 }
                             }
                             else -> {
@@ -139,7 +132,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                                         val value = view.text.toString()
                                         if (value.isNotEmpty()) {
                                             viewModel.saveFieldValue(fieldName, value)
-                                            Log.d("FieldValueManager", "保存文本字段 $fieldName: $value")
                                         }
                                     }
                                     is RadioGroup -> {
@@ -186,7 +178,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                 }
             }
         } catch (e: Exception) {
-            Log.e("FieldValueManager", "保存字段值出错", e)
             e.printStackTrace()
         }
     }
@@ -195,35 +186,156 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
      * 恢复所有字段的值
      */
     fun restoreFieldValues(fieldViews: Map<String, View>) {
-        if (fieldViews.isEmpty()) return
+        if (fieldViews.isEmpty()) {
+            return
+        }
 
         val savedValues = viewModel.getAllFieldValues()
-        Log.d("FieldValueManager", "准备恢复字段值，保存的值：${savedValues.keys}")
+        if (savedValues.isEmpty()) {
+            // 清空所有字段
+            fieldViews.forEach { (fieldName, view) ->
+                when (view) {
+                    is EditText -> {
+                        view.setText("")
+                    }
+                    is ViewGroup -> {
+                        // 处理复合视图
+                        findSpinnerInView(view)?.let { spinner ->
+                            if (spinner.count > 0) {
+                                spinner.setSelection(0)
+                            }
+                        }
+
+                        findRatingBarInView(view)?.let { ratingBar ->
+                            ratingBar.rating = 0f
+                        }
+
+                        findRadioGroupInView(view)?.let { radioGroup ->
+                            radioGroup.clearCheck()
+                        }
+
+                        // 清空日期选择器
+                        findTextViewInView(view, DATE_TAG)?.let { dateTextView ->
+                            dateTextView.text = ""
+                        }
+
+                        // 处理带单位的字段
+                        val properties = viewModel.getFieldProperties(fieldName)
+                        if (properties.unitOptions?.isNotEmpty() == true) {
+                            // 清空数值
+                            findEditTextInView(view)?.let { editText ->
+                                editText.setText(properties.defaultValue ?: "0")
+                            }
+
+                            // 重置单位为默认值
+                            findTextViewInView(view, "unit_textview")?.let { unitTextView ->
+                                val defaultUnit = properties.unitOptions.first()
+                                unitTextView.text = defaultUnit
+                            }
+                        } else {
+                            // 如果不是带单位字段，正常清空
+                            findEditTextInView(view)?.let { editText ->
+                                editText.setText("")
+                            }
+                        }
+
+                        // 清空期限选择器
+                        if (fieldName == "保质期" || fieldName == "保修期") {
+                            // 清空数值输入框
+                            findTextViewInView(view, "period_number_textview")?.let { numberText ->
+                                numberText.text = ""
+                            }
+                            // 重置单位选择器
+                            findTextViewInView(view, "period_unit_textview")?.let { unitText ->
+                                val properties = viewModel.getFieldProperties(fieldName)
+                                properties.periodUnits?.firstOrNull()?.let { firstUnit ->
+                                    unitText.text = firstUnit
+                                }
+                            }
+                        }
+
+                        // 清空位置选择器
+                        if (fieldName == "位置") {
+                            findLocationSelectorInView(view)?.let { locationSelector ->
+                                // 设置位置选择监听器
+                                locationSelector.setOnLocationSelectedListener { area, container, sublocation ->
+                                    // 保存选择的值到 ViewModel
+                                    if (area != null) {
+                                        viewModel.saveFieldValue("位置_area", area)
+                                        if (container != null) {
+                                            viewModel.saveFieldValue("位置_container", container)
+                                            if (sublocation != null) {
+                                                viewModel.saveFieldValue("位置_sublocation", sublocation)
+                                            } else {
+                                                viewModel.clearFieldValue("位置_sublocation")
+                                            }
+                                        } else {
+                                            viewModel.clearFieldValue("位置_container")
+                                            viewModel.clearFieldValue("位置_sublocation")
+                                        }
+                                    } else {
+                                        viewModel.clearFieldValue("位置_area")
+                                        viewModel.clearFieldValue("位置_container")
+                                        viewModel.clearFieldValue("位置_sublocation")
+                                    }
+                                }
+
+                                // 清除选择
+                                locationSelector.clearSelection()
+                            }
+                        }
+
+                        // 清空标签选择器
+                        if (fieldName == "标签" || fieldName == "季节") {
+                            // 获取 TagManager 实例
+                            val tagManager = TagManager(context, dialogFactory, viewModel, fieldName)
+
+                            // 清空ChipGroup
+                            view.findViewById<ChipGroup>(R.id.selected_tags_container)?.let { chipGroup ->
+                                tagManager.clearTags(chipGroup)
+                            }
+
+                            // 保存未选中状态到ViewModel
+                            viewModel.saveFieldValue(fieldName, emptySet<String>())
+                        }
+
+                        // 清空下拉选择器的显示文本
+                        findTextViewInView(view, SPINNER_TAG)?.let { spinnerText ->
+                            val properties = viewModel.getFieldProperties(fieldName)
+                            if (properties.options?.isNotEmpty() == true) {
+                                spinnerText.text = properties.options.first()
+                            } else {
+                                spinnerText.text = ""
+                            }
+                        }
+                    }
+                }
+            }
+            return
+        }
 
         try {
             savedValues.forEach { (fieldName, value) ->
                 // 跳过单位字段，这些会在各自的字段类型处理中被处理
-                if (fieldName.endsWith("_unit")) return@forEach
+                if (fieldName.endsWith("_unit")) {
+                    return@forEach
+                }
 
                 if (value == null) {
-                    Log.d("FieldValueManager", "字段 $fieldName 的值为空，跳过恢复")
                     return@forEach
                 }
 
                 val view = fieldViews[fieldName]
                 if (view == null) {
-                    Log.d("FieldValueManager", "找不到字段 $fieldName 的视图，跳过恢复")
                     return@forEach
                 }
 
                 val properties = viewModel.getFieldProperties(fieldName)
-                Log.d("FieldValueManager", "恢复字段 $fieldName 的值: $value, 类型: ${properties.displayStyle}")
 
                 when (properties.displayStyle) {
                     AddItemViewModel.DisplayStyle.TAG -> {
                         // 标签恢复逻辑保持不变
                         val tags = value as? Set<String> ?: return@forEach
-                        Log.d("FieldValueManager", "恢复标签字段 $fieldName: $tags")
                         val selectedTagsContainer = view.findViewById<ChipGroup>(R.id.selected_tags_container)
                         selectedTagsContainer?.removeAllViews()
 
@@ -307,22 +419,17 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                             is Int -> value.toFloat()
                             else -> return@forEach
                         }
-                        Log.d("FieldValueManager", "恢复评分字段 $fieldName: $rating")
                         val ratingBar = findRatingBarInView(view)
                         ratingBar?.rating = rating
                     }
                     AddItemViewModel.DisplayStyle.PERIOD_SELECTOR -> {
                         val periodValue = value as? Pair<*, *> ?: return@forEach
-                        Log.d("FieldValueManager", "恢复期限字段 $fieldName: $periodValue")
                         val container = view as? LinearLayout ?: return@forEach
                         val numberTextView = findTextViewInView(container, "period_number_textview")
                         val unitTextView = findTextViewInView(container, "period_unit_textview")
                         if (numberTextView != null && unitTextView != null) {
                             numberTextView.text = periodValue.first as? String ?: ""
                             unitTextView.text = periodValue.second as? String ?: ""
-                            Log.d("FieldValueManager", "期限字段 $fieldName 设置为: number=${numberTextView.text}, unit=${unitTextView.text}")
-                        } else {
-                            Log.d("FieldValueManager", "期限字段 $fieldName 控件未找到: numberTextView=${numberTextView != null}, unitTextView=${unitTextView != null}")
                         }
                     }
                     else -> {
@@ -331,48 +438,38 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                                 val dateTextView = findTextViewInView(view, DATE_TAG)
                                 if (dateTextView != null && value is String && value != fieldName) {
                                     dateTextView.text = value
-                                    Log.d("FieldValueManager", "恢复日期字段 $fieldName: ${dateTextView.text}")
                                 }
                             }
                             properties.options != null -> {
                                 val spinnerTextView = findTextViewInView(view, SPINNER_TAG)
                                 if (spinnerTextView != null && value is String && value != fieldName) {
                                     spinnerTextView.text = value
-                                    Log.d("FieldValueManager", "恢复选项字段 $fieldName: ${spinnerTextView.text}")
                                 }
                             }
                             properties.unitOptions != null -> {
-                                Log.d("FieldValueManager", "恢复带单位字段 $fieldName")
                                 if (view !is LinearLayout) {
-                                    Log.d("FieldValueManager", "带单位字段 $fieldName 视图不是 LinearLayout")
                                     return@forEach
                                 }
 
                                 val editText = findEditTextInView(view)
                                 val unitTextView = findTextViewInView(view, "unit_textview")
 
-                                Log.d("FieldValueManager", "带单位字段 $fieldName 找到控件: editText=${editText != null}, unitTextView=${unitTextView != null}")
-
                                 if (editText == null || unitTextView == null) return@forEach
 
                                 // 恢复数值
                                 if (value is String) {
                                     editText.setText(value)
-                                    Log.d("FieldValueManager", "带单位字段 $fieldName 设置值: $value")
                                 }
 
                                 // 恢复单位
                                 val unitValue = viewModel.getFieldValue("${fieldName}_unit") as? String
-                                Log.d("FieldValueManager", "带单位字段 $fieldName 获取单位: $unitValue")
 
                                 if (!unitValue.isNullOrEmpty()) {
                                     unitTextView.text = unitValue
-                                    Log.d("FieldValueManager", "带单位字段 $fieldName 设置单位: $unitValue")
                                 } else if (properties.unitOptions?.isNotEmpty() == true) {
                                     // 如果没有保存单位或单位为空，使用第一个可选单位
                                     val defaultUnit = properties.unitOptions.first()
                                     unitTextView.text = defaultUnit
-                                    Log.d("FieldValueManager", "带单位字段 $fieldName 设置默认单位: $defaultUnit")
                                 }
                             }
                             else -> {
@@ -380,7 +477,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                                     is EditText -> {
                                         if (value is String && value.isNotEmpty()) {
                                             view.setText(value)
-                                            Log.d("FieldValueManager", "恢复文本字段 $fieldName: $value")
                                         }
                                     }
                                     is RadioGroup -> {
@@ -444,7 +540,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
     private fun findEditTextInView(view: View): EditText? {
         return when (view) {
             is EditText -> {
-                Log.d("FieldValueManager", "找到 EditText: ${view.id}")
                 view
             }
             is ViewGroup -> {
@@ -453,7 +548,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                     for (i in 0 until view.childCount) {
                         val child = view.getChildAt(i)
                         if (child is EditText) {
-                            Log.d("FieldValueManager", "在 LinearLayout 中直接找到 EditText: ${child.id}")
                             return child
                         }
                     }
@@ -468,7 +562,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                     }
                 }
 
-                Log.d("FieldValueManager", "在 ${view.javaClass.simpleName} 中未找到 EditText")
                 null
             }
             else -> null
@@ -482,7 +575,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
         return when (view) {
             is TextView -> {
                 if (view !is EditText && (tag == null || view.tag == tag)) {
-                    Log.d("FieldValueManager", "找到 TextView: tag=${view.tag}, 寻找的tag=$tag")
                     view
                 } else null
             }
@@ -492,7 +584,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                     for (i in 0 until view.childCount) {
                         val child = view.getChildAt(i)
                         if (child is TextView && child !is EditText && (tag == null || child.tag == tag)) {
-                            Log.d("FieldValueManager", "在 LinearLayout 中直接找到 TextView: tag=${child.tag}")
                             return child
                         }
                     }
@@ -507,9 +598,6 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
                     }
                 }
 
-                if (tag != null) {
-                    Log.d("FieldValueManager", "在 ${view.javaClass.simpleName} 中未找到 tag=$tag 的 TextView")
-                }
                 null
             }
             else -> null
@@ -675,6 +763,39 @@ class FieldValueManager(private val viewModel: AddItemViewModel) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun findSpinnerInView(view: ViewGroup): Spinner? {
+        if (view is Spinner) return view
+        for (i in 0 until view.childCount) {
+            val child = view.getChildAt(i)
+            if (child is Spinner) return child
+            if (child is ViewGroup) {
+                val result = findSpinnerInView(child)
+                if (result != null) return result
+            }
+        }
+        return null
+    }
+
+    /**
+     * 在视图层次结构中查找LocationSelectorView
+     */
+    private fun findLocationSelectorInView(view: View): LocationSelectorView? {
+        return when (view) {
+            is LocationSelectorView -> view
+            is ViewGroup -> {
+                for (i in 0 until view.childCount) {
+                    val child = view.getChildAt(i)
+                    val result = findLocationSelectorInView(child)
+                    if (result != null) {
+                        return result
+                    }
+                }
+                null
+            }
+            else -> null
         }
     }
 } 

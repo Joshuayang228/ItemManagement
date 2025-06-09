@@ -1,5 +1,7 @@
 package com.example.itemmanagement.ui.add
 
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
@@ -7,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.itemmanagement.data.model.Item
 import kotlinx.coroutines.launch
+import java.io.Serializable
 
 class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
 
@@ -31,6 +34,14 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
     // 用于保存每个字段的自定义标签
     private var customTagsMap: MutableMap<String, MutableList<String>> = savedStateHandle.get<MutableMap<String, MutableList<String>>>("custom_tags") ?: mutableMapOf()
 
+    // 添加图片URI列表的LiveData
+    private val _photoUris = savedStateHandle.getLiveData<List<Uri>>("photo_uris", listOf())
+    val photoUris: LiveData<List<Uri>> = _photoUris
+
+    // 添加一个 LiveData 来跟踪选中的标签
+    private val _selectedTags = MutableLiveData<Map<String, Set<String>>>(mapOf())
+    val selectedTags: LiveData<Map<String, Set<String>>> = _selectedTags
+
     // 字段属性定义
     data class FieldProperties(
         val defaultValue: String? = null,
@@ -50,13 +61,17 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
         val displayStyle: DisplayStyle = DisplayStyle.DEFAULT, // 显示样式
         val periodRange: IntRange? = null,    // 期限范围（如1-36个月）
         val periodUnits: List<String>? = null // 期限单位（如年、月、日）
-    )
+    ) : Serializable {
+        companion object {
+            private const val serialVersionUID = 1L
+        }
+    }
 
-    enum class ValidationType {
+    enum class ValidationType : Serializable {
         TEXT, NUMBER, DATE, DATETIME, EMAIL, PHONE, URL
     }
 
-    enum class DisplayStyle {
+    enum class DisplayStyle : Serializable {
         DEFAULT,           // 默认显示
         TAG,              // 标签样式
         RATING_STAR,      // 评分星星
@@ -102,6 +117,16 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
     fun saveFieldValue(fieldName: String, value: Any?) {
         fieldValues[fieldName] = value
         savedStateHandle["field_values"] = fieldValues
+
+        // 如果是标签字段，更新 selectedTags
+        if (getFieldProperties(fieldName).displayStyle == DisplayStyle.TAG) {
+            val currentSelectedTags = _selectedTags.value?.toMutableMap() ?: mutableMapOf()
+            if (value is Set<*>) {
+                @Suppress("UNCHECKED_CAST")
+                currentSelectedTags[fieldName] = value as Set<String>
+                _selectedTags.value = currentSelectedTags
+            }
+        }
     }
 
     // 获取字段值
@@ -375,6 +400,19 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
         val tags = getCustomTags(fieldName)
         tags.remove(tag)
         setCustomTags(fieldName, tags)
+
+        // 从已选中的标签中移除被删除的标签
+        val currentSelectedTags = _selectedTags.value?.toMutableMap() ?: mutableMapOf()
+        currentSelectedTags[fieldName]?.let { selectedTags ->
+            if (selectedTags.contains(tag)) {
+                val updatedTags = selectedTags.toMutableSet()
+                updatedTags.remove(tag)
+                currentSelectedTags[fieldName] = updatedTags
+                _selectedTags.value = currentSelectedTags
+                // 同时更新 fieldValues
+                saveFieldValue(fieldName, updatedTags)
+            }
+        }
     }
 
     fun saveItem(item: Item) {
@@ -387,5 +425,64 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
                 _saveResult.value = false
             }
         }
+    }
+
+    // 保存自定义位置数据
+    fun saveCustomLocations(customData: CustomLocationData) {
+        try {
+            savedStateHandle["custom_locations"] = customData
+        } catch (e: Exception) {
+        }
+    }
+
+    // 获取自定义位置数据
+    fun getCustomLocations(): CustomLocationData? {
+        return try {
+            val data = savedStateHandle.get<CustomLocationData>("custom_locations")
+            data
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // 添加图片URI管理方法
+    fun addPhotoUri(uri: Uri) {
+        val currentUris = _photoUris.value?.toMutableList() ?: mutableListOf()
+        currentUris.add(uri)
+        savedStateHandle["photo_uris"] = currentUris
+        _photoUris.value = currentUris
+    }
+
+    fun removePhotoUri(position: Int) {
+        val currentUris = _photoUris.value?.toMutableList() ?: mutableListOf()
+        if (position in currentUris.indices) {
+            currentUris.removeAt(position)
+            savedStateHandle["photo_uris"] = currentUris
+            _photoUris.value = currentUris
+        }
+    }
+
+    fun getPhotoUris(): List<Uri> {
+        return _photoUris.value ?: listOf()
+    }
+
+    fun clearPhotos() {
+        _photoUris.value = emptyList()
+        savedStateHandle["photo_uris"] = emptyList<Uri>()
+    }
+
+    fun clearAllData() {
+        // 清除所有字段值
+        fieldValues.clear()
+        savedStateHandle.remove<MutableMap<String, Any?>>("field_values")
+
+        // 清除位置相关的数据
+        savedStateHandle.remove<String>("位置_area")
+        savedStateHandle.remove<String>("位置_container")
+        savedStateHandle.remove<String>("位置_sublocation")
+
+        // 清除所有照片
+        _photoUris.value = emptyList()
+        savedStateHandle.remove<List<Uri>>("photo_uris")
     }
 }

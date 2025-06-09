@@ -1,7 +1,6 @@
 package com.example.itemmanagement.ui.add
 
 import android.content.Context
-import android.util.Log
 import android.util.TypedValue
 import android.view.ViewGroup
 import com.google.android.material.chip.Chip
@@ -52,6 +51,10 @@ class TagManager(
         val chip = createChip(tagName, container)
         container.addView(chip)
         selectedTags.add(tagName)
+
+        // 保存选中状态到 ViewModel
+        viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+
         return true
     }
 
@@ -80,6 +83,9 @@ class TagManager(
             setOnCloseIconClickListener {
                 container.removeView(this)
                 selectedTags.remove(tagName)
+
+                // 保存更新后的状态到 ViewModel
+                viewModel.saveFieldValue(fieldName, selectedTags.toSet())
             }
 
             // 长按编辑或删除标签
@@ -98,18 +104,42 @@ class TagManager(
     }
 
     /**
+     * 添加标签到ChipGroup
+     */
+    fun addChipToGroup(container: ChipGroup, tagName: String) {
+        val chip = createChip(tagName, container)
+        container.addView(chip)
+        selectedTags.add(tagName)
+        viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+    }
+
+    /**
      * 显示标签选择对话框
      */
     fun showTagSelectionDialog(container: ChipGroup) {
+        // 先从 ViewModel 获取最新的选中状态
+        val savedTags = viewModel.getFieldValue(fieldName) as? Set<String>
+        if (savedTags != null) {
+            // 同步内存中的选中状态与 ViewModel 中的状态
+            selectedTags.clear()
+            selectedTags.addAll(savedTags)
+        } else {
+            // 如果 ViewModel 中没有数据，清空选中状态
+            selectedTags.clear()
+        }
+
         dialogFactory.showTagSelectionDialog(
             selectedTags,
             defaultTags,
             customTags,
             getAllTags().toMutableList(),
-            container
-        ) { selectedTag ->
-            addTagToContainer(selectedTag, container)
-        }
+            container,
+            { selectedTag ->
+                addTagToContainer(selectedTag, container)
+            },
+            viewModel,
+            fieldName
+        )
     }
 
     /**
@@ -133,6 +163,9 @@ class TagManager(
     fun clearTags(container: ChipGroup) {
         container.removeAllViews()
         selectedTags.clear()
+
+        // 保存空集合到 ViewModel
+        viewModel.saveFieldValue(fieldName, emptySet<String>())
     }
 
     /**

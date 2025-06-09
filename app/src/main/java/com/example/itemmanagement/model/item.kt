@@ -1,13 +1,38 @@
 package com.example.itemmanagement.data.model
 
+import android.net.Uri
 import java.util.Date
 
 // 位置信息数据类
 data class Location(
-    val room: String,           // 房间（必填）
-    val container: String? = null,     // 容器（如冰箱/柜子）
-    val specificLocation: String? = null // 具体位置
-)
+    val area: String,                  // 区域（如厨房、卧室等，必填）
+    val container: String? = null,     // 容器（如冰箱、衣柜等，依赖于area）
+    val sublocation: String? = null    // 子位置（如第三层、左侧抽屉等，依赖于container）
+) {
+    // 确保层级关系正确
+    init {
+        // 如果area为空，不允许container和sublocation有值
+        require(area.isNotBlank()) { "区域(area)不能为空" }
+
+        // 如果container为空，不允许sublocation有值
+        if (container.isNullOrBlank()) {
+            require(sublocation.isNullOrBlank()) { "当容器(container)为空时，子位置(sublocation)也必须为空" }
+        }
+    }
+
+    // 获取完整位置字符串
+    fun getFullLocationString(): String {
+        val parts = mutableListOf<String>()
+        parts.add(area)
+        if (!container.isNullOrBlank()) {
+            parts.add(container)
+            if (!sublocation.isNullOrBlank()) {
+                parts.add(sublocation)
+            }
+        }
+        return parts.joinToString(" > ")
+    }
+}
 
 // 开封状态枚举
 enum class OpenStatus {
@@ -43,7 +68,7 @@ data class Item(
     // 规格属性
     val brand: String? = null,           // 品牌
     val specification: String? = null,    // 规格描述
-    val imageUrl: String? = null,        // 图片URL
+    val photos: List<Uri> = emptyList(), // 物品照片列表
 
     // 状态与管理属性
     val status: ItemStatus = ItemStatus.IN_STOCK,  // 物品状态

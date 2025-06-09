@@ -3,6 +3,7 @@ package com.example.itemmanagement.ui.add
 import android.app.AlertDialog
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.SharedPreferences
 import android.util.Log
 import android.view.LayoutInflater
@@ -163,7 +164,9 @@ class DialogFactory(private val context: Context) {
         customTags: MutableList<String>,
         allTags: MutableList<String>,
         selectedTagsContainer: ChipGroup,
-        onTagSelected: (String) -> Unit
+        onTagSelected: (String) -> Unit,
+        viewModel: AddItemViewModel,
+        fieldName: String
     ) {
         // 更新所有标签列表
         allTags.clear()
@@ -188,7 +191,9 @@ class DialogFactory(private val context: Context) {
                 allTags,
                 selectedTagsContainer,
                 onTagSelected,
-                dialog
+                dialog,
+                viewModel,
+                fieldName
             )
         }
 
@@ -216,13 +221,12 @@ class DialogFactory(private val context: Context) {
                                 break
                             }
                         }
-                        Log.d("TagDebug", "用户取消选中标签: $tagName")
                     }
                 }
             }
             .setPositiveButton("确定", null)
             .setNeutralButton("管理标签") { _, _ ->
-                showManageTagsDialog(defaultTags, customTags, allTags, selectedTags)
+                showManageTagsDialog(defaultTags, customTags, allTags, selectedTags, viewModel, fieldName)
             }
             .create()
 
@@ -242,7 +246,9 @@ class DialogFactory(private val context: Context) {
         allTags: MutableList<String>,
         selectedTagsContainer: ChipGroup,
         onTagAdded: (String) -> Unit,
-        parentDialog: MaterialAlertDialog? = null
+        parentDialog: MaterialAlertDialog? = null,
+        viewModel: AddItemViewModel,
+        fieldName: String
     ) {
         val editText = EditText(context).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -274,27 +280,29 @@ class DialogFactory(private val context: Context) {
                             customTags,
                             allTags,
                             selectedTagsContainer,
-                            onTagAdded
+                            onTagAdded,
+                            viewModel,
+                            fieldName
+                        )
+                    } else if (!selectedTags.contains(tagName)) {
+                        // 如果标签已存在但未选中，则选中它
+                        // 关闭所有对话框
+                        dialog.dismiss()
+                        parentDialog?.dismiss()
+                        onTagAdded(tagName)
+                        // 重新显示标签选择对话框
+                        showTagSelectionDialog(
+                            selectedTags,
+                            defaultTags,
+                            customTags,
+                            allTags,
+                            selectedTagsContainer,
+                            onTagAdded,
+                            viewModel,
+                            fieldName
                         )
                     } else {
-                        // 如果标签已存在但未选中，则选中它
-                        if (!selectedTags.contains(tagName)) {
-                            // 关闭所有对话框
-                            dialog.dismiss()
-                            parentDialog?.dismiss()
-                            onTagAdded(tagName)
-                            // 重新显示标签选择对话框
-                            showTagSelectionDialog(
-                                selectedTags,
-                                defaultTags,
-                                customTags,
-                                allTags,
-                                selectedTagsContainer,
-                                onTagAdded
-                            )
-                        } else {
-                            Toast.makeText(context, "该标签已存在且已选中", Toast.LENGTH_SHORT).show()
-                        }
+                        Toast.makeText(context, "该标签已存在且已选中", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -311,7 +319,9 @@ class DialogFactory(private val context: Context) {
         defaultTags: MutableList<String>,
         customTags: MutableList<String>,
         allTags: MutableList<String>,
-        selectedTags: MutableSet<String>
+        selectedTags: MutableSet<String>,
+        viewModel: AddItemViewModel,
+        fieldName: String
     ) {
         // 更新所有标签列表
         allTags.clear()
@@ -323,7 +333,8 @@ class DialogFactory(private val context: Context) {
         val checkedItems = BooleanArray(items.size) { false }
         val selectedForOperation = mutableSetOf<String>()
 
-        val dialogBuilder = MaterialAlertDialogBuilder(context)
+        // 创建对话框，但不立即显示
+        val dialog = MaterialAlertDialogBuilder(context)
             .setTitle("管理标签")
             .setMultiChoiceItems(items, checkedItems) { _, which, isChecked ->
                 val tagName = items[which]
@@ -333,8 +344,31 @@ class DialogFactory(private val context: Context) {
                     selectedForOperation.remove(tagName)
                 }
             }
-            .setPositiveButton("删除选中项") { _, _ ->
-                if (selectedForOperation.isNotEmpty()) {
+            .setPositiveButton("删除选中项", null) // 设置为 null，我们将在后面设置点击监听器
+            .setNegativeButton("取消", null)
+            .setNeutralButton("添加新标签") { _, _ ->
+                showAddNewTagDialog(
+                    selectedTags,
+                    defaultTags,
+                    customTags,
+                    allTags,
+                    ChipGroup(context),  // 传入一个临时的ChipGroup，因为这里不需要实际添加到UI
+                    { _ -> },            // 空的回调函数
+                    null,                // 无父对话框
+                    viewModel,           // 添加 ViewModel 参数
+                    fieldName            // 添加字段名参数
+                )
+            }
+            .create()
+
+        // 设置"删除选中项"按钮的点击监听器
+        dialog.setOnShowListener {
+            val positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            positiveButton.setOnClickListener {
+                if (selectedForOperation.isEmpty()) {
+                    Toast.makeText(context, "请先选择要删除的标签", Toast.LENGTH_SHORT).show()
+                } else {
+                    // 创建确认删除的对话框
                     MaterialAlertDialogBuilder(context)
                         .setTitle("批量删除")
                         .setMessage("确定要删除选中的 ${selectedForOperation.size} 个标签吗？")
@@ -347,7 +381,10 @@ class DialogFactory(private val context: Context) {
                             val tagsToRemove = selectedTags.intersect(selectedForOperation)
                             if (tagsToRemove.isNotEmpty()) {
                                 selectedTags.removeAll(tagsToRemove)
-                                Log.d("TagDebug", "已删除标签: ${tagsToRemove.joinToString()}")
+                                // 通知 ViewModel 删除标签
+                                tagsToRemove.forEach { tag ->
+                                    viewModel.removeCustomTag(fieldName, tag)
+                                }
                             }
 
                             // 更新所有标签列表
@@ -356,27 +393,15 @@ class DialogFactory(private val context: Context) {
                             allTags.addAll(customTags)
 
                             Toast.makeText(context, "已删除 ${selectedForOperation.size} 个标签", Toast.LENGTH_SHORT).show()
+                            dialog.dismiss() // 只有在确认删除后才关闭管理标签对话框
                         }
                         .setNegativeButton("取消", null)
                         .show()
-                } else {
-                    Toast.makeText(context, "请先选择要删除的标签", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("取消", null)
-            .setNeutralButton("添加新标签") { _, _ ->
-                showAddNewTagDialog(
-                    selectedTags,
-                    defaultTags,
-                    customTags,
-                    allTags,
-                    ChipGroup(context),  // 传入一个临时的ChipGroup，因为这里不需要实际添加到UI
-                    { _ -> },            // 空的回调函数
-                    null                 // 无父对话框
-                )
-            }
+        }
 
-        dialogBuilder.show()
+        dialog.show()
     }
 
     /**
@@ -879,6 +904,95 @@ class DialogFactory(private val context: Context) {
                     }
                 }
             }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    /**
+     * 创建一个基础的选择对话框
+     * @param title 对话框标题
+     * @param items 选项列表
+     * @param onItemSelected 选项选中回调
+     */
+    fun createDialog(
+        title: String,
+        items: Array<String>,
+        onItemSelected: (Int) -> Unit
+    ) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle(title)
+            .setItems(items) { _: DialogInterface, which: Int ->
+                onItemSelected(which)
+            }
+            .show()
+    }
+
+    /**
+     * 创建一个确认对话框
+     * @param title 对话框标题
+     * @param message 对话框内容
+     * @param positiveButtonText 确认按钮文本
+     * @param negativeButtonText 取消按钮文本
+     * @param onPositiveClick 确认按钮点击回调
+     * @param onNegativeClick 取消按钮点击回调
+     */
+    fun createConfirmDialog(
+        title: String,
+        message: String,
+        positiveButtonText: String = "确定",
+        negativeButtonText: String = "取消",
+        onPositiveClick: () -> Unit = {},
+        onNegativeClick: () -> Unit = {}
+    ) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(positiveButtonText) { _, _ -> onPositiveClick() }
+            .setNegativeButton(negativeButtonText) { _, _ -> onNegativeClick() }
+            .show()
+    }
+
+    /**
+     * 创建一个单选对话框
+     * @param title 对话框标题
+     * @param items 选项列表
+     * @param checkedItem 默认选中项
+     * @param onItemSelected 选项选中回调
+     */
+    fun createSingleChoiceDialog(
+        title: String,
+        items: Array<String>,
+        checkedItem: Int = 0,
+        onItemSelected: (Int) -> Unit
+    ) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle(title)
+            .setSingleChoiceItems(items, checkedItem) { dialog, which ->
+                onItemSelected(which)
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    /**
+     * 创建一个多选对话框
+     * @param title 对话框标题
+     * @param items 选项列表
+     * @param checkedItems 选中状态数组
+     * @param onItemsSelected 选项选中状态变化回调
+     */
+    fun createMultiChoiceDialog(
+        title: String,
+        items: Array<String>,
+        checkedItems: BooleanArray,
+        onItemsSelected: (BooleanArray) -> Unit
+    ) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle(title)
+            .setMultiChoiceItems(items, checkedItems) { _, which, isChecked ->
+                checkedItems[which] = isChecked
+            }
+            .setPositiveButton("确定") { _, _ -> onItemsSelected(checkedItems) }
             .setNegativeButton("取消", null)
             .show()
     }

@@ -1,12 +1,16 @@
 package com.example.itemmanagement.ui.add
 
+import java.io.Serializable
+
 data class Field(
     val group: String,
     val name: String,
     var isSelected: Boolean = false,
     val order: Int = getDefaultOrder(name)
-) {
+) : Serializable {
     companion object {
+        private const val serialVersionUID = 1L  // 添加序列化版本ID
+
         fun getDefaultOrder(name: String): Int = when(name) {
             "名称" -> 1
             "数量" -> 2
