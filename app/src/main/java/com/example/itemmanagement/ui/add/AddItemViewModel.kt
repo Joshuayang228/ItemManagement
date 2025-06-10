@@ -10,6 +10,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.itemmanagement.data.model.Item
 import kotlinx.coroutines.launch
 import java.io.Serializable
+import java.text.SimpleDateFormat
+import java.util.*
 
 class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
 
@@ -44,6 +46,7 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
 
     // 字段属性定义
     data class FieldProperties(
+        val fieldName: String? = null,
         val defaultValue: String? = null,
         val options: List<String>? = null,
         val min: Number? = null,
@@ -105,7 +108,9 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
 
     // 设置字段属性
     fun setFieldProperties(fieldName: String, properties: FieldProperties) {
-        fieldProperties[fieldName] = properties
+        // 确保FieldProperties包含字段名
+        val updatedProperties = properties.copy(fieldName = fieldName)
+        fieldProperties[fieldName] = updatedProperties
     }
 
     // 获取字段属性
@@ -115,23 +120,37 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
 
     // 保存字段值
     fun saveFieldValue(fieldName: String, value: Any?) {
-        fieldValues[fieldName] = value
-        savedStateHandle["field_values"] = fieldValues
+        // 如果值不为null，或者是明确设置为空，则更新
+        if (value != null || fieldValues.containsKey(fieldName)) {
+            fieldValues[fieldName] = value
+            savedStateHandle["field_values"] = fieldValues
 
-        // 如果是标签字段，更新 selectedTags
-        if (getFieldProperties(fieldName).displayStyle == DisplayStyle.TAG) {
-            val currentSelectedTags = _selectedTags.value?.toMutableMap() ?: mutableMapOf()
-            if (value is Set<*>) {
-                @Suppress("UNCHECKED_CAST")
-                currentSelectedTags[fieldName] = value as Set<String>
-                _selectedTags.value = currentSelectedTags
+            // 如果是标签字段，更新 selectedTags
+            if (getFieldProperties(fieldName).displayStyle == DisplayStyle.TAG) {
+                val currentSelectedTags = _selectedTags.value?.toMutableMap() ?: mutableMapOf()
+                if (value is Set<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    currentSelectedTags[fieldName] = value as Set<String>
+                    _selectedTags.value = currentSelectedTags
+                }
             }
         }
     }
 
     // 获取字段值
     fun getFieldValue(fieldName: String): Any? {
-        return fieldValues[fieldName]
+        // 对于"添加日期"字段，如果没有值则返回当前日期
+        if (fieldName == "添加日期" && !fieldValues.containsKey(fieldName)) {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            return dateFormat.format(Date())
+        }
+
+        // 确保明确返回存储的值，即使是null
+        return if (fieldValues.containsKey(fieldName)) {
+            fieldValues[fieldName]
+        } else {
+            null
+        }
     }
 
     // 获取所有字段值
@@ -162,7 +181,7 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
 
         // 数量字段
         setFieldProperties("数量", FieldProperties(
-            defaultValue = "1",
+            defaultValue = null,
             validationType = ValidationType.NUMBER,
             min = 0,
             hint = "请输入数量",
@@ -243,19 +262,19 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
         // 开封时间字段
         setFieldProperties("开封时间", FieldProperties(
             validationType = ValidationType.DATE,
-            defaultDate = true
+            defaultDate = false
         ))
 
         // 购买日期字段
         setFieldProperties("购买日期", FieldProperties(
             validationType = ValidationType.DATE,
-            defaultDate = true
+            defaultDate = false
         ))
 
         // 生产日期字段
         setFieldProperties("生产日期", FieldProperties(
             validationType = ValidationType.DATE,
-            defaultDate = true
+            defaultDate = false
         ))
 
         // 保质期字段
@@ -268,7 +287,7 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
         // 保质过期时间字段
         setFieldProperties("保质过期时间", FieldProperties(
             validationType = ValidationType.DATE,
-            defaultDate = true
+            defaultDate = false
         ))
 
         // 保修期字段
@@ -281,7 +300,7 @@ class AddItemViewModel(private val savedStateHandle: SavedStateHandle) : ViewMod
         // 保修到期时间字段
         setFieldProperties("保修到期时间", FieldProperties(
             validationType = ValidationType.DATE,
-            defaultDate = true
+            defaultDate = false
         ))
 
         // 品牌字段

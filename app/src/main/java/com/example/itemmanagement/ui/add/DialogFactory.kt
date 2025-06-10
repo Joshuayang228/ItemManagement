@@ -199,7 +199,22 @@ class DialogFactory(private val context: Context) {
 
         // 创建多选对话框
         val items = allTags.toTypedArray()
-        val checkedItems = BooleanArray(items.size) { i -> selectedTags.contains(items[i]) }
+
+        // 确保使用最新的UI状态来设置选中项
+        val currentSelectedTags = mutableSetOf<String>()
+        for (i in 0 until selectedTagsContainer.childCount) {
+            val chip = selectedTagsContainer.getChildAt(i) as? Chip
+            if (chip != null) {
+                currentSelectedTags.add(chip.text.toString())
+            }
+        }
+
+        // 使用UI中的实际选中状态
+        val checkedItems = BooleanArray(items.size) { i -> currentSelectedTags.contains(items[i]) }
+
+        // 同步selectedTags与UI状态
+        selectedTags.clear()
+        selectedTags.addAll(currentSelectedTags)
 
         val dialog = MaterialAlertDialogBuilder(context)
             .setCustomTitle(customTitleView)
@@ -224,7 +239,10 @@ class DialogFactory(private val context: Context) {
                     }
                 }
             }
-            .setPositiveButton("确定", null)
+            .setPositiveButton("确定") { _, _ ->
+                // 保存最终的选中状态到ViewModel
+                viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+            }
             .setNeutralButton("管理标签") { _, _ ->
                 showManageTagsDialog(defaultTags, customTags, allTags, selectedTags, viewModel, fieldName)
             }

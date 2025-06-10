@@ -143,7 +143,8 @@ class FieldViewFactory(
             addView(RadioButton(context).apply {
                 id = View.generateViewId()
                 text = "未开封"
-                isChecked = true
+                // 移除默认选中状态
+                // isChecked = true
             })
 
             addView(Space(context).apply {
@@ -161,6 +162,15 @@ class FieldViewFactory(
     }
 
     private fun createTagSelector(fieldName: String, properties: AddItemViewModel.FieldProperties): View {
+        // 创建一个容器来包含标签选择器和提示文本
+        val containerLayout = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+
         // 直接加载标签容器
         val selectedTagsContainer = LayoutInflater.from(context).inflate(R.layout.tag_selector_layout, null, false) as ChipGroup
 
@@ -169,6 +179,26 @@ class FieldViewFactory(
 
         // 初始化 TagManager 的默认标签
         tagManager.initialize(properties.options)
+
+        // 创建提示文本视图
+        val placeholderText = TextView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            text = "点击选择标签"
+            textSize = 14f
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+            id = View.generateViewId() // 生成唯一ID以便后续引用
+
+            // 设置点击事件，点击时显示标签选择对话框
+            setOnClickListener {
+                tagManager.showTagSelectionDialog(selectedTagsContainer)
+                // 隐藏提示文本，因为对话框关闭后可能会添加标签
+                visibility = View.GONE
+            }
+        }
 
         // 创建标签选择按钮
         val tagSelectorButton = ImageButton(context).apply {
@@ -181,7 +211,8 @@ class FieldViewFactory(
                 // 增加左侧margin，使按钮向右移动
                 marginStart = resources.getDimensionPixelSize(R.dimen.margin_normal)
             }
-            setImageResource(R.drawable.ic_arrow_drop_down)
+            // 使用已有的右箭头图标
+            setImageResource(R.drawable.ic_chevron_right)
             background = null
             setPadding(
                 resources.getDimensionPixelSize(R.dimen.padding_normal),
@@ -193,6 +224,8 @@ class FieldViewFactory(
             // 点击显示标签选择对话框
             setOnClickListener {
                 tagManager.showTagSelectionDialog(selectedTagsContainer)
+                // 隐藏提示文本，因为对话框关闭后可能会添加标签
+                placeholderText.visibility = View.GONE
             }
         }
 
@@ -221,6 +254,23 @@ class FieldViewFactory(
         }
         relativeLayout.addView(tagSelectorButton, buttonParams)
 
+        // 将提示文本添加到相对布局
+        val placeholderParams = RelativeLayout.LayoutParams(
+            RelativeLayout.LayoutParams.WRAP_CONTENT,
+            RelativeLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            addRule(RelativeLayout.CENTER_VERTICAL)
+            addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
+            // 设置右边距，避免与按钮重叠，并向左移动一些
+            rightMargin = resources.getDimensionPixelSize(R.dimen.padding_normal) * 4
+        }
+        relativeLayout.addView(placeholderText, placeholderParams)
+
+        // 设置标签容器的监听器，根据是否有标签来显示/隐藏提示文本
+        selectedTagsContainer.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            placeholderText.visibility = if (selectedTagsContainer.childCount > 0) View.GONE else View.VISIBLE
+        }
+
         return relativeLayout
     }
 
@@ -242,6 +292,8 @@ class FieldViewFactory(
             )
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
             hint = properties.hint
+            // 不设置默认值
+            setText("")
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
@@ -270,14 +322,14 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8, 8)
 
             // 设置唯一标识
-            tag = "unit_textview"  // 保持与 FieldValueManager 中一致
+            tag = "unit_textview_${fieldName}"  // 使用字段名创建唯一tag
 
             // 设置默认值
-            text = defaultUnits.firstOrNull() ?: "个"
+            text = "选择单位"  // 修改默认值
 
             // 添加下拉箭头图标
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
@@ -294,6 +346,8 @@ class FieldViewFactory(
                     this,
                     { selectedUnit ->
                         text = selectedUnit
+                        // 选择后设置为黑色文本
+                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
                     },
                     { oldUnit, newUnit ->
                         // 更新单位
@@ -359,14 +413,15 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8 + resources.getDimensionPixelSize(R.dimen.margin_normal), 8)
 
-            // 设置唯一标识
-            tag = "period_number_textview"  // 保持与 FieldValueManager 中一致
+            // 设置唯一标识，包含字段名
+            tag = "period_number_textview_${fieldName}"
 
-            // 设置默认值
-            text = (properties.periodRange?.first ?: 1).toString()
+            // 设置默认值为空
+            text = ""
+            hint = "选择数值"
 
             // 添加下拉箭头图标
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
@@ -379,6 +434,8 @@ class FieldViewFactory(
                     .setTitle("选择数值")
                     .setItems(numbers) { dialog, which ->
                         text = numbers[which]
+                        // 设置文本颜色为黑色表示已选择
+                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
                     }
                     .setNegativeButton("取消", null)
                     .show()
@@ -405,14 +462,14 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8 + resources.getDimensionPixelSize(R.dimen.margin_normal), 8)
 
-            // 设置唯一标识
-            tag = "period_unit_textview"  // 保持与 FieldValueManager 中一致
+            // 设置唯一标识，包含字段名
+            tag = "period_unit_textview_${fieldName}"
 
-            // 设置默认值
-            text = defaultUnits.firstOrNull() ?: "月"
+            // 设置默认值为空
+            text = "选择单位"
 
             // 添加下拉箭头图标
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
@@ -429,6 +486,8 @@ class FieldViewFactory(
                     this,
                     { selectedUnit ->
                         text = selectedUnit
+                        // 设置文本颜色为黑色表示已选择
+                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
                     },
                     { oldUnit, newUnit ->
                         // 更新单位
@@ -484,18 +543,22 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8, 8)
 
-            // 设置唯一标识
-            tag = "spinner_textview"  // 保持与 FieldValueManager.SPINNER_TAG 常量一致
+            // 设置唯一标识，包含字段名
+            tag = "spinner_textview_${fieldName}"
 
             // 获取默认选项和自定义选项
             val defaultOptions = properties.options?.toMutableList() ?: mutableListOf()
             val customOptions = viewModel.getCustomOptions(fieldName)
 
-            // 设置默认值
-            spinnerTextView.text = properties.options?.firstOrNull() ?: ""
+            // 根据字段名设置默认提示文本
+            spinnerTextView.text = when(fieldName) {
+                "分类" -> "选择分类"
+                "购买渠道" -> "选择渠道"
+                else -> "请选择"
+            }
 
             // 添加下拉箭头图标
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
@@ -517,6 +580,8 @@ class FieldViewFactory(
                     spinnerTextView,
                     { selectedOption ->
                         spinnerTextView.text = selectedOption
+                        // 选择后设置为黑色文本
+                        spinnerTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
                     },
                     { oldOption, newOption ->
                         // 更新选项
@@ -602,18 +667,23 @@ class FieldViewFactory(
             hint = "点击选择日期"
             setTextColor(ContextCompat.getColor(context, android.R.color.black))
 
-            // 设置唯一标识
-            tag = "date_textview"  // 保持与 FieldValueManager.DATE_TAG 常量一致
+            // 获取当前字段名
+            val fieldName = properties.fieldName ?: ""
+
+            // 设置唯一标识，包含字段名
+            tag = "date_textview_${fieldName}"
 
             // 添加日历图标
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_calendar, 0)
             compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.margin_small)
 
-            if (properties.defaultDate) {
+            if (properties.defaultDate) {  // 仅对"添加日期"使用当前日期
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 text = dateFormat.format(Date())
+                setTextColor(ContextCompat.getColor(context, android.R.color.black))
             } else {
-                text = ""
+                text = ""  // 其他日期字段默认为空
+                setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             }
 
             setOnClickListener {
@@ -638,6 +708,8 @@ class FieldViewFactory(
                         calendar.set(year, month, day)
                         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                         text = dateFormat.format(calendar.time)
+                        // 用户选择日期后，设置文本颜色为黑色
+                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
                     },
                     currentDate.get(Calendar.YEAR),
                     currentDate.get(Calendar.MONTH),
@@ -720,7 +792,7 @@ class FieldViewFactory(
 
             // 通过自定义样式调整大小
             val density = resources.displayMetrics.density
-            val starSize = (22 * density).toInt() // 缩小到原来的90%左右 (24dp -> 22dp)
+            val starSize = (20 * density).toInt() // 缩小到原来的90%左右 (24dp -> 20dp)
             progressDrawable.setBounds(0, 0, starSize * numStars, starSize)
 
             // 设置星星之间的间距

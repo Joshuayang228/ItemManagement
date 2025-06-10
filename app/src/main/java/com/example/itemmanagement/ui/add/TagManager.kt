@@ -2,7 +2,10 @@ package com.example.itemmanagement.ui.add
 
 import android.content.Context
 import android.util.TypedValue
+import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import android.widget.RelativeLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 
@@ -55,6 +58,9 @@ class TagManager(
         // 保存选中状态到 ViewModel
         viewModel.saveFieldValue(fieldName, selectedTags.toSet())
 
+        // 隐藏提示文本
+        findPlaceholderTextView(container)?.visibility = View.GONE
+
         return true
     }
 
@@ -86,6 +92,11 @@ class TagManager(
 
                 // 保存更新后的状态到 ViewModel
                 viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+
+                // 如果没有标签了，显示提示文本
+                if (container.childCount == 0) {
+                    findPlaceholderTextView(container)?.visibility = View.VISIBLE
+                }
             }
 
             // 长按编辑或删除标签
@@ -111,6 +122,9 @@ class TagManager(
         container.addView(chip)
         selectedTags.add(tagName)
         viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+
+        // 隐藏提示文本
+        findPlaceholderTextView(container)?.visibility = View.GONE
     }
 
     /**
@@ -128,6 +142,22 @@ class TagManager(
             selectedTags.clear()
         }
 
+        // 同步UI中的选中状态
+        val uiTags = mutableSetOf<String>()
+        for (i in 0 until container.childCount) {
+            val chip = container.getChildAt(i) as? Chip
+            if (chip != null) {
+                uiTags.add(chip.text.toString())
+            }
+        }
+
+        // 确保selectedTags与UI一致
+        selectedTags.clear()
+        selectedTags.addAll(uiTags)
+
+        // 保存最新状态到ViewModel
+        viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+
         dialogFactory.showTagSelectionDialog(
             selectedTags,
             defaultTags,
@@ -136,6 +166,8 @@ class TagManager(
             container,
             { selectedTag ->
                 addTagToContainer(selectedTag, container)
+                // 隐藏提示文本
+                findPlaceholderTextView(container)?.visibility = View.GONE
             },
             viewModel,
             fieldName
@@ -166,6 +198,9 @@ class TagManager(
 
         // 保存空集合到 ViewModel
         viewModel.saveFieldValue(fieldName, emptySet<String>())
+
+        // 显示提示文本
+        findPlaceholderTextView(container)?.visibility = View.VISIBLE
     }
 
     /**
@@ -173,8 +208,70 @@ class TagManager(
      */
     fun restoreTags(tags: Set<String>, container: ChipGroup) {
         clearTags(container)
-        tags.forEach { tag ->
-            addTagToContainer(tag, container)
+
+        if (tags.isNotEmpty()) {
+            // 隐藏提示文本
+            findPlaceholderTextView(container)?.visibility = View.GONE
+
+            tags.forEach { tag ->
+                addTagToContainer(tag, container)
+            }
+        } else {
+            // 显示提示文本
+            findPlaceholderTextView(container)?.visibility = View.VISIBLE
         }
+    }
+
+    /**
+     * 查找提示文本视图
+     */
+    private fun findPlaceholderTextView(container: View): TextView? {
+        // 首先在当前视图层次结构中查找
+        val viewToSearch = findRootViewForSearch(container)
+
+        // 递归查找具有"点击选择标签"文本的TextView
+        return findTextViewWithText(viewToSearch, "点击选择标签")
+    }
+
+    /**
+     * 查找合适的根视图来搜索提示文本
+     */
+    private fun findRootViewForSearch(view: View): ViewGroup {
+        // 获取父视图
+        var current = view
+        var parent = view.parent as? ViewGroup
+
+        // 向上查找到RelativeLayout，这通常是我们放置提示文本的地方
+        while (parent != null) {
+            if (parent is RelativeLayout) {
+                return parent
+            }
+            current = parent
+            parent = parent.parent as? ViewGroup
+        }
+
+        // 如果找不到RelativeLayout，则返回最顶层的ViewGroup
+        return (current.parent as? ViewGroup) ?: (current as? ViewGroup) ?: throw IllegalStateException("Cannot find suitable root view")
+    }
+
+    /**
+     * 递归查找具有特定文本的TextView
+     */
+    private fun findTextViewWithText(view: View, text: String): TextView? {
+        if (view is TextView && view.text == text) {
+            return view
+        }
+
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) {
+                val child = view.getChildAt(i)
+                val result = findTextViewWithText(child, text)
+                if (result != null) {
+                    return result
+                }
+            }
+        }
+
+        return null
     }
 }

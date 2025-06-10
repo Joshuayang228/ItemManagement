@@ -449,7 +449,7 @@ class LocationSelectorView @JvmOverloads constructor(
     private fun updateViewState() {
         // 更新区域显示
         if (selectedArea.isNullOrEmpty()) {
-            areaTextView.text = "-"
+            areaTextView.text = "选择位置"
             areaTextView.setTextColor(ContextCompat.getColor(context, android.R.color.darker_gray))
         } else {
             areaTextView.text = selectedArea
