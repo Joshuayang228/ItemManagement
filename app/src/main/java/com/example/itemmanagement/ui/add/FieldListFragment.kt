@@ -5,8 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.databinding.FragmentFieldListBinding
 
 class FieldListFragment : Fragment() {
@@ -14,8 +15,17 @@ class FieldListFragment : Fragment() {
     private val binding get() = _binding!!
     private var fields: List<Field> = emptyList()
     private var onFieldSelected: ((Field, Boolean) -> Unit)? = null
-    private val viewModel: AddItemViewModel by activityViewModels()
+    private lateinit var viewModel: AddItemViewModel
     private var adapter: FieldsAdapter? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // 初始化ViewModel
+        val repository = (requireActivity().application as ItemManagementApplication).repository
+        val factory = AddItemViewModelFactory(repository, requireActivity())
+        viewModel = ViewModelProvider(requireActivity(), factory)[AddItemViewModel::class.java]
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

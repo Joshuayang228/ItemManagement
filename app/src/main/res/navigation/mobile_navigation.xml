@@ -16,7 +16,11 @@
     <fragment
         android:id="@+id/navigation_warehouse"
         android:name="com.example.itemmanagement.ui.warehouse.WarehouseFragment"
-        android:label="仓库" />
+        android:label="仓库">
+        <action
+            android:id="@+id/action_navigation_warehouse_to_navigation_item_detail"
+            app:destination="@id/navigation_item_detail" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_statistics"
@@ -27,6 +31,11 @@
         android:id="@+id/navigation_profile"
         android:name="com.example.itemmanagement.ui.profile.ProfileFragment"
         android:label="我的" />
+
+    <fragment
+        android:id="@+id/navigation_item_list"
+        android:name="com.example.itemmanagement.ui.itemlist.ItemListFragment"
+        android:label="物品列表" />
 
     <fragment
         android:id="@+id/nav_category"
@@ -41,5 +50,21 @@
     <fragment
         android:id="@+id/addItemFragment"
         android:name="com.example.itemmanagement.ui.add.AddItemFragment"
-        android:label="添加物品" />
-</navigation>
+        android:label="添加物品">
+        <argument
+            android:name="item"
+            app:argType="com.example.itemmanagement.data.model.Item"
+            app:nullable="true"
+            android:defaultValue="@null" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/navigation_item_detail"
+        android:name="com.example.itemmanagement.ui.detail.ItemDetailFragment"
+        android:label="物品详情">
+        <argument
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+</navigation> 

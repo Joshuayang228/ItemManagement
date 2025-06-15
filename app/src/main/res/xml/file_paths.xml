@@ -4,24 +4,24 @@
     <files-path
         name="internal_files"
         path="." />
-
+        
     <!-- 缓存路径 -->
     <cache-path
         name="internal_cache"
         path="." />
-
+        
     <!-- 外部存储应用专属目录 -->
     <external-files-path
         name="photos"
         path="Photos/" />
-
+    
     <!-- 外部存储缓存目录 -->
     <external-cache-path
         name="external_cache"
         path="." />
-
+        
     <!-- 外部存储公共目录 -->
     <external-path
         name="external"
         path="." />
-</paths>
+</paths> 

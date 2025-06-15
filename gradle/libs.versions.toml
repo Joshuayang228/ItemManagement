@@ -1,26 +1,61 @@
 [versions]
-agp = "8.9.2"
-kotlin = "2.0.21"
-coreKtx = "1.16.0"
+# 核心构建工具版本
+agp = "8.4.1" # Android Gradle Plugin最新稳定版本
+kotlin = "1.9.24" # Kotlin最新稳定版本
+navigation = "2.7.7" # Navigation组件最新稳定版本
+room = "2.6.1" # Room版本
+lifecycle = "2.7.0" # Lifecycle版本
+coroutines = "1.8.1" # Kotlin协程最新稳定版本
+glide = "4.16.0" # Glide版本
+
+# AndroidX和其他库版本
+androidx-core = "1.13.1" # AndroidX Core最新稳定版本
+appcompat = "1.7.0" # AppCompat最新稳定版本
+material = "1.12.0" # Material Design最新稳定版本
+activity = "1.9.0" # Activity KTX最新稳定版本
+constraintlayout = "2.1.4" # 修正为实际可用的版本
 junit = "4.13.2"
-junitVersion = "1.2.1"
-espressoCore = "3.6.1"
-appcompat = "1.7.0"
-material = "1.12.0"
-activity = "1.10.1"
-constraintlayout = "2.2.1"
+junit-ext = "1.2.1" # AndroidX Test JUnit最新稳定版本
+espresso = "3.6.1" # Espresso最新稳定版本
 
 [libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+# Kotlin相关库
+kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
+kotlin-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlin-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+
+# AndroidX核心库
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidx-core" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
+# 测试库
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junit-ext" }
+androidx-espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+
+# Navigation组件
+navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
+navigation-ui = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
+
+# Room数据库
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# Lifecycle组件
+lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycle" }
+lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+
+# Glide图片加载
+glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
+glide-compiler = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-
+navigation-safeargs = { id = "androidx.navigation.safeargs.kotlin", version.ref = "navigation" }

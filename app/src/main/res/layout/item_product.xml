@@ -54,8 +54,18 @@
                 android:textSize="14sp"
                 tools:text="数量: 10" />
 
+            <ImageButton
+                android:id="@+id/deleteButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end"
+                android:layout_marginTop="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete"
+                android:contentDescription="删除物品" />
+
         </LinearLayout>
 
     </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</com.google.android.material.card.MaterialCardView> 

@@ -81,9 +81,6 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- 主要内容区域 -->
-
-    <!-- 添加按钮 -->
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
@@ -93,6 +90,7 @@
         android:paddingBottom="88dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
+    <!-- 添加按钮 -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addButton"
         android:layout_width="wrap_content"
@@ -104,4 +102,4 @@
         app:backgroundTint="@color/purple_500"
         app:tint="@color/white" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout> 

@@ -58,7 +58,7 @@ class AddItemFragment : Fragment() {
 
     private var _binding: FragmentAddItemBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: AddItemViewModel by activityViewModels()
+    private lateinit var viewModel: AddItemViewModel
 
     private lateinit var photoAdapter: PhotoAdapter
     private var currentPhotoUri: Uri? = null
@@ -361,10 +361,41 @@ class AddItemFragment : Fragment() {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
 
+        // 初始化ViewModel
+        val repository = (requireActivity().application as com.example.itemmanagement.ItemManagementApplication).repository
+        val factory = AddItemViewModelFactory(repository, requireActivity())
+        viewModel = ViewModelProvider(requireActivity(), factory)[AddItemViewModel::class.java]
+
         // 初始化工具类
         dialogFactory = DialogFactory(requireContext())
         fieldViewFactory = FieldViewFactory(requireContext(), viewModel, dialogFactory, resources)
         fieldValueManager = FieldValueManager(requireContext(), viewModel, dialogFactory)
+        
+        // 处理导航参数
+        arguments?.let { args ->
+            // 处理Item对象参数
+            if (args.containsKey("item")) {
+                val item = args.getParcelable<Item>("item")
+                item?.let {
+                    // 将物品数据加载到ViewModel
+                    viewModel.loadItemData(it)
+                }
+            }
+            // 处理itemId参数
+            else if (args.containsKey("itemId")) {
+                val itemId = args.getLong("itemId", -1L)
+                if (itemId != -1L) {
+                    // 根据ID加载物品
+                    viewModel.loadItemById(itemId)
+                } else {
+                    // 无效的itemId，不执行任何操作
+                    Log.w("AddItemFragment", "收到无效的itemId: -1")
+                }
+            } else {
+                // 没有收到任何导航参数，创建新物品
+                Log.d("AddItemFragment", "没有收到导航参数，创建新物品")
+            }
+        }
     }
 
     override fun onCreateView(
@@ -447,6 +478,22 @@ class AddItemFragment : Fragment() {
         observeSelectedFields()
         setupButtons()
         hideBottomNavigation()
+        
+        // 观察保存结果
+        viewModel.saveResult.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()
+                // 导航回上一个页面
+                findNavController().navigateUp()
+            }
+        }
+        
+        // 观察错误信息
+        viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
+            if (!message.isNullOrEmpty()) {
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
+        }
 
         // 观察标签变化
         viewModel.selectedTags.observe(viewLifecycleOwner) { selectedTagsMap ->
@@ -835,6 +882,15 @@ class AddItemFragment : Fragment() {
             return
         }
 
+        // 将Uri列表转换为Photo列表
+        val photoList = photoAdapter.getPhotos().map { uri ->
+            com.example.itemmanagement.data.model.Photo(
+                uri = uri.toString(),
+                isMain = false,
+                displayOrder = 0
+            )
+        }
+
         // 创建物品对象
         val item = Item(
             name = nameValue,
@@ -849,7 +905,26 @@ class AddItemFragment : Fragment() {
             productionDate = parseDate(values["生产日期"] as? String),
             expirationDate = parseDate(values["到期日期"] as? String),
             openStatus = if (values["开封状态"] == "已开封") OpenStatus.OPENED else OpenStatus.UNOPENED,
-            photos = photoAdapter.getPhotos()
+            openDate = parseDate(values["开封日期"] as? String),
+            brand = values["品牌"] as? String,
+            specification = values["规格"] as? String,
+            stockWarningThreshold = (values["库存预警值"] as? String)?.toIntOrNull(),
+            price = (values["价格"] as? String)?.toDoubleOrNull(),
+            purchaseChannel = values["购买渠道"] as? String,
+            storeName = values["商家名称"] as? String,
+            subCategory = values["子分类"] as? String,
+            customNote = values["备注"] as? String,
+            season = values["季节"] as? String,
+            capacity = (values["容量"] as? String)?.toDoubleOrNull(),
+            rating = (values["评分"] as? String)?.toDoubleOrNull(),
+            totalPrice = (values["总价"] as? String)?.toDoubleOrNull(),
+            purchaseDate = parseDate(values["购买日期"] as? String),
+            shelfLife = (values["保质期"] as? String)?.toIntOrNull(),
+            warrantyPeriod = (values["保修期"] as? String)?.toIntOrNull(),
+            warrantyEndDate = parseDate(values["保修到期时间"] as? String),
+            serialNumber = values["序列号"] as? String,
+            photos = photoList,
+            tags = emptyList() // 暂时使用空列表，后续可以添加标签功能
         )
 
         // 保存物品
@@ -859,7 +934,7 @@ class AddItemFragment : Fragment() {
     private fun showClearConfirmDialog() {
         dialogFactory.createConfirmDialog(
             title = "确认清除",
-            message = "确定要清除所有已输入的信息吗？此操作无法撤销。",
+            message = "确定要清除所有已输入的信息吗？",
             positiveButtonText = "确定",
             negativeButtonText = "取消",
             onPositiveClick = {

@@ -1,11 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">物品管理</string>
-    <string name="title_home">主页</string>
+    <string name="title_home">首页</string>
     <string name="title_warehouse">仓库</string>
     <string name="title_statistics">统计</string>
     <string name="title_profile">我的</string>
     <string name="title_category">分类管理</string>
     <string name="title_setting">设置</string>
     <string name="add_item">添加物品</string>
-</resources>
+    <string name="title_add_item">添加物品</string>
+    <string name="title_item_list">物品列表</string>
+    
+    <!-- 物品详情页面 -->
+    <string name="quantity_format">数量：%1$.2f %2$s</string>
+    <string name="category_format">分类：%1$s</string>
+    <string name="subcategory_format">子分类：%1$s</string>
+    <string name="location_format">位置：%1$s</string>
+    <string name="add_date_format">添加日期：%1$s</string>
+    <string name="production_date_format">生产日期：%1$s</string>
+    <string name="expiration_date_format">过期日期：%1$s</string>
+    <string name="open_status_format">开封状态：%1$s</string>
+    <string name="open_date_format">开封日期：%1$s</string>
+    <string name="brand_format">品牌：%1$s</string>
+    <string name="specification_format">规格：%1$s</string>
+    <string name="status_format">状态：%1$s</string>
+    <string name="stock_warning_threshold_format">库存预警值：%1$d</string>
+    <string name="price_format">价格：¥%1$.2f</string>
+    <string name="purchase_channel_format">购买渠道：%1$s</string>
+    <string name="store_name_format">商家名称：%1$s</string>
+    <string name="custom_note_format">备注：%1$s</string>
+    <string name="photo_content_description">物品照片</string>
+    
+    <!-- 通用 -->
+    <string name="error_loading_item">加载物品失败</string>
+    <string name="error_item_not_found">找不到该物品</string>
+</resources> 

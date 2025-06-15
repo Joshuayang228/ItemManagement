@@ -6,9 +6,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.databinding.FragmentEditFieldsBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.tabs.TabLayoutMediator
@@ -17,13 +18,18 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
     private var _binding: FragmentEditFieldsBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: AddItemViewModel by activityViewModels()
+    private lateinit var viewModel: AddItemViewModel
     private val tabs = listOf("全部", "基础信息", "数字类", "日期类", "状态类", "分类", "商业类", "其他")
     private var currentAdapter: FieldsPagerAdapter? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("EditFieldsFragment", "onCreate: Fragment创建")
+        
+        // 初始化ViewModel
+        val repository = (requireActivity().application as ItemManagementApplication).repository
+        val factory = AddItemViewModelFactory(repository, requireActivity())
+        viewModel = ViewModelProvider(requireActivity(), factory)[AddItemViewModel::class.java]
     }
 
     override fun onCreateView(

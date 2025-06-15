@@ -1,6 +1,7 @@
 package com.example.itemmanagement.ui.add
 
 import android.content.Context
+import com.example.itemmanagement.data.model.CustomLocationData
 
 /**
  * 位置管理器，负责管理位置的层级关系
