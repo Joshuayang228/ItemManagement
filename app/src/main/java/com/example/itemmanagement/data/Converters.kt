@@ -1,0 +1,57 @@
+package com.example.itemmanagement.data
+
+import android.net.Uri
+import androidx.room.TypeConverter
+import com.example.itemmanagement.data.model.ItemStatus
+import com.example.itemmanagement.data.model.OpenStatus
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.util.Date
+
+class Converters {
+    private val gson = Gson()
+
+    @TypeConverter
+    fun fromTimestamp(value: Long?): Date? {
+        return value?.let { Date(it) }
+    }
+
+    @TypeConverter
+    fun dateToTimestamp(date: Date?): Long? {
+        return date?.time
+    }
+
+    @TypeConverter
+    fun fromOpenStatus(value: OpenStatus?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toOpenStatus(value: String?): OpenStatus? {
+        return value?.let { OpenStatus.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromItemStatus(value: ItemStatus): String {
+        return value.name
+    }
+
+    @TypeConverter
+    fun toItemStatus(value: String): ItemStatus {
+        return ItemStatus.valueOf(value)
+    }
+
+    @TypeConverter
+    fun fromUriList(value: List<Uri>?): String {
+        if (value == null) return ""
+        return gson.toJson(value.map { it.toString() })
+    }
+
+    @TypeConverter
+    fun toUriList(value: String): List<Uri> {
+        if (value.isEmpty()) return emptyList()
+        val type = object : TypeToken<List<String>>() {}.type
+        val stringList = gson.fromJson<List<String>>(value, type)
+        return stringList.map { Uri.parse(it) }
+    }
+} 

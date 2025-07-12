@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="@dimen/detail_category_tag_corner" />
+    <solid android:color="@color/category_food" /> <!-- 默认颜色，实际使用时会动态设置 -->
+</shape> 
