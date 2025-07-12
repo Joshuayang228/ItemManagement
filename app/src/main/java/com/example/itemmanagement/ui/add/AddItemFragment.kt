@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentAddItemBinding
 import com.example.itemmanagement.data.model.Item
+import com.example.itemmanagement.data.model.ItemStatus
 import com.example.itemmanagement.data.model.Location
 import com.example.itemmanagement.data.model.OpenStatus
 import java.io.File
@@ -373,27 +374,34 @@ class AddItemFragment : Fragment() {
         
         // 处理导航参数
         arguments?.let { args ->
-            // 处理Item对象参数
-            if (args.containsKey("item")) {
-                val item = args.getParcelable<Item>("item")
-                item?.let {
-                    // 将物品数据加载到ViewModel
-                    viewModel.loadItemData(it)
-                }
-            }
-            // 处理itemId参数
-            else if (args.containsKey("itemId")) {
+            // 获取模式参数
+            val mode = args.getString("mode") ?: "add"
+            // 设置模式
+            viewModel.setMode(mode)
+            
+            // 根据模式处理参数
+            if (mode == "edit") {
+                // 编辑模式：获取itemId并加载物品
                 val itemId = args.getLong("itemId", -1L)
                 if (itemId != -1L) {
                     // 根据ID加载物品
                     viewModel.loadItemById(itemId)
                 } else {
                     // 无效的itemId，不执行任何操作
-                    Log.w("AddItemFragment", "收到无效的itemId: -1")
+                    Log.w("AddItemFragment", "编辑模式收到无效的itemId: -1")
                 }
             } else {
-                // 没有收到任何导航参数，创建新物品
-                Log.d("AddItemFragment", "没有收到导航参数，创建新物品")
+                // 添加模式：处理Item对象参数
+                if (args.containsKey("item")) {
+                    val item = args.getParcelable<Item>("item")
+                    item?.let {
+                        // 将物品数据加载到ViewModel
+                        viewModel.loadItemData(it)
+                    }
+                } else {
+                    // 正常的添加模式：调用prepareForAddMode准备全新的状态
+                    viewModel.prepareForAddMode()
+                }
             }
         }
     }
@@ -409,6 +417,18 @@ class AddItemFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // 观察模式变化
+        viewModel.mode.observe(viewLifecycleOwner) { mode ->
+            // 根据模式设置标题和按钮文本
+            if (mode == "edit") {
+                requireActivity().title = "编辑物品"
+                binding.saveButton.text = "更新物品"
+            } else {
+                requireActivity().title = "添加物品"
+                binding.saveButton.text = "保存物品"
+            }
+        }
 
         // 初始化照片适配器
         photoAdapter = PhotoAdapter().apply {
@@ -481,10 +501,18 @@ class AddItemFragment : Fragment() {
         
         // 观察保存结果
         viewModel.saveResult.observe(viewLifecycleOwner) { success ->
-            if (success) {
+            // success可能为null，需要做null判断
+            if (success == true) {
                 Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()
+                
+                // 清除所有数据和草稿，确保下次进入是全新状态
+                viewModel.clearAllData()
+                viewModel.clearAddDraftAfterSave()
+                
                 // 导航回上一个页面
                 findNavController().navigateUp()
+                // 重置保存结果的状态，防止再次进入时触发
+                viewModel.onSaveResultConsumed()
             }
         }
         
@@ -536,8 +564,8 @@ class AddItemFragment : Fragment() {
     }
 
     private fun initializeDefaultFields() {
-        // 只在首次创建时初始化默认字段
-        if (viewModel.getSelectedFieldsValue().isEmpty()) {
+        // 只在首次创建时且不是编辑模式时初始化默认字段
+        if (viewModel.getSelectedFieldsValue().isEmpty() && viewModel.mode.value != "edit") {
             viewModel.initializeDefaultFieldProperties()
             // 设置默认选中的字段
             listOf(
@@ -890,12 +918,62 @@ class AddItemFragment : Fragment() {
                 displayOrder = 0
             )
         }
+        
+        // 处理标签数据
+        val tagsList = mutableListOf<com.example.itemmanagement.data.model.Tag>()
+        (values["标签"] as? Set<String>)?.forEach { tagName ->
+            tagsList.add(com.example.itemmanagement.data.model.Tag(name = tagName))
+        }
+
+        // 处理季节数据
+        val seasonValue = (values["季节"] as? Set<String>)?.joinToString(", ")
+
+        // 处理保质期和保修期数据 - 这些字段通常保存为Pair<String, String>格式
+        val shelfLifeValue = when (val shelfLife = values["保质期"]) {
+            is Pair<*, *> -> {
+                val number = (shelfLife.first as? String)?.toIntOrNull()
+                val unit = shelfLife.second as? String
+                
+                when (unit) {
+                    "年" -> number?.times(365)
+                    "月" -> number?.times(30)
+                    "日" -> number
+                    else -> null
+                }
+            }
+            is String -> shelfLife.toIntOrNull()
+            else -> null
+        }
+        
+        val warrantyPeriodValue = when (val warranty = values["保修期"]) {
+            is Pair<*, *> -> {
+                val number = (warranty.first as? String)?.toIntOrNull()
+                val unit = warranty.second as? String
+                
+                when (unit) {
+                    "年" -> number?.times(365)
+                    "月" -> number?.times(30)
+                    "日" -> number
+                    else -> null
+                }
+            }
+            is String -> warranty.toIntOrNull()
+            else -> null
+        }
+
+        // 处理带单位的字段
+        val quantityUnit = values["数量_unit"] as? String ?: ""
+        val capacityUnit = values["容量_unit"] as? String ?: ""
+        val priceUnit = values["单价_unit"] as? String ?: "元"
+        val totalPriceUnit = values["总价_unit"] as? String ?: "元"
 
         // 创建物品对象
         val item = Item(
+            // 如果是编辑模式，保留原有ID；否则使用默认值0
+            id = if (viewModel.mode.value == "edit") viewModel.getEditingItemId() ?: 0 else 0,
             name = nameValue,
             quantity = (values["数量"] as? String)?.toDoubleOrNull() ?: 0.0,
-            unit = values["单位"] as? String ?: "",
+            unit = quantityUnit,
             location = Location(
                 area = values["位置_area"] as? String ?: "未指定",
                 container = values["位置_container"] as? String,
@@ -903,28 +981,39 @@ class AddItemFragment : Fragment() {
             ),
             category = values["分类"] as? String ?: "未指定",
             productionDate = parseDate(values["生产日期"] as? String),
-            expirationDate = parseDate(values["到期日期"] as? String),
-            openStatus = if (values["开封状态"] == "已开封") OpenStatus.OPENED else OpenStatus.UNOPENED,
-            openDate = parseDate(values["开封日期"] as? String),
+            expirationDate = parseDate(values["保质过期时间"] as? String),
+            // 确保开封状态有默认值
+            openStatus = when(values["开封状态"]) {
+                "已开封" -> OpenStatus.OPENED
+                else -> OpenStatus.UNOPENED // 默认为未开封
+            },
+            openDate = parseDate(values["开封时间"] as? String),
             brand = values["品牌"] as? String,
             specification = values["规格"] as? String,
             stockWarningThreshold = (values["库存预警值"] as? String)?.toIntOrNull(),
-            price = (values["价格"] as? String)?.toDoubleOrNull(),
+            price = (values["单价"] as? String)?.toDoubleOrNull(),
+            priceUnit = priceUnit,
             purchaseChannel = values["购买渠道"] as? String,
             storeName = values["商家名称"] as? String,
             subCategory = values["子分类"] as? String,
             customNote = values["备注"] as? String,
-            season = values["季节"] as? String,
+            season = seasonValue,
             capacity = (values["容量"] as? String)?.toDoubleOrNull(),
-            rating = (values["评分"] as? String)?.toDoubleOrNull(),
+            capacityUnit = capacityUnit,
+            rating = (values["评分"] as? String)?.toDoubleOrNull() ?: (values["评分"] as? Float)?.toDouble(),
             totalPrice = (values["总价"] as? String)?.toDoubleOrNull(),
+            totalPriceUnit = totalPriceUnit,
             purchaseDate = parseDate(values["购买日期"] as? String),
-            shelfLife = (values["保质期"] as? String)?.toIntOrNull(),
-            warrantyPeriod = (values["保修期"] as? String)?.toIntOrNull(),
+            shelfLife = shelfLifeValue,
+            warrantyPeriod = warrantyPeriodValue,
             warrantyEndDate = parseDate(values["保修到期时间"] as? String),
             serialNumber = values["序列号"] as? String,
             photos = photoList,
-            tags = emptyList() // 暂时使用空列表，后续可以添加标签功能
+            // 使用当前时间作为添加日期，或者使用用户输入的添加日期
+            addDate = parseDate(values["添加日期"] as? String) ?: Date(),
+            // 其他默认值
+            status = ItemStatus.IN_STOCK,
+            tags = tagsList
         )
 
         // 保存物品
@@ -944,8 +1033,8 @@ class AddItemFragment : Fragment() {
     }
 
     private fun clearAllFields() {
-        // 清除ViewModel中的所有数据
-        viewModel.clearAllData()
+        // 清除ViewModel中的字段值和照片，但保留已选中的字段
+        viewModel.clearFieldValuesOnly()
 
         // 通过fieldValueManager恢复空值到UI
         if (fieldViews.isNotEmpty()) {
@@ -953,6 +1042,18 @@ class AddItemFragment : Fragment() {
         }
 
         // 显示清除成功提示
-        Toast.makeText(context, "已清除所有信息", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "已清除输入信息", Toast.LENGTH_SHORT).show()
     }
-} 
+
+    // 添加一个方法来重置为添加模式
+    private fun resetToAddMode() {
+        // 清除所有数据并重置为添加模式
+        viewModel.resetToAddMode()
+        
+        // 重新初始化默认字段
+        initializeDefaultFields()
+        
+        // 重新设置视图
+        setupViews()
+    }
+}

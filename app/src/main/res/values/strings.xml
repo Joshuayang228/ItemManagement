@@ -13,6 +13,7 @@
     
     <!-- 物品详情页面 -->
     <string name="quantity_format">数量：%1$.2f %2$s</string>
+    <string name="quantity_value_format">%1$.2f %2$s</string>
     <string name="category_format">分类：%1$s</string>
     <string name="subcategory_format">子分类：%1$s</string>
     <string name="location_format">位置：%1$s</string>

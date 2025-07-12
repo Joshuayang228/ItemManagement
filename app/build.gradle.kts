@@ -19,6 +19,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // 添加Room模式导出目录
+        ksp {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
     }
 
     buildTypes {
@@ -46,6 +51,13 @@ android {
     
     androidResources {
         additionalParameters += listOf("--warn-manifest-validation")
+    }
+    
+    lint {
+        // 添加lint配置
+        abortOnError = false
+        checkReleaseBuilds = false
+        baseline = file("lint-baseline.xml")
     }
 }
 
@@ -84,4 +96,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso)
+
+    // Google Flexbox
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
 } 

@@ -1,58 +1,60 @@
 package com.example.itemmanagement.ui.detail.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.itemmanagement.R
-import com.example.itemmanagement.data.model.Photo
-import com.example.itemmanagement.databinding.ItemDetailPhotoBinding
+import com.example.itemmanagement.data.entity.PhotoEntity
 
-class PhotoAdapter : RecyclerView.Adapter<PhotoAdapter.PhotoViewHolder>() {
-    
-    private var photos: List<Photo> = emptyList()
-    private var onPhotoClickListener: ((Photo) -> Unit)? = null
-    
-    fun submitList(newPhotos: List<Photo>) {
-        photos = newPhotos
-        notifyDataSetChanged()
-    }
-    
-    fun setOnPhotoClickListener(listener: (Photo) -> Unit) {
+class PhotoAdapter : ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(PhotoDiffCallback()) {
+
+    private var onPhotoClickListener: ((PhotoEntity, Int) -> Unit)? = null
+
+    fun setOnPhotoClickListener(listener: (PhotoEntity, Int) -> Unit) {
         onPhotoClickListener = listener
     }
-    
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
-        val binding = ItemDetailPhotoBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return PhotoViewHolder(binding)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_detail_photo, parent, false)
+        return PhotoViewHolder(view)
     }
-    
+
     override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
-        holder.bind(photos[position])
+        val photo = getItem(position)
+        holder.bind(photo, position)
     }
-    
-    override fun getItemCount(): Int = photos.size
-    
-    inner class PhotoViewHolder(private val binding: ItemDetailPhotoBinding) : 
-        RecyclerView.ViewHolder(binding.root) {
-        
-        fun bind(photo: Photo) {
-            // 加载图片
-            Glide.with(binding.root.context)
+
+    inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val photoImageView: ImageView = itemView.findViewById(R.id.photoImageView)
+
+        fun bind(photo: PhotoEntity, position: Int) {
+            // 使用Glide加载图片
+            Glide.with(itemView.context)
                 .load(photo.uri)
-                .placeholder(R.drawable.ic_image_placeholder)
-                .error(R.drawable.ic_image_error)
                 .centerCrop()
-                .into(binding.photoImageView)
-                
+                .error(R.drawable.ic_error_placeholder)
+                .into(photoImageView)
+
             // 设置点击事件
-            binding.root.setOnClickListener {
-                onPhotoClickListener?.invoke(photo)
+            itemView.setOnClickListener {
+                onPhotoClickListener?.invoke(photo, position)
             }
+        }
+    }
+
+    class PhotoDiffCallback : DiffUtil.ItemCallback<PhotoEntity>() {
+        override fun areItemsTheSame(oldItem: PhotoEntity, newItem: PhotoEntity): Boolean {
+            return oldItem.id == newItem.id
+        }
+
+        override fun areContentsTheSame(oldItem: PhotoEntity, newItem: PhotoEntity): Boolean {
+            return oldItem.uri == newItem.uri
         }
     }
 } 

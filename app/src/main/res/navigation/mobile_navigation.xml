@@ -56,6 +56,14 @@
             app:argType="com.example.itemmanagement.data.model.Item"
             app:nullable="true"
             android:defaultValue="@null" />
+        <argument
+            android:name="mode"
+            app:argType="string"
+            android:defaultValue="add" />
+        <argument
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
     </fragment>
     
     <fragment
@@ -66,5 +74,13 @@
             android:name="itemId"
             app:argType="long"
             android:defaultValue="-1L" />
+        <action
+            android:id="@+id/action_navigation_item_detail_to_addItemFragment"
+            app:destination="@id/addItemFragment">
+            <argument
+                android:name="mode"
+                app:argType="string"
+                android:defaultValue="edit" />
+        </action>
     </fragment>
 </navigation> 

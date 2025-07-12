@@ -7,5 +7,88 @@
     <dimen name="chip_min_height">32dp</dimen>
     <dimen name="input_min_width">80dp</dimen>
     <dimen name="rating_bar_width">200dp</dimen>
-    <dimen name="photo_grid_spacing">2dp</dimen>
+    <dimen name="photo_grid_spacing">4dp</dimen>
+    
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    
+    <!-- 物品详情页尺寸规范 -->
+    <!-- 顶部信息区 -->
+    <dimen name="detail_header_image_height">220dp</dimen>
+    <dimen name="detail_header_image_height_large">280dp</dimen>
+    <dimen name="detail_title_text_size">24sp</dimen>
+    <dimen name="detail_title_padding">12dp</dimen>
+    <dimen name="detail_basic_info_height">20dp</dimen>
+    <dimen name="detail_basic_info_text_size">16sp</dimen>
+    <dimen name="detail_edit_button_size">48dp</dimen>
+    <dimen name="detail_edit_button_padding">8dp</dimen>
+    
+    <!-- 卡片共用规范 -->
+    <dimen name="detail_card_corner_radius">12dp</dimen>
+    <dimen name="detail_card_margin">16dp</dimen>
+    <dimen name="detail_card_spacing">12dp</dimen>
+    <dimen name="detail_card_padding">16dp</dimen>
+    <dimen name="detail_card_shadow">2dp</dimen>
+    <dimen name="detail_card_title_text_size">18sp</dimen>
+    <dimen name="detail_card_content_spacing">8dp</dimen>
+    
+    <!-- 底部操作区 -->
+    <dimen name="detail_bottom_area_height">64dp</dimen>
+    <dimen name="detail_button_height">48dp</dimen>
+    <dimen name="detail_button_min_width">80dp</dimen>
+    <dimen name="detail_button_spacing">8dp</dimen>
+    <dimen name="detail_button_corner_radius">24dp</dimen>
+    
+    <!-- 基本信息卡片 -->
+    <dimen name="detail_basic_card_min_height">120dp</dimen>
+    <dimen name="detail_icon_size">24dp</dimen>
+    <dimen name="detail_row_height">36dp</dimen>
+    <dimen name="detail_category_tag_corner">4dp</dimen>
+    <dimen name="detail_category_tag_padding_horizontal">8dp</dimen>
+    <dimen name="detail_category_tag_padding_vertical">4dp</dimen>
+    <dimen name="detail_location_min_touch_height">48dp</dimen>
+    <dimen name="detail_secondary_text_size">14sp</dimen>
+    
+    <!-- 照片画廊卡片 -->
+    <dimen name="detail_photo_height">180dp</dimen>
+    <dimen name="detail_photo_height_large">220dp</dimen>
+    <dimen name="detail_photo_spacing">8dp</dimen>
+    <dimen name="detail_photo_corner_radius">8dp</dimen>
+    <dimen name="detail_indicator_diameter">6dp</dimen>
+    <dimen name="detail_indicator_spacing">4dp</dimen>
+    <dimen name="detail_indicator_bottom_margin">12dp</dimen>
+    <dimen name="detail_thumbnail_size">60dp</dimen>
+    
+    <!-- 时间信息卡片 -->
+    <dimen name="detail_date_row_height">32dp</dimen>
+    <dimen name="detail_date_text_size">14sp</dimen>
+    <dimen name="detail_label_width">100dp</dimen>
+    <dimen name="detail_progress_bar_height">4dp</dimen>
+    
+    <!-- 购买信息卡片 -->
+    <dimen name="detail_purchase_label_width">90dp</dimen>
+    <dimen name="detail_price_text_size">16sp</dimen>
+    <dimen name="detail_channel_icon_size">16dp</dimen>
+    <dimen name="detail_channel_icon_margin">4dp</dimen>
+    
+    <!-- 标签卡片 -->
+    <dimen name="detail_tags_min_height">80dp</dimen>
+    <dimen name="detail_tag_height">32dp</dimen>
+    <dimen name="detail_tag_padding_horizontal">12dp</dimen>
+    <dimen name="detail_tag_padding_vertical">8dp</dimen>
+    <dimen name="detail_tag_corner_radius">16dp</dimen>
+    <dimen name="detail_tag_horizontal_spacing">8dp</dimen>
+    <dimen name="detail_tag_vertical_spacing">6dp</dimen>
+    <dimen name="detail_tag_text_size">14sp</dimen>
+    <dimen name="detail_tag_max_width">120dp</dimen>
+    
+    <!-- 备注卡片 -->
+    <dimen name="detail_note_max_height">200dp</dimen>
+    <dimen name="detail_note_text_size">14sp</dimen>
+    <dimen name="detail_expand_button_height">36dp</dimen>
+    <dimen name="detail_expand_text_size">12sp</dimen>
+    
+    <!-- 其他元素 -->
+    <dimen name="detail_min_touch_target">48dp</dimen>
 </resources> 

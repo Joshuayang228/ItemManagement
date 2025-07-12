@@ -1,386 +1,712 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- 内容区域 -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="@dimen/detail_bottom_area_height"
+        android:clipToPadding="false">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- 照片区域 -->
+            <FrameLayout
+                android:id="@+id/photoContainer"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/detail_header_image_height"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/photoViewPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <!-- 照片指示器 -->
+                <LinearLayout
+                    android:id="@+id/photoIndicator"
+                    style="@style/DetailPhotoIndicatorContainer">
+                    <!-- 动态添加指示器点 -->
+                </LinearLayout>
+
+                <!-- 状态标签（如临期、过期等） -->
+                <TextView
+                    android:id="@+id/statusTagView"
+                    style="@style/DetailStatusTag"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="@dimen/detail_card_padding"
+                    android:background="@drawable/bg_status_warning"
+                    android:gravity="center"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="0dp"
+                    android:includeFontPadding="false"
+                    android:visibility="gone"
+                    tools:text="临期"
+                    tools:visibility="visible" />
+            </FrameLayout>
+
+            <!-- 物品名称 -->
+            <TextView
+                android:id="@+id/nameTextView"
+                style="@style/DetailItemTitle"
+                android:layout_marginTop="@dimen/detail_card_spacing"
+                android:layout_marginStart="@dimen/detail_card_margin"
+                android:layout_marginEnd="@dimen/detail_card_margin"
+                app:layout_constraintTop_toBottomOf="@id/photoContainer"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                tools:text="MacBook Pro 14" />
+
+            <!-- 卡片一：基本信息 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/keyInfoCard"
+                style="@style/DetailCard"
+                app:layout_constraintTop_toBottomOf="@id/nameTextView"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    style="@style/DetailCardContent">
+
+                    <!-- 修改第一个卡片标题 -->
+                    <TextView
+                        style="@style/DetailCardTitle"
+                        android:text="基本信息" />
+
+                    <!-- 数量 -->
+                    <LinearLayout
+                        style="@style/DetailInfoRowHorizontal">
+
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="数量" />
+
+                        <TextView
+                            android:id="@+id/quantityTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            android:textSize="@dimen/detail_basic_info_text_size"
+                            tools:text="1台" />
+                    </LinearLayout>
+
+                    <!-- 容量 -->
+                    <LinearLayout
+                        android:id="@+id/capacityContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="容量" />
+                        <TextView
+                            android:id="@+id/capacityTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="512GB" />
+                    </LinearLayout>
+                    
+                    <!-- 单价 -->
+                    <LinearLayout
+                        android:id="@+id/priceContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="单价" />
+                        <TextView
+                            android:id="@+id/priceTextView"
+                            style="@style/DetailPriceText"
+                            android:gravity="end"
+                            tools:text="¥14999" />
+                    </LinearLayout>
+
+                    <!-- 总价 -->
+                    <LinearLayout
+                        android:id="@+id/totalPriceContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="总价" />
+                        <TextView
+                            android:id="@+id/totalPriceTextView"
+                            style="@style/DetailPriceText"
+                            android:gravity="end"
+                            tools:text="¥14999" />
+                    </LinearLayout>
+
+                    <!-- 分类和子分类 - 统一布局 -->
+                    <LinearLayout
+                        android:id="@+id/categoryContainer"
+                        style="@style/DetailInfoRowHorizontal">
+
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="分类" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="end">
+
+                            <TextView
+                                android:id="@+id/categoryTextView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="@dimen/detail_secondary_text_size"
+                                android:background="@drawable/bg_category_tag"
+                                android:paddingStart="@dimen/detail_category_tag_padding_horizontal"
+                                android:paddingEnd="@dimen/detail_category_tag_padding_horizontal"
+                                android:paddingTop="@dimen/detail_category_tag_padding_vertical"
+                                android:paddingBottom="@dimen/detail_category_tag_padding_vertical"
+                                android:textColor="@color/white"
+                                tools:text="电子产品" />
+
+                            <TextView
+                                android:id="@+id/subCategoryTextView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/detail_card_content_spacing"
+                                android:textSize="@dimen/detail_secondary_text_size"
+                                android:background="@drawable/bg_category_tag"
+                                android:paddingStart="@dimen/detail_category_tag_padding_horizontal"
+                                android:paddingEnd="@dimen/detail_category_tag_padding_horizontal"
+                                android:paddingTop="@dimen/detail_category_tag_padding_vertical"
+                                android:paddingBottom="@dimen/detail_category_tag_padding_vertical"
+                                android:textColor="@color/white"
+                                tools:text="笔记本电脑" />
+                        </LinearLayout>
+                    </LinearLayout>
+                    
+                    <!-- 位置信息 -->
+                    <LinearLayout
+                        android:id="@+id/locationContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="位置" />
+                        
+                        <TextView
+                            android:id="@+id/locationTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            android:textSize="@dimen/detail_basic_info_text_size"
+                            tools:text="书房 > 桌面" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            
+            <!-- 基本信息卡片2（无标题） -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/keyInfoCard2"
+                style="@style/DetailCard"
+                app:layout_constraintTop_toBottomOf="@id/keyInfoCard"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    style="@style/DetailCardContent">
+                    
+                    <!-- 添加状态信息标题 -->
+                    <TextView
+                        style="@style/DetailCardTitle"
+                        android:text="物品状态" />
+                    
+                    <!-- 保质期 -->
+                    <LinearLayout
+                        android:id="@+id/shelfLifeContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="保质期" />
+                        <TextView
+                            android:id="@+id/shelfLifeTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="30天" />
+                    </LinearLayout>
+
+                    <!-- 保修期 -->
+                    <LinearLayout
+                        android:id="@+id/warrantyContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="保修期" />
+                        <TextView
+                            android:id="@+id/warrantyTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="365天" />
+                    </LinearLayout>
+
+                    <!-- 季节 -->
+                    <LinearLayout
+                        android:id="@+id/seasonContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="季节" />
+                        <TextView
+                            android:id="@+id/seasonTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="春夏秋冬" />
+                    </LinearLayout>
+                    
+                    <!-- 开封状态 -->
+                    <LinearLayout
+                        android:id="@+id/openStatusContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="开封状态" />
+                        <TextView
+                            android:id="@+id/openStatusTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="未开封" />
+                    </LinearLayout>
+
+                    <!-- 评分 -->
+                    <LinearLayout
+                        android:id="@+id/ratingContainer"
+                        style="@style/DetailInfoRowHorizontal">
+
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="评分" />
+
+                        <RatingBar
+                            android:id="@+id/ratingBar"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end|center_vertical"
+                            style="?android:attr/ratingBarStyleIndicator"
+                            android:numStars="5"
+                            android:stepSize="0.5"
+                            android:isIndicator="true"
+                            tools:rating="3.5" />
+                    </LinearLayout>
+
+                    <!-- 标签 -->
+                    <LinearLayout
+                        android:id="@+id/tagsContainer"
+                        style="@style/DetailInfoRowHorizontal">
+
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="标签" />
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/tagsRecyclerView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="end" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 卡片二：日期信息 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/dateCard"
+                style="@style/DetailCard"
+                app:layout_constraintTop_toBottomOf="@id/keyInfoCard2"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    style="@style/DetailCardContent">
+
+                    <TextView
+                        style="@style/DetailCardTitle"
+                        android:text="日期信息" />
+
+                    <!-- 添加日期 -->
+                    <LinearLayout
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="添加日期" />
+                        <TextView
+                            android:id="@+id/addDateTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="2023-05-20" />
+                    </LinearLayout>
+
+                    <!-- 购买日期 -->
+                    <LinearLayout
+                        android:id="@+id/purchaseDateContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="购买日期" />
+                        <TextView
+                            android:id="@+id/purchaseDateTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="2023-05-20" />
+                    </LinearLayout>
+
+                    <!-- 生产日期 -->
+                    <LinearLayout
+                        android:id="@+id/productionDateContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="生产日期" />
+                        <TextView
+                            android:id="@+id/productionDateTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="2023-01-15" />
+                    </LinearLayout>
+
+                    <!-- 开封日期 -->
+                    <LinearLayout
+                        android:id="@+id/openDateContainer"
+                        style="@style/DetailInfoRowHorizontal"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="开封日期" />
+                        <TextView
+                            android:id="@+id/openDateTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="2023-06-01" />
+                    </LinearLayout>
+
+                    <!-- 保质过期时间 -->
+                    <LinearLayout
+                        android:id="@+id/expirationDateContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="保质到期" />
+                        <TextView
+                            android:id="@+id/expirationDateTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="2024-01-15" />
+                    </LinearLayout>
+
+                    <!-- 保修到期时间 -->
+                    <LinearLayout
+                        android:id="@+id/warrantyEndContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="保修到期" />
+                        <TextView
+                            android:id="@+id/warrantyEndDateTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="2024-05-20" />
+                    </LinearLayout>
+
+                    <!-- 保修进度条 -->
+                    <ProgressBar
+                        android:id="@+id/warrantyProgressBar"
+                        style="@style/DetailProgressBar"
+                        android:progress="45" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 卡片三：商业信息 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/commercialInfoCard"
+                style="@style/DetailCard"
+                app:layout_constraintTop_toBottomOf="@id/dateCard"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <LinearLayout
+                    style="@style/DetailCardContent">
+
+                    <TextView
+                        style="@style/DetailCardTitle"
+                        android:text="商业信息" />
+
+                    <!-- 品牌 -->
+                    <LinearLayout
+                        android:id="@+id/brandContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="品牌" />
+                        <TextView
+                            android:id="@+id/brandTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="Apple" />
+                    </LinearLayout>
+
+                    <!-- 商家名称 -->
+                    <LinearLayout
+                        android:id="@+id/storeNameContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="商家" />
+                        <TextView
+                            android:id="@+id/storeNameTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="Apple 官方旗舰店" />
+                    </LinearLayout>
+
+                    <!-- 购买渠道 -->
+                    <LinearLayout
+                        android:id="@+id/purchaseChannelContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="购买渠道" />
+                        <TextView
+                            android:id="@+id/purchaseChannelTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="Apple Store" />
+                    </LinearLayout>
+
+                    <!-- 序列号 -->
+                    <LinearLayout
+                        android:id="@+id/serialNumberContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="序列号" />
+                        <TextView
+                            android:id="@+id/serialNumberTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="FVFXC2023ABCD" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 卡片四：规格与备注 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/specsAndNotesCard"
+                style="@style/DetailCard"
+                android:layout_marginBottom="@dimen/detail_card_spacing"
+                app:layout_constraintTop_toBottomOf="@id/commercialInfoCard"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <LinearLayout
+                    style="@style/DetailCardContent">
+
+                    <TextView
+                        style="@style/DetailCardTitle"
+                        android:text="其他信息" />
+
+                    <!-- 规格 -->
+                    <LinearLayout
+                        android:id="@+id/specificationContainer"
+                        style="@style/DetailInfoRowHorizontal">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="规格" />
+                        <TextView
+                            android:id="@+id/specificationTextView"
+                            style="@style/DetailValue"
+                            android:layout_width="wrap_content"
+                            android:layout_weight="0"
+                            android:gravity="end"
+                            tools:text="M2 Pro, 16GB RAM, 512GB SSD" />
+                    </LinearLayout>
+
+                    <!-- 备注 -->
+                    <LinearLayout
+                        style="@style/DetailInfoRowHorizontal"
+                        android:layout_marginTop="@dimen/detail_card_content_spacing">
+                        <TextView
+                            style="@style/DetailLabel"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:gravity="start"
+                            android:text="备注" />
+                        
+                        <TextView
+                            android:id="@+id/customNoteTextView"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:maxHeight="@dimen/detail_note_max_height"
+                            android:textSize="@dimen/detail_note_text_size"
+                            android:lineSpacingMultiplier="1.2"
+                            android:gravity="end"
+                            tools:text="这是备注信息，可能有很多行。这是备注信息，可能有很多行。这是备注信息，可能有很多行。这是备注信息，可能有很多行。" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/expandButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/detail_expand_button_height"
+                        android:layout_marginTop="@dimen/detail_card_content_spacing"
+                        android:gravity="center"
+                        android:textSize="@dimen/detail_expand_text_size"
+                        android:textColor="@color/primary"
+                        android:text="展开"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- 底部操作栏 -->
+    <LinearLayout
+        android:id="@+id/bottomActionsContainer"
+        style="@style/DetailBottomActionContainer"
+        android:layout_gravity="bottom">
+
+        <Button
+            android:id="@+id/modifyQuantityButton"
+            style="@style/DetailActionButton"
+            android:text="修改数量"
+            app:icon="@drawable/ic_edit_quantity" />
+
+        <Button
+            android:id="@+id/markOpenedButton"
+            style="@style/DetailActionButton"
+            android:text="标记开封"
+            app:icon="@drawable/ic_open" />
+
+        <Button
+            android:id="@+id/consumeButton"
+            style="@style/DetailActionButton"
+            android:text="消耗"
+            app:icon="@drawable/ic_consume" />
+    </LinearLayout>
+
+    <!-- 编辑按钮 -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/editButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/detail_card_margin"
+        android:layout_marginBottom="@dimen/detail_bottom_area_height"
+        android:contentDescription="编辑物品"
+        app:tint="@android:color/white"
+        app:backgroundTint="@color/primary"
+        app:fabSize="normal"
+        android:src="@android:drawable/ic_menu_edit" />
 
-        <!-- 照片区域 -->
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/photoViewPager"
-            android:layout_width="0dp"
-            android:layout_height="200dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- 基本信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/basicInfoCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/photoViewPager">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:id="@+id/nameTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="24sp"
-                    android:textStyle="bold"
-                    tools:text="物品名称" />
-
-                <TextView
-                    android:id="@+id/quantityTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="数量：5个" />
-
-                <TextView
-                    android:id="@+id/categoryTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="分类：食品" />
-
-                <TextView
-                    android:id="@+id/subCategoryTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="子分类：零食" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 位置信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/locationCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/basicInfoCard">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="位置信息"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/locationTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="厨房 > 冰箱 > 冷藏室" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 日期信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/dateCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/locationCard">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="日期信息"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/addDateTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="添加日期：2024-03-15" />
-
-                <TextView
-                    android:id="@+id/productionDateTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="生产日期：2024-03-20" />
-
-                <TextView
-                    android:id="@+id/expirationDateTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="过期日期：2024-06-20" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 状态信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/statusCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/dateCard">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="状态信息"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/openStatusTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="开封状态：未开封" />
-
-                <TextView
-                    android:id="@+id/openDateTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="开封日期：2024-03-25" />
-
-                <TextView
-                    android:id="@+id/statusTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="库存状态：充足" />
-
-                <TextView
-                    android:id="@+id/stockWarningThresholdTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="库存警告阈值：2" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 商品信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/productInfoCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/statusCard">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="商品信息"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/brandTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="品牌：XX品牌" />
-
-                <TextView
-                    android:id="@+id/specificationTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="规格：500g" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 购买信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/purchaseInfoCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/productInfoCard">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="购买信息"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/priceTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="价格：¥19.9" />
-
-                <TextView
-                    android:id="@+id/purchaseChannelTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="购买渠道：线上" />
-
-                <TextView
-                    android:id="@+id/storeNameTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="商店名称：XX超市" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 备注信息卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/noteCard"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/purchaseInfoCard">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="备注"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/customNoteTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textSize="16sp"
-                    tools:text="这是一条备注信息" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 标签区域 -->
-        <TextView
-            android:id="@+id/tagsLabel"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="标签"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/noteCard" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/tagsRecyclerView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tagsLabel" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-</ScrollView> 
+</androidx.coordinatorlayout.widget.CoordinatorLayout> 

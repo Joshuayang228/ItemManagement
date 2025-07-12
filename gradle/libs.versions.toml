@@ -1,11 +1,11 @@
 [versions]
 # 核心构建工具版本
-agp = "8.4.1" # Android Gradle Plugin最新稳定版本
-kotlin = "1.9.24" # Kotlin最新稳定版本
+agp = "8.2.2" # 降级Android Gradle Plugin版本以匹配Kotlin版本
+kotlin = "1.9.22" # 降级Kotlin版本以解决兼容性问题
 navigation = "2.7.7" # Navigation组件最新稳定版本
 room = "2.6.1" # Room版本
 lifecycle = "2.7.0" # Lifecycle版本
-coroutines = "1.8.1" # Kotlin协程最新稳定版本
+coroutines = "1.8.0" # 降级协程版本以匹配Kotlin版本
 glide = "4.16.0" # Glide版本
 
 # AndroidX和其他库版本

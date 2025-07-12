@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.navigation.safeargs) apply false
     id("com.google.dagger.hilt.android") version "2.50" apply false
-    id("com.google.devtools.ksp") version "1.9.24-1.0.20" apply false
+    id("com.google.devtools.ksp") version "1.9.22-1.0.16" apply false
 }
 
 // 解决已弃用API警告

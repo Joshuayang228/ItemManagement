@@ -140,12 +140,13 @@ class FieldViewFactory(
             orientation = RadioGroup.HORIZONTAL
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
 
-            addView(RadioButton(context).apply {
+            val unopenedButton = RadioButton(context).apply {
                 id = View.generateViewId()
                 text = "未开封"
-                // 移除默认选中状态
-                // isChecked = true
-            })
+                // 不设置默认选中
+                isChecked = false
+            }
+            addView(unopenedButton)
 
             addView(Space(context).apply {
                 layoutParams = RadioGroup.LayoutParams(

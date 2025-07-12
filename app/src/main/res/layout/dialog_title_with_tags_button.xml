@@ -25,7 +25,6 @@
         android:src="@drawable/ic_add"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:padding="8dp"
-        android:tint="@android:color/black"
         app:tint="@android:color/black"
         android:contentDescription="添加标签" />
 

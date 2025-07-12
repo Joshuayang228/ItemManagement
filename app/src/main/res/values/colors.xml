@@ -8,4 +8,30 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="hint_text_color">#FF757575</color>
+    <color name="colorAccent">#FF6200EE</color>
+    
+    <!-- 详情页配色方案 -->
+    <color name="primary">#1976D2</color>
+    <color name="accent">#FFC107</color>
+    <color name="background">#FAFAFA</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="divider">#EEEEEE</color>
+    <color name="error">#F44336</color>
+    <color name="success">#4CAF50</color>
+    <color name="warning">#FF9800</color>
+    
+    <!-- 分类专属颜色 -->
+    <color name="category_food">#FF9800</color>
+    <color name="category_medicine">#4CAF50</color>
+    <color name="category_electronics">#2196F3</color>
+    <color name="category_clothing">#9C27B0</color>
+    <color name="category_other">#607D8B</color>
+    
+    <!-- 状态标签颜色 -->
+    <color name="status_new">#4CAF50</color>
+    <color name="status_expiring_soon">#FF9800</color>
+    <color name="status_expired">#F44336</color>
+    <color name="status_low_stock">#FF9800</color>
 </resources> 

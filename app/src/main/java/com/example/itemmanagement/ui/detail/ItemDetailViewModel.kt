@@ -25,7 +25,8 @@ class ItemDetailViewModel(private val repository: ItemRepository) : ViewModel() 
             try {
                 val itemWithDetails = repository.getItemWithDetailsById(id)
                 if (itemWithDetails != null) {
-                    _item.value = itemWithDetails.toItem()
+                    val item = itemWithDetails.toItem()
+                    _item.value = item
                 } else {
                     _errorMessage.value = "找不到该物品"
                 }
