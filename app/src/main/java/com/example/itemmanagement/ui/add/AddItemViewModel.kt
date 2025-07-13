@@ -166,8 +166,15 @@ class AddItemViewModel(
     fun saveFieldValue(fieldName: String, value: Any?) {
         // 如果值不为null，或者是明确设置为空，则更新
         if (value != null || fieldValues.containsKey(fieldName)) {
+            // 直接设置到fieldValues和savedStateHandle
             fieldValues[fieldName] = value
-            savedStateHandle["field_values"] = fieldValues
+            savedStateHandle[fieldName] = value
+            
+            // 如果是开封状态字段，确保同步到草稿中
+            if (fieldName == "开封状态" && !isInEditMode && !isModeSwitchInProgress) {
+                addDraftFieldValues[fieldName] = value
+                savedStateHandle["add_draft_field_values"] = addDraftFieldValues
+            }
 
             // 如果是标签字段，更新 selectedTags
             if (getFieldProperties(fieldName).displayStyle == DisplayStyle.TAG) {
@@ -201,11 +208,23 @@ class AddItemViewModel(
             return dateFormat.format(Date())
         }
 
+        // 如果是开封状态字段，特殊处理
+        if (fieldName == "开封状态") {
+            // 首先尝试从fieldValues获取
+            val fieldValue = if (fieldValues.containsKey(fieldName)) fieldValues[fieldName] else null
+            // 然后尝试从savedStateHandle获取
+            val stateHandleValue = savedStateHandle.get<Any>(fieldName)
+            
+            // 优先返回fieldValues中的值，如果没有则返回savedStateHandle中的值
+            return fieldValue ?: stateHandleValue
+        }
+
         // 确保明确返回存储的值，即使是null
         return if (fieldValues.containsKey(fieldName)) {
             fieldValues[fieldName]
         } else {
-            null
+            // 尝试从savedStateHandle获取
+            savedStateHandle.get<Any>(fieldName)
         }
     }
 
@@ -747,6 +766,22 @@ class AddItemViewModel(
         savedStateHandle.remove<String>("位置_area")
         savedStateHandle.remove<String>("位置_container")
         savedStateHandle.remove<String>("位置_sublocation")
+        
+        // 确保从fieldValues中也删除位置相关数据
+        fieldValues.remove("位置_area")
+        fieldValues.remove("位置_container")
+        fieldValues.remove("位置_sublocation")
+        
+        // 清除开封状态数据
+        savedStateHandle.remove<String>("开封状态")
+        // 确保从fieldValues中也删除开封状态数据
+        fieldValues.remove("开封状态")
+        
+        // 清除单位相关的数据
+        val fieldsWithUnits = listOf("数量", "容量", "单价", "总价")
+        fieldsWithUnits.forEach { fieldName ->
+            savedStateHandle.remove<String>("${fieldName}_unit")
+        }
 
         // 清除所有照片
         _photoUris.value = emptyList()
@@ -754,6 +789,7 @@ class AddItemViewModel(
         
         // 清除已选中的标签
         _selectedTags.value = emptyMap()
+        savedStateHandle.remove<Map<String, Set<String>>>("selected_tags")
         
         // 注意：不清除已选中的字段列表 _selectedFields
     }
@@ -814,6 +850,14 @@ class AddItemViewModel(
             addDraftFieldValues["位置_container"]?.let { savedStateHandle["位置_container"] = it }
             addDraftFieldValues["位置_sublocation"]?.let { savedStateHandle["位置_sublocation"] = it }
             
+            // 恢复开封状态数据
+            if (addDraftFieldValues.containsKey("开封状态")) {
+                val openStatusValue = addDraftFieldValues["开封状态"]
+                savedStateHandle["开封状态"] = openStatusValue
+                // 强制设置到fieldValues中
+                fieldValues["开封状态"] = openStatusValue
+            }
+            
             // 记录日志，便于调试
             Log.d("AddItemViewModel", "草稿已恢复: ${fieldValues.size} 个字段值, ${_selectedFields.value?.size ?: 0} 个已选字段")
         } finally {
@@ -855,7 +899,6 @@ class AddItemViewModel(
     /**
      * 智能准备添加模式
      * 恢复添加模式的草稿数据
-     * 注意：此方法应该只在用户明确点击"添加物品"按钮时调用，通常在导航到添加界面之前
      */
     fun prepareForAddMode() {
         Log.d("AddItemViewModel", "收到指令：准备添加模式")
@@ -864,6 +907,10 @@ class AddItemViewModel(
         isModeSwitchInProgress = true
         
         try {
+            // 确保清除开封状态数据，防止编辑模式数据污染添加模式
+            fieldValues.remove("开封状态")
+            savedStateHandle.remove<String>("开封状态")
+            
             // 从草稿保险箱恢复状态
             restoreStateFromAddDraft()
             
@@ -932,34 +979,124 @@ class AddItemViewModel(
             
             // 将物品的字段值设置到表单中
             item.name.let { saveFieldValue("名称", it) }
-            item.quantity.let { saveFieldValue("数量", it.toString()) }
+            
+            // 处理数量字段 - 如果是整数，去掉小数点后的.0
+            item.quantity.let { 
+                val quantityStr = if (it == it.toInt().toDouble()) {
+                    it.toInt().toString()
+                } else {
+                    it.toString()
+                }
+                saveFieldValue("数量", quantityStr) 
+            }
+            
+            // 保存单位
             item.unit?.let { saveFieldValue("单位", it) }
+            item.unit?.let { saveFieldValue("数量_unit", it) }
+            
             item.category.let { saveFieldValue("分类", it) }
             item.location?.let { location ->
                 saveFieldValue("位置_area", location.area)
                 saveFieldValue("位置_container", location.container)
                 saveFieldValue("位置_sublocation", location.sublocation)
             }
+            
+            // 日期类字段
             item.productionDate?.let { saveFieldValue("生产日期", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
-            item.expirationDate?.let { saveFieldValue("到期日期", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
-            item.openStatus?.let { saveFieldValue("开封状态", if (it == OpenStatus.OPENED) "已开封" else "未开封") }
+            item.expirationDate?.let { saveFieldValue("保质过期时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
+            item.addDate.let { saveFieldValue("添加日期", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
+            
+            // 开封状态
+            item.openStatus?.let { 
+                val openStatusValue = if (it == OpenStatus.OPENED) "已开封" else "未开封"
+                saveFieldValue("开封状态", openStatusValue)
+                // 确保同时保存到savedStateHandle
+                savedStateHandle["开封状态"] = openStatusValue
+            }
             item.openDate?.let { saveFieldValue("开封时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
+            
             item.brand?.let { saveFieldValue("品牌", it) }
             item.specification?.let { saveFieldValue("规格", it) }
-            item.price?.let { saveFieldValue("单价", it.toString()) }
+            
+            // 处理单价字段 - 如果是整数，去掉小数点后的.0
+            item.price?.let { 
+                val priceStr = if (it == it.toInt().toDouble()) {
+                    it.toInt().toString()
+                } else {
+                    it.toString()
+                }
+                saveFieldValue("单价", priceStr)
+                item.priceUnit?.let { unit -> saveFieldValue("单价_unit", unit) }
+            }
+            
             item.purchaseChannel?.let { saveFieldValue("购买渠道", it) }
             item.storeName?.let { saveFieldValue("商家名称", it) }
             item.subCategory?.let { saveFieldValue("子分类", it) }
             item.customNote?.let { saveFieldValue("备注", it) }
-            item.season?.let { saveFieldValue("季节", it) }
-            item.capacity?.let { saveFieldValue("容量", it.toString()) }
-            item.rating?.let { saveFieldValue("评分", it.toString()) }
-            item.totalPrice?.let { saveFieldValue("总价", it.toString()) }
+            
+            // 处理季节字段 - 将逗号分隔的字符串转换为Set
+            item.season?.let { 
+                val seasonSet = it.split(",").map { s -> s.trim() }.toSet()
+                saveFieldValue("季节", seasonSet)
+            }
+            
+            // 处理容量字段 - 如果是整数，去掉小数点后的.0
+            item.capacity?.let { 
+                val capacityStr = if (it == it.toInt().toDouble()) {
+                    it.toInt().toString()
+                } else {
+                    it.toString()
+                }
+                saveFieldValue("容量", capacityStr)
+                item.capacityUnit?.let { unit -> saveFieldValue("容量_unit", unit) }
+            }
+            
+            // 评分字段
+            item.rating?.let { saveFieldValue("评分", it) }
+            
+            // 处理总价字段 - 如果是整数，去掉小数点后的.0
+            item.totalPrice?.let { 
+                val totalPriceStr = if (it == it.toInt().toDouble()) {
+                    it.toInt().toString()
+                } else {
+                    it.toString()
+                }
+                saveFieldValue("总价", totalPriceStr)
+                item.totalPriceUnit?.let { unit -> saveFieldValue("总价_unit", unit) }
+            }
+            
             item.purchaseDate?.let { saveFieldValue("购买日期", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
-            item.shelfLife?.let { saveFieldValue("保质期", it.toString()) }
-            item.warrantyPeriod?.let { saveFieldValue("保修期", it.toString()) }
+            
+            // 处理保质期字段 - 保存为Pair<String, String>格式
+            item.shelfLife?.let {
+                val days = it
+                val pair = when {
+                    days % 365 == 0 -> Pair(days / 365, "年")
+                    days % 30 == 0 -> Pair(days / 30, "月")
+                    else -> Pair(days, "日")
+                }
+                saveFieldValue("保质期", Pair(pair.first.toString(), pair.second))
+            }
+            
+            // 处理保修期字段 - 保存为Pair<String, String>格式
+            item.warrantyPeriod?.let {
+                val days = it
+                val pair = when {
+                    days % 365 == 0 -> Pair(days / 365, "年")
+                    days % 30 == 0 -> Pair(days / 30, "月")
+                    else -> Pair(days, "日")
+                }
+                saveFieldValue("保修期", Pair(pair.first.toString(), pair.second))
+            }
+            
             item.warrantyEndDate?.let { saveFieldValue("保修到期时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
             item.serialNumber?.let { saveFieldValue("序列号", it) }
+            
+            // 处理标签数据
+            if (item.tags.isNotEmpty()) {
+                val tagSet = item.tags.map { it.name }.toSet()
+                saveFieldValue("标签", tagSet)
+            }
             
             // 将Photo对象转换为Uri列表
             val uris = item.photos.map { Uri.parse(it.uri) }
@@ -975,6 +1112,7 @@ class AddItemViewModel(
             if (item.location != null) fieldsToAdd.add(Field("基础信息", "位置", true))
             if (item.productionDate != null) fieldsToAdd.add(Field("日期类", "生产日期", true))
             if (item.expirationDate != null) fieldsToAdd.add(Field("日期类", "保质过期时间", true))
+            if (item.openStatus != null) fieldsToAdd.add(Field("基础信息", "开封状态", true))
             if (item.openDate != null) fieldsToAdd.add(Field("日期类", "开封时间", true))
             if (!item.brand.isNullOrBlank()) fieldsToAdd.add(Field("商业类", "品牌", true))
             if (!item.specification.isNullOrBlank()) fieldsToAdd.add(Field("基础信息", "规格", true))
@@ -992,6 +1130,9 @@ class AddItemViewModel(
             if (item.warrantyPeriod != null) fieldsToAdd.add(Field("日期类", "保修期", true))
             if (item.warrantyEndDate != null) fieldsToAdd.add(Field("日期类", "保修到期时间", true))
             if (!item.serialNumber.isNullOrBlank()) fieldsToAdd.add(Field("商业类", "序列号", true))
+            if (item.tags.isNotEmpty()) fieldsToAdd.add(Field("分类", "标签", true))
+            // 始终添加添加日期字段
+            fieldsToAdd.add(Field("日期类", "添加日期", true))
             
             // 更新选中的字段（直接替换，而不是追加）
             savedStateHandle["selected_fields"] = fieldsToAdd
@@ -1096,6 +1237,10 @@ class AddItemViewModel(
             // 清除当前的编辑状态
             editingItemId = null
             isInEditMode = false
+            
+            // 确保清除开封状态数据，防止编辑模式数据污染添加模式
+            fieldValues.remove("开封状态")
+            savedStateHandle.remove<String>("开封状态")
             
             // 从草稿保险箱恢复状态
             restoreStateFromAddDraft()

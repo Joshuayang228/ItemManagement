@@ -9,6 +9,7 @@
     <string name="title_setting">设置</string>
     <string name="add_item">添加物品</string>
     <string name="title_add_item">添加物品</string>
+    <string name="title_edit_item">编辑物品</string>
     <string name="title_item_list">物品列表</string>
     
     <!-- 物品详情页面 -->

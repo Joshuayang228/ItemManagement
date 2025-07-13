@@ -113,8 +113,7 @@ class ItemDetailFragment : Fragment() {
     
     private fun navigateToEditItem() {
         // 导航到编辑物品页面
-        val action = ItemDetailFragmentDirections.actionNavigationItemDetailToAddItemFragment(
-            mode = "edit",
+        val action = ItemDetailFragmentDirections.actionNavigationItemDetailToEditItemFragment(
             itemId = args.itemId
         )
         findNavController().navigate(action)

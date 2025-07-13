@@ -50,7 +50,7 @@
     <fragment
         android:id="@+id/addItemFragment"
         android:name="com.example.itemmanagement.ui.add.AddItemFragment"
-        android:label="添加物品">
+        android:label="@string/title_add_item">
         <argument
             android:name="item"
             app:argType="com.example.itemmanagement.data.model.Item"
@@ -67,6 +67,25 @@
     </fragment>
     
     <fragment
+        android:id="@+id/editItemFragment"
+        android:name="com.example.itemmanagement.ui.edit.EditItemFragment"
+        android:label="@string/title_edit_item">
+        <argument
+            android:name="item"
+            app:argType="com.example.itemmanagement.data.model.Item"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="mode"
+            app:argType="string"
+            android:defaultValue="edit" />
+        <argument
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+    
+    <fragment
         android:id="@+id/navigation_item_detail"
         android:name="com.example.itemmanagement.ui.detail.ItemDetailFragment"
         android:label="物品详情">
@@ -75,8 +94,8 @@
             app:argType="long"
             android:defaultValue="-1L" />
         <action
-            android:id="@+id/action_navigation_item_detail_to_addItemFragment"
-            app:destination="@id/addItemFragment">
+            android:id="@+id/action_navigation_item_detail_to_editItemFragment"
+            app:destination="@id/editItemFragment">
             <argument
                 android:name="mode"
                 app:argType="string"

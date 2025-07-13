@@ -422,10 +422,10 @@ class AddItemFragment : Fragment() {
         viewModel.mode.observe(viewLifecycleOwner) { mode ->
             // 根据模式设置标题和按钮文本
             if (mode == "edit") {
-                requireActivity().title = "编辑物品"
+                requireActivity().title = getString(R.string.title_edit_item)
                 binding.saveButton.text = "更新物品"
             } else {
-                requireActivity().title = "添加物品"
+                requireActivity().title = getString(R.string.title_add_item)
                 binding.saveButton.text = "保存物品"
             }
         }
@@ -755,9 +755,31 @@ class AddItemFragment : Fragment() {
     }
 
     private fun updateFields(fields: Set<Field>) {
+        Log.e("开封状态DEBUG", "updateFields - 开始")
+        
         // 保存当前字段的值
         if (fieldViews.isNotEmpty()) {
+            // 检查开封状态
+            val openStatusView = fieldViews["开封状态"]
+            if (openStatusView != null) {
+                val radioGroup = fieldValueManager.findRadioGroupInView(openStatusView)
+                if (radioGroup != null) {
+                    val selectedId = radioGroup.checkedRadioButtonId
+                    val radioButton = if (selectedId != -1) radioGroup.findViewById<RadioButton>(selectedId) else null
+                    val value = radioButton?.text?.toString()
+                    Log.e("开封状态DEBUG", "updateFields - UI中的开封状态: $value")
+                }
+            }
+            
+            // 保存前的值
+            val beforeSave = viewModel.getFieldValue("开封状态")
+            Log.e("开封状态DEBUG", "updateFields - 保存前的值: $beforeSave")
+            
             fieldValueManager.saveFieldValues(fieldViews)
+            
+            // 保存后的值
+            val afterSave = viewModel.getFieldValue("开封状态")
+            Log.e("开封状态DEBUG", "updateFields - 保存后的值: $afterSave")
         }
 
         binding.fieldsContainer.removeAllViews()
@@ -765,17 +787,70 @@ class AddItemFragment : Fragment() {
 
         // 使用Field类中定义的order属性进行排序
         val sortedFields = fields.sortedBy { it.order }
+        
+        // 检查是否包含开封状态字段
+        val hasOpenStatusField = sortedFields.any { it.name == "开封状态" }
+        Log.e("开封状态DEBUG", "updateFields - 包含开封状态字段: $hasOpenStatusField")
 
         sortedFields.forEach { field ->
             val fieldView = fieldViewFactory.createFieldView(field)
             binding.fieldsContainer.addView(fieldView)
             fieldViews[field.name] = fieldView
+            
+            if (field.name == "开封状态") {
+                Log.e("开封状态DEBUG", "updateFields - 创建了开封状态字段")
+            }
         }
 
         // 恢复保存的字段值
         if (fieldViews.isNotEmpty()) {
+            // 恢复前的值
+            val beforeRestore = viewModel.getFieldValue("开封状态")
+            Log.e("开封状态DEBUG", "updateFields - 恢复前的值: $beforeRestore")
+            
             fieldValueManager.restoreFieldValues(fieldViews)
+            
+            // 特别处理开封状态字段
+            if (fieldViews.containsKey("开封状态")) {
+                val openStatusView = fieldViews["开封状态"]
+                val openStatusValue = viewModel.getFieldValue("开封状态") as? String
+                Log.e("开封状态DEBUG", "updateFields - 尝试特别处理值: $openStatusValue")
+                
+                if (openStatusView != null && openStatusValue != null) {
+                    val radioGroup = fieldValueManager.findRadioGroupInView(openStatusView)
+                    if (radioGroup != null) {
+                        // 记录当前选中状态
+                        val currentSelectedId = radioGroup.checkedRadioButtonId
+                        val currentSelected = if (currentSelectedId != -1) 
+                            radioGroup.findViewById<RadioButton>(currentSelectedId)?.text 
+                        else null
+                        Log.e("开封状态DEBUG", "updateFields - 当前选中: $currentSelected")
+                        
+                        // 尝试设置选中状态
+                        for (i in 0 until radioGroup.childCount) {
+                            val radioButton = radioGroup.getChildAt(i) as? RadioButton
+                            if (radioButton != null) {
+                                Log.e("开封状态DEBUG", "updateFields - RadioButton[$i]: ${radioButton.text}")
+                                if (radioButton.text == openStatusValue) {
+                                    radioButton.isChecked = true
+                                    Log.e("开封状态DEBUG", "updateFields - 设置选中: ${radioButton.text}")
+                                    break
+                                }
+                            }
+                        }
+                        
+                        // 记录设置后的选中状态
+                        val afterSelectedId = radioGroup.checkedRadioButtonId
+                        val afterSelected = if (afterSelectedId != -1) 
+                            radioGroup.findViewById<RadioButton>(afterSelectedId)?.text 
+                        else null
+                        Log.e("开封状态DEBUG", "updateFields - 设置后选中: $afterSelected")
+                    }
+                }
+            }
         }
+        
+        Log.e("开封状态DEBUG", "updateFields - 字段更新完成")
     }
 
     private fun setupButtons() {
@@ -822,9 +897,85 @@ class AddItemFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
+        
+        // 简单直接的日志
+        Log.e("开封状态DEBUG", "onPause - 开始")
+        
         // 在Fragment暂停时保存所有字段的值
         if (fieldViews.isNotEmpty()) {
+            // 检查开封状态
+            val openStatusView = fieldViews["开封状态"]
+            if (openStatusView != null) {
+                val radioGroup = fieldValueManager.findRadioGroupInView(openStatusView)
+                if (radioGroup != null) {
+                    val selectedId = radioGroup.checkedRadioButtonId
+                    val radioButton = if (selectedId != -1) radioGroup.findViewById<RadioButton>(selectedId) else null
+                    val value = radioButton?.text?.toString()
+                    Log.e("开封状态DEBUG", "onPause - UI中的开封状态: $value")
+                }
+            }
+            
+            // 保存前的值
+            val beforeSave = viewModel.getFieldValue("开封状态")
+            Log.e("开封状态DEBUG", "onPause - 保存前的值: $beforeSave")
+            
             fieldValueManager.saveFieldValues(fieldViews)
+            
+            // 保存后的值
+            val afterSave = viewModel.getFieldValue("开封状态")
+            Log.e("开封状态DEBUG", "onPause - 保存后的值: $afterSave")
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        
+        // 简单直接的日志
+        Log.e("开封状态DEBUG", "onResume - 开始")
+        
+        // 获取当前值
+        val currentValue = viewModel.getFieldValue("开封状态")
+        Log.e("开封状态DEBUG", "onResume - 当前值: $currentValue")
+        
+        // 在Fragment恢复时特别处理开封状态字段
+        if (fieldViews.isNotEmpty() && fieldViews.containsKey("开封状态")) {
+            val openStatusView = fieldViews["开封状态"]
+            val openStatusValue = viewModel.getFieldValue("开封状态") as? String
+            Log.e("开封状态DEBUG", "onResume - 尝试恢复值: $openStatusValue")
+            
+            if (openStatusView != null && openStatusValue != null) {
+                val radioGroup = fieldValueManager.findRadioGroupInView(openStatusView)
+                if (radioGroup != null) {
+                    Log.e("开封状态DEBUG", "onResume - 找到RadioGroup")
+                    
+                    // 记录当前选中状态
+                    val currentSelectedId = radioGroup.checkedRadioButtonId
+                    val currentSelected = if (currentSelectedId != -1) 
+                        radioGroup.findViewById<RadioButton>(currentSelectedId)?.text 
+                    else null
+                    Log.e("开封状态DEBUG", "onResume - 当前选中: $currentSelected")
+                    
+                    // 尝试设置选中状态
+                    for (i in 0 until radioGroup.childCount) {
+                        val radioButton = radioGroup.getChildAt(i) as? RadioButton
+                        if (radioButton != null) {
+                            Log.e("开封状态DEBUG", "onResume - RadioButton[$i]: ${radioButton.text}")
+                            if (radioButton.text == openStatusValue) {
+                                radioButton.isChecked = true
+                                Log.e("开封状态DEBUG", "onResume - 设置选中: ${radioButton.text}")
+                                break
+                            }
+                        }
+                    }
+                    
+                    // 记录设置后的选中状态
+                    val afterSelectedId = radioGroup.checkedRadioButtonId
+                    val afterSelected = if (afterSelectedId != -1) 
+                        radioGroup.findViewById<RadioButton>(afterSelectedId)?.text 
+                    else null
+                    Log.e("开封状态DEBUG", "onResume - 设置后选中: $afterSelected")
+                }
+            }
         }
     }
 
@@ -982,10 +1133,11 @@ class AddItemFragment : Fragment() {
             category = values["分类"] as? String ?: "未指定",
             productionDate = parseDate(values["生产日期"] as? String),
             expirationDate = parseDate(values["保质过期时间"] as? String),
-            // 确保开封状态有默认值
+            // 不设置开封状态默认值
             openStatus = when(values["开封状态"]) {
                 "已开封" -> OpenStatus.OPENED
-                else -> OpenStatus.UNOPENED // 默认为未开封
+                "未开封" -> OpenStatus.UNOPENED
+                else -> null // 如果没有选择，则为null
             },
             openDate = parseDate(values["开封时间"] as? String),
             brand = values["品牌"] as? String,
@@ -1036,6 +1188,9 @@ class AddItemFragment : Fragment() {
         // 清除ViewModel中的字段值和照片，但保留已选中的字段
         viewModel.clearFieldValuesOnly()
 
+        // 清除照片适配器中的照片
+        photoAdapter.clearPhotos()
+        
         // 通过fieldValueManager恢复空值到UI
         if (fieldViews.isNotEmpty()) {
             fieldValueManager.restoreFieldValues(fieldViews)

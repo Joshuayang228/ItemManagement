@@ -58,6 +58,14 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     fun getPhotos(): List<Uri> = photos.toList()
 
+    /**
+     * 清除所有照片
+     */
+    fun clearPhotos() {
+        photos.clear()
+        notifyDataSetChanged()
+    }
+
     override fun getItemViewType(position: Int): Int {
         return if (position < photos.size) VIEW_TYPE_PHOTO else VIEW_TYPE_ADD
     }

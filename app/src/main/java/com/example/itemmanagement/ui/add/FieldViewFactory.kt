@@ -158,6 +158,8 @@ class FieldViewFactory(
             addView(RadioButton(context).apply {
                 id = View.generateViewId()
                 text = "已开封"
+                // 不设置默认选中
+                isChecked = false
             })
         }
     }

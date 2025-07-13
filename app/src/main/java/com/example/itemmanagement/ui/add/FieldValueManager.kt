@@ -18,6 +18,7 @@ import android.widget.RatingBar
 import android.widget.LinearLayout
 import android.content.Context
 import androidx.core.content.ContextCompat
+import android.util.Log
 
 /**
  * 负责管理字段值的保存和恢复
@@ -45,8 +46,36 @@ class FieldValueManager(
         }
 
         try {
+            // 特殊处理开封状态字段 - 先处理开封状态，确保它的值被正确保存
+            if (fieldViews.containsKey("开封状态")) {
+                val openStatusView = fieldViews["开封状态"]
+                if (openStatusView != null) {
+                    val radioGroup = findRadioGroupInView(openStatusView)
+                    if (radioGroup != null) {
+                        val selectedId = radioGroup.checkedRadioButtonId
+                        val radioButton = if (selectedId != -1) radioGroup.findViewById<RadioButton>(selectedId) else null
+                        val value = radioButton?.text?.toString()
+                        
+                        // 直接保存UI中的值，不设置默认值
+                        if (value != null) {
+                            viewModel.saveFieldValue("开封状态", value)
+                        } else {
+                            // 如果UI中没有选中值，则清除该字段值
+                            viewModel.clearFieldValue("开封状态")
+                        }
+                    }
+                }
+            }
+            
+            // 处理其他字段
             fieldViews.forEach { (fieldName, view) ->
+                // 跳过开封状态字段，因为已经处理过了
+                if (fieldName == "开封状态") {
+                    return@forEach
+                }
+                
                 val properties = viewModel.getFieldProperties(fieldName)
+                
                 when (properties.displayStyle) {
                     AddItemViewModel.DisplayStyle.TAG -> {
                         val selectedTagsContainer = view.findViewById<ChipGroup>(R.id.selected_tags_container)
@@ -210,7 +239,9 @@ class FieldValueManager(
                     }
                 }
             }
+            
         } catch (e: Exception) {
+            Log.e("FieldValueManager", "saveFieldValues 异常", e)
             e.printStackTrace()
         }
     }
@@ -223,146 +254,54 @@ class FieldValueManager(
             return
         }
 
-        val savedValues = viewModel.getAllFieldValues()
-
-        if (savedValues.isEmpty()) {
-            fieldViews.forEach { (fieldName, view) ->
-                val properties = viewModel.getFieldProperties(fieldName)
-                when (view) {
-                    is EditText -> {
-                        view.setText("")
-                    }
-                    is ViewGroup -> {
-                        findEditTextInView(view)?.let { editText ->
-                            editText.setText("")
-                        }
-
-                        findSpinnerInView(view)?.let { spinner ->
-                            if (spinner.count > 0) {
-                                spinner.setSelection(0)
-                            }
-                        }
-
-                        findRatingBarInView(view)?.let { ratingBar ->
-                            ratingBar.rating = 0f
-                        }
-
-                        findRadioGroupInView(view)?.let { radioGroup ->
-                            radioGroup.clearCheck()
-                        }
-
-                        findTextViewInView(view, DATE_TAG_PREFIX, fieldName)?.let { dateTextView ->
-                            if (fieldName == "添加日期") {
-                                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                                dateTextView.text = dateFormat.format(Date())
-                                dateTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
-                            } else {
-                                dateTextView.text = ""
-                                dateTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
-                            }
-                        }
-
-                        if (properties.unitOptions != null) {
-                            findEditTextInView(view)?.let { editText ->
-                                editText.setText("")
-                            }
-
-                            findTextViewInView(view, UNIT_TAG_PREFIX, fieldName)?.let { unitTextView ->
-                                unitTextView.text = "选择单位"
-                                unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
-                            }
-                        }
-
-                        if (fieldName == "保质期" || fieldName == "保修期") {
-                            findTextViewInView(view, PERIOD_NUMBER_TAG_PREFIX, fieldName)?.let { numberText ->
-                                numberText.text = ""
-                                numberText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
-                            }
-                            findTextViewInView(view, PERIOD_UNIT_TAG_PREFIX, fieldName)?.let { unitText ->
-                                unitText.text = "选择单位"
-                                unitText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
-                            }
-                        }
-
-                        if (fieldName == "位置") {
-                            findLocationSelectorInView(view)?.let { locationSelector ->
-                                locationSelector.setOnLocationSelectedListener { area, container, sublocation ->
-                                    if (area != null) {
-                                        viewModel.saveFieldValue("位置_area", area)
-                                        if (container != null) {
-                                            viewModel.saveFieldValue("位置_container", container)
-                                            if (sublocation != null) {
-                                                viewModel.saveFieldValue("位置_sublocation", sublocation)
-                                            } else {
-                                                viewModel.clearFieldValue("位置_sublocation")
-                                            }
-                                        } else {
-                                            viewModel.clearFieldValue("位置_container")
-                                            viewModel.clearFieldValue("位置_sublocation")
-                                        }
-                                    } else {
-                                        viewModel.clearFieldValue("位置_area")
-                                        viewModel.clearFieldValue("位置_container")
-                                        viewModel.clearFieldValue("位置_sublocation")
-                                    }
-                                }
-
-                                locationSelector.clearSelection()
-                            }
-                        }
-
-                        if (fieldName == "标签" || fieldName == "季节") {
-                            val tagManager = TagManager(context, dialogFactory, viewModel, fieldName)
-
-                            view.findViewById<ChipGroup>(R.id.selected_tags_container)?.let { chipGroup ->
-                                tagManager.clearTags(chipGroup)
-
-                                // 显示提示文本
-                                val placeholderText = findTagPlaceholderTextView(view)
-                                placeholderText?.visibility = View.VISIBLE
-                            }
-                        }
-
-                        findTextViewInView(view, SPINNER_TAG_PREFIX, fieldName)?.let { spinnerText ->
-                            val text = when(fieldName) {
-                                "分类" -> "选择分类"
-                                "购买渠道" -> "选择渠道"
-                                else -> "请选择"
-                            }
-                            spinnerText.text = text
-                            spinnerText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
-                        }
-                    }
-                }
-            }
-            return
-        }
-
         try {
+            val savedValues = viewModel.getAllFieldValues()
+            
+            // 首先清除所有字段的值
             fieldViews.forEach { (fieldName, view) ->
                 val properties = viewModel.getFieldProperties(fieldName)
-
-                findTextViewInView(view, DATE_TAG_PREFIX, fieldName)?.let { dateTextView ->
-                    if (fieldName == "添加日期") {
-                        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        dateTextView.text = dateFormat.format(Date())
-                        dateTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
-                    } else {
-                        dateTextView.text = ""
-                        dateTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
-                    }
+                
+                // 清除EditText
+                val editText = findEditTextInView(view)
+                editText?.setText("")
+                
+                // 清除RadioGroup
+                val radioGroup = findRadioGroupInView(view)
+                radioGroup?.clearCheck()
+                
+                // 清除RatingBar
+                val ratingBar = findRatingBarInView(view)
+                ratingBar?.rating = 0f
+                
+                // 清除标签
+                if (properties.displayStyle == AddItemViewModel.DisplayStyle.TAG) {
+                    val selectedTagsContainer = view.findViewById<ChipGroup>(R.id.selected_tags_container)
+                    selectedTagsContainer?.removeAllViews()
+                    
+                    // 显示提示文本
+                    val placeholderText = findTagPlaceholderTextView(view)
+                    placeholderText?.visibility = View.VISIBLE
                 }
-
-                findTextViewInView(view, SPINNER_TAG_PREFIX, fieldName)?.let { spinnerText ->
-                    val text = when(fieldName) {
+                
+                // 清除位置选择器
+                if (properties.displayStyle == AddItemViewModel.DisplayStyle.LOCATION_SELECTOR) {
+                    val locationSelectorView = findLocationSelectorInView(view)
+                    locationSelectorView?.clearSelection()
+                }
+                
+                // 清除下拉选择框
+                val spinnerText = findTextViewInView(view, SPINNER_TAG_PREFIX, fieldName)
+                if (spinnerText != null) {
+                    val text = when (fieldName) {
                         "分类" -> "选择分类"
-                        "购买渠道" -> "选择渠道"
+                        "渠道" -> "选择渠道"
                         else -> "请选择"
                     }
                     spinnerText.text = text
                     spinnerText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                 }
 
+                // 清除单位选择
                 if (properties.unitOptions != null) {
                     findTextViewInView(view, UNIT_TAG_PREFIX, fieldName)?.let { unitTextView ->
                         unitTextView.text = "选择单位"
@@ -370,6 +309,7 @@ class FieldValueManager(
                     }
                 }
 
+                // 清除周期选择器
                 if (fieldName == "保质期" || fieldName == "保修期") {
                     findTextViewInView(view, PERIOD_NUMBER_TAG_PREFIX, fieldName)?.let { numberText ->
                         numberText.text = ""
@@ -380,9 +320,50 @@ class FieldValueManager(
                         unitText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                     }
                 }
+                
+                // 清除日期选择
+                if (properties.validationType == AddItemViewModel.ValidationType.DATE) {
+                    val dateTextView = findTextViewInView(view, DATE_TAG_PREFIX, fieldName)
+                    if (dateTextView != null) {
+                        dateTextView.text = "点击选择日期"
+                        dateTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                    }
+                }
             }
 
+            // 特殊处理开封状态字段
+            if (fieldViews.containsKey("开封状态")) {
+                val openStatusView = fieldViews["开封状态"]
+                val openStatusValue = viewModel.getFieldValue("开封状态") as? String
+                
+                if (openStatusView != null) {
+                    val radioGroup = findRadioGroupInView(openStatusView)
+                    if (radioGroup != null) {
+                        // 首先清除选择
+                        radioGroup.clearCheck()
+                        
+                        // 只有在有值的情况下才设置选中状态
+                        if (openStatusValue != null) {
+                            // 尝试设置选中状态
+                            for (i in 0 until radioGroup.childCount) {
+                                val radioButton = radioGroup.getChildAt(i) as? RadioButton
+                                if (radioButton != null && radioButton.text.toString() == openStatusValue) {
+                                    radioButton.isChecked = true
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 然后恢复有保存值的字段
             savedValues.forEach { (fieldName, value) ->
+                // 跳过开封状态字段，因为已经特殊处理过了
+                if (fieldName == "开封状态") {
+                    return@forEach
+                }
+                
                 if (fieldName.endsWith("_unit")) {
                     return@forEach
                 }
@@ -624,7 +605,9 @@ class FieldValueManager(
                     }
                 }
             }
+
         } catch (e: Exception) {
+            Log.e("FieldValueManager", "restoreFieldValues 异常", e)
             e.printStackTrace()
         }
     }
@@ -724,7 +707,7 @@ class FieldValueManager(
     /**
      * 在视图层次结构中查找RadioGroup
      */
-    private fun findRadioGroupInView(view: View): RadioGroup? {
+    fun findRadioGroupInView(view: View): RadioGroup? {
         return when (view) {
             is RadioGroup -> view
             is ViewGroup -> {
