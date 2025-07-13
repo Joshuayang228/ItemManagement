@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                 // 这表示用户从编辑页面返回到主页后又点击了添加按钮
                 if (mode == "add" && viewModel.isInEditMode()) {
                     // 从编辑模式切换回添加模式，恢复之前的草稿
-                    viewModel.returnToAddMode()
+                    viewModel.returnFromEditToAdd()
                 }
             }
         }

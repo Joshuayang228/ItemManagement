@@ -102,6 +102,35 @@ class FieldValueManager(
                             viewModel.clearFieldValue(fieldName)
                         }
                     }
+                    AddItemViewModel.DisplayStyle.LOCATION_SELECTOR -> {
+                        val locationSelector = findLocationSelectorInView(view)
+                        if (locationSelector != null) {
+                            val area = locationSelector.getSelectedArea()
+                            val container = locationSelector.getSelectedContainer()
+                            val sublocation = locationSelector.getSelectedSublocation()
+                            
+                            // 保存位置信息到ViewModel
+                            if (!area.isNullOrEmpty()) {
+                                viewModel.saveFieldValue("位置_area", area)
+                                
+                                if (!container.isNullOrEmpty()) {
+                                    viewModel.saveFieldValue("位置_container", container)
+                                } else {
+                                    viewModel.clearFieldValue("位置_container")
+                                }
+                                
+                                if (!sublocation.isNullOrEmpty()) {
+                                    viewModel.saveFieldValue("位置_sublocation", sublocation)
+                                } else {
+                                    viewModel.clearFieldValue("位置_sublocation")
+                                }
+                            } else {
+                                viewModel.clearFieldValue("位置_area")
+                                viewModel.clearFieldValue("位置_container")
+                                viewModel.clearFieldValue("位置_sublocation")
+                            }
+                        }
+                    }
                     AddItemViewModel.DisplayStyle.PERIOD_SELECTOR -> {
                         val container = view as? LinearLayout
                         if (container != null) {
@@ -118,6 +147,7 @@ class FieldValueManager(
                             }
                         }
                     }
+
                     else -> {
                         when {
                             properties.validationType == AddItemViewModel.ValidationType.DATE -> {
@@ -357,6 +387,22 @@ class FieldValueManager(
                 }
             }
 
+            // 特殊处理位置信息的恢复
+            val areaValue = savedValues["位置_area"] as? String
+            val containerValue = savedValues["位置_container"] as? String
+            val sublocationValue = savedValues["位置_sublocation"] as? String
+            
+            // 如果有位置信息，找到位置选择器视图并设置位置
+            if (!areaValue.isNullOrEmpty()) {
+                fieldViews.forEach { (fieldName, view) ->
+                    val properties = viewModel.getFieldProperties(fieldName)
+                    if (properties.displayStyle == AddItemViewModel.DisplayStyle.LOCATION_SELECTOR) {
+                        val locationSelector = findLocationSelectorInView(view)
+                        locationSelector?.setSelectedLocation(areaValue, containerValue, sublocationValue)
+                    }
+                }
+            }
+            
             // 然后恢复有保存值的字段
             savedValues.forEach { (fieldName, value) ->
                 // 跳过开封状态字段，因为已经特殊处理过了
@@ -365,6 +411,11 @@ class FieldValueManager(
                 }
                 
                 if (fieldName.endsWith("_unit")) {
+                    return@forEach
+                }
+                
+                // 跳过位置相关字段，因为已经特殊处理过了
+                if (fieldName == "位置_area" || fieldName == "位置_container" || fieldName == "位置_sublocation") {
                     return@forEach
                 }
 
@@ -508,6 +559,7 @@ class FieldValueManager(
                             }
                         }
                     }
+
                     else -> {
                         when {
                             properties.validationType == AddItemViewModel.ValidationType.DATE -> {

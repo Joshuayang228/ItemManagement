@@ -1,0 +1,795 @@
+package com.example.itemmanagement.ui.base
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Rect
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.itemmanagement.ItemManagementApplication
+import com.example.itemmanagement.R
+import com.example.itemmanagement.data.model.Item
+import com.example.itemmanagement.data.model.OpenStatus
+import com.example.itemmanagement.data.model.Photo
+import com.example.itemmanagement.data.model.Tag
+import com.example.itemmanagement.databinding.FragmentAddItemBinding
+import com.example.itemmanagement.ui.add.AddItemViewModel
+import com.example.itemmanagement.ui.add.AddItemViewModelFactory
+import com.example.itemmanagement.ui.add.DialogFactory
+import com.example.itemmanagement.ui.add.Field
+import com.example.itemmanagement.ui.add.FieldValueManager
+import com.example.itemmanagement.ui.add.FieldViewFactory
+import com.example.itemmanagement.ui.add.PhotoAdapter
+import com.example.itemmanagement.ui.add.TagManager
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.lifecycle.lifecycleScope
+
+/**
+ * 物品管理基础Fragment
+ * 这个抽象类包含AddItemFragment和EditItemFragment的共享逻辑
+ */
+abstract class BaseItemFragment : Fragment() {
+
+    protected var _binding: FragmentAddItemBinding? = null
+    protected val binding get() = _binding!!
+    protected lateinit var viewModel: AddItemViewModel
+    protected lateinit var photoAdapter: PhotoAdapter
+
+    // 工具类实例
+    protected lateinit var fieldViewFactory: FieldViewFactory
+    protected lateinit var dialogFactory: DialogFactory
+    protected lateinit var fieldValueManager: FieldValueManager
+
+    // 字段视图映射
+    protected val fieldViews = mutableMapOf<String, View>()
+    
+    // 临时照片相关变量
+    protected var currentPhotoUri: Uri? = null
+    protected var currentPhotoFile: File? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+
+        // 初始化ViewModel
+        val repository = (requireActivity().application as ItemManagementApplication).repository
+        val factory = AddItemViewModelFactory(repository, requireActivity())
+        viewModel = ViewModelProvider(requireActivity(), factory)[AddItemViewModel::class.java]
+
+        // 初始化工具类
+        dialogFactory = DialogFactory(requireContext())
+        fieldViewFactory = FieldViewFactory(requireContext(), viewModel, dialogFactory, resources)
+        fieldValueManager = FieldValueManager(requireContext(), viewModel, dialogFactory)
+        
+        // 处理子类特定的初始化
+        initializeMode(savedInstanceState)
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentAddItemBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        
+        // 设置标题和按钮文本
+        setupTitleAndButtons()
+
+        // 初始化照片适配器
+        photoAdapter = PhotoAdapter().apply {
+            setOnDeleteClickListener { position ->
+                photoAdapter.removePhoto(position)
+                viewModel.removePhotoUri(position)
+            }
+            setOnAddPhotoClickListener {
+                showPhotoSelectionDialog()
+            }
+            setOnPhotoClickListener { uri ->
+                showPhotoViewDialog(uri)
+            }
+        }
+
+        // 设置照片RecyclerView
+        setupPhotoRecyclerView()
+
+        // 观察ViewModel中的图片URI列表变化
+        viewModel.photoUris.observe(viewLifecycleOwner) { uris ->
+            photoAdapter.setPhotos(uris)
+        }
+
+        // 恢复已保存的图片
+        val savedPhotos = viewModel.getPhotoUris()
+        if (savedPhotos.isNotEmpty()) {
+            photoAdapter.setPhotos(savedPhotos)
+        }
+
+        // 设置字段
+        setupFields()
+        observeSelectedFields()
+        setupButtons()
+        hideBottomNavigation()
+        
+        // 观察保存结果
+        observeSaveResult()
+        
+        // 观察错误信息
+        viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
+            if (!message.isNullOrEmpty()) {
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            }
+        }
+
+        // 观察标签变化
+        observeTags()
+    }
+
+    protected fun setupPhotoRecyclerView() {
+        binding.photoRecyclerView.apply {
+            val spanCount = 3
+            val spacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
+
+            // 设置内边距
+            setPadding(spacing, spacing, spacing, spacing)
+            clipToPadding = false
+
+            layoutManager = GridLayoutManager(requireContext(), spanCount).apply {
+                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int = 1
+                }
+            }
+
+            // 添加间距装饰器
+            if (itemDecorationCount == 0) {
+                addItemDecoration(object : RecyclerView.ItemDecoration() {
+                    override fun getItemOffsets(
+                        outRect: Rect,
+                        view: View,
+                        parent: RecyclerView,
+                        state: RecyclerView.State
+                    ) {
+                        outRect.set(spacing, spacing, spacing, spacing)
+                    }
+                })
+            }
+
+            adapter = photoAdapter
+
+            // 设置item的高度等于宽度
+            post {
+                val itemWidth = (width - (paddingLeft + paddingRight) - (spacing * (spanCount - 1))) / spanCount
+                photoAdapter.setItemSize(itemWidth)
+            }
+        }
+    }
+
+    protected fun setupFields() {
+        // 观察字段变化，动态创建字段视图
+        viewModel.selectedFields.observe(viewLifecycleOwner) { fields ->
+            binding.fieldsContainer.removeAllViews()
+            fieldViews.clear()
+            
+            // 使用Field类中定义的order属性进行排序
+            val sortedFields = fields.sortedBy { it.order }
+            
+            sortedFields.forEach { field ->
+                val fieldView = fieldViewFactory.createFieldView(field)
+                binding.fieldsContainer.addView(fieldView)
+                fieldViews[field.name] = fieldView
+            }
+            
+            // 恢复已保存的字段值
+            fieldValueManager.restoreFieldValues(fieldViews)
+        }
+    }
+
+    protected fun observeSelectedFields() {
+        // 观察已选择的字段变化
+        viewModel.selectedFields.observe(viewLifecycleOwner) { fields ->
+            // 已在setupFields中处理
+        }
+    }
+
+    protected fun observeTags() {
+        // 观察标签变化
+        viewModel.selectedTags.observe(viewLifecycleOwner) { selectedTagsMap ->
+            selectedTagsMap.forEach { (fieldName, selectedTags) ->
+                fieldViews[fieldName]?.let { fieldView ->
+                    val chipGroup = fieldView.findViewById<ChipGroup>(R.id.selected_tags_container)
+                    if (chipGroup != null) {
+                        // 获取当前显示的标签
+                        val currentTags = mutableSetOf<String>()
+                        for (i in 0 until chipGroup.childCount) {
+                            val chip = chipGroup.getChildAt(i) as? Chip
+                            if (chip != null) {
+                                currentTags.add(chip.text.toString())
+                            }
+                        }
+
+                        // 移除已删除的标签
+                        val tagsToRemove = currentTags - selectedTags
+                        if (tagsToRemove.isNotEmpty()) {
+                            for (i in chipGroup.childCount - 1 downTo 0) {
+                                val chip = chipGroup.getChildAt(i) as? Chip
+                                if (chip != null && chip.text.toString() in tagsToRemove) {
+                                    chipGroup.removeView(chip)
+                                }
+                            }
+                        }
+
+                        // 添加新的标签
+                        val tagsToAdd = selectedTags - currentTags
+                        if (tagsToAdd.isNotEmpty()) {
+                            val tagManager = TagManager(requireContext(), dialogFactory, viewModel, fieldName)
+                            tagsToAdd.forEach { tag ->
+                                tagManager.addChipToGroup(chipGroup, tag)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    protected fun setupButtons() {
+        binding.editFieldsButton.setOnClickListener {
+            // 在显示编辑字段对话框前，先保存当前字段的值
+            if (fieldViews.isNotEmpty()) {
+                fieldValueManager.saveFieldValues(fieldViews)
+            }
+            showEditFieldsDialog()
+        }
+
+        binding.saveButton.setOnClickListener {
+            saveItem()
+        }
+    }
+
+    protected fun showEditFieldsDialog() {
+        com.example.itemmanagement.ui.add.EditFieldsFragment.newInstance().show(
+            childFragmentManager,
+            "EditFieldsFragment"
+        )
+    }
+
+    protected fun saveItem() {
+        // 保存字段值
+        if (fieldViews.isNotEmpty()) {
+            fieldValueManager.saveFieldValues(fieldViews)
+        }
+        
+        // 获取所有字段的值
+        val values = fieldValueManager.getFieldValues(fieldViews)
+
+        // 验证必填字段
+        val nameValue = values["名称"] as? String
+        if (nameValue.isNullOrBlank()) {
+            Toast.makeText(context, "请输入物品名称", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 将Uri列表转换为Photo列表
+        val photoList = photoAdapter.getPhotos().map { uri ->
+            Photo(
+                uri = uri.toString(),
+                isMain = false,
+                displayOrder = 0
+            )
+        }
+        
+        // 处理标签数据
+        val tagsList = mutableListOf<Tag>()
+        (values["标签"] as? Set<String>)?.forEach { tagName ->
+            tagsList.add(Tag(name = tagName))
+        }
+
+        // 处理季节数据
+        val seasonValue = (values["季节"] as? Set<String>)?.joinToString(", ")
+
+        // 处理单位
+        val quantityUnit = values["数量_unit"] as? String ?: "个"
+        val priceUnit = values["单价_unit"] as? String ?: "元"
+        val capacityUnit = values["容量_unit"] as? String
+        val totalPriceUnit = values["总价_unit"] as? String ?: "元"
+
+        // 处理保质期和保修期数据
+        val shelfLifeValue = when (val shelfLife = values["保质期"]) {
+            is Pair<*, *> -> {
+                val number = (shelfLife.first as? String)?.toIntOrNull()
+                val unit = shelfLife.second as? String
+                
+                when (unit) {
+                    "年" -> number?.times(365)
+                    "月" -> number?.times(30)
+                    "日" -> number
+                    else -> null
+                }
+            }
+            is String -> shelfLife.toIntOrNull()
+            else -> null
+        }
+        
+        val warrantyPeriodValue = when (val warranty = values["保修期"]) {
+            is Pair<*, *> -> {
+                val number = (warranty.first as? String)?.toIntOrNull()
+                val unit = warranty.second as? String
+                
+                when (unit) {
+                    "年" -> number?.times(365)
+                    "月" -> number?.times(30)
+                    "日" -> number
+                    else -> null
+                }
+            }
+            is String -> warranty.toIntOrNull()
+            else -> null
+        }
+
+        // 解析日期
+        fun parseDate(dateStr: String?): Date? {
+            if (dateStr.isNullOrBlank()) return null
+            return try {
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateStr)
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        // 创建Item对象
+        val item = Item(
+            id = getItemId(),
+            name = nameValue,
+            quantity = (values["数量"] as? String)?.toDoubleOrNull() ?: 0.0,
+            unit = quantityUnit,
+            location = com.example.itemmanagement.data.model.Location(
+                area = values["位置_area"] as? String ?: "未指定",
+                container = values["位置_container"] as? String,
+                sublocation = values["位置_sublocation"] as? String
+            ),
+            category = values["分类"] as? String ?: "未指定",
+            productionDate = parseDate(values["生产日期"] as? String),
+            expirationDate = parseDate(values["保质过期时间"] as? String),
+            openStatus = when(values["开封状态"]) {
+                "已开封" -> OpenStatus.OPENED
+                "未开封" -> OpenStatus.UNOPENED
+                else -> null
+            },
+            openDate = parseDate(values["开封时间"] as? String),
+            brand = values["品牌"] as? String,
+            specification = values["规格"] as? String,
+            stockWarningThreshold = (values["库存预警值"] as? String)?.toIntOrNull(),
+            price = (values["单价"] as? String)?.toDoubleOrNull(),
+            priceUnit = priceUnit,
+            purchaseChannel = values["购买渠道"] as? String,
+            storeName = values["商家名称"] as? String,
+            subCategory = values["子分类"] as? String,
+            customNote = values["备注"] as? String,
+            season = seasonValue,
+            capacity = (values["容量"] as? String)?.toDoubleOrNull(),
+            capacityUnit = capacityUnit,
+            rating = (values["评分"] as? String)?.toDoubleOrNull() ?: (values["评分"] as? Float)?.toDouble(),
+            totalPrice = (values["总价"] as? String)?.toDoubleOrNull(),
+            totalPriceUnit = totalPriceUnit,
+            purchaseDate = parseDate(values["购买日期"] as? String),
+            shelfLife = shelfLifeValue,
+            warrantyPeriod = warrantyPeriodValue,
+            warrantyEndDate = parseDate(values["保修到期时间"] as? String),
+            serialNumber = values["序列号"] as? String,
+            photos = photoList,
+            addDate = parseDate(values["添加日期"] as? String) ?: Date(),
+            status = com.example.itemmanagement.data.model.ItemStatus.IN_STOCK,
+            tags = tagsList
+        )
+
+        // 保存物品
+        viewModel.saveItem(item)
+    }
+
+    // 修改这些方法为open，允许子类重写
+    protected open fun showPhotoSelectionDialog() {
+        val items = arrayOf("拍照", "从相册选择")
+        dialogFactory.createDialog(
+            title = "选择照片来源",
+            items = items
+        ) { which ->
+            when (which) {
+                0 -> checkAndRequestCameraPermission()
+                1 -> checkAndRequestStoragePermission()
+            }
+        }
+    }
+
+    protected fun checkAndRequestCameraPermission() {
+        val cameraPermission = Manifest.permission.CAMERA
+
+        when {
+            // 检查相机权限
+            ContextCompat.checkSelfPermission(requireContext(), cameraPermission) == PackageManager.PERMISSION_GRANTED -> {
+                launchCamera()
+            }
+            // 如果应该显示权限说明
+            shouldShowRequestPermissionRationale(cameraPermission) -> {
+                dialogFactory.createConfirmDialog(
+                    title = "需要相机权限",
+                    message = "我们需要相机权限来为物品拍照。请在接下来的对话框中允许使用相机。",
+                    positiveButtonText = "确定",
+                    onPositiveClick = {
+                        requestCameraPermissions.launch(arrayOf(cameraPermission))
+                    }
+                )
+            }
+            else -> {
+                requestCameraPermissions.launch(arrayOf(cameraPermission))
+            }
+        }
+    }
+
+    protected fun checkAndRequestStoragePermission() {
+        val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+        when {
+            ContextCompat.checkSelfPermission(requireContext(), permission) == PackageManager.PERMISSION_GRANTED -> {
+                openGallery()
+            }
+            shouldShowRequestPermissionRationale(permission) -> {
+                dialogFactory.createConfirmDialog(
+                    title = "需要存储权限",
+                    message = "需要存储权限才能访问相册。",
+                    positiveButtonText = "确定",
+                    onPositiveClick = {
+                        requestStoragePermission.launch(arrayOf(permission))
+                    }
+                )
+            }
+            else -> {
+                requestStoragePermission.launch(arrayOf(permission))
+            }
+        }
+    }
+
+    // 权限请求
+    protected val requestCameraPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        val allGranted = permissions.entries.all { it.value }
+        if (allGranted) {
+            launchCamera()
+        } else {
+            showPermissionDeniedDialog("相机")
+        }
+    }
+
+    protected val requestStoragePermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        val allGranted = permissions.entries.all { it.value }
+        if (allGranted) {
+            openGallery()
+        } else {
+            showPermissionDeniedDialog("存储")
+        }
+    }
+
+    protected fun showPermissionDeniedDialog(permissionType: String) {
+        dialogFactory.createConfirmDialog(
+            title = "${permissionType}权限被拒绝",
+            message = "没有${permissionType}权限，无法完成操作。请在设置中手动授予权限。",
+            positiveButtonText = "确定"
+        )
+    }
+
+    // 创建临时图片文件
+    protected fun createTempImageFile(prefix: String): File {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "${prefix}_${timeStamp}"
+        val storageDir = requireContext().getExternalFilesDir("Photos")
+        return File.createTempFile(
+            imageFileName,  /* prefix */
+            ".jpg",        /* suffix */
+            storageDir     /* directory */
+        )
+    }
+
+    // 图片压缩工具方法
+    protected fun compressImage(uri: Uri): Uri? {
+        return try {
+            // 获取图片的原始尺寸
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, options)
+            }
+
+            // 计算采样率
+            val maxDimension = 1024 // 最大尺寸
+            var sampleSize = 1
+
+            if (options.outHeight > maxDimension || options.outWidth > maxDimension) {
+                val heightRatio = Math.round(options.outHeight.toFloat() / maxDimension.toFloat())
+                val widthRatio = Math.round(options.outWidth.toFloat() / maxDimension.toFloat())
+                sampleSize = if (heightRatio < widthRatio) widthRatio else heightRatio
+            }
+
+            // 使用采样率加载图片
+            val compressOptions = BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+            }
+
+            // 加载并压缩图片
+            val bitmap = requireContext().contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, compressOptions)
+            } ?: throw Exception("无法加载图片")
+
+            // 创建压缩后的文件
+            val compressedFile = createTempImageFile("COMPRESSED")
+            FileOutputStream(compressedFile).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+            }
+
+            // 释放Bitmap
+            bitmap.recycle()
+
+            // 生成新的URI
+            FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.provider",
+                compressedFile
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    protected open fun launchCamera() {
+        try {
+            currentPhotoFile = createTempImageFile("CAMERA")
+            currentPhotoUri = FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.provider",
+                currentPhotoFile!!
+            )
+            takePicture.launch(currentPhotoUri)
+        } catch (e: IOException) {
+            Toast.makeText(context, "创建临时文件失败", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    protected fun openGallery() {
+        pickImage.launch("image/*")
+    }
+
+    // 将ActivityResult注册为open属性
+    protected open val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (!isFragmentActive()) {
+            cleanupTempFiles()
+            return@registerForActivityResult
+        }
+
+        if (success) {
+            currentPhotoUri?.let { uri ->
+                lifecycleScope.launch {
+                    try {
+                        val isValid = withContext(Dispatchers.IO) {
+                            currentPhotoFile?.let { file ->
+                                if (file.exists() && file.length() > 0) {
+                                    // 压缩图片
+                                    val compressedUri = compressImage(uri)
+                                    if (compressedUri != null) {
+                                        // 验证压缩后的URI
+                                        val isUriValid = isUriValid(compressedUri)
+                                        if (!isUriValid) {
+                                            false
+                                        } else {
+                                            // 更新当前URI为压缩后的URI
+                                            currentPhotoUri = compressedUri
+                                            true
+                                        }
+                                    } else {
+                                        false
+                                    }
+                                } else {
+                                    false
+                                }
+                            } ?: false
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            if (!isFragmentActive()) {
+                                cleanupTempFiles()
+                                return@withContext
+                            }
+
+                            if (isValid) {
+                                try {
+                                    currentPhotoUri?.let { validUri ->
+                                        viewModel.addPhotoUri(validUri)
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "添加照片失败", Toast.LENGTH_SHORT).show()
+                                    cleanupTempFiles()
+                                }
+                            } else {
+                                Toast.makeText(context, "照片保存失败", Toast.LENGTH_SHORT).show()
+                                cleanupTempFiles()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
+                            if (isFragmentActive()) {
+                                Toast.makeText(context, "处理照片时出错", Toast.LENGTH_SHORT).show()
+                            }
+                            cleanupTempFiles()
+                        }
+                    }
+                }
+            }
+        } else {
+            cleanupTempFiles()
+        }
+    }
+
+    protected open val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (!isFragmentActive()) {
+            return@registerForActivityResult
+        }
+
+        uri?.let { sourceUri ->
+            lifecycleScope.launch {
+                try {
+                    val copiedUri = withContext(Dispatchers.IO) {
+                        // 先复制到私有存储
+                        val tempUri = copyUriToPrivateStorage(sourceUri)
+
+                        // 压缩复制后的图片
+                        tempUri?.let { compressImage(it) }
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        if (!isFragmentActive()) {
+                            return@withContext
+                        }
+
+                        if (copiedUri != null) {
+                            viewModel.addPhotoUri(copiedUri)
+                        } else {
+                            Toast.makeText(context, "处理图片失败", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        if (isFragmentActive()) {
+                            Toast.makeText(context, "处理图片时出错", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    protected fun copyUriToPrivateStorage(sourceUri: Uri): Uri? {
+        return try {
+            val tempFile = createTempImageFile("GALLERY")
+            requireContext().contentResolver.openInputStream(sourceUri)?.use { input ->
+                FileOutputStream(tempFile).use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            FileProvider.getUriForFile(
+                requireContext(),
+                "${requireContext().packageName}.provider",
+                tempFile
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    protected fun isUriValid(uri: Uri): Boolean {
+        return try {
+            requireContext().contentResolver.openInputStream(uri)?.use {
+                true
+            } ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    protected fun isFragmentActive(): Boolean {
+        return isAdded && !isDetached() && !isRemoving && context != null
+    }
+
+    protected fun cleanupTempFiles() {
+        currentPhotoFile?.let {
+            if (it.exists()) {
+                it.delete()
+            }
+        }
+        currentPhotoFile = null
+        currentPhotoUri = null
+    }
+
+    protected open fun showPhotoViewDialog(uri: Uri) {
+        val dialog = android.app.Dialog(requireContext())
+        dialog.setContentView(R.layout.dialog_photo_view)
+        
+        val photoView = dialog.findViewById<android.widget.ImageView>(R.id.photoView)
+        
+        com.bumptech.glide.Glide.with(requireContext())
+            .load(uri)
+            .error(R.drawable.ic_image_error)
+            .into(photoView)
+        
+        // 点击图片关闭对话框
+        photoView.setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        dialog.show()
+    }
+
+    protected fun hideBottomNavigation() {
+        // 隐藏底部导航栏
+        val bottomNav = activity?.findViewById<View>(R.id.nav_view)
+        bottomNav?.visibility = View.GONE
+    }
+
+    protected fun showBottomNavigation() {
+        // 显示底部导航栏
+        val bottomNav = activity?.findViewById<View>(R.id.nav_view)
+        bottomNav?.visibility = View.VISIBLE
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // 恢复底部导航栏
+        showBottomNavigation()
+        _binding = null
+    }
+
+    /**
+     * 当Fragment暂停时保存所有字段值
+     */
+    override fun onPause() {
+        super.onPause()
+        // 保存当前所有字段的值
+        if (fieldViews.isNotEmpty() && ::fieldValueManager.isInitialized) {
+            fieldValueManager.saveFieldValues(fieldViews)
+        }
+    }
+
+    // 抽象方法，由子类实现
+    protected abstract fun initializeMode(savedInstanceState: Bundle?)
+    protected abstract fun setupTitleAndButtons()
+    protected abstract fun observeSaveResult()
+    protected abstract fun getItemId(): Long
+} 

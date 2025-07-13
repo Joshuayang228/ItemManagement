@@ -18,14 +18,23 @@ import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * 模式类型枚举
+ * 用于区分当前ViewModel的工作模式
+ */
+enum class ItemMode {
+    ADD,    // 添加模式
+    EDIT    // 编辑模式
+}
+
 class AddItemViewModel(
     private val repository: ItemRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // 添加模式变量
-    private val _mode = MutableLiveData<String>("add")
-    val mode: LiveData<String> = _mode
+    // 添加模式变量，使用枚举类型
+    private val _mode = MutableLiveData<ItemMode>(ItemMode.ADD)
+    val mode: LiveData<ItemMode> = _mode
 
     private val _selectedFields = savedStateHandle.getLiveData<Set<Field>>("selected_fields", setOf())
     val selectedFields: LiveData<Set<Field>> = _selectedFields
@@ -140,7 +149,7 @@ class AddItemViewModel(
         _selectedFields.value = currentFields
         
         // 如果是添加模式且不在模式切换过程中，同步更新草稿保险箱中的已选字段
-        if (!isInEditMode && !isModeSwitchInProgress) {
+        if (_mode.value == ItemMode.ADD && !isInEditMode && !isModeSwitchInProgress) {
             addDraftSelectedFields = currentFields
             savedStateHandle["add_draft_selected_fields"] = addDraftSelectedFields
         }
@@ -171,7 +180,7 @@ class AddItemViewModel(
             savedStateHandle[fieldName] = value
             
             // 如果是开封状态字段，确保同步到草稿中
-            if (fieldName == "开封状态" && !isInEditMode && !isModeSwitchInProgress) {
+            if (fieldName == "开封状态" && _mode.value == ItemMode.ADD && !isInEditMode && !isModeSwitchInProgress) {
                 addDraftFieldValues[fieldName] = value
                 savedStateHandle["add_draft_field_values"] = addDraftFieldValues
             }
@@ -187,7 +196,7 @@ class AddItemViewModel(
             }
             
             // 如果是添加模式且不在模式切换过程中，同步更新草稿保险箱中的字段值
-            if (!isInEditMode && !isModeSwitchInProgress) {
+            if (_mode.value == ItemMode.ADD && !isInEditMode && !isModeSwitchInProgress) {
                 addDraftFieldValues[fieldName] = value
                 savedStateHandle["add_draft_field_values"] = addDraftFieldValues
                 
@@ -701,7 +710,7 @@ class AddItemViewModel(
         _photoUris.value = currentUris
         
         // 如果是添加模式且不在模式切换过程中，同步更新草稿保险箱中的照片
-        if (!isInEditMode && !isModeSwitchInProgress) {
+        if (_mode.value == ItemMode.ADD && !isInEditMode && !isModeSwitchInProgress) {
             addDraftPhotoUris = currentUris
             savedStateHandle["add_draft_photo_uris"] = addDraftPhotoUris
         }
@@ -715,7 +724,7 @@ class AddItemViewModel(
             _photoUris.value = currentUris
             
             // 如果是添加模式且不在模式切换过程中，同步更新草稿保险箱中的照片
-            if (!isInEditMode && !isModeSwitchInProgress) {
+            if (_mode.value == ItemMode.ADD && !isInEditMode && !isModeSwitchInProgress) {
                 addDraftPhotoUris = currentUris
                 savedStateHandle["add_draft_photo_uris"] = addDraftPhotoUris
             }
@@ -798,7 +807,7 @@ class AddItemViewModel(
     private fun saveCurrentStateToAddDraft() {
         // 只有在添加模式下才保存草稿
         // 注意：允许在模式切换过程中保存草稿，这是必要的
-        if (!isInEditMode) {
+        if (_mode.value == ItemMode.ADD) {
             // 保存字段值
             addDraftFieldValues = HashMap(fieldValues)
             savedStateHandle["add_draft_field_values"] = addDraftFieldValues
@@ -867,87 +876,161 @@ class AddItemViewModel(
     }
 
     /**
-     * 设置操作模式
-     * @param newMode 模式："add" 或 "edit"
-     * 警告：请勿直接调用此方法来切换模式，应该使用 prepareForAddMode() 或 loadItemById() 方法
+     * 设置ViewModel的工作模式
+     * @param mode 模式字符串，"add"或"edit"
      */
-    fun setMode(newMode: String) {
-        if (newMode == "add" || newMode == "edit") {
-            _mode.value = newMode
-        }
-    }
-
-    /**
-     * 重置为添加模式，但保留草稿数据
-     * 警告：此方法已弃用，请使用prepareForAddMode()代替
-     * 警告：请勿在Fragment的生命周期方法中调用此方法，否则可能导致数据污染
-     */
-    @Deprecated("此方法可能导致数据污染，请使用prepareForAddMode()代替")
-    fun resetToAddMode() {
-        // 警告：此方法已弃用，请使用 prepareForAddMode()
-        Log.w("AddItemViewModel", "resetToAddMode() 已弃用，请使用 prepareForAddMode()")
+    fun setMode(mode: String) {
+        val newMode = if (mode == "edit") ItemMode.EDIT else ItemMode.ADD
         
-        // 重置为添加模式
-        setMode("add")
-        // 清除编辑ID
-        editingItemId = null
-        // 重置编辑模式标记
-        isInEditMode = false
-        // 注意：我们不清除字段值，以保留草稿功能
-    }
-    
-    /**
-     * 智能准备添加模式
-     * 恢复添加模式的草稿数据
-     */
-    fun prepareForAddMode() {
-        Log.d("AddItemViewModel", "收到指令：准备添加模式")
+        // 如果模式没有变化，不做任何操作
+        if (_mode.value == newMode) {
+            return
+        }
         
         // 设置模式切换标志，防止数据污染
         isModeSwitchInProgress = true
         
         try {
-            // 确保清除开封状态数据，防止编辑模式数据污染添加模式
-            fieldValues.remove("开封状态")
-            savedStateHandle.remove<String>("开封状态")
-            
-            // 从草稿保险箱恢复状态
-            restoreStateFromAddDraft()
-            
-            // 如果草稿保险箱是空的（首次使用），设置默认的添加模式字段
-            if (addDraftSelectedFields.isEmpty()) {
-                Log.d("AddItemViewModel", "草稿为空，设置默认字段")
-                val defaultFields = setOf(
-                    Field("基础信息", "名称", true),
-                    Field("基础信息", "数量", true),
-                    Field("基础信息", "位置", true),
-                    Field("分类", "分类", true),
-                    Field("数字类", "评分", true),
-                    Field("日期类", "添加日期", true)
-                )
-                _selectedFields.value = defaultFields
-                savedStateHandle["selected_fields"] = defaultFields
+            // 如果从编辑模式切换到添加模式，清除编辑状态
+            if (_mode.value == ItemMode.EDIT && newMode == ItemMode.ADD) {
+                isInEditMode = false
+                editingItemId = null
                 
-                // 同步更新草稿保险箱
-                addDraftSelectedFields = defaultFields
-                savedStateHandle["add_draft_selected_fields"] = defaultFields
+                // 恢复添加模式的草稿
+                restoreAddModeDraft()
+            }
+            // 如果从添加模式切换到编辑模式，保存添加模式的草稿
+            else if (_mode.value == ItemMode.ADD && newMode == ItemMode.EDIT) {
+                isInEditMode = true
+                
+                // 保存添加模式的草稿
+                saveCurrentStateToAddDraft()
+                
+                // 清除当前工作区数据，准备加载编辑数据
+                clearAllData()
             }
             
-            // 设置为添加模式
-            setMode("add")
-            // 清除编辑ID
-            editingItemId = null
-            // 重置编辑模式标记
-            isInEditMode = false
+            // 更新模式
+            _mode.value = newMode
             
-            // 标记为已初始化
+            // 标记已初始化
             isInitialized = true
-            
-            Log.d("AddItemViewModel", "添加模式准备完成")
         } finally {
             // 无论如何都要重置模式切换标志
             isModeSwitchInProgress = false
         }
+    }
+
+    /**
+     * 准备添加模式
+     * 恢复草稿或初始化默认字段
+     */
+    fun prepareForAddMode() {
+        // 设置模式切换标志，防止数据污染
+        isModeSwitchInProgress = true
+        
+        try {
+            // 设置为添加模式
+            _mode.value = ItemMode.ADD
+            isInEditMode = false
+            editingItemId = null
+            
+            // 如果有草稿，恢复草稿
+            if (addDraftSelectedFields.isNotEmpty()) {
+                restoreAddModeDraft()
+            } else {
+                // 初始化默认字段
+                initializeDefaultFields()
+            }
+            
+            // 标记已初始化
+            isInitialized = true
+        } finally {
+            // 无论如何都要重置模式切换标志
+            isModeSwitchInProgress = false
+        }
+    }
+    
+    /**
+     * 初始化默认字段
+     */
+    private fun initializeDefaultFields() {
+        initializeDefaultFieldProperties()
+        
+        // 创建一个有序的默认字段列表，包含分类和顺序
+        val defaultFields = listOf(
+            Field("基础信息", "名称", true),
+            Field("基础信息", "数量", false),
+            Field("基础信息", "位置", false),
+            Field("分类", "分类", false),
+            Field("日期类", "生产日期", false),
+            Field("日期类", "保质过期时间", false),
+            Field("日期类", "添加日期", false)
+        )
+        
+        // 清除当前选中的字段
+        val currentFields = _selectedFields.value?.toMutableSet() ?: mutableSetOf()
+        currentFields.clear()
+        
+        // 添加默认字段
+        defaultFields.forEach { field ->
+            currentFields.add(field)
+        }
+        
+        // 更新选中的字段
+        savedStateHandle["selected_fields"] = currentFields
+        _selectedFields.value = currentFields
+    }
+
+
+
+    /**
+     * 恢复添加模式草稿
+     */
+    private fun restoreAddModeDraft() {
+        if (isModeSwitchInProgress) return
+        
+        // 设置模式切换标志，防止数据污染
+        isModeSwitchInProgress = true
+        
+        try {
+            // 清除当前数据
+            clearAllData()
+            
+            // 恢复字段值
+            fieldValues = addDraftFieldValues.toMutableMap()
+            savedStateHandle["field_values"] = fieldValues
+            
+            // 恢复已选字段
+            _selectedFields.value = addDraftSelectedFields
+            savedStateHandle["selected_fields"] = addDraftSelectedFields
+            
+            // 恢复照片URI
+            _photoUris.value = addDraftPhotoUris
+            
+            // 恢复已选标签
+            _selectedTags.value = addDraftSelectedTags
+        } finally {
+            // 无论如何都要重置模式切换标志
+            isModeSwitchInProgress = false
+        }
+    }
+
+    /**
+     * 保存物品成功后清理添加模式的草稿
+     * 这个方法应该在物品成功保存到数据库后调用
+     */
+    fun clearAddDraftAfterSave() {
+        addDraftFieldValues.clear()
+        addDraftSelectedFields = setOf()
+        addDraftPhotoUris = emptyList()
+        addDraftSelectedTags = mapOf()
+        
+        // 保存到SavedStateHandle
+        savedStateHandle["add_draft_field_values"] = addDraftFieldValues
+        savedStateHandle["add_draft_selected_fields"] = addDraftSelectedFields
+        savedStateHandle["add_draft_photo_uris"] = addDraftPhotoUris
+        savedStateHandle["add_draft_selected_tags"] = addDraftSelectedTags
     }
 
     /**
@@ -963,13 +1046,13 @@ class AddItemViewModel(
         
         try {
             // 如果当前是添加模式，先保存草稿
-            if (!isInEditMode) {
+            if (_mode.value == ItemMode.ADD) {
                 Log.d("AddItemViewModel", "从添加模式切换到编辑模式，保存草稿")
                 saveCurrentStateToAddDraft()
             }
             
             // 设置为编辑模式
-            setMode("edit")
+            _mode.value = ItemMode.EDIT
             editingItemId = item.id
             // 设置编辑模式标记
             isInEditMode = true
@@ -1149,9 +1232,8 @@ class AddItemViewModel(
     }
 
     /**
-     * 根据ID加载物品数据
+     * 根据ID加载物品
      * @param itemId 物品ID
-     * 注意：此方法应该只在用户明确点击某个物品进行编辑时调用，通常在导航到编辑界面之前
      */
     fun loadItemById(itemId: Long) {
         Log.d("AddItemViewModel", "收到指令：根据ID加载物品，ID=$itemId")
@@ -1162,7 +1244,7 @@ class AddItemViewModel(
                 isModeSwitchInProgress = true
                 
                 // 如果当前是添加模式，先保存草稿
-                if (!isInEditMode) {
+                if (_mode.value == ItemMode.ADD) {
                     Log.d("AddItemViewModel", "从添加模式切换到编辑模式，保存草稿")
                     saveCurrentStateToAddDraft()
                 }
@@ -1170,7 +1252,7 @@ class AddItemViewModel(
                 val item = repository.getItemById(itemId)
                 item?.let {
                     // 设置为编辑模式
-                    setMode("edit")
+                    _mode.value = ItemMode.EDIT
                     editingItemId = it.id
                     // 设置编辑模式标记
                     isInEditMode = true
@@ -1199,56 +1281,29 @@ class AddItemViewModel(
     }
 
     /**
-     * 保存物品成功后清理添加模式的草稿
-     * 这个方法应该在物品成功保存到数据库后调用
-     */
-    fun clearAddDraftAfterSave() {
-        // 只有在添加模式下才清理草稿
-        if (!isInEditMode) {
-            // 清空草稿保险箱
-            addDraftFieldValues.clear()
-            savedStateHandle.remove<MutableMap<String, Any?>>("add_draft_field_values")
-            
-            addDraftSelectedFields = emptySet()
-            savedStateHandle.remove<Set<Field>>("add_draft_selected_fields")
-            
-            addDraftPhotoUris = emptyList()
-            savedStateHandle.remove<List<Uri>>("add_draft_photo_uris")
-            
-            addDraftSelectedTags = emptyMap()
-            savedStateHandle.remove<Map<String, Set<String>>>("add_draft_selected_tags")
-            
-            Log.d("AddItemViewModel", "物品保存成功，草稿已清理")
-        }
-    }
-    
-    /**
      * 从编辑模式返回到添加模式
-     * 这个方法应该在用户从编辑界面返回到主界面，再进入添加界面时调用
-     * 它会恢复之前保存的草稿数据，而不是保留编辑模式的数据
      */
-    fun returnToAddMode() {
-        Log.d("AddItemViewModel", "收到指令：从编辑模式返回到添加模式")
-        
+    fun returnFromEditToAdd() {
         // 设置模式切换标志，防止数据污染
         isModeSwitchInProgress = true
         
         try {
-            // 清除当前的编辑状态
+            // 清除所有数据
+            clearAllData()
+            
+            // 清除编辑ID
             editingItemId = null
+            
+            // 重置编辑模式标记
             isInEditMode = false
             
-            // 确保清除开封状态数据，防止编辑模式数据污染添加模式
-            fieldValues.remove("开封状态")
-            savedStateHandle.remove<String>("开封状态")
-            
-            // 从草稿保险箱恢复状态
-            restoreStateFromAddDraft()
-            
             // 设置为添加模式
-            setMode("add")
+            _mode.value = ItemMode.ADD
             
             Log.d("AddItemViewModel", "已从编辑模式返回到添加模式，并恢复草稿")
+            
+            // 恢复添加模式的草稿
+            restoreAddModeDraft()
         } finally {
             // 无论如何都要重置模式切换标志
             isModeSwitchInProgress = false
