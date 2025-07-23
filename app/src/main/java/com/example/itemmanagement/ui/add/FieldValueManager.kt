@@ -125,6 +125,19 @@ class FieldValueManager(
                                     viewModel.clearFieldValue("位置_sublocation")
                                 }
                             } else {
+                                // 只有在确认用户清除了位置时才清除位置字段
+                                val existingArea = viewModel.getFieldValue("位置_area") as? String
+                                viewModel.clearFieldValue("位置_area")
+                                viewModel.clearFieldValue("位置_container")
+                                viewModel.clearFieldValue("位置_sublocation")
+                            }
+                        } else {
+                            // 如果找不到位置选择器但ViewModel中有位置值，保留这些值
+                            val existingArea = viewModel.getFieldValue("位置_area") as? String
+                            if (existingArea != null && existingArea.isNotEmpty()) {
+                                // 已经有位置信息，不做任何操作，保留现有值
+                            } else {
+                                // 没有现有位置信息，清除所有位置字段
                                 viewModel.clearFieldValue("位置_area")
                                 viewModel.clearFieldValue("位置_container")
                                 viewModel.clearFieldValue("位置_sublocation")
@@ -171,7 +184,20 @@ class FieldValueManager(
                                         (spinnerTextView != null && spinnerTextView.textColors.defaultColor == ContextCompat.getColor(context, R.color.hint_text_color))
 
                                 if (spinnerTextView != null && textContent.isNotEmpty() && !isHintText) {
-                                    viewModel.saveFieldValue(fieldName, textContent)
+                                    // 对于所有下拉选择类字段，如果值是"未指定"或为空，直接清除该字段
+                                    if (textContent == "未指定" || textContent.isBlank()) {
+                                        viewModel.clearFieldValue(fieldName)
+                                        // 重置选择器的显示
+                                        val hintText = when (fieldName) {
+                                            "分类" -> "选择分类"
+                                            "购买渠道" -> "选择渠道"
+                                            else -> "请选择"
+                                        }
+                                        spinnerTextView.text = hintText
+                                        spinnerTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                                    } else {
+                                        viewModel.saveFieldValue(fieldName, textContent)
+                                    }
                                 } else {
                                     viewModel.clearFieldValue(fieldName)
                                 }
@@ -229,6 +255,7 @@ class FieldValueManager(
                                         val editText = findEditTextInView(view)
                                         val radioGroup = findRadioGroupInView(view)
                                         val ratingBar = findRatingBarInView(view)
+                                        val spinnerTextView = findTextViewInView(view, SPINNER_TAG_PREFIX, fieldName)
 
                                         when {
                                             editText != null -> {
@@ -258,6 +285,14 @@ class FieldValueManager(
                                                     viewModel.clearFieldValue(fieldName)
                                                 }
                                             }
+                                            spinnerTextView != null -> {
+                                                val value = spinnerTextView.text.toString()
+                                                if (value.isNotEmpty() && !value.startsWith("DELETED:") && !value.startsWith("EDIT:") && value != "选择分类" && value != "请选择分类" && value != "选择子分类" && value != "请选择子分类" && value != "选择渠道" && value != "请选择") {
+                                                    viewModel.saveFieldValue(fieldName, value)
+                                                } else {
+                                                    viewModel.clearFieldValue(fieldName)
+                                                }
+                                            }
                                             else -> {
                                                 viewModel.clearFieldValue(fieldName)
                                             }
@@ -271,7 +306,7 @@ class FieldValueManager(
             }
             
         } catch (e: Exception) {
-            Log.e("FieldValueManager", "saveFieldValues 异常", e)
+
             e.printStackTrace()
         }
     }
@@ -323,7 +358,8 @@ class FieldValueManager(
                 val spinnerText = findTextViewInView(view, SPINNER_TAG_PREFIX, fieldName)
                 if (spinnerText != null) {
                     val text = when (fieldName) {
-                        "分类" -> "选择分类"
+                        "分类" -> "请选择分类"
+                        "子分类" -> "请选择子分类"
                         "渠道" -> "选择渠道"
                         else -> "请选择"
                     }
@@ -392,8 +428,8 @@ class FieldValueManager(
             val containerValue = savedValues["位置_container"] as? String
             val sublocationValue = savedValues["位置_sublocation"] as? String
             
-            // 如果有位置信息，找到位置选择器视图并设置位置
-            if (!areaValue.isNullOrEmpty()) {
+            // 只有当位置区域不是"未指定"或空时才恢复位置字段
+            if (!areaValue.isNullOrEmpty() && areaValue != "未指定") {
                 fieldViews.forEach { (fieldName, view) ->
                     val properties = viewModel.getFieldProperties(fieldName)
                     if (properties.displayStyle == AddItemViewModel.DisplayStyle.LOCATION_SELECTOR) {
@@ -420,6 +456,11 @@ class FieldValueManager(
                 }
 
                 if (value == null) {
+                    return@forEach
+                }
+
+                // 特殊处理所有字段，如果值是"未指定"或为空，则不恢复
+                if (value is String && (value == "未指定" || value.isBlank())) {
                     return@forEach
                 }
 
@@ -659,7 +700,7 @@ class FieldValueManager(
             }
 
         } catch (e: Exception) {
-            Log.e("FieldValueManager", "restoreFieldValues 异常", e)
+
             e.printStackTrace()
         }
     }
@@ -780,8 +821,13 @@ class FieldValueManager(
      * 获取所有字段的值用于保存物品
      */
     fun getFieldValues(fieldViews: Map<String, View>): Map<String, Any?> {
-        saveFieldValues(fieldViews)
+        // 不再重复调用saveFieldValues，因为在BaseItemFragment.saveItem()中已经调用过了
+        // 重复调用可能会导致位置信息丢失
+        // saveFieldValues(fieldViews)
+        
+        // 确保位置信息被正确保存
         val values = viewModel.getAllFieldValues()
+        
         return values
     }
 
@@ -945,23 +991,36 @@ class FieldValueManager(
      * 在视图层次结构中查找LocationSelectorView
      */
     private fun findLocationSelectorInView(view: View): LocationSelectorView? {
-        return when (view) {
-            is LocationSelectorView -> {
-                view
-            }
-            is ViewGroup -> {
-                for (i in 0 until view.childCount) {
-                    val child = view.getChildAt(i)
-                    val result = findLocationSelectorInView(child)
-                    if (result != null) {
-                        return result
-                    }
+        try {
+            return when (view) {
+                is LocationSelectorView -> {
+                    view
                 }
-                null
+                is ViewGroup -> {
+                    // 先检查直接子视图
+                    for (i in 0 until view.childCount) {
+                        val child = view.getChildAt(i)
+                        if (child is LocationSelectorView) {
+                            return child
+                        }
+                    }
+                    
+                    // 然后递归检查
+                    for (i in 0 until view.childCount) {
+                        val child = view.getChildAt(i)
+                        val result = findLocationSelectorInView(child)
+                        if (result != null) {
+                            return result
+                        }
+                    }
+                    null
+                }
+                else -> {
+                    null
+                }
             }
-            else -> {
-                null
-            }
+        } catch (e: Exception) {
+            return null
         }
     }
 

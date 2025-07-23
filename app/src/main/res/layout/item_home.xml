@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
@@ -12,12 +13,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 物品图片 -->
+        <!-- 物品图片 - 宽度固定，高度根据图片宽高比自适应 -->
         <ImageView
             android:id="@+id/itemImage"
             android:layout_width="match_parent"
-            android:layout_height="160dp"
-            android:scaleType="centerCrop" />
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:contentDescription="@string/item_image" />
 
         <!-- 物品信息 -->
         <LinearLayout
@@ -34,25 +37,48 @@
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:textColor="@color/black"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                tools:text="物品名称" />
 
-            <!-- 添加日期 -->
-            <TextView
-                android:id="@+id/itemDate"
+            <!-- 单价和添加日期（在同一行） -->
+            <LinearLayout
+                android:id="@+id/priceAndDateLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <!-- 单价 -->
+                <TextView
+                    android:id="@+id/itemPrice"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textColor="@color/purple_500"
+                    android:textSize="14sp"
+                    tools:text="¥99.9" />
+
+                <!-- 添加日期（右对齐） -->
+                <TextView
+                    android:id="@+id/itemDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    tools:text="2023-05-20" />
+            </LinearLayout>
+
+            <!-- 备注 -->
+            <TextView
+                android:id="@+id/itemNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:maxLines="2"
                 android:textColor="@android:color/darker_gray"
-                android:textSize="12sp" />
-
-            <!-- 物品数量 -->
-            <TextView
-                android:id="@+id/itemCount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:textColor="@color/purple_500"
-                android:textSize="14sp" />
+                android:textSize="12sp"
+                tools:text="这是一段备注信息" />
 
         </LinearLayout>
     </LinearLayout>

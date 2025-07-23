@@ -1,11 +1,10 @@
 package com.example.itemmanagement.ui.detail
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -43,6 +42,42 @@ class ItemDetailFragment : Fragment() {
     private lateinit var photoAdapter: PhotoAdapter
     private lateinit var tagAdapter: TagAdapter
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true) // 启用选项菜单
+    }
+    
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.menu_item_detail, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_edit -> {
+                navigateToEditItem()
+                true
+            }
+            R.id.action_delete -> {
+                showDeleteConfirmationDialog()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
+    private fun showDeleteConfirmationDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("删除物品")
+            .setMessage("确定要删除此物品吗？")
+            .setPositiveButton("删除") { _, _ ->
+                // 调用ViewModel中的删除方法
+                viewModel.deleteItem(args.itemId)
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -60,6 +95,16 @@ class ItemDetailFragment : Fragment() {
         viewModel.loadItem(args.itemId)
         observeItem()
         observeError()
+        observeNavigation()
+    }
+    
+    private fun observeNavigation() {
+        viewModel.navigateBack.observe(viewLifecycleOwner) { shouldNavigate ->
+            if (shouldNavigate) {
+                findNavController().navigateUp()
+                viewModel.onNavigationComplete()
+            }
+        }
     }
 
     private fun setupViewPager() {
@@ -78,11 +123,6 @@ class ItemDetailFragment : Fragment() {
     }
     
     private fun setupButtons() {
-        // 设置编辑按钮点击事件
-        binding.editButton.setOnClickListener {
-            navigateToEditItem()
-        }
-        
         // 设置底部操作按钮
         binding.modifyQuantityButton.setOnClickListener {
             // 实现修改数量的逻辑

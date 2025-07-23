@@ -129,7 +129,6 @@ class AddItemViewModel(
         
         // 注意：初始化时不自动恢复草稿，必须通过明确的指令触发
         // 这样可以避免在Fragment重建时意外恢复草稿
-        Log.d("AddItemViewModel", "ViewModel已创建，等待指令")
     }
 
     fun updateFieldSelection(field: Field, isSelected: Boolean) {
@@ -236,6 +235,23 @@ class AddItemViewModel(
             savedStateHandle.get<Any>(fieldName)
         }
     }
+    
+    // 获取当前正在编辑的物品的位置信息
+    fun getEditingItemLocation(): com.example.itemmanagement.data.model.Location? {
+        val area = fieldValues["位置_area"] as? String
+        val container = fieldValues["位置_container"] as? String
+        val sublocation = fieldValues["位置_sublocation"] as? String
+        
+        return if (!area.isNullOrEmpty()) {
+            com.example.itemmanagement.data.model.Location(
+                area = area,
+                container = container,
+                sublocation = sublocation
+            )
+        } else {
+            null
+        }
+    }
 
     // 获取所有字段值
     fun getAllFieldValues(): Map<String, Any?> {
@@ -290,6 +306,12 @@ class AddItemViewModel(
         // 分类字段
         setFieldProperties("分类", FieldProperties(
             options = listOf("食品", "药品", "日用品", "电子产品", "衣物", "文具", "其他"),
+            isCustomizable = true
+        ))
+
+        // 子分类字段 - 修改为下拉框形式
+        setFieldProperties("子分类", FieldProperties(
+            options = emptyList(), // 初始为空，将根据选择的分类动态加载
             isCustomizable = true
         ))
 
@@ -418,13 +440,6 @@ class AddItemViewModel(
             hint = "请输入规格"
         ))
         
-        // 子分类字段
-        setFieldProperties("子分类", FieldProperties(
-            validationType = ValidationType.TEXT,
-            hint = "请输入子分类",
-            isCustomizable = true
-        ))
-        
         // 单位字段（虽然通常作为数量的一部分，但有时也单独使用）
         setFieldProperties("单位", FieldProperties(
             options = listOf("个", "件", "包", "盒", "瓶", "袋", "箱", "克", "千克", "升", "毫升"),
@@ -442,6 +457,106 @@ class AddItemViewModel(
             validationType = ValidationType.DATE,
             defaultDate = false
         ))
+    }
+
+    // 子分类与分类的映射关系
+    private val subCategoryMap = mutableMapOf<String, List<String>>(
+        "食品" to listOf("零食", "饮料", "水果", "蔬菜", "肉类", "调味品", "干货", "速食", "乳制品"),
+        "药品" to listOf("感冒药", "消炎药", "止痛药", "维生素", "胃药", "外用药", "眼药水", "创可贴"),
+        "日用品" to listOf("洗护用品", "清洁用品", "厨房用品", "卫生用品", "收纳用品", "纸巾", "洗衣液"),
+        "电子产品" to listOf("手机", "电脑", "相机", "耳机", "充电器", "数据线", "移动电源", "智能手表"),
+        "衣物" to listOf("上衣", "裤子", "鞋子", "袜子", "内衣", "外套", "帽子", "围巾", "手套"),
+        "文具" to listOf("笔", "本子", "纸张", "胶带", "剪刀", "尺子", "订书机", "文件夹"),
+        "其他" to listOf("礼品", "玩具", "工具", "装饰品", "宠物用品", "植物", "书籍", "运动用品")
+    )
+
+    // 获取指定分类的子分类列表
+    fun getSubCategoriesForCategory(category: String): List<String> {
+        val defaultSubCategories = subCategoryMap[category] ?: emptyList()
+        val customOptions = getCustomOptions("子分类")
+        
+        // 找出被标记为删除的选项
+        val deletedOptions = customOptions.filter { it.startsWith("DELETED:") }
+            .map { it.removePrefix("DELETED:") }
+        
+        // 找出编辑映射关系
+        val editMappings = customOptions.filter { it.startsWith("EDIT:") }
+            .associate { 
+                val parts = it.removePrefix("EDIT:").split("->")
+                if (parts.size == 2) parts[0] to parts[1] else null to null
+            }
+            .filterKeys { it != null }
+            .mapKeys { it.key!! }
+            .mapValues { it.value!! }
+        
+        // 应用编辑映射和删除过滤
+        val processedDefaults = defaultSubCategories
+            .filter { !deletedOptions.contains(it) } // 过滤删除的选项
+            .map { editMappings[it] ?: it } // 应用编辑映射
+        
+        // 获取真正的自定义选项（不包括删除标记和编辑映射）
+        val realCustomOptions = customOptions.filter { 
+            !it.startsWith("DELETED:") && !it.startsWith("EDIT:") 
+        }
+        
+        return (processedDefaults + realCustomOptions).distinct()
+    }
+
+    // 获取原始的（未经处理的）子分类列表
+    fun getOriginalSubCategoriesForCategory(category: String): List<String> {
+        return subCategoryMap[category] ?: emptyList()
+    }
+
+    // 检查分类是否已选择
+    fun isCategorySelected(): Boolean {
+        val categoryValue = getFieldValue("分类")
+        return categoryValue != null && categoryValue.toString().isNotBlank() && 
+               categoryValue.toString() != "选择分类" && categoryValue.toString() != "请选择分类"
+    }
+
+    // 更新子分类选项
+    fun updateSubCategoryOptions(category: String) {
+        val defaultSubCategories = getSubCategoriesForCategory(category)
+        val properties = getFieldProperties("子分类")
+        
+        // 保留现有的自定义选项，只更新默认选项
+        val existingCustomOptions = getCustomOptions("子分类")
+        
+        // 设置新的默认选项，但保留自定义选项
+        setFieldProperties("子分类", properties.copy(options = defaultSubCategories))
+    }
+
+    // 获取指定区域的容器列表（包含自定义选项）
+    suspend fun getContainersForArea(area: String): List<String> {
+        return try {
+            val defaultContainers = repository.getContainersByArea(area)
+            val customContainers = getCustomOptions("位置_容器_${area}")
+            (defaultContainers + customContainers).distinct()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // 获取指定区域和容器的子位置列表（包含自定义选项）
+    suspend fun getSublocationsForContainer(area: String, container: String): List<String> {
+        return try {
+            val defaultSublocations = repository.getSublocations(area, container)
+            val customSublocations = getCustomOptions("位置_子位置_${area}_${container}")
+            (defaultSublocations + customSublocations).distinct()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // 获取所有区域列表（包含自定义选项）
+    suspend fun getAllAreas(): List<String> {
+        return try {
+            val defaultAreas = repository.getAllLocationAreas()
+            val customAreas = getCustomOptions("位置_区域")
+            (defaultAreas + customAreas).distinct()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
 
     // 获取字段的自定义选项
@@ -584,36 +699,42 @@ class AddItemViewModel(
         item.name.let { saveFieldValue("名称", it) }
         item.quantity.let { saveFieldValue("数量", it.toString()) }
         item.unit?.let { saveFieldValue("单位", it) }
-        item.category.let { saveFieldValue("分类", it) }
-        item.location?.let { location ->
-            saveFieldValue("位置_area", location.area)
-            saveFieldValue("位置_container", location.container)
-            saveFieldValue("位置_sublocation", location.sublocation)
+        
+        // 只有当分类不是"未指定"时才保存分类字段
+        if (!item.category.isNullOrBlank() && item.category != "未指定") {
+            saveFieldValue("分类", item.category)
         }
+        
+        // 只有当位置区域不是"未指定"或空时才保存位置字段
+        item.location?.let { location ->
+            if (!location.area.isNullOrBlank() && location.area != "未指定") {
+                saveFieldValue("位置_area", location.area)
+                location.container?.let { if (it.isNotBlank()) saveFieldValue("位置_container", it) }
+                location.sublocation?.let { if (it.isNotBlank()) saveFieldValue("位置_sublocation", it) }
+            }
+        }
+        
         item.productionDate?.let { saveFieldValue("生产日期", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
         item.expirationDate?.let { saveFieldValue("保质过期时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
         item.openStatus?.let { saveFieldValue("开封状态", if (it == OpenStatus.OPENED) "已开封" else "未开封") }
         item.openDate?.let { saveFieldValue("开封时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
-        item.brand?.let { saveFieldValue("品牌", it) }
-        item.specification?.let { saveFieldValue("规格", it) }
+        
+        // 其他字段 - 只保存非空且非"未指定"的值
+        item.brand?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("品牌", it) }
+        item.specification?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("规格", it) }
         item.price?.let { saveFieldValue("单价", it.toString()) }
-        item.purchaseChannel?.let { saveFieldValue("购买渠道", it) }
-        item.storeName?.let { saveFieldValue("商家名称", it) }
-        item.subCategory?.let { saveFieldValue("子分类", it) }
-        item.customNote?.let { saveFieldValue("备注", it) }
-        item.season?.let { saveFieldValue("季节", it) }
+        item.purchaseChannel?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("购买渠道", it) }
+        item.storeName?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("商家名称", it) }
+        item.subCategory?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("子分类", it) }
+        item.customNote?.let { if (it.isNotBlank()) saveFieldValue("备注", it) }
+        
+        // 季节字段 - 只保存非空且非"未指定"的值
+        item.season?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("季节", it) }
+        
         item.capacity?.let { saveFieldValue("容量", it.toString()) }
         item.rating?.let { saveFieldValue("评分", it.toString()) }
         item.totalPrice?.let { saveFieldValue("总价", it.toString()) }
         item.purchaseDate?.let { saveFieldValue("购买日期", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
-        item.shelfLife?.let { saveFieldValue("保质期", it.toString()) }
-        item.warrantyPeriod?.let { saveFieldValue("保修期", it.toString()) }
-        item.warrantyEndDate?.let { saveFieldValue("保修到期时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
-        item.serialNumber?.let { saveFieldValue("序列号", it) }
-        
-        // 将Photo对象转换为Uri列表
-        val uris = item.photos.map { Uri.parse(it.uri) }
-        _photoUris.value = uris
     }
 
     /**
@@ -635,7 +756,34 @@ class AddItemViewModel(
                 val itemEntity = item.toItemEntity()
                 
                 // 准备位置实体（如果有）
-                val locationEntity = item.location?.let { it.toLocationEntity() }
+                val locationEntity = item.location?.let { 
+                    // 如果区域为"未指定"且是编辑模式，检查是否应该保留现有位置
+                    if (it.area == "未指定" && editingItemId != null) {
+                        // 获取现有位置信息
+                        val existingArea = fieldValues["位置_area"] as? String
+                        val existingContainer = fieldValues["位置_container"] as? String
+                        val existingSublocation = fieldValues["位置_sublocation"] as? String
+                        
+                        if (!existingArea.isNullOrEmpty() && existingArea != "未指定") {
+                            LocationEntity(
+                                id = 0, // 数据库会处理ID
+                                area = existingArea,
+                                container = existingContainer,
+                                sublocation = existingSublocation
+                            )
+                        } else {
+                            it.toLocationEntity()
+                        }
+                    } else if (it.area != "未指定") {
+                        // 如果有有效的位置信息，转换为实体
+                        it.toLocationEntity()
+                    } else {
+                        // 如果位置是"未指定"，返回null
+                        null
+                    }
+                }
+                
+                // 记录位置信息
                 
                 // 准备照片实体
                 val photoEntities = mutableListOf<PhotoEntity>()
@@ -749,6 +897,9 @@ class AddItemViewModel(
         savedStateHandle.remove<String>("位置_area")
         savedStateHandle.remove<String>("位置_container")
         savedStateHandle.remove<String>("位置_sublocation")
+        
+        // 清除开封状态数据
+        savedStateHandle.remove<String>("开封状态")
 
         // 清除所有照片
         _photoUris.value = emptyList()
@@ -825,7 +976,6 @@ class AddItemViewModel(
             savedStateHandle["add_draft_selected_tags"] = addDraftSelectedTags
             
             // 记录日志，便于调试
-            Log.d("AddItemViewModel", "草稿已保存: ${fieldValues.size} 个字段值, ${_selectedFields.value?.size ?: 0} 个已选字段")
         }
     }
     
@@ -868,7 +1018,6 @@ class AddItemViewModel(
             }
             
             // 记录日志，便于调试
-            Log.d("AddItemViewModel", "草稿已恢复: ${fieldValues.size} 个字段值, ${_selectedFields.value?.size ?: 0} 个已选字段")
         } finally {
             // 无论如何都要重置模式切换标志
             isModeSwitchInProgress = false
@@ -1039,7 +1188,6 @@ class AddItemViewModel(
      * 注意：此方法应该只在用户明确点击某个物品进行编辑时调用，通常在导航到编辑界面之前
      */
     fun loadItemData(item: Item) {
-        Log.d("AddItemViewModel", "收到指令：加载物品数据，ID=${item.id}")
         
         // 设置模式切换标志，防止数据污染
         isModeSwitchInProgress = true
@@ -1047,7 +1195,6 @@ class AddItemViewModel(
         try {
             // 如果当前是添加模式，先保存草稿
             if (_mode.value == ItemMode.ADD) {
-                Log.d("AddItemViewModel", "从添加模式切换到编辑模式，保存草稿")
                 saveCurrentStateToAddDraft()
             }
             
@@ -1077,11 +1224,18 @@ class AddItemViewModel(
             item.unit?.let { saveFieldValue("单位", it) }
             item.unit?.let { saveFieldValue("数量_unit", it) }
             
-            item.category.let { saveFieldValue("分类", it) }
+            // 只有当分类不是"未指定"时才保存分类字段
+            if (!item.category.isNullOrBlank() && item.category != "未指定") {
+                saveFieldValue("分类", item.category)
+            }
+            
+            // 只有当位置区域不是"未指定"或空时才保存位置字段
             item.location?.let { location ->
-                saveFieldValue("位置_area", location.area)
-                saveFieldValue("位置_container", location.container)
-                saveFieldValue("位置_sublocation", location.sublocation)
+                if (!location.area.isNullOrBlank() && location.area != "未指定") {
+                    saveFieldValue("位置_area", location.area)
+                    location.container?.let { if (it.isNotBlank()) saveFieldValue("位置_container", it) }
+                    location.sublocation?.let { if (it.isNotBlank()) saveFieldValue("位置_sublocation", it) }
+                }
             }
             
             // 日期类字段
@@ -1098,8 +1252,9 @@ class AddItemViewModel(
             }
             item.openDate?.let { saveFieldValue("开封时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
             
-            item.brand?.let { saveFieldValue("品牌", it) }
-            item.specification?.let { saveFieldValue("规格", it) }
+            // 其他字段 - 只保存非空且非"未指定"的值
+            item.brand?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("品牌", it) }
+            item.specification?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("规格", it) }
             
             // 处理单价字段 - 如果是整数，去掉小数点后的.0
             item.price?.let { 
@@ -1112,15 +1267,18 @@ class AddItemViewModel(
                 item.priceUnit?.let { unit -> saveFieldValue("单价_unit", unit) }
             }
             
-            item.purchaseChannel?.let { saveFieldValue("购买渠道", it) }
-            item.storeName?.let { saveFieldValue("商家名称", it) }
-            item.subCategory?.let { saveFieldValue("子分类", it) }
-            item.customNote?.let { saveFieldValue("备注", it) }
+            // 其他字段 - 只保存非空且非"未指定"的值
+            item.purchaseChannel?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("购买渠道", it) }
+            item.storeName?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("商家名称", it) }
+            item.subCategory?.let { if (it.isNotBlank() && it != "未指定") saveFieldValue("子分类", it) }
+            item.customNote?.let { if (it.isNotBlank()) saveFieldValue("备注", it) }
             
             // 处理季节字段 - 将逗号分隔的字符串转换为Set
             item.season?.let { 
-                val seasonSet = it.split(",").map { s -> s.trim() }.toSet()
-                saveFieldValue("季节", seasonSet)
+                if (it.isNotBlank() && it != "未指定") {
+                    val seasonSet = it.split(",").map { s -> s.trim() }.toSet()
+                    saveFieldValue("季节", seasonSet)
+                }
             }
             
             // 处理容量字段 - 如果是整数，去掉小数点后的.0
@@ -1173,7 +1331,7 @@ class AddItemViewModel(
             }
             
             item.warrantyEndDate?.let { saveFieldValue("保修到期时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
-            item.serialNumber?.let { saveFieldValue("序列号", it) }
+            item.serialNumber?.let { if (it.isNotBlank()) saveFieldValue("序列号", it) }
             
             // 处理标签数据
             if (item.tags.isNotEmpty()) {
@@ -1191,20 +1349,20 @@ class AddItemViewModel(
             // 添加必要的字段
             fieldsToAdd.add(Field("基础信息", "名称", true))
             if (item.quantity > 0) fieldsToAdd.add(Field("基础信息", "数量", true))
-            if (!item.category.isNullOrBlank()) fieldsToAdd.add(Field("分类", "分类", true))
-            if (item.location != null) fieldsToAdd.add(Field("基础信息", "位置", true))
+            if (!item.category.isNullOrBlank() && item.category != "未指定") fieldsToAdd.add(Field("分类", "分类", true))
+            if (item.location != null && !item.location.area.isNullOrBlank() && item.location.area != "未指定") fieldsToAdd.add(Field("基础信息", "位置", true))
             if (item.productionDate != null) fieldsToAdd.add(Field("日期类", "生产日期", true))
             if (item.expirationDate != null) fieldsToAdd.add(Field("日期类", "保质过期时间", true))
             if (item.openStatus != null) fieldsToAdd.add(Field("基础信息", "开封状态", true))
             if (item.openDate != null) fieldsToAdd.add(Field("日期类", "开封时间", true))
-            if (!item.brand.isNullOrBlank()) fieldsToAdd.add(Field("商业类", "品牌", true))
-            if (!item.specification.isNullOrBlank()) fieldsToAdd.add(Field("基础信息", "规格", true))
+            if (!item.brand.isNullOrBlank() && item.brand != "未指定") fieldsToAdd.add(Field("商业类", "品牌", true))
+            if (!item.specification.isNullOrBlank() && item.specification != "未指定") fieldsToAdd.add(Field("基础信息", "规格", true))
             if (item.price != null) fieldsToAdd.add(Field("数字类", "单价", true))
-            if (!item.purchaseChannel.isNullOrBlank()) fieldsToAdd.add(Field("商业类", "购买渠道", true))
-            if (!item.storeName.isNullOrBlank()) fieldsToAdd.add(Field("商业类", "商家名称", true))
-            if (!item.subCategory.isNullOrBlank()) fieldsToAdd.add(Field("分类", "子分类", true))
+            if (!item.purchaseChannel.isNullOrBlank() && item.purchaseChannel != "未指定") fieldsToAdd.add(Field("商业类", "购买渠道", true))
+            if (!item.storeName.isNullOrBlank() && item.storeName != "未指定") fieldsToAdd.add(Field("商业类", "商家名称", true))
+            if (!item.subCategory.isNullOrBlank() && item.subCategory != "未指定") fieldsToAdd.add(Field("分类", "子分类", true))
             if (!item.customNote.isNullOrBlank()) fieldsToAdd.add(Field("其他", "备注", true))
-            if (!item.season.isNullOrBlank()) fieldsToAdd.add(Field("分类", "季节", true))
+            if (!item.season.isNullOrBlank() && item.season != "未指定") fieldsToAdd.add(Field("分类", "季节", true))
             if (item.capacity != null) fieldsToAdd.add(Field("数字类", "容量", true))
             if (item.rating != null) fieldsToAdd.add(Field("数字类", "评分", true))
             if (item.totalPrice != null) fieldsToAdd.add(Field("数字类", "总价", true))
@@ -1224,7 +1382,6 @@ class AddItemViewModel(
             // 标记为已初始化
             isInitialized = true
             
-            Log.d("AddItemViewModel", "编辑模式准备完成，物品ID=${item.id}")
         } finally {
             // 无论如何都要重置模式切换标志
             isModeSwitchInProgress = false
@@ -1236,7 +1393,6 @@ class AddItemViewModel(
      * @param itemId 物品ID
      */
     fun loadItemById(itemId: Long) {
-        Log.d("AddItemViewModel", "收到指令：根据ID加载物品，ID=$itemId")
         
         viewModelScope.launch {
             try {
@@ -1245,7 +1401,6 @@ class AddItemViewModel(
                 
                 // 如果当前是添加模式，先保存草稿
                 if (_mode.value == ItemMode.ADD) {
-                    Log.d("AddItemViewModel", "从添加模式切换到编辑模式，保存草稿")
                     saveCurrentStateToAddDraft()
                 }
                 
@@ -1300,10 +1455,13 @@ class AddItemViewModel(
             // 设置为添加模式
             _mode.value = ItemMode.ADD
             
-            Log.d("AddItemViewModel", "已从编辑模式返回到添加模式，并恢复草稿")
-            
             // 恢复添加模式的草稿
-            restoreAddModeDraft()
+            if (addDraftSelectedFields.isNotEmpty()) {
+                restoreAddModeDraft()
+            } else {
+                // 如果没有草稿，初始化默认字段
+                initializeDefaultFields()
+            }
         } finally {
             // 无论如何都要重置模式切换标志
             isModeSwitchInProgress = false
@@ -1330,5 +1488,23 @@ class AddItemViewModel(
      */
     fun onSaveResultConsumed() {
         _saveResult.value = null
+    }
+
+    // 获取当前正在编辑的物品
+    fun getEditingItem(): Item? {
+        return try {
+            editingItemId?.let { id ->
+                // 尝试从内存中获取已加载的物品
+                // _loadedItem.value // This line was not in the original file, so it's not added.
+                // Assuming _loadedItem.value is a LiveData<Item> that holds the item loaded by loadItemData
+                // For now, we'll return null as _loadedItem.value is not defined in the original file.
+                // If _loadedItem.value is meant to be a LiveData<Item>, it needs to be declared.
+                // For now, we'll return null as per the original file's state.
+                null // Placeholder: _loadedItem.value is not defined
+            }
+        } catch (e: Exception) {
+            Log.e("AddItemViewModel", "获取编辑中物品失败", e)
+            null
+        }
     }
 }

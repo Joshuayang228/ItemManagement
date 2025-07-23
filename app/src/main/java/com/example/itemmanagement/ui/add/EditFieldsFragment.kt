@@ -1,7 +1,7 @@
 package com.example.itemmanagement.ui.add
 
 import android.os.Bundle
-import android.util.Log
+
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,7 +24,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d("EditFieldsFragment", "onCreate: Fragment创建")
+
         
         // 初始化ViewModel
         val repository = (requireActivity().application as ItemManagementApplication).repository
@@ -38,19 +38,18 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentEditFieldsBinding.inflate(inflater, container, false)
-        Log.d("EditFieldsFragment", "onCreateView: 创建视图")
+
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Log.d("EditFieldsFragment", "onViewCreated: 视图创建完成")
+
         setupViews()
     }
 
     private fun setupViews() {
         binding.closeButton.setOnClickListener {
-            Log.d("EditFieldsFragment", "关闭按钮点击，关闭对话框")
             dismiss()
         }
 
@@ -61,13 +60,11 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
     private fun setupViewPager() {
         currentAdapter = FieldsPagerAdapter()
         binding.viewPager.adapter = currentAdapter
-        Log.d("EditFieldsFragment", "设置ViewPager适配器")
 
         // 添加页面切换监听器
         binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
-                Log.d("EditFieldsFragment", "页面切换到: ${tabs[position]}")
                 // 页面切换时不需要特殊处理，因为每个Fragment都会观察ViewModel的变化
             }
         })
@@ -77,7 +74,6 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.text = tabs[position]
         }.attach()
-        Log.d("EditFieldsFragment", "设置TabLayout完成")
     }
 
     private inner class FieldsPagerAdapter : FragmentStateAdapter(this) {
@@ -85,7 +81,6 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
         override fun createFragment(position: Int): Fragment {
             val tabName = tabs[position]
-            Log.d("EditFieldsFragment", "创建Fragment: $tabName")
 
             val fields = when (tabName) {
                 "全部" -> getAllFields()
@@ -99,10 +94,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
                 else -> emptyList()
             }
 
-            Log.d("EditFieldsFragment", "$tabName 字段数量: ${fields.size}")
-
             return FieldListFragment.newInstance(fields) { field, isSelected ->
-                Log.d("EditFieldsFragment", "字段选择变更: ${field.name}, 选中: $isSelected")
                 viewModel.updateFieldSelection(field, isSelected)
             }
         }
@@ -118,7 +110,6 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
     private fun getAllFields(): List<Field> {
         val selectedFields = viewModel.getSelectedFieldsValue()
-        Log.d("EditFieldsFragment", "获取全部字段，当前已选: ${selectedFields.size}")
         return listOf(
             Field("基础信息", "名称", selectedFields.any { it.name == "名称" }),
             Field("基础信息", "数量", selectedFields.any { it.name == "数量" }),
@@ -137,6 +128,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             Field("日期类", "开封时间", selectedFields.any { it.name == "开封时间" }),
             Field("状态类", "开封状态", selectedFields.any { it.name == "开封状态" }),
             Field("分类", "分类", selectedFields.any { it.name == "分类" }),
+            Field("分类", "子分类", selectedFields.any { it.name == "子分类" }),
             Field("分类", "标签", selectedFields.any { it.name == "标签" }),
             Field("分类", "季节", selectedFields.any { it.name == "季节" }),
             Field("商业类", "购买渠道", selectedFields.any { it.name == "购买渠道" }),
@@ -192,6 +184,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         val selectedFields = viewModel.getSelectedFieldsValue()
         return listOf(
             Field("分类", "分类", selectedFields.any { it.name == "分类" }),
+            Field("分类", "子分类", selectedFields.any { it.name == "子分类" }),
             Field("分类", "标签", selectedFields.any { it.name == "标签" }),
             Field("分类", "季节", selectedFields.any { it.name == "季节" })
         )
@@ -217,27 +210,22 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        Log.d("EditFieldsFragment", "onStart: Fragment开始")
     }
 
     override fun onResume() {
         super.onResume()
-        Log.d("EditFieldsFragment", "onResume: Fragment恢复")
     }
 
     override fun onPause() {
         super.onPause()
-        Log.d("EditFieldsFragment", "onPause: Fragment暂停")
     }
 
     override fun onStop() {
         super.onStop()
-        Log.d("EditFieldsFragment", "onStop: Fragment停止")
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        Log.d("EditFieldsFragment", "onDestroyView: 销毁视图")
         binding.viewPager.unregisterOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {})
         currentAdapter = null
         _binding = null
@@ -245,7 +233,6 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d("EditFieldsFragment", "onDestroy: Fragment销毁")
     }
 
     companion object {

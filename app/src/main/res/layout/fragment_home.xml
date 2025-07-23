@@ -87,8 +87,45 @@
         android:layout_height="match_parent"
         android:clipToPadding="false"
         android:padding="8dp"
-        android:paddingBottom="88dp"
+        android:paddingBottom="100dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+        
+    <!-- 空视图 -->
+    <LinearLayout
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_image_placeholder"
+            android:alpha="0.5"
+            android:contentDescription="空视图图标" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="暂无物品"
+            android:textSize="18sp"
+            android:textColor="@android:color/darker_gray" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="点击添加按钮开始记录您的物品"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:gravity="center" />
+
+    </LinearLayout>
 
     <!-- 添加按钮 -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -97,7 +134,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="76dp"
+        android:layout_marginBottom="88dp"
         android:src="@drawable/ic_add"
         app:backgroundTint="@color/purple_500"
         app:tint="@color/white" />

@@ -35,7 +35,7 @@ class LocationManager(
     }
 
     // 所有区域（包括默认和自定义）
-    private val allAreas = mutableListOf<String>()
+    // private val allAreas = mutableListOf<String>() // 移除这个变量，现在通过getAllAreas()方法动态获取
 
     // 用户自定义区域
     private val customAreas = mutableListOf<String>()
@@ -47,9 +47,6 @@ class LocationManager(
     private val customContainerSublocationMap = mutableMapOf<String, MutableList<String>>()
 
     init {
-        // 初始化allAreas，包含所有默认区域
-        allAreas.addAll(DEFAULT_AREAS)
-
         // 从 ViewModel 恢复自定义数据
         loadCustomData()
     }
@@ -59,12 +56,6 @@ class LocationManager(
         viewModel.getCustomLocations()?.let { customData ->
             customData.customAreas?.let { areas ->
                 customAreas.addAll(areas)
-                // 将自定义区域添加到allAreas（如果不存在）
-                areas.forEach { area ->
-                    if (!allAreas.contains(area)) {
-                        allAreas.add(area)
-                    }
-                }
             }
 
             customData.customAreaContainerMap?.forEach { (area, containers) ->
@@ -88,20 +79,78 @@ class LocationManager(
     }
 
     // 获取所有区域
-    fun getAllAreas(): List<String> = allAreas.toList()
+    fun getAllAreas(): List<String> {
+        val areas = mutableListOf<String>()
+        
+        // 添加默认区域
+        areas.addAll(DEFAULT_AREAS)
+        
+        // 添加自定义区域
+        customAreas.forEach { area ->
+            if (!areas.contains(area)) {
+                areas.add(area)
+            }
+        }
+        
+        // 处理被删除的默认区域
+        val deletedAreas = customAreas.filter { it.startsWith("DELETED:") }
+            .map { it.removePrefix("DELETED:") }
+        areas.removeAll(deletedAreas)
+        
+        // 处理被编辑的默认区域
+        val editedAreas = customAreas.filter { it.startsWith("EDIT:") }
+        editedAreas.forEach { editMapping ->
+            val mapping = editMapping.removePrefix("EDIT:")
+            if (mapping.contains("->")) {
+                val parts = mapping.split("->")
+                if (parts.size == 2) {
+                    val oldName = parts[0]
+                    val newName = parts[1]
+                    val index = areas.indexOf(oldName)
+                    if (index >= 0) {
+                        areas[index] = newName
+                    }
+                }
+            }
+        }
+        
+        return areas
+    }
 
     // 根据区域获取容器列表
     fun getContainersByArea(area: String): List<String> {
         val containers = mutableListOf<String>()
 
         // 添加默认容器
-        DEFAULT_AREA_CONTAINER_MAP[area]?.let { containers.addAll(it) }
+        DEFAULT_AREA_CONTAINER_MAP[area]?.let { defaultContainers ->
+            containers.addAll(defaultContainers)
+        }
 
         // 添加自定义容器
-        customAreaContainerMap[area]?.let {
-            it.forEach { container ->
+        customAreaContainerMap[area]?.let { customContainers ->
+            customContainers.forEach { container ->
                 if (!containers.contains(container)) {
                     containers.add(container)
+                }
+            }
+        }
+
+        // 处理被删除的默认容器
+        val deletedContainers = customAreaContainerMap["DELETED_CONTAINERS_$area"] ?: mutableListOf()
+        containers.removeAll(deletedContainers)
+
+        // 处理被编辑的默认容器
+        val editedContainers = customAreaContainerMap["EDITED_CONTAINERS_$area"] ?: mutableListOf()
+        editedContainers.forEach { editMapping ->
+            if (editMapping.contains("->")) {
+                val parts = editMapping.split("->")
+                if (parts.size == 2) {
+                    val oldName = parts[0]
+                    val newName = parts[1]
+                    val index = containers.indexOf(oldName)
+                    if (index >= 0) {
+                        containers[index] = newName
+                    }
                 }
             }
         }
@@ -114,13 +163,35 @@ class LocationManager(
         val sublocations = mutableListOf<String>()
 
         // 添加默认子位置
-        DEFAULT_CONTAINER_SUBLOCATION_MAP[container]?.let { sublocations.addAll(it) }
+        DEFAULT_CONTAINER_SUBLOCATION_MAP[container]?.let { defaultSublocations ->
+            sublocations.addAll(defaultSublocations)
+        }
 
         // 添加自定义子位置
-        customContainerSublocationMap[container]?.let {
-            it.forEach { sublocation ->
+        customContainerSublocationMap[container]?.let { customSublocations ->
+            customSublocations.forEach { sublocation ->
                 if (!sublocations.contains(sublocation)) {
                     sublocations.add(sublocation)
+                }
+            }
+        }
+
+        // 处理被删除的默认子位置
+        val deletedSublocations = customContainerSublocationMap["DELETED_SUBLOCATIONS_$container"] ?: mutableListOf()
+        sublocations.removeAll(deletedSublocations)
+
+        // 处理被编辑的默认子位置
+        val editedSublocations = customContainerSublocationMap["EDITED_SUBLOCATIONS_$container"] ?: mutableListOf()
+        editedSublocations.forEach { editMapping ->
+            if (editMapping.contains("->")) {
+                val parts = editMapping.split("->")
+                if (parts.size == 2) {
+                    val oldName = parts[0]
+                    val newName = parts[1]
+                    val index = sublocations.indexOf(oldName)
+                    if (index >= 0) {
+                        sublocations[index] = newName
+                    }
                 }
             }
         }
@@ -134,8 +205,7 @@ class LocationManager(
             return
         }
 
-        if (!allAreas.contains(area)) {
-            allAreas.add(area)
+        if (!getAllAreas().contains(area)) {
             customAreas.add(area)
             saveCustomData()
         }
@@ -187,11 +257,19 @@ class LocationManager(
             removeCustomContainer(area, container)
         }
 
-        // 从allAreas中移除
-        allAreas.remove(area)
-
-        // 如果是自定义区域，从customAreas中移除
-        customAreas.remove(area)
+        // 检查是否是默认区域
+        val isDefaultArea = DEFAULT_AREAS.contains(area)
+        
+        if (isDefaultArea) {
+            // 如果是默认区域，记录删除标记
+            val deletedAreaMark = "DELETED:$area"
+            if (!customAreas.contains(deletedAreaMark)) {
+                customAreas.add(deletedAreaMark)
+            }
+        } else {
+            // 如果是自定义区域，从customAreas中移除
+            customAreas.remove(area)
+        }
 
         // 从区域-容器映射中移除
         customAreaContainerMap.remove(area)
@@ -210,13 +288,25 @@ class LocationManager(
             removeCustomSublocation(container, sublocation)
         }
 
-        // 从区域-容器映射中移除
-        customAreaContainerMap[area]?.let { containers ->
-            if (containers.contains(container)) {
-                (containers as MutableList<String>).remove(container)
+        // 检查是否是默认容器
+        val isDefaultContainer = getDefaultContainersByArea(area).contains(container)
+        
+        if (isDefaultContainer) {
+            // 如果是默认容器，记录删除标记
+            val deletedContainersKey = "DELETED_CONTAINERS_$area"
+            if (!customAreaContainerMap.containsKey(deletedContainersKey)) {
+                customAreaContainerMap[deletedContainersKey] = mutableListOf()
+            }
+            customAreaContainerMap[deletedContainersKey]!!.add(container)
+        } else {
+            // 如果是自定义容器，从区域-容器映射中移除
+            customAreaContainerMap[area]?.let { containers ->
+                if (containers.contains(container)) {
+                    (containers as MutableList<String>).remove(container)
 
-                if (containers.isEmpty()) {
-                    customAreaContainerMap.remove(area)
+                    if (containers.isEmpty()) {
+                        customAreaContainerMap.remove(area)
+                    }
                 }
             }
         }
@@ -230,13 +320,25 @@ class LocationManager(
 
     // 删除自定义子位置
     fun removeCustomSublocation(container: String, sublocation: String) {
-        // 从容器-子位置映射中移除
-        customContainerSublocationMap[container]?.let { sublocations ->
-            if (sublocations.contains(sublocation)) {
-                (sublocations as MutableList<String>).remove(sublocation)
+        // 检查是否是默认子位置
+        val isDefaultSublocation = getDefaultSublocationsByContainer(container).contains(sublocation)
+        
+        if (isDefaultSublocation) {
+            // 如果是默认子位置，记录删除标记
+            val deletedSublocationsKey = "DELETED_SUBLOCATIONS_$container"
+            if (!customContainerSublocationMap.containsKey(deletedSublocationsKey)) {
+                customContainerSublocationMap[deletedSublocationsKey] = mutableListOf()
+            }
+            customContainerSublocationMap[deletedSublocationsKey]!!.add(sublocation)
+        } else {
+            // 如果是自定义子位置，从容器-子位置映射中移除
+            customContainerSublocationMap[container]?.let { sublocations ->
+                if (sublocations.contains(sublocation)) {
+                    (sublocations as MutableList<String>).remove(sublocation)
 
-                if (sublocations.isEmpty()) {
-                    customContainerSublocationMap.remove(container)
+                    if (sublocations.isEmpty()) {
+                        customContainerSublocationMap.remove(container)
+                    }
                 }
             }
         }
@@ -262,23 +364,26 @@ class LocationManager(
         }
 
         // 检查新名称是否已存在
+        val allAreas = getAllAreas()
         if (allAreas.contains(newName)) {
             throw IllegalArgumentException("区域名称 '$newName' 已存在")
         }
 
-        // 在allAreas中替换名称
-        val index = allAreas.indexOf(oldName)
-        if (index >= 0) {
-            allAreas[index] = newName
-        }
-
-        // 如果是自定义区域，更新customAreas
-        if (customAreas.contains(oldName)) {
-            customAreas.remove(oldName)
-            customAreas.add(newName)
+        // 检查是否是默认区域
+        val isDefaultArea = DEFAULT_AREAS.contains(oldName)
+        
+        if (isDefaultArea) {
+            // 如果是默认区域，记录编辑映射
+            val editMapping = "EDIT:$oldName->$newName"
+            if (!customAreas.contains(editMapping)) {
+                customAreas.add(editMapping)
+            }
         } else {
-            // 如果是默认区域，将新名称添加到自定义区域列表
-            customAreas.add(newName)
+            // 如果是自定义区域，直接更新
+            if (customAreas.contains(oldName)) {
+                customAreas.remove(oldName)
+                customAreas.add(newName)
+            }
         }
 
         // 更新容器映射
@@ -298,25 +403,34 @@ class LocationManager(
             return
         }
 
-        // 获取区域下的容器列表
-        val containers = customAreaContainerMap[area]
-        if (containers == null || !containers.contains(oldName)) {
-            return
-        }
-
         // 检查新名称是否已存在
-        val defaultContainers = getDefaultContainersByArea(area)
-        if (defaultContainers.contains(newName) || containers.contains(newName)) {
+        val allContainers = getContainersByArea(area)
+        if (allContainers.contains(newName)) {
             throw IllegalArgumentException("容器名称 '$newName' 已存在")
         }
 
-        // 更新容器名称
-        val index = containers.indexOf(oldName)
-        if (index >= 0) {
-            (containers as MutableList<String>)[index] = newName
+        // 检查是否是默认容器
+        val isDefaultContainer = getDefaultContainersByArea(area).contains(oldName)
+        
+        if (isDefaultContainer) {
+            // 如果是默认容器，记录编辑映射
+            val editedContainersKey = "EDITED_CONTAINERS_$area"
+            if (!customAreaContainerMap.containsKey(editedContainersKey)) {
+                customAreaContainerMap[editedContainersKey] = mutableListOf()
+            }
+            customAreaContainerMap[editedContainersKey]!!.add("$oldName->$newName")
+        } else {
+            // 如果是自定义容器，直接更新
+            val containers = customAreaContainerMap[area]
+            if (containers != null && containers.contains(oldName)) {
+                val index = containers.indexOf(oldName)
+                if (index >= 0) {
+                    (containers as MutableList<String>)[index] = newName
+                }
+            }
         }
 
-        // 更新子位置映射
+        // 更新子位置映射（容器名改变时）
         val sublocations = customContainerSublocationMap[oldName]
         if (sublocations != null) {
             customContainerSublocationMap[newName] = sublocations
@@ -333,22 +447,31 @@ class LocationManager(
             return
         }
 
-        // 获取容器下的子位置列表
-        val sublocations = customContainerSublocationMap[container]
-        if (sublocations == null || !sublocations.contains(oldName)) {
-            return
-        }
-
         // 检查新名称是否已存在
-        val defaultSublocations = getDefaultSublocationsByContainer(container)
-        if (defaultSublocations.contains(newName) || sublocations.contains(newName)) {
+        val allSublocations = getSublocationsByContainer(container)
+        if (allSublocations.contains(newName)) {
             throw IllegalArgumentException("子位置名称 '$newName' 已存在")
         }
 
-        // 更新子位置名称
-        val index = sublocations.indexOf(oldName)
-        if (index >= 0) {
-            (sublocations as MutableList<String>)[index] = newName
+        // 检查是否是默认子位置
+        val isDefaultSublocation = getDefaultSublocationsByContainer(container).contains(oldName)
+        
+        if (isDefaultSublocation) {
+            // 如果是默认子位置，记录编辑映射
+            val editedSublocationsKey = "EDITED_SUBLOCATIONS_$container"
+            if (!customContainerSublocationMap.containsKey(editedSublocationsKey)) {
+                customContainerSublocationMap[editedSublocationsKey] = mutableListOf()
+            }
+            customContainerSublocationMap[editedSublocationsKey]!!.add("$oldName->$newName")
+        } else {
+            // 如果是自定义子位置，直接更新
+            val sublocations = customContainerSublocationMap[container]
+            if (sublocations != null && sublocations.contains(oldName)) {
+                val index = sublocations.indexOf(oldName)
+                if (index >= 0) {
+                    (sublocations as MutableList<String>)[index] = newName
+                }
+            }
         }
 
         // 保存更改

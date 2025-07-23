@@ -32,8 +32,13 @@
     <string name="store_name_format">商家名称：%1$s</string>
     <string name="custom_note_format">备注：%1$s</string>
     <string name="photo_content_description">物品照片</string>
+    <string name="item_image">物品图片</string>
     
     <!-- 通用 -->
     <string name="error_loading_item">加载物品失败</string>
     <string name="error_item_not_found">找不到该物品</string>
+    
+    <!-- Warehouse Item -->
+    <string name="warehouse_item_quantity">数量: %1$s %2$s</string>
+    <string name="warehouse_item_location">位置: %1$s > %2$s</string>
 </resources> 

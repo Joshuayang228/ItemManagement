@@ -34,4 +34,20 @@
     <color name="status_expiring_soon">#FF9800</color>
     <color name="status_expired">#F44336</color>
     <color name="status_low_stock">#FF9800</color>
+    
+    <!-- 状态颜色 -->
+    <color name="status_good">#4CAF50</color>
+    <color name="status_warning">#FF9800</color>
+    <color name="status_error">#F44336</color>
+    
+    <!-- 进度条背景色 -->
+    <color name="background_light">#F0F0F0</color>
+    
+    <!-- 保质期状态颜色 -->
+    <color name="normal_color">#4CAF50</color>
+    <color name="warning_color">#FF9800</color>
+    <color name="expired_color">#F44336</color>
+    
+    <!-- 价格颜色 -->
+    <color name="price_color">#F44336</color>
 </resources> 

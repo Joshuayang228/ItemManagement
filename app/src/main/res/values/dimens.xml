@@ -8,6 +8,7 @@
     <dimen name="input_min_width">80dp</dimen>
     <dimen name="rating_bar_width">200dp</dimen>
     <dimen name="photo_grid_spacing">4dp</dimen>
+    <dimen name="default_image_height">160dp</dimen>
     
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
@@ -91,4 +92,14 @@
     
     <!-- 其他元素 -->
     <dimen name="detail_min_touch_target">48dp</dimen>
+    
+    <!-- 默认尺寸 -->
+    <dimen name="default_margin">16dp</dimen>
+    <dimen name="default_padding">8dp</dimen>
+    
+    <!-- ExpirationStatusView 默认值 -->
+    <dimen name="default_bar_height">8dp</dimen>
+    <dimen name="default_corner_radius">4dp</dimen>
+    <dimen name="default_text_size">12sp</dimen>
+    <dimen name="default_text_padding">8dp</dimen>
 </resources> 

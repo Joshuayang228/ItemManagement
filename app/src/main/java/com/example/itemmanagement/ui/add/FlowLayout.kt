@@ -2,7 +2,7 @@ package com.example.itemmanagement.ui.add
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
+
 import android.view.View
 import android.view.ViewGroup
 import kotlin.math.max
@@ -36,7 +36,7 @@ class FlowLayout @JvmOverloads constructor(
         }
 
         // 调试日志
-        Log.d("FlowLayout", "Total children: $count, Visible children: ${childrenToLayout.size}")
+
 
         // 如果没有子视图，设置高度为0
         if (childrenToLayout.isEmpty()) {
@@ -118,7 +118,7 @@ class FlowLayout @JvmOverloads constructor(
             if (child.visibility != View.GONE) {
                 childrenToLayout.add(child)
                 // 调试日志
-                Log.d("FlowLayout", "Child $i: ${child.javaClass.simpleName}, width: ${child.measuredWidth}, height: ${child.measuredHeight}")
+    
             }
         }
 
@@ -144,7 +144,7 @@ class FlowLayout @JvmOverloads constructor(
             }
 
             // 调试日志
-            Log.d("FlowLayout", "Row with $itemsInThisRow items, height: $maxChildHeight")
+
 
             // 只有当还有下一行时才添加行间距
             if (currentLineStart + itemsInThisRow < childrenToLayout.size) {

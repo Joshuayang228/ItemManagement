@@ -6,10 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.example.itemmanagement.R
 import com.example.itemmanagement.data.model.Item
 import java.text.SimpleDateFormat
@@ -36,7 +38,7 @@ class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_product, parent, false)
+            .inflate(R.layout.item_home, parent, false)
         return ItemViewHolder(view, onItemClickListener, onDeleteClickListener)
     }
 
@@ -53,15 +55,42 @@ class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemViewHolder>() {
     ) : RecyclerView.ViewHolder(itemView) {
         private val imageView: ImageView = itemView.findViewById(R.id.itemImage)
         private val nameText: TextView = itemView.findViewById(R.id.itemName)
+        private val priceAndDateLayout: LinearLayout = itemView.findViewById(R.id.priceAndDateLayout)
+        private val priceText: TextView = itemView.findViewById(R.id.itemPrice)
         private val dateText: TextView = itemView.findViewById(R.id.itemDate)
-        private val quantityText: TextView = itemView.findViewById(R.id.itemQuantity)
-        private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
+        private val noteText: TextView = itemView.findViewById(R.id.itemNote)
         private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
         fun bind(item: Item) {
+            // 设置名称（必须显示）
             nameText.text = item.name
+            
+            // 设置单价和日期行
+            var showPriceAndDateLayout = false
+            
+            // 设置单价（如果有）
+            if (item.price != null) {
+                priceText.text = "¥${item.price}"
+                priceText.visibility = View.VISIBLE
+                showPriceAndDateLayout = true
+            } else {
+                priceText.visibility = View.GONE
+            }
+            
+            // 设置添加日期
             dateText.text = dateFormat.format(item.addDate)
-            quantityText.text = "${item.quantity}${item.unit?.let { " $it" } ?: ""}"
+            showPriceAndDateLayout = true
+            
+            // 控制整行的可见性
+            priceAndDateLayout.visibility = if (showPriceAndDateLayout) View.VISIBLE else View.GONE
+            
+            // 设置备注（如果有）
+            if (!item.customNote.isNullOrEmpty()) {
+                noteText.text = item.customNote
+                noteText.visibility = View.VISIBLE
+            } else {
+                noteText.visibility = View.GONE
+            }
 
             // 设置点击事件 - 导航到详情页面
             itemView.setOnClickListener {
@@ -75,19 +104,22 @@ class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemViewHolder>() {
                 true
             }
 
-            // 设置删除按钮点击事件
-            deleteButton.setOnClickListener {
-                showDeleteConfirmationDialog(item)
-            }
-
-            // 加载图片
+            // 加载图片 - 使用适合瀑布流的加载方式
             if (item.photos.isNotEmpty()) {
+                val requestOptions = RequestOptions()
+                    .placeholder(R.drawable.ic_image_placeholder)
+                    .error(R.drawable.ic_image_error)
+                    .fitCenter()
+                
                 Glide.with(itemView.context)
                     .load(item.photos[0].uri)
-                    .centerCrop()
+                    .apply(requestOptions)
                     .into(imageView)
             } else {
                 imageView.setImageResource(R.drawable.ic_image_placeholder)
+                // 为空图片设置一个默认高度
+                imageView.layoutParams.height = itemView.resources.getDimensionPixelSize(R.dimen.default_image_height)
+                imageView.requestLayout()
             }
         }
 

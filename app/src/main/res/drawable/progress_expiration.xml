@@ -1,17 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 背景色 -->
     <item android:id="@android:id/background">
-        <shape android:shape="rectangle">
-            <corners android:radius="2dp" />
-            <solid android:color="@color/divider" />
+        <shape>
+            <corners android:radius="5dp" />
+            <solid android:color="#E0E0E0" /> <!-- 灰色背景 -->
         </shape>
     </item>
+
+    <!-- 进度条颜色 -->
     <item android:id="@android:id/progress">
-        <scale android:scaleWidth="100%">
-            <shape android:shape="rectangle">
-                <corners android:radius="2dp" />
-                <solid android:color="@color/primary" />
+        <clip>
+            <shape>
+                <corners android:radius="5dp" />
+                <!-- 默认颜色，我们会在代码中动态改变它 -->
+                <solid android:color="#4CAF50" /> <!-- 默认绿色 -->
             </shape>
-        </scale>
+        </clip>
     </item>
+
 </layer-list> 

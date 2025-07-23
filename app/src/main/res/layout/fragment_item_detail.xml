@@ -695,18 +695,4 @@
             app:icon="@drawable/ic_consume" />
     </LinearLayout>
 
-    <!-- 编辑按钮 -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/editButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="@dimen/detail_card_margin"
-        android:layout_marginBottom="@dimen/detail_bottom_area_height"
-        android:contentDescription="编辑物品"
-        app:tint="@android:color/white"
-        app:backgroundTint="@color/primary"
-        app:fabSize="normal"
-        android:src="@android:drawable/ic_menu_edit" />
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout> 

@@ -151,4 +151,41 @@ class AddItemFragment : BaseItemFragment() {
     override val pickImage = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
         photoManager.handleGalleryResult(uri, isFragmentActive = { isFragmentActive() })
     }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.menu_add_item, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_scan -> {
+                Toast.makeText(context, "扫描功能将在后续版本实现", Toast.LENGTH_SHORT).show()
+                true
+            }
+            R.id.action_camera -> {
+                showPhotoSelectionDialog()
+                true
+            }
+            R.id.action_clear -> {
+                showClearConfirmDialog()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
+    private fun showClearConfirmDialog() {
+        dialogFactory.createConfirmDialog(
+            title = "清除数据",
+            message = "确定要清除所有已填写的数据吗？",
+            positiveButtonText = "确定",
+            negativeButtonText = "取消",
+            onPositiveClick = {
+                viewModel.clearAllData()
+                viewModel.prepareForAddMode()
+                Toast.makeText(context, "已清除所有数据", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
 }

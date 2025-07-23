@@ -7,22 +7,25 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.ItemAdapter
-import com.example.itemmanagement.data.model.Item
-import com.example.itemmanagement.data.model.Location
-import com.example.itemmanagement.data.model.OpenStatus
-import com.example.itemmanagement.data.model.ItemStatus
 import com.example.itemmanagement.databinding.FragmentHomeBinding
-import java.util.Date
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private val itemAdapter = ItemAdapter()
+    
+    private val viewModel: HomeViewModel by viewModels {
+        HomeViewModelFactory(
+            (requireActivity().application as ItemManagementApplication).repository
+        )
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,19 +41,38 @@ class HomeFragment : Fragment() {
         setupRecyclerView()
         setupSearchView()
         setupButtons()
-        loadTestData()
+        observeItems()
     }
 
     private fun setupRecyclerView() {
         binding.recyclerView.apply {
-            layoutManager = GridLayoutManager(context, 2)
+            // 使用StaggeredGridLayoutManager实现瀑布流布局
+            layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL).apply {
+                // 设置间距
+                addItemDecoration(object : androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
+                    override fun getItemOffsets(
+                        outRect: android.graphics.Rect,
+                        view: View,
+                        parent: androidx.recyclerview.widget.RecyclerView,
+                        state: androidx.recyclerview.widget.RecyclerView.State
+                    ) {
+                        val spacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
+                        outRect.set(spacing, spacing, spacing, spacing)
+                    }
+                })
+            }
             adapter = itemAdapter
         }
 
         // 设置物品点击事件
         itemAdapter.setOnItemClickListener { item ->
-            val action = HomeFragmentDirections.actionNavigationHomeToAddItemFragment(item)
-            findNavController().navigate(action)
+            val bundle = androidx.core.os.bundleOf("itemId" to item.id)
+            findNavController().navigate(R.id.navigation_item_detail, bundle)
+        }
+        
+        // 设置物品删除事件
+        itemAdapter.setOnDeleteClickListener { item ->
+            viewModel.deleteItem(item.id)
         }
     }
 
@@ -90,109 +112,12 @@ class HomeFragment : Fragment() {
         Toast.makeText(context, "搜索: $query", Toast.LENGTH_SHORT).show()
     }
 
-    private fun loadTestData() {
-        val testItems = listOf(
-            Item(
-                id = 1L,
-                name = "MacBook Pro 14",
-                quantity = 5.0,
-                unit = "台",
-                location = Location(1, "书房", "桌面", null),
-                category = "电子设备",
-                productionDate = null,
-                expirationDate = null,
-                openStatus = OpenStatus.UNOPENED,
-                openDate = null,
-                brand = "Apple",
-                specification = "M2 Pro",
-                status = ItemStatus.IN_STOCK,
-                stockWarningThreshold = 1,
-                price = 14999.0,
-                purchaseChannel = "Apple Store",
-                storeName = "Apple 官方旗舰店",
-                subCategory = "笔记本电脑",
-                customNote = "工作用",
-                season = null,
-                capacity = null,
-                capacityUnit = null,
-                rating = 5.0,
-                totalPrice = 14999.0,
-                purchaseDate = Date(),
-                shelfLife = null,
-                warrantyPeriod = 365,
-                warrantyEndDate = Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000L),
-                serialNumber = "FVFXC2023ABCD",
-                photos = emptyList(),
-                tags = emptyList()
-            ),
-            Item(
-                id = 2L,
-                name = "iPhone 15 Pro",
-                quantity = 2.0,
-                unit = "部",
-                location = Location(2, "卧室", "抽屉", null),
-                category = "电子设备",
-                productionDate = null,
-                expirationDate = null,
-                openStatus = OpenStatus.UNOPENED,
-                openDate = null,
-                brand = "Apple",
-                specification = "256GB",
-                status = ItemStatus.IN_STOCK,
-                stockWarningThreshold = 1,
-                price = 8999.0,
-                purchaseChannel = "京东",
-                storeName = "Apple 京东自营旗舰店",
-                subCategory = "手机",
-                customNote = null,
-                season = null,
-                capacity = 256.0,
-                capacityUnit = "GB",
-                rating = 4.5,
-                totalPrice = 8999.0 * 2,
-                purchaseDate = Date(),
-                shelfLife = null,
-                warrantyPeriod = 365,
-                warrantyEndDate = Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000L),
-                serialNumber = "IP15PRO2023XYZ",
-                photos = emptyList(),
-                tags = emptyList()
-            ),
-            Item(
-                id = 3L,
-                name = "iPad Pro 12.9",
-                quantity = 1.0,
-                unit = "台",
-                location = Location(3, "客厅", "茶几", null),
-                category = "电子设备",
-                productionDate = null,
-                expirationDate = null,
-                openStatus = OpenStatus.UNOPENED,
-                openDate = null,
-                brand = "Apple",
-                specification = "M2 1TB",
-                status = ItemStatus.IN_STOCK,
-                stockWarningThreshold = 1,
-                price = 12999.0,
-                purchaseChannel = "天猫",
-                storeName = "Apple 天猫旗舰店",
-                subCategory = "平板电脑",
-                customNote = "画图用",
-                season = null,
-                capacity = 1024.0,
-                capacityUnit = "GB",
-                rating = 4.8,
-                totalPrice = 12999.0,
-                purchaseDate = Date(),
-                shelfLife = null,
-                warrantyPeriod = 365,
-                warrantyEndDate = Date(System.currentTimeMillis() + 365 * 24 * 60 * 60 * 1000L),
-                serialNumber = "IPADPRO2023ABC",
-                photos = emptyList(),
-                tags = emptyList()
-            )
-        )
-        itemAdapter.submitList(testItems)
+    private fun observeItems() {
+        // 观察数据库中的物品数据
+        viewModel.allItems.observe(viewLifecycleOwner) { items ->
+            itemAdapter.submitList(items)
+            binding.emptyView?.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+        }
     }
 
     override fun onDestroyView() {

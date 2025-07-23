@@ -156,36 +156,48 @@ abstract class BaseItemFragment : Fragment() {
         binding.photoRecyclerView.apply {
             val spanCount = 3
             val spacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
-
-            // 设置内边距
-            setPadding(spacing, spacing, spacing, spacing)
+            
+            // 移除RecyclerView本身的padding，让ItemDecoration全权负责间距
+            setPadding(0, 0, 0, 0)
             clipToPadding = false
 
-            layoutManager = GridLayoutManager(requireContext(), spanCount).apply {
-                spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                    override fun getSpanSize(position: Int): Int = 1
-                }
-            }
+            layoutManager = GridLayoutManager(requireContext(), spanCount)
 
-            // 添加间距装饰器
-            if (itemDecorationCount == 0) {
-                addItemDecoration(object : RecyclerView.ItemDecoration() {
-                    override fun getItemOffsets(
-                        outRect: Rect,
-                        view: View,
-                        parent: RecyclerView,
-                        state: RecyclerView.State
-                    ) {
-                        outRect.set(spacing, spacing, spacing, spacing)
-                    }
-                })
+            // 如果已经有decoration，先移除旧的，防止重复添加
+            if (itemDecorationCount > 0) {
+                removeItemDecorationAt(0) 
             }
+            
+            // 添加新的ItemDecoration实现九宫格布局
+            addItemDecoration(object : RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: Rect,
+                    view: View,
+                    parent: RecyclerView,
+                    state: RecyclerView.State
+                ) {
+                    val position = parent.getChildAdapterPosition(view) // 获取item的position
+                    val column = position % spanCount // item在当前行的列索引 (0, 1, 2)
+
+                    // 这是一个经典的网格间距算法
+                    // 它通过巧妙的计算，只在item之间创建间距
+                    outRect.left = column * spacing / spanCount
+                    outRect.right = spacing - (column + 1) * spacing / spanCount
+
+                    // 如果不是第一行，则添加顶部间距
+                    if (position >= spanCount) {
+                        outRect.top = spacing 
+                    }
+                }
+            })
 
             adapter = photoAdapter
 
-            // 设置item的高度等于宽度
+            // 使用与新ItemDecoration配套的正确公式计算item的宽高
             post {
-                val itemWidth = (width - (paddingLeft + paddingRight) - (spacing * (spanCount - 1))) / spanCount
+                // 这个公式确保3个item的宽度 + 2个间距的宽度 = RecyclerView的总宽度
+                val totalSpacing = (spanCount - 1) * spacing
+                val itemWidth = (width - totalSpacing) / spanCount
                 photoAdapter.setItemSize(itemWidth)
             }
         }
@@ -289,6 +301,27 @@ abstract class BaseItemFragment : Fragment() {
         // 获取所有字段的值
         val values = fieldValueManager.getFieldValues(fieldViews)
 
+        // 记录位置信息
+        val locationArea = values["位置_area"] as? String
+        val locationContainer = values["位置_container"] as? String
+        val locationSublocation = values["位置_sublocation"] as? String
+        
+        // 处理位置信息 - 如果是编辑模式且位置信息为空，尝试从当前加载的物品中获取
+        var area = locationArea ?: "未指定"
+        var container = locationContainer
+        var sublocation = locationSublocation
+        
+        // 如果是编辑模式且位置信息为"未指定"，尝试从当前加载的物品中获取
+        if (getItemId() > 0 && (area == "未指定" || area.isNullOrEmpty())) {
+            viewModel.getEditingItemLocation()?.let { existingLocation ->
+                if (existingLocation.area != "未指定" && !existingLocation.area.isNullOrEmpty()) {
+                    area = existingLocation.area
+                    container = existingLocation.container
+                    sublocation = existingLocation.sublocation
+                }
+            }
+        }
+
         // 验证必填字段
         val nameValue = values["名称"] as? String
         if (nameValue.isNullOrBlank()) {
@@ -370,9 +403,9 @@ abstract class BaseItemFragment : Fragment() {
             quantity = (values["数量"] as? String)?.toDoubleOrNull() ?: 0.0,
             unit = quantityUnit,
             location = com.example.itemmanagement.data.model.Location(
-                area = values["位置_area"] as? String ?: "未指定",
-                container = values["位置_container"] as? String,
-                sublocation = values["位置_sublocation"] as? String
+                area = area,
+                container = container,
+                sublocation = sublocation
             ),
             category = values["分类"] as? String ?: "未指定",
             productionDate = parseDate(values["生产日期"] as? String),
