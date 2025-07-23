@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="12dp"
+    android:background="?android:attr/selectableItemBackground">
+
+    <!-- 物品图片 - 左侧 (放大50%) -->
+    <ImageView
+        android:id="@+id/itemImage"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/bg_input"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:src="@drawable/ic_image_placeholder" />
+
+    <!-- 右侧信息区域 -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/infoContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        app:layout_constraintStart_toEndOf="@id/itemImage"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!-- 第一行：物品名称和标签 -->
+        <TextView
+            android:id="@+id/itemName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tagContainer"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="物品名称" />
+
+        <!-- 标签容器 (右居中) -->
+        <LinearLayout
+            android:id="@+id/tagContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/itemName"
+            app:layout_constraintBottom_toBottomOf="@id/itemName">
+            
+            <TextView
+                android:id="@+id/itemTag1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="6dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp"
+                android:textSize="11sp"
+                android:visibility="gone"
+                android:layout_marginEnd="4dp"
+                tools:text="标签1"
+                tools:visibility="visible" />
+                
+            <TextView
+                android:id="@+id/itemTag2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="6dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp"
+                android:textSize="11sp"
+                android:visibility="gone"
+                android:layout_marginEnd="4dp"
+                tools:text="标签2"
+                tools:visibility="visible" />
+                
+            <TextView
+                android:id="@+id/itemTag3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="6dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:text="标签3"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <!-- 第二行：位置信息 (只用图标表示) -->
+        <ImageView
+            android:id="@+id/locationIcon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_location"
+            android:tint="@color/text_secondary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/itemLocation"
+            app:layout_constraintBottom_toBottomOf="@id/itemLocation" />
+
+        <TextView
+            android:id="@+id/itemLocation"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintStart_toEndOf="@id/locationIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/itemName"
+            tools:text="厨房 > 冰箱" />
+
+        <!-- 第三行：数量、分类、评分 (用|分隔) -->
+        <TextView
+            android:id="@+id/itemQuantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/itemLocation"
+            tools:text="3 盒" />
+
+        <TextView
+            android:id="@+id/separator1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:text="|"
+            app:layout_constraintStart_toEndOf="@id/itemQuantity"
+            app:layout_constraintTop_toTopOf="@id/itemQuantity" />
+
+        <TextView
+            android:id="@+id/itemCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toEndOf="@id/separator1"
+            app:layout_constraintTop_toTopOf="@id/itemQuantity"
+            tools:text="食品" />
+
+        <TextView
+            android:id="@+id/separator2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:text="|"
+            app:layout_constraintStart_toEndOf="@id/itemCategory"
+            app:layout_constraintTop_toTopOf="@id/itemQuantity" />
+
+        <TextView
+            android:id="@+id/itemRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toEndOf="@id/separator2"
+            app:layout_constraintTop_toTopOf="@id/itemQuantity"
+            tools:text="★★★★☆" />
+            
+        <!-- 第四行：单价和开封状态 -->
+        <TextView
+            android:id="@+id/itemPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/itemQuantity"
+            tools:text="￥25.8/个" />
+            
+        <TextView
+            android:id="@+id/itemOpenStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:paddingStart="8dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="2dp"
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@id/itemPrice"
+            app:layout_constraintTop_toTopOf="@id/itemPrice"
+            app:layout_constraintBottom_toBottomOf="@id/itemPrice"
+            tools:text="已开封"
+            tools:visibility="visible" />
+            
+        <!-- 添加Group来管理第四行的单价和开封状态字段 -->
+        <androidx.constraintlayout.widget.Group
+            android:id="@+id/priceAndStatusGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:constraint_referenced_ids="itemPrice,itemOpenStatus" />
+
+        <!-- 编辑和删除按钮 -->
+        <ImageButton
+            android:id="@+id/editButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit_modern"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@id/deleteButton"
+            app:layout_constraintTop_toTopOf="parent"
+            android:contentDescription="编辑" />
+
+        <ImageButton
+            android:id="@+id/deleteButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_delete_modern"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:contentDescription="删除" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    
+    <!-- 第五行：保质期进度条 (自定义视图) - 与infoContainer左边对齐，图片底部与进度条中间水平对齐 -->
+    <com.example.itemmanagement.ui.custom.ExpirationStatusView
+        android:id="@+id/expirationStatusView"
+        android:layout_width="0dp"
+        android:layout_height="16dp"
+        app:barHeight="8dp"
+        app:cornerRadius="4dp"
+        app:barWidthRatio="0.7"
+        app:goodColor="@color/status_good"
+        app:warningColor="@color/status_warning"
+        app:errorColor="@color/status_error"
+        app:textSize="12sp"
+        app:textPadding="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/infoContainer"
+        app:layout_constraintTop_toBottomOf="@id/itemImage"
+        android:layout_marginTop="-8dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout> 

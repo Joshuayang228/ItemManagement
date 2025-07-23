@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ExpirationStatusView">
+        <attr name="barHeight" format="dimension" />
+        <attr name="cornerRadius" format="dimension" />
+        <attr name="goodColor" format="color" />
+        <attr name="warningColor" format="color" />
+        <attr name="errorColor" format="color" />
+        <attr name="textSize" format="dimension" />
+        <attr name="textPadding" format="dimension" />
+        <attr name="showStatusText" format="boolean" />
+        <attr name="barWidthRatio" format="float" />
+    </declare-styleable>
+</resources> 
