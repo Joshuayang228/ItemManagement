@@ -197,4 +197,33 @@
         <item name="android:layout_marginEnd">@dimen/detail_indicator_spacing</item>
         <item name="android:background">@drawable/dot_indicator</item>
     </style>
+
+    <!-- 扁平圆角输入框样式 -->
+    <style name="Widget.App.TextInputLayout.FlatRounded" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundMode">outline</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+        <item name="boxBackgroundColor">@android:color/transparent</item>
+        <item name="android:background">@drawable/bg_flat_rounded_input_selector</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="hintTextColor">#757575</item>
+        <item name="android:textColorHint">#757575</item>
+        <item name="hintEnabled">false</item>
+        <item name="android:focusable">false</item>
+        <item name="android:focusableInTouchMode">false</item>
+    </style>
+
+    <style name="Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxBackgroundMode">outline</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+        <item name="boxBackgroundColor">@android:color/transparent</item>
+        <item name="android:background">@drawable/bg_flat_rounded_input_selector</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="hintTextColor">#757575</item>
+        <item name="android:textColorHint">#757575</item>
+        <item name="hintEnabled">false</item>
+        <item name="android:focusable">false</item>
+        <item name="android:focusableInTouchMode">false</item>
+    </style>
 </resources> 

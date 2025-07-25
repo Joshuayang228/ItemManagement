@@ -11,7 +11,6 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingBottom="@dimen/detail_bottom_area_height"
         android:clipToPadding="false">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -670,29 +669,6 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- 底部操作栏 -->
-    <LinearLayout
-        android:id="@+id/bottomActionsContainer"
-        style="@style/DetailBottomActionContainer"
-        android:layout_gravity="bottom">
 
-        <Button
-            android:id="@+id/modifyQuantityButton"
-            style="@style/DetailActionButton"
-            android:text="修改数量"
-            app:icon="@drawable/ic_edit_quantity" />
-
-        <Button
-            android:id="@+id/markOpenedButton"
-            style="@style/DetailActionButton"
-            android:text="标记开封"
-            app:icon="@drawable/ic_open" />
-
-        <Button
-            android:id="@+id/consumeButton"
-            style="@style/DetailActionButton"
-            android:text="消耗"
-            app:icon="@drawable/ic_consume" />
-    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout> 

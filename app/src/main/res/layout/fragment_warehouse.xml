@@ -5,17 +5,58 @@
     android:layout_height="match_parent">
 
     <!-- 搜索栏 -->
-    <androidx.appcompat.widget.SearchView
-        android:id="@+id/searchView"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/searchContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
-        android:background="@drawable/bg_search"
-        android:iconifiedByDefault="false"
-        android:queryHint="搜索物品..."
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <ImageView
+                android:id="@+id/searchIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_search"
+                android:layout_marginEnd="8dp"
+                app:tint="@android:color/darker_gray" />
+
+            <EditText
+                android:id="@+id/searchEditText"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="搜索物品"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textSize="16sp"
+                android:textColorHint="@android:color/darker_gray" />
+
+            <ImageView
+                android:id="@+id/clearButton"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_clear"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@android:color/darker_gray" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
 
     <!-- 排序栏 -->
     <com.google.android.material.card.MaterialCardView
@@ -25,7 +66,7 @@
         app:cardElevation="2dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchView">
+        app:layout_constraintTop_toBottomOf="@id/searchContainer">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -52,19 +93,19 @@
                     android:paddingEnd="8dp">
 
                     <TextView
-                        android:id="@+id/sortDefault"
+                        android:id="@+id/sortComprehensive"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:background="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"
-                        android:text="默认"
+                        android:text="综合"
                         android:textColor="@android:color/black"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/sortPrice"
+                        android:id="@+id/sortQuantity"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:background="?attr/selectableItemBackground"
@@ -75,6 +116,17 @@
                         android:textSize="14sp" />
 
                     <TextView
+                        android:id="@+id/sortPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:text="单价"
+                        android:textSize="14sp" />
+
+                    <TextView
                         android:id="@+id/sortRating"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
@@ -82,18 +134,29 @@
                         android:gravity="center"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"
-                        android:text="名称"
+                        android:text="评分"
                         android:textSize="14sp" />
 
                     <TextView
-                        android:id="@+id/sortExpiration"
+                        android:id="@+id/sortShelfLife"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
                         android:background="?attr/selectableItemBackground"
                         android:gravity="center"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp"
-                        android:text="保质期"
+                        android:text="剩余保质期"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/sortAddTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:text="添加时间"
                         android:textSize="14sp" />
 
                 </LinearLayout>
@@ -129,19 +192,47 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- 筛选状态指示器 -->
-    <com.google.android.material.chip.ChipGroup
-        android:id="@+id/filterChipGroup"
+    <LinearLayout
+        android:id="@+id/filterChipContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
         android:paddingStart="8dp"
         android:paddingTop="4dp"
         android:paddingEnd="8dp"
         android:paddingBottom="4dp"
-        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sortBarCard"
+        app:layout_constraintTop_toBottomOf="@id/sortBarCard">
+
+        <!-- 固定的清除全部芯片 -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/clearAllChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="清除全部"
+            android:visibility="gone"
+            app:chipIcon="@drawable/ic_clear"
+            android:layout_marginEnd="8dp" />
+
+        <!-- 可滚动的筛选芯片 -->
+        <HorizontalScrollView
+            android:id="@+id/filterChipScrollView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/filterChipGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
         app:singleLine="true" />
+
+        </HorizontalScrollView>
+
+    </LinearLayout>
 
     <!-- 物品列表 -->
     <androidx.recyclerview.widget.RecyclerView
@@ -150,11 +241,10 @@
         android:layout_height="0dp"
         android:clipToPadding="false"
         android:padding="8dp"
-        android:paddingBottom="72dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filterChipGroup" />
+        app:layout_constraintTop_toBottomOf="@id/filterChipContainer" />
 
     <!-- 空视图 -->
     <TextView
@@ -163,10 +253,11 @@
         android:layout_height="wrap_content"
         android:text="暂无物品"
         android:textSize="16sp"
+        android:textColor="@android:color/darker_gray"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/recyclerView" />
+        app:layout_constraintTop_toBottomOf="@id/filterChipContainer" />
 
 </androidx.constraintlayout.widget.ConstraintLayout> 

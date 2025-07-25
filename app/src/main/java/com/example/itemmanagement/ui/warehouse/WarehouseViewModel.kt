@@ -37,7 +37,7 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
             started = SharingStarted.Lazily,
             initialValue = emptyList()
         )
-    
+
     // 删除结果
     private val _deleteResult = MutableLiveData<Boolean>()
     val deleteResult: LiveData<Boolean> = _deleteResult
@@ -69,6 +69,13 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
     // 子位置列表
     private val _sublocations = MutableLiveData<List<String>>()
     val sublocations: LiveData<List<String>> = _sublocations
+    
+    // 可用标签列表
+    private val _availableTags = MutableLiveData<List<String>>()
+    val availableTags: LiveData<List<String>> = _availableTags
+    
+    private val _availableSeasons = MutableLiveData<List<String>>()
+    val availableSeasons: LiveData<List<String>> = _availableSeasons
     
     // 初始化
     init {
@@ -150,6 +157,166 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
     }
     
     /**
+     * 设置子位置
+     * @param sublocation 子位置名称
+     */
+    fun setSublocation(sublocation: String) {
+        _filterState.value = _filterState.value.copy(sublocation = sublocation)
+    }
+    
+    /**
+     * 设置开封状态
+     * @param openStatus 开封状态，true为已开封，false为未开封，null为不限制
+     */
+    fun updateOpenStatus(openStatus: Boolean?) {
+        _filterState.value = _filterState.value.copy(openStatus = openStatus)
+    }
+
+    /**
+     * 更新多选开封状态
+     * @param openStatuses 选中的开封状态集合
+     */
+    fun updateOpenStatuses(openStatuses: Set<Boolean>) {
+        _filterState.value = _filterState.value.copy(openStatuses = openStatuses)
+    }
+    
+    /**
+     * 设置最低评分
+     * @param minRating 最低评分
+     */
+    fun updateMinRating(minRating: Float?) {
+        _filterState.value = _filterState.value.copy(minRating = minRating)
+    }
+    
+    /**
+     * 设置评分范围
+     * @param minRating 最低评分
+     * @param maxRating 最高评分
+     */
+    fun updateRatingRange(minRating: Float?, maxRating: Float?) {
+        _filterState.value = _filterState.value.copy(
+            minRating = minRating,
+            maxRating = maxRating
+        )
+    }
+
+    /**
+     * 更新多选评分
+     * @param ratings 选中的评分集合
+     */
+    fun updateRatings(ratings: Set<Float>) {
+        _filterState.value = _filterState.value.copy(ratings = ratings)
+    }
+    
+    /**
+     * 设置季节筛选
+     * @param seasons 选中的季节集合
+     */
+    fun updateSeasons(seasons: Set<String>) {
+        _filterState.value = _filterState.value.copy(seasons = seasons)
+    }
+    
+    /**
+     * 设置标签筛选
+     * @param tags 选中的标签集合
+     */
+    fun updateTags(tags: Set<String>) {
+        _filterState.value = _filterState.value.copy(tags = tags)
+    }
+    
+    /**
+     * 设置数量范围
+     * @param minQuantity 最小数量
+     * @param maxQuantity 最大数量
+     */
+    fun updateQuantityRange(minQuantity: Int?, maxQuantity: Int?) {
+        _filterState.value = _filterState.value.copy(
+            minQuantity = minQuantity,
+            maxQuantity = maxQuantity
+        )
+    }
+    
+    /**
+     * 设置价格范围
+     * @param minPrice 最低价格
+     * @param maxPrice 最高价格
+     */
+    fun updatePriceRange(minPrice: Double?, maxPrice: Double?) {
+        _filterState.value = _filterState.value.copy(
+            minPrice = minPrice,
+            maxPrice = maxPrice
+        )
+    }
+    
+    /**
+     * 设置日期类型 - 保持兼容性，已弃用
+     * @param dateType 日期类型
+     */
+    @Deprecated("使用具体的日期范围更新方法")
+    fun updateDateType(dateType: DateType?) {
+        // 兼容性实现，不做实际操作
+    }
+    
+    /**
+     * 设置日期范围 - 保持兼容性，已弃用
+     * @param startDate 开始日期时间戳
+     * @param endDate 结束日期时间戳
+     */
+    @Deprecated("使用具体的日期范围更新方法")
+    fun updateDateRange(startDate: Long?, endDate: Long?) {
+        // 兼容性实现，更新过期日期范围
+        updateExpirationDateRange(startDate, endDate)
+    }
+    
+    /**
+     * 更新过期日期范围
+     * @param startDate 开始日期时间戳
+     * @param endDate 结束日期时间戳
+     */
+    fun updateExpirationDateRange(startDate: Long?, endDate: Long?) {
+        _filterState.value = _filterState.value.copy(
+            expirationStartDate = startDate,
+            expirationEndDate = endDate
+        )
+    }
+    
+    /**
+     * 更新添加日期范围
+     * @param startDate 开始日期时间戳
+     * @param endDate 结束日期时间戳
+     */
+    fun updateCreationDateRange(startDate: Long?, endDate: Long?) {
+        _filterState.value = _filterState.value.copy(
+            creationStartDate = startDate,
+            creationEndDate = endDate
+        )
+    }
+    
+    /**
+     * 更新购买日期范围
+     * @param startDate 开始日期时间戳
+     * @param endDate 结束日期时间戳
+     */
+    fun updatePurchaseDateRange(startDate: Long?, endDate: Long?) {
+        _filterState.value = _filterState.value.copy(
+            purchaseStartDate = startDate,
+            purchaseEndDate = endDate
+        )
+    }
+    
+    /**
+     * 更新生产日期范围
+     * @param startDate 开始日期时间戳
+     * @param endDate 结束日期时间戳
+     */
+    fun updateProductionDateRange(startDate: Long?, endDate: Long?) {
+        _filterState.value = _filterState.value.copy(
+            productionStartDate = startDate,
+            productionEndDate = endDate
+        )
+    }
+    
+    /**
      * 设置排序选项
      * @param option 排序选项
      */
@@ -168,8 +335,15 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
     /**
      * 重置筛选
      */
-    fun resetFilter() {
+    fun resetFilters() {
         _filterState.value = FilterState()
+    }
+    
+    /**
+     * 重置筛选（保持兼容性）
+     */
+    fun resetFilter() {
+        resetFilters()
     }
     
     /**
@@ -197,6 +371,12 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
                 
                 val locationAreas = repository.getAllLocationAreas()
                 _locationAreas.value = locationAreas
+                
+                val tags = repository.getAllTags()
+                _availableTags.value = tags
+                
+                val seasons = repository.getAllSeasons()
+                _availableSeasons.value = seasons
             } catch (e: Exception) {
                 _errorMessage.value = "加载筛选选项失败：${e.message}"
             }

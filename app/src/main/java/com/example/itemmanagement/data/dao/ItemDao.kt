@@ -76,6 +76,14 @@ interface ItemDao {
     @Query("SELECT DISTINCT brand FROM items WHERE brand IS NOT NULL AND brand != ''")
     suspend fun getAllBrands(): List<String>
     
+    // 获取所有标签
+    @Query("SELECT DISTINCT name FROM tags WHERE name IS NOT NULL AND name != ''")
+    suspend fun getAllTags(): List<String>
+    
+    // 获取所有季节
+    @Query("SELECT DISTINCT season FROM items WHERE season IS NOT NULL AND season != ''")
+    suspend fun getAllSeasonsRaw(): List<String>
+    
     // 获取所有位置区域
     @Query("SELECT DISTINCT area FROM locations WHERE area IS NOT NULL AND area != ''")
     suspend fun getAllLocationAreas(): List<String>

@@ -123,22 +123,6 @@ class ItemDetailFragment : Fragment() {
     }
     
     private fun setupButtons() {
-        // 设置底部操作按钮
-        binding.modifyQuantityButton.setOnClickListener {
-            // 实现修改数量的逻辑
-            Toast.makeText(context, "修改数量功能将在后续版本实现", Toast.LENGTH_SHORT).show()
-        }
-        
-        binding.markOpenedButton.setOnClickListener {
-            // 实现标记开封的逻辑
-            Toast.makeText(context, "标记开封功能将在后续版本实现", Toast.LENGTH_SHORT).show()
-        }
-        
-        binding.consumeButton.setOnClickListener {
-            // 实现消耗的逻辑
-            Toast.makeText(context, "消耗功能将在后续版本实现", Toast.LENGTH_SHORT).show()
-        }
-        
         // 备注展开/收起按钮
         binding.expandButton.setOnClickListener {
             if (binding.customNoteTextView.maxLines == 5) {
@@ -411,10 +395,6 @@ class ItemDetailFragment : Fragment() {
                 } else {
                     photoContainer.visibility = View.GONE
                 }
-                
-                // 根据是否已开封，设置"标记开封"按钮状态
-                markOpenedButton.isEnabled = item.openStatus != OpenStatus.OPENED
-                markOpenedButton.text = if (item.openStatus == OpenStatus.OPENED) "已开封" else "标记开封"
                 
                 // 根据内容决定卡片的可见性
                 updateCardVisibility()

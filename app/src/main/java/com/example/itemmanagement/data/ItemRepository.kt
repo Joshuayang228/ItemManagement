@@ -135,6 +135,54 @@ class ItemRepository(private val itemDao: ItemDao) {
     }
     
     /**
+     * 获取所有标签
+     * @return List<String> 标签列表
+     */
+    suspend fun getAllTags(): List<String> {
+        return itemDao.getAllTags()
+    }
+    
+    suspend fun getAllSeasons(): List<String> {
+        val rawSeasons = itemDao.getAllSeasonsRaw()
+        val seasonSet = mutableSetOf<String>()
+        
+        // 将合并的季节文本拆分成独立的季节
+        rawSeasons.forEach { seasonText ->
+            if (seasonText.isNotBlank()) {
+                // 按常见分隔符拆分季节
+                val separators = listOf(",", "，", "、", ";", "；", "/", "|")
+                var seasons = listOf(seasonText)
+                
+                separators.forEach { separator ->
+                    seasons = seasons.flatMap { it.split(separator) }
+                }
+                
+                seasons.forEach { season ->
+                    val trimmedSeason = season.trim()
+                    if (trimmedSeason.isNotBlank()) {
+                        seasonSet.add(trimmedSeason)
+                    }
+                }
+            }
+        }
+        
+        // 按照自然季节顺序排序
+        val seasonOrder = listOf("春", "夏", "秋", "冬", "初春", "仲春", "暮春", "初夏", "仲夏", "晚夏", "初秋", "仲秋", "晚秋", "初冬", "仲冬", "晚冬")
+        
+        return seasonSet.toList().sortedWith { a, b ->
+            val indexA = seasonOrder.indexOf(a)
+            val indexB = seasonOrder.indexOf(b)
+            
+            when {
+                indexA != -1 && indexB != -1 -> indexA.compareTo(indexB)
+                indexA != -1 && indexB == -1 -> -1
+                indexA == -1 && indexB != -1 -> 1
+                else -> a.compareTo(b)
+            }
+        }
+    }
+    
+    /**
      * 获取所有位置区域
      * @return List<String> 区域列表
      */
@@ -177,8 +225,29 @@ class ItemRepository(private val itemDao: ItemDao) {
             .withLocationSublocation(filterState.sublocation)
             .withQuantityRange(filterState.minQuantity, filterState.maxQuantity)
             .withPriceRange(filterState.minPrice, filterState.maxPrice)
-            .withRatingRange(filterState.minRating, filterState.maxRating)
-            .withOpenStatus(filterState.openStatus)
+            .apply {
+                // 优先使用多选评分，如果没有则使用评分范围
+                if (filterState.ratings.isNotEmpty()) {
+                    withRatings(filterState.ratings)
+                } else {
+                    withRatingRange(filterState.minRating, filterState.maxRating)
+                }
+            }
+            .apply {
+                // 优先使用多选开封状态，如果没有则使用单选开封状态
+                if (filterState.openStatuses.isNotEmpty()) {
+                    withOpenStatuses(filterState.openStatuses)
+                } else {
+                    withOpenStatus(filterState.openStatus)
+                }
+            }
+            .withSeasons(filterState.seasons)
+            .withTags(filterState.tags)
+            // 使用新的分离日期范围方法
+            .withExpirationDateRange(filterState.expirationStartDate, filterState.expirationEndDate)
+            .withCreationDateRange(filterState.creationStartDate, filterState.creationEndDate)
+            .withPurchaseDateRange(filterState.purchaseStartDate, filterState.purchaseEndDate)
+            .withProductionDateRange(filterState.productionStartDate, filterState.productionEndDate)
             .sortBy(filterState.sortOption, filterState.sortDirection)
         
         val query = queryBuilder.build()
