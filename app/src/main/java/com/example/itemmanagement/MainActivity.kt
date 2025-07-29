@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_home,
                 R.id.navigation_item_list,
                 R.id.navigation_warehouse,
-                R.id.navigation_statistics,
+                R.id.navigation_function,
                 R.id.navigation_profile,
                 R.id.nav_category,
                 R.id.nav_settings

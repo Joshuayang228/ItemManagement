@@ -11,6 +11,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.databinding.FragmentEditFieldsBinding
+import com.example.itemmanagement.ui.shopping.ShoppingFieldManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.tabs.TabLayoutMediator
 
@@ -19,12 +20,34 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
     private var _binding: FragmentEditFieldsBinding? = null
     private val binding get() = _binding!!
     private lateinit var viewModel: AddItemViewModel
-    private val tabs = listOf("全部", "基础信息", "数字类", "日期类", "状态类", "分类", "商业类", "其他")
+    private var isShoppingMode: Boolean = false
+    private lateinit var tabs: List<String>
     private var currentAdapter: FieldsPagerAdapter? = null
+    
+    companion object {
+        private const val ARG_IS_SHOPPING_MODE = "is_shopping_mode"
+        
+        fun newInstance(isShoppingMode: Boolean = false): EditFieldsFragment {
+            return EditFieldsFragment().apply {
+                arguments = Bundle().apply {
+                    putBoolean(ARG_IS_SHOPPING_MODE, isShoppingMode)
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 获取购物模式参数
+        isShoppingMode = arguments?.getBoolean(ARG_IS_SHOPPING_MODE, false) ?: false
+        
+        // 根据模式设置tabs
+        tabs = if (isShoppingMode) {
+            listOf("全部", "基础信息", "购物字段", "数字类", "日期类", "状态类", "分类", "商业类", "其他")
+        } else {
+            listOf("全部", "基础信息", "数字类", "日期类", "状态类", "分类", "商业类", "其他")
+        }
         
         // 初始化ViewModel
         val repository = (requireActivity().application as ItemManagementApplication).repository
@@ -85,6 +108,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             val fields = when (tabName) {
                 "全部" -> getAllFields()
                 "基础信息" -> getBasicFields()
+                "购物字段" -> getShoppingFields()
                 "数字类" -> getNumberFields()
                 "日期类" -> getDateFields()
                 "状态类" -> getStatusFields()
@@ -110,10 +134,12 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
     private fun getAllFields(): List<Field> {
         val selectedFields = viewModel.getSelectedFieldsValue()
-        return listOf(
+        val commonFields = listOf(
             Field("基础信息", "名称", selectedFields.any { it.name == "名称" }),
             Field("基础信息", "数量", selectedFields.any { it.name == "数量" }),
             Field("基础信息", "位置", selectedFields.any { it.name == "位置" }),
+            Field("基础信息", "加入心愿单", selectedFields.any { it.name == "加入心愿单" }),
+            Field("基础信息", "高周转", selectedFields.any { it.name == "高周转" }),
             Field("数字类", "单价", selectedFields.any { it.name == "单价" }),
             Field("数字类", "总价", selectedFields.any { it.name == "总价" }),
             Field("数字类", "容量", selectedFields.any { it.name == "容量" }),
@@ -137,6 +163,13 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             Field("商业类", "序列号", selectedFields.any { it.name == "序列号" }),
             Field("其他", "备注", selectedFields.any { it.name == "备注" })
         )
+        
+        // 如果是购物模式，添加购物专用字段
+        return if (isShoppingMode) {
+            commonFields + getShoppingFields()
+        } else {
+            commonFields
+        }
     }
 
     private fun getBasicFields(): List<Field> {
@@ -144,7 +177,9 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         return listOf(
             Field("基础信息", "名称", selectedFields.any { it.name == "名称" }),
             Field("基础信息", "数量", selectedFields.any { it.name == "数量" }),
-            Field("基础信息", "位置", selectedFields.any { it.name == "位置" })
+            Field("基础信息", "位置", selectedFields.any { it.name == "位置" }),
+            Field("基础信息", "加入心愿单", selectedFields.any { it.name == "加入心愿单" }),
+            Field("基础信息", "高周转", selectedFields.any { it.name == "高周转" })
         )
     }
 
@@ -207,6 +242,21 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             Field("其他", "备注", selectedFields.any { it.name == "备注" })
         )
     }
+    
+    private fun getShoppingFields(): List<Field> {
+        if (!isShoppingMode) return emptyList()
+        
+        val selectedFields = viewModel.getSelectedFieldsValue()
+        val shoppingFieldNames = ShoppingFieldManager.getDefaultShoppingFields().filter { fieldName ->
+            // 过滤掉基础信息字段，因为它们在"基础信息"tab中
+            !setOf("名称", "数量", "分类", "品牌", "备注").contains(fieldName)
+        }
+        
+        return shoppingFieldNames.map { fieldName ->
+            val group = ShoppingFieldManager.getShoppingFieldGroup(fieldName)
+            Field(group, fieldName, selectedFields.any { it.name == fieldName })
+        }.sortedBy { ShoppingFieldManager.getShoppingFieldOrder(it.name) }
+    }
 
     override fun onStart() {
         super.onStart()
@@ -233,9 +283,5 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-    }
-
-    companion object {
-        fun newInstance() = EditFieldsFragment()
     }
 }

@@ -2,8 +2,7 @@ package com.example.itemmanagement.data
 
 import android.net.Uri
 import androidx.room.TypeConverter
-import com.example.itemmanagement.data.model.ItemStatus
-import com.example.itemmanagement.data.model.OpenStatus
+import com.example.itemmanagement.data.model.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.util.Date
@@ -53,5 +52,47 @@ class Converters {
         val type = object : TypeToken<List<String>>() {}.type
         val stringList = gson.fromJson<List<String>>(value, type)
         return stringList.map { Uri.parse(it) }
+    }
+
+    // Calendar Event related converters
+    @TypeConverter
+    fun fromEventType(value: EventType?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toEventType(value: String?): EventType? {
+        return value?.let { EventType.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromPriority(value: Priority?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toPriority(value: String?): Priority? {
+        return value?.let { Priority.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromRecurrenceType(value: RecurrenceType?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toRecurrenceType(value: String?): RecurrenceType? {
+        return value?.let { RecurrenceType.valueOf(it) }
+    }
+
+    @TypeConverter
+    fun fromIntList(value: List<Int>?): String {
+        return gson.toJson(value ?: emptyList<Int>())
+    }
+
+    @TypeConverter
+    fun toIntList(value: String): List<Int> {
+        val type = object : TypeToken<List<Int>>() {}.type
+        return gson.fromJson(value, type) ?: emptyList()
     }
 } 

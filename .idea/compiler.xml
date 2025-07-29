@@ -3,6 +3,7 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="ItemManagement.app" target="21" />
+      <module name="ItemManagement.charts" target="21" />
       <module name="My_Application.app" target="21" />
     </bytecodeTargetLevel>
   </component>

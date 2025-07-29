@@ -8,6 +8,9 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.itemmanagement.data.dao.ItemDao
+import com.example.itemmanagement.data.dao.CalendarEventDao
+import com.example.itemmanagement.data.dao.ShoppingDao
+import com.example.itemmanagement.data.dao.ShoppingListDao
 import com.example.itemmanagement.data.entity.*
 
 @Database(
@@ -16,14 +19,20 @@ import com.example.itemmanagement.data.entity.*
         LocationEntity::class,
         PhotoEntity::class,
         TagEntity::class,
-        ItemTagCrossRef::class
+        ItemTagCrossRef::class,
+        CalendarEventEntity::class,
+        ShoppingItemEntity::class,
+    ShoppingListEntity::class
     ],
-    version = 7,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun itemDao(): ItemDao
+    abstract fun calendarEventDao(): CalendarEventDao
+    abstract fun shoppingDao(): ShoppingDao
+    abstract fun shoppingListDao(): ShoppingListDao
 
     companion object {
         @Volatile
@@ -36,7 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                 .build()
                 INSTANCE = instance
                 instance
@@ -330,6 +339,302 @@ abstract class AppDatabase : RoomDatabase() {
                 
                 // 重新创建索引
                 database.execSQL("CREATE INDEX IF NOT EXISTS index_items_locationId ON items(locationId)")
+            }
+        }
+
+        // 添加从版本7升级到版本8的迁移，添加心愿单和高周转字段
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 添加心愿单和高周转字段
+                database.execSQL("ALTER TABLE items ADD COLUMN isWishlistItem INTEGER NOT NULL DEFAULT 0")
+                database.execSQL("ALTER TABLE items ADD COLUMN isHighTurnover INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        // 添加从版本8升级到版本9的迁移，添加日历事件和购物清单功能
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建日历事件表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS calendar_events (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        eventType TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        eventDate INTEGER NOT NULL,
+                        reminderDays TEXT NOT NULL,
+                        priority TEXT NOT NULL,
+                        isCompleted INTEGER NOT NULL DEFAULT 0,
+                        recurrenceType TEXT,
+                        createdDate INTEGER NOT NULL,
+                        completedDate INTEGER,
+                        FOREIGN KEY(itemId) REFERENCES items(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 创建日历事件表的索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_calendar_events_itemId ON calendar_events(itemId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_calendar_events_eventDate ON calendar_events(eventDate)")
+                
+                // 创建购物清单表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS shopping_lists (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        createdDate INTEGER NOT NULL,
+                        targetDate INTEGER,
+                        isCompleted INTEGER NOT NULL DEFAULT 0,
+                        notes TEXT
+                    )
+                """)
+                
+                // 创建购物物品表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS shopping_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        listId INTEGER NOT NULL,
+                        name TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        quantity REAL NOT NULL,
+                        unit TEXT NOT NULL,
+                        estimatedPrice REAL,
+                        actualPrice REAL,
+                        priority TEXT NOT NULL DEFAULT 'NORMAL',
+                        store TEXT,
+                        notes TEXT,
+                        isCompleted INTEGER NOT NULL DEFAULT 0,
+                        linkedItemId INTEGER,
+                        addedReason TEXT NOT NULL DEFAULT 'USER_MANUAL',
+                        createdDate INTEGER NOT NULL,
+                        completedDate INTEGER,
+                        FOREIGN KEY(listId) REFERENCES shopping_lists(id) ON DELETE CASCADE,
+                        FOREIGN KEY(linkedItemId) REFERENCES items(id) ON DELETE SET NULL
+                    )
+                """)
+                
+                // 创建购物物品表的索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_items_listId ON shopping_items(listId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_items_linkedItemId ON shopping_items(linkedItemId)")
+            }
+        }
+
+        // 添加从版本9升级到版本10的迁移，简化购物清单功能
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 1. 创建新的简化购物物品表（与ShoppingItemEntity定义完全匹配）
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS shopping_items_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        quantity REAL NOT NULL,
+                        unit TEXT NOT NULL,
+                        notes TEXT,
+                        isPurchased INTEGER NOT NULL DEFAULT 0,
+                        category TEXT,
+                        brand TEXT,
+                        creationDate INTEGER NOT NULL,
+                        sourceItemId INTEGER
+                    )
+                """)
+                
+                // 2. 迁移现有数据（如果有的话）
+                database.execSQL("""
+                    INSERT INTO shopping_items_new (
+                        id, name, quantity, unit, notes, isPurchased, category, brand, creationDate, sourceItemId
+                    )
+                    SELECT 
+                        id, name, quantity, unit, notes, isCompleted, category, '', createdDate, linkedItemId
+                    FROM shopping_items
+                """)
+                
+                // 3. 删除旧表
+                database.execSQL("DROP TABLE IF EXISTS shopping_items")
+                database.execSQL("DROP TABLE IF EXISTS shopping_lists")
+                
+                // 4. 重命名新表
+                database.execSQL("ALTER TABLE shopping_items_new RENAME TO shopping_items")
+                
+                // 注意：不添加外键约束和索引，因为ShoppingItemEntity没有定义它们
+            }
+        }
+
+        // 迁移 10 到 11：支持完整购物清单系统
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 1. 创建新的购物清单表
+                database.execSQL("""
+                    CREATE TABLE shopping_lists (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        type TEXT NOT NULL DEFAULT 'DAILY',
+                        status TEXT NOT NULL DEFAULT 'ACTIVE',
+                        createdDate INTEGER NOT NULL,
+                        targetDate INTEGER,
+                        estimatedBudget REAL,
+                        actualSpent REAL,
+                        notes TEXT
+                    )
+                """)
+                
+                // 2. 创建默认购物清单
+                database.execSQL("""
+                    INSERT INTO shopping_lists (name, description, type, status, createdDate)
+                    VALUES ('我的购物清单', '默认购物清单', 'DAILY', 'ACTIVE', ${System.currentTimeMillis()})
+                """)
+                
+                // 3. 备份现有购物物品数据
+                database.execSQL("""
+                    CREATE TABLE shopping_items_backup AS 
+                    SELECT * FROM shopping_items
+                """)
+                
+                // 4. 删除旧的购物物品表
+                database.execSQL("DROP TABLE shopping_items")
+                
+                // 5. 创建新的购物物品表（与ItemEntity字段一致）
+                database.execSQL("""
+                    CREATE TABLE shopping_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        listId INTEGER NOT NULL,
+                        name TEXT NOT NULL,
+                        quantity REAL NOT NULL,
+                        unit TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        brand TEXT,
+                        specification TEXT,
+                        subCategory TEXT,
+                        customNote TEXT,
+                        price REAL,
+                        priceUnit TEXT,
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        estimatedPrice REAL,
+                        actualPrice REAL,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        purchaseDate INTEGER,
+                        capacity REAL,
+                        capacityUnit TEXT,
+                        rating REAL,
+                        isPurchased INTEGER NOT NULL DEFAULT 0,
+                        priority TEXT NOT NULL DEFAULT 'NORMAL',
+                        createdDate INTEGER NOT NULL,
+                        sourceItemId INTEGER,
+                        serialNumber TEXT,
+                        season TEXT,
+                        FOREIGN KEY(listId) REFERENCES shopping_lists(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 6. 迁移旧数据到新表（关联到默认清单）
+                database.execSQL("""
+                    INSERT INTO shopping_items (
+                        listId, name, quantity, unit, category, brand, customNote, 
+                        isPurchased, createdDate, sourceItemId
+                    )
+                    SELECT 
+                        1 as listId,
+                        name, quantity, unit, 
+                        COALESCE(category, '未分类') as category, 
+                        brand, notes as customNote,
+                        isPurchased, creationDate, sourceItemId
+                    FROM shopping_items_backup
+                """)
+                
+                // 7. 创建索引
+                database.execSQL("CREATE INDEX index_shopping_items_listId ON shopping_items(listId)")
+                
+                // 8. 清理备份表
+                database.execSQL("DROP TABLE shopping_items_backup")
+            }
+        }
+
+        /**
+         * 迁移 11 -> 12: 重构购物物品表字段
+         * 移除不必要的unit字段，添加购物特有字段
+         */
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 1. 备份现有数据
+                database.execSQL("CREATE TABLE shopping_items_backup AS SELECT * FROM shopping_items")
+                
+                // 2. 删除旧表
+                database.execSQL("DROP TABLE shopping_items")
+                
+                // 3. 创建新的购物物品表（移除unit字段，添加新字段）
+                database.execSQL("""
+                    CREATE TABLE shopping_items (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        listId INTEGER NOT NULL,
+                        name TEXT NOT NULL,
+                        quantity REAL NOT NULL,
+                        category TEXT NOT NULL,
+                        subCategory TEXT,
+                        brand TEXT,
+                        specification TEXT,
+                        customNote TEXT,
+                        estimatedPrice REAL,
+                        actualPrice REAL,
+                        priceUnit TEXT DEFAULT '元',
+                        budgetLimit REAL,
+                        totalPrice REAL,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        preferredStore TEXT,
+                        purchaseDate INTEGER,
+                        isPurchased INTEGER NOT NULL DEFAULT 0,
+                        priority TEXT NOT NULL DEFAULT 'NORMAL',
+                        urgencyLevel TEXT NOT NULL DEFAULT 'NORMAL',
+                        deadline INTEGER,
+                        capacity REAL,
+                        capacityUnit TEXT,
+                        rating REAL,
+                        season TEXT,
+                        sourceItemId INTEGER,
+                        recommendationReason TEXT,
+                        addedReason TEXT DEFAULT 'USER_MANUAL',
+                        createdDate INTEGER NOT NULL,
+                        completedDate INTEGER,
+                        remindDate INTEGER,
+                        serialNumber TEXT,
+                        isRecurring INTEGER NOT NULL DEFAULT 0,
+                        recurringInterval INTEGER,
+                        tags TEXT,
+                        FOREIGN KEY(listId) REFERENCES shopping_lists(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 4. 迁移数据（保留兼容的字段）
+                database.execSQL("""
+                    INSERT INTO shopping_items (
+                        id, listId, name, quantity, category, subCategory, brand, 
+                        specification, customNote, estimatedPrice, actualPrice, 
+                        priceUnit, totalPrice, purchaseChannel, storeName, 
+                        purchaseDate, isPurchased, priority, capacity, capacityUnit, 
+                        rating, season, sourceItemId, createdDate, serialNumber
+                    )
+                    SELECT 
+                        id, listId, name, quantity, 
+                        COALESCE(category, '未分类') as category,
+                        subCategory, brand, specification, customNote,
+                        estimatedPrice, actualPrice, priceUnit, totalPrice,
+                        purchaseChannel, storeName, purchaseDate, 
+                        COALESCE(isPurchased, 0) as isPurchased,
+                        COALESCE(priority, 'NORMAL') as priority,
+                        capacity, capacityUnit, rating, season, sourceItemId,
+                        COALESCE(createdDate, datetime('now')) as createdDate,
+                        serialNumber
+                    FROM shopping_items_backup
+                """)
+                
+                // 5. 创建索引
+                database.execSQL("CREATE INDEX index_shopping_items_listId ON shopping_items(listId)")
+                
+                // 6. 清理备份表
+                database.execSQL("DROP TABLE shopping_items_backup")
             }
         }
     }

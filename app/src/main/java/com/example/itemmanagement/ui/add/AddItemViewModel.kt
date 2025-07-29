@@ -10,6 +10,7 @@ import com.example.itemmanagement.data.entity.PhotoEntity
 import com.example.itemmanagement.data.entity.TagEntity
 import com.example.itemmanagement.data.mapper.toItemEntity
 import com.example.itemmanagement.data.mapper.toLocationEntity
+import com.example.itemmanagement.data.mapper.toItem
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.data.model.OpenStatus
 import com.example.itemmanagement.data.model.CustomLocationData
@@ -431,6 +432,20 @@ class AddItemViewModel(
         setFieldProperties("序列号", FieldProperties(
             validationType = ValidationType.TEXT,
             hint = "请输入序列号"
+        ))
+
+        // 加入心愿单字段 - Switch类型
+        setFieldProperties("加入心愿单", FieldProperties(
+            validationType = ValidationType.TEXT,
+            defaultValue = "false",
+            hint = "是否加入心愿单"
+        ))
+
+        // 高周转字段 - Switch类型  
+        setFieldProperties("高周转", FieldProperties(
+            validationType = ValidationType.TEXT,
+            defaultValue = "false", 
+            hint = "是否为高周转物品"
         ))
         
         // 为缺失的字段添加属性定义
@@ -1114,7 +1129,9 @@ class AddItemViewModel(
             Field("分类", "分类", false),
             Field("日期类", "生产日期", false),
             Field("日期类", "保质过期时间", false),
-            Field("日期类", "添加日期", false)
+            Field("日期类", "添加日期", false),
+            Field("基础信息", "加入心愿单", false),
+            Field("基础信息", "高周转", false)
         )
         
         // 清除当前选中的字段
@@ -1333,6 +1350,10 @@ class AddItemViewModel(
             item.warrantyEndDate?.let { saveFieldValue("保修到期时间", SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it)) }
             item.serialNumber?.let { if (it.isNotBlank()) saveFieldValue("序列号", it) }
             
+            // 处理心愿单和高周转字段
+            saveFieldValue("加入心愿单", item.isWishlistItem.toString())
+            saveFieldValue("高周转", item.isHighTurnover.toString())
+            
             // 处理标签数据
             if (item.tags.isNotEmpty()) {
                 val tagSet = item.tags.map { it.name }.toSet()
@@ -1362,6 +1383,9 @@ class AddItemViewModel(
             if (!item.storeName.isNullOrBlank() && item.storeName != "未指定") fieldsToAdd.add(Field("商业类", "商家名称", true))
             if (!item.subCategory.isNullOrBlank() && item.subCategory != "未指定") fieldsToAdd.add(Field("分类", "子分类", true))
             if (!item.customNote.isNullOrBlank()) fieldsToAdd.add(Field("其他", "备注", true))
+            // 总是添加心愿单和高周转字段，因为它们有默认值
+            fieldsToAdd.add(Field("基础信息", "加入心愿单", true))
+            fieldsToAdd.add(Field("基础信息", "高周转", true))
             if (!item.season.isNullOrBlank() && item.season != "未指定") fieldsToAdd.add(Field("分类", "季节", true))
             if (item.capacity != null) fieldsToAdd.add(Field("数字类", "容量", true))
             if (item.rating != null) fieldsToAdd.add(Field("数字类", "评分", true))
@@ -1507,4 +1531,139 @@ class AddItemViewModel(
             null
         }
     }
+
+    /**
+     * 从购物清单项目预填充表单数据
+     * 这个方法将购物清单中的信息自动填入相应的字段，减少用户重复输入
+     */
+    fun prepareFormFromShoppingItem(shoppingItemEntity: com.example.itemmanagement.data.entity.ShoppingItemEntity) {
+        viewModelScope.launch {
+            try {
+                // 基础信息填充
+                saveFieldValue("名称", shoppingItemEntity.name)
+                saveFieldValue("数量", shoppingItemEntity.quantity)
+                saveFieldValue("分类", shoppingItemEntity.category)
+                
+                // 可选信息填充
+                shoppingItemEntity.customNote?.let { notes ->
+                    saveFieldValue("自定义备注", notes)
+                }
+                
+                shoppingItemEntity.brand?.let { brand ->
+                    saveFieldValue("品牌", brand)
+                }
+                
+                shoppingItemEntity.specification?.let { spec ->
+                    saveFieldValue("规格", spec)
+                }
+                
+                shoppingItemEntity.subCategory?.let { subCat ->
+                    saveFieldValue("子分类", subCat)
+                }
+                
+                // 价格信息填充
+                shoppingItemEntity.estimatedPrice?.let { price ->
+                    saveFieldValue("预估价格", price)
+                }
+                
+                shoppingItemEntity.actualPrice?.let { actualPrice ->
+                    saveFieldValue("实际价格", actualPrice)
+                }
+                
+                shoppingItemEntity.totalPrice?.let { total ->
+                    saveFieldValue("总价", total)
+                }
+                
+                // 购买信息填充
+                shoppingItemEntity.purchaseChannel?.let { channel ->
+                    saveFieldValue("购买渠道", channel)
+                }
+                
+                shoppingItemEntity.storeName?.let { store ->
+                    saveFieldValue("商店名称", store)
+                }
+                
+                // 容量信息填充
+                shoppingItemEntity.capacity?.let { capacity ->
+                    saveFieldValue("容量", capacity)
+                }
+                
+                shoppingItemEntity.capacityUnit?.let { unit ->
+                    saveFieldValue("容量单位", unit)
+                }
+                
+                // 评分
+                shoppingItemEntity.rating?.let { rating ->
+                    saveFieldValue("评分", rating)
+                }
+                
+                // 深度填充：如果购物项目有源物品ID，从源物品加载更多信息
+                shoppingItemEntity.sourceItemId?.let { sourceItemId ->
+                    val originalItemWithDetails = repository.getItemWithDetailsById(sourceItemId)
+                    originalItemWithDetails?.let { itemWithDetails ->
+                        val item = itemWithDetails.toItem()
+                        
+                        // 从原始物品填充更多字段（如果购物清单中没有指定的话）
+                        if (shoppingItemEntity.brand.isNullOrBlank()) {
+                            item.brand?.let { brandValue: String ->
+                                saveFieldValue("品牌", brandValue)
+                            }
+                        }
+                        
+                        if (shoppingItemEntity.specification.isNullOrBlank()) {
+                            item.specification?.let { specValue: String ->
+                                saveFieldValue("规格", specValue)
+                            }
+                        }
+                        
+                        // 填充其他有用的信息（从源物品补充）
+                        
+                        // 如果原物品有标签，也可以预设标签
+                        if (item.tags.isNotEmpty()) {
+                            val tagNames = item.tags.map { tag: com.example.itemmanagement.data.model.Tag -> tag.name }.toSet()
+                            saveFieldValue("标签", tagNames)
+                        }
+                        
+                        // 预设默认的存放位置（可能用户想放在同一个地方）
+                        item.location?.let { locationValue: com.example.itemmanagement.data.model.Location ->
+                            // 简单地保存位置字符串到备注中，而不是使用复杂的CustomLocationData
+                            val locationText = locationValue.getFullLocationString()
+                            saveFieldValue("存放位置备注", "建议存放位置：$locationText")
+                        }
+                        
+                        // 预设价格单位和总价单位
+                        item.priceUnit?.let { priceUnitValue: String ->
+                            saveFieldValue("价格单位", priceUnitValue)
+                        }
+                        
+                        item.totalPriceUnit?.let { totalPriceUnitValue: String ->
+                            saveFieldValue("总价单位", totalPriceUnitValue)
+                        }
+                        
+                        // 预设容量单位
+                        item.capacityUnit?.let { capacityUnitValue: String ->
+                            saveFieldValue("容量单位", capacityUnitValue)
+                        }
+                    }
+                }
+                
+                // 设置当前日期为添加日期
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                saveFieldValue("添加日期", dateFormat.format(Date()))
+                
+                Log.d("AddItemViewModel", "成功从购物清单项目预填充表单数据: ${shoppingItemEntity.name}")
+                
+            } catch (e: Exception) {
+                Log.e("AddItemViewModel", "从购物清单预填充数据失败", e)
+                _errorMessage.value = "预填充数据失败: ${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 获取Repository实例（供其他Fragment使用）
+     */
+    fun getRepository(): com.example.itemmanagement.data.ItemRepository = repository
+    
+
 }

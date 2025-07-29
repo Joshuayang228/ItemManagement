@@ -255,6 +255,7 @@ class FieldValueManager(
                                         val editText = findEditTextInView(view)
                                         val radioGroup = findRadioGroupInView(view)
                                         val ratingBar = findRatingBarInView(view)
+                                        val switchView = findSwitchInView(view)
                                         val spinnerTextView = findTextViewInView(view, SPINNER_TAG_PREFIX, fieldName)
 
                                         when {
@@ -284,6 +285,10 @@ class FieldValueManager(
                                                 } else {
                                                     viewModel.clearFieldValue(fieldName)
                                                 }
+                                            }
+                                            switchView != null -> {
+                                                // 保存Switch的状态
+                                                viewModel.saveFieldValue(fieldName, switchView.isChecked.toString())
                                             }
                                             spinnerTextView != null -> {
                                                 val value = spinnerTextView.text.toString()
@@ -662,6 +667,7 @@ class FieldValueManager(
                                         val editText = findEditTextInView(view)
                                         val radioGroup = findRadioGroupInView(view)
                                         val ratingBar = findRatingBarInView(view)
+                                        val switchView = findSwitchInView(view)
 
                                         when {
                                             editText != null -> {
@@ -689,6 +695,15 @@ class FieldValueManager(
                                                 if (rating > 0) {
                                                     ratingBar.rating = rating
                                                 }
+                                            }
+                                            switchView != null -> {
+                                                // 恢复Switch的状态
+                                                val isChecked = when (value) {
+                                                    is Boolean -> value
+                                                    is String -> value.toBoolean()
+                                                    else -> false
+                                                }
+                                                switchView.isChecked = isChecked
                                             }
                                         }
                                     }
@@ -807,6 +822,26 @@ class FieldValueManager(
                 for (i in 0 until view.childCount) {
                     val child = view.getChildAt(i)
                     val result = findRadioGroupInView(child)
+                    if (result != null) {
+                        return result
+                    }
+                }
+                null
+            }
+            else -> null
+        }
+    }
+
+    /**
+     * 在视图层次结构中查找Switch控件
+     */
+    private fun findSwitchInView(view: View): Switch? {
+        return when (view) {
+            is Switch -> view
+            is ViewGroup -> {
+                for (i in 0 until view.childCount) {
+                    val child = view.getChildAt(i)
+                    val result = findSwitchInView(child)
                     if (result != null) {
                         return result
                     }

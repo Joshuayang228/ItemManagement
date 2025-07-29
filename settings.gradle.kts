@@ -23,6 +23,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://www.jitpack.io") }
     }
 }
 
@@ -31,3 +32,7 @@ rootProject.name = "ItemManagement"
 
 // 包含的子模块
 include(":app") 
+
+// 本地AAChartCore-Kotlin模块
+include(":charts")
+project(":charts").projectDir = file("libs/AAChartCore-Kotlin-7.4.0/charts") 

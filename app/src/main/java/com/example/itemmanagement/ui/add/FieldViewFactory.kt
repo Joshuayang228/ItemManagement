@@ -18,6 +18,7 @@ import com.google.android.material.chip.ChipGroup
 import java.text.SimpleDateFormat
 import java.util.*
 import android.widget.Toast
+import android.widget.Switch
 
 /**
  * 负责创建各种类型的字段视图的工厂类
@@ -121,6 +122,7 @@ class FieldViewFactory(
         // 根据字段类型创建不同的输入控件
         val input = when {
             field.name == "开封状态" -> createRadioGroup()
+            field.name == "加入心愿单" || field.name == "高周转" -> createSwitchView(field.name, properties)
             properties.displayStyle == AddItemViewModel.DisplayStyle.TAG -> createTagSelector(field.name, properties)
             properties.displayStyle == AddItemViewModel.DisplayStyle.RATING_STAR -> createRatingBar()
             properties.displayStyle == AddItemViewModel.DisplayStyle.PERIOD_SELECTOR -> createPeriodSelector(field.name, properties)
@@ -177,6 +179,11 @@ class FieldViewFactory(
             }
             is TextView -> { // Handles DatePicker TextView primarily
                 // If the TextView (e.g., DatePicker) is WRAP_CONTENT, align it to the end.
+                inputContainer.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                inputContainer.addView(input)
+            }
+            is Switch -> {
+                // 右对齐Switch控件
                 inputContainer.gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 inputContainer.addView(input)
             }
@@ -1083,5 +1090,30 @@ class FieldViewFactory(
 
         container.addView(ratingBar)
         return container
+    }
+
+    private fun createSwitchView(fieldName: String, properties: AddItemViewModel.FieldProperties): View {
+        return Switch(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            
+            // 设置唯一标识
+            tag = "switch_${fieldName}"
+            
+            // 设置默认值为false（关闭状态）
+            isChecked = false
+            
+            // 设置切换监听器
+            setOnCheckedChangeListener { _, isChecked ->
+                // 保存开关状态到ViewModel
+                viewModel.saveFieldValue(fieldName, isChecked.toString())
+            }
+            
+            // 设置开关样式
+            textSize = 14f
+            setPadding(8, 8, 8, 8)
+        }
     }
 }

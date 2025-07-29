@@ -11,9 +11,9 @@
         android:title="@string/title_warehouse" />
 
     <item
-        android:id="@+id/navigation_statistics"
+        android:id="@+id/navigation_function"
         android:icon="@drawable/ic_statistics"
-        android:title="@string/title_statistics" />
+        android:title="@string/title_function" />
 
     <item
         android:id="@+id/navigation_profile"

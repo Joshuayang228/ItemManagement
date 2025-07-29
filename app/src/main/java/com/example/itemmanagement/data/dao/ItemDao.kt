@@ -103,6 +103,77 @@ interface ItemDao {
     @Query("SELECT * FROM tags WHERE name LIKE :query")
     suspend fun searchTags(query: String): List<TagEntity>
 
+    // ==================== 库存分析查询 ====================
+    
+    // 核心指标查询
+    @Query("SELECT COUNT(*) as totalItems FROM items")
+    suspend fun getTotalItemsCount(): Int
+    
+    @Query("SELECT COALESCE(SUM(price), 0.0) as totalValue FROM items WHERE price IS NOT NULL")
+    suspend fun getTotalValue(): Double
+    
+    @Query("SELECT COUNT(DISTINCT category) as categoriesCount FROM items WHERE category IS NOT NULL AND category != ''")
+    suspend fun getCategoriesCount(): Int
+    
+    @Query("SELECT COUNT(DISTINCT locationId) as locationsCount FROM items WHERE locationId IS NOT NULL")
+    suspend fun getLocationsCount(): Int
+    
+    @Query("SELECT COUNT(DISTINCT t.name) as tagsCount FROM tags t INNER JOIN item_tag_cross_ref itcr ON t.id = itcr.tagId")
+    suspend fun getTagsCount(): Int
+    
+    // 分类分析查询
+    @Query("""
+        SELECT COALESCE(category, '未分类') as category, 
+               COUNT(*) as count, 
+               COALESCE(SUM(price), 0.0) as totalValue 
+        FROM items 
+        GROUP BY COALESCE(category, '未分类')
+        HAVING count > 0
+        ORDER BY count DESC
+    """)
+    suspend fun getCategoryAnalysis(): List<CategoryAnalysisResult>
+    
+    // 位置分析查询
+    @Query("""
+        SELECT COALESCE(l.area, '未指定位置') as location, 
+               COUNT(i.id) as count,
+               COALESCE(SUM(i.price), 0.0) as totalValue
+        FROM items i
+        LEFT JOIN locations l ON i.locationId = l.id
+        GROUP BY COALESCE(l.area, '未指定位置')
+        HAVING count > 0
+        ORDER BY count DESC
+    """)
+    suspend fun getLocationAnalysis(): List<LocationAnalysisResult>
+    
+    // 标签分析查询
+    @Query("""
+        SELECT COALESCE(t.name, '无标签') as tag, 
+               COUNT(DISTINCT i.id) as count,
+               COALESCE(SUM(i.price), 0.0) as totalValue
+        FROM items i
+        LEFT JOIN item_tag_cross_ref itcr ON i.id = itcr.itemId
+        LEFT JOIN tags t ON itcr.tagId = t.id
+        GROUP BY COALESCE(t.name, '无标签')
+        HAVING count > 0
+        ORDER BY count DESC
+    """)
+    suspend fun getTagAnalysis(): List<TagAnalysisResult>
+    
+    // 月度趋势查询
+    @Query("""
+        SELECT strftime('%Y-%m', addDate/1000, 'unixepoch') as month, 
+               COUNT(*) as count, 
+               COALESCE(SUM(price), 0.0) as totalValue
+        FROM items 
+        WHERE addDate IS NOT NULL AND addDate > 0
+        GROUP BY strftime('%Y-%m', addDate/1000, 'unixepoch')
+        HAVING month IS NOT NULL
+        ORDER BY month DESC
+        LIMIT 12
+    """)
+    suspend fun getMonthlyTrends(): List<MonthlyTrendResult>
+
     // 事务操作
     @Transaction
     suspend fun insertItemWithDetails(
@@ -173,5 +244,149 @@ interface ItemDao {
 
     // 为仓库列表页添加新的查询方法
     @RawQuery(observedEntities = [ItemEntity::class, LocationEntity::class, PhotoEntity::class])
-    fun getWarehouseItems(query: SupportSQLiteQuery): Flow<List<WarehouseItem>>
-} 
+            fun getWarehouseItems(query: SupportSQLiteQuery): Flow<List<WarehouseItem>>
+
+    // =================== 浪费报告相关查询 ===================
+    
+    /**
+     * 获取指定时间范围内的浪费物品（过期或丢弃）
+     */
+    @Query("""
+        SELECT i.id, i.name, i.category, i.quantity, i.unit, i.status, 
+               i.addDate, i.totalPrice,
+               l.area, l.container, l.sublocation,
+               (SELECT p.uri FROM photos p WHERE p.itemId = i.id 
+                ORDER BY p.isMain DESC, p.displayOrder ASC LIMIT 1) as photoUri
+        FROM items i
+        LEFT JOIN locations l ON i.locationId = l.id
+        WHERE (i.status = 'EXPIRED' OR i.status = 'DISCARDED')
+        AND i.addDate BETWEEN :startDate AND :endDate
+        ORDER BY i.addDate DESC
+    """)
+    suspend fun getWastedItemsInPeriod(startDate: Long, endDate: Long): List<WastedItemInfo>
+
+    /**
+     * 获取指定时间范围内按类别统计的浪费数据
+     */
+    @Query("""
+        SELECT 
+            category,
+            COUNT(*) as itemCount,
+            COALESCE(SUM(totalPrice), 0) as totalValue
+        FROM items 
+        WHERE (status = 'EXPIRED' OR status = 'DISCARDED')
+        AND addDate BETWEEN :startDate AND :endDate
+        GROUP BY category
+        ORDER BY itemCount DESC
+    """)
+    suspend fun getWasteByCategoryInPeriod(startDate: Long, endDate: Long): List<WasteCategoryInfo>
+
+    /**
+     * 获取指定时间范围内按日期统计的浪费数据
+     */
+    @Query("""
+        SELECT 
+            DATE(addDate/1000, 'unixepoch') as date,
+            COUNT(*) as itemCount,
+            COALESCE(SUM(totalPrice), 0) as totalValue
+        FROM items 
+        WHERE (status = 'EXPIRED' OR status = 'DISCARDED')
+        AND addDate BETWEEN :startDate AND :endDate
+        GROUP BY DATE(addDate/1000, 'unixepoch')
+        ORDER BY date ASC
+    """)
+    suspend fun getWasteByDateInPeriod(startDate: Long, endDate: Long): List<WasteDateInfo>
+
+    /**
+     * 获取浪费报告统计概要
+     */
+    @Query("""
+        SELECT 
+            COUNT(*) as totalItems,
+            COALESCE(SUM(totalPrice), 0) as totalValue,
+            SUM(CASE WHEN status = 'EXPIRED' THEN 1 ELSE 0 END) as expiredItems,
+            SUM(CASE WHEN status = 'DISCARDED' THEN 1 ELSE 0 END) as discardedItems
+        FROM items 
+        WHERE (status = 'EXPIRED' OR status = 'DISCARDED')
+        AND addDate BETWEEN :startDate AND :endDate
+    """)
+    suspend fun getWasteSummaryInPeriod(startDate: Long, endDate: Long): WasteSummaryInfo
+
+    /**
+     * 检查并更新过期物品状态
+     * @param currentTime 当前时间戳
+     * @return 更新的物品数量
+     */
+    @Query("""
+        UPDATE items 
+        SET status = 'EXPIRED'
+        WHERE status = 'IN_STOCK' 
+        AND expirationDate IS NOT NULL 
+        AND expirationDate < :currentTime
+    """)
+    suspend fun updateExpiredItems(currentTime: Long)
+}
+
+// 分析查询结果数据类
+data class CategoryAnalysisResult(
+    val category: String,
+    val count: Int,
+    val totalValue: Double
+)
+
+data class LocationAnalysisResult(
+    val location: String,
+    val count: Int,
+    val totalValue: Double
+)
+
+data class TagAnalysisResult(
+    val tag: String,
+    val count: Int,
+    val totalValue: Double
+)
+
+data class MonthlyTrendResult(
+    val month: String,
+    val count: Int,
+    val totalValue: Double
+)
+
+// =================== 浪费报告查询结果数据类 ===================
+
+data class WastedItemInfo(
+    val id: Long,
+    val name: String,
+    val category: String,
+    val quantity: Double,
+    val unit: String,
+    val status: String,
+    val addDate: Long,
+    val totalPrice: Double,
+    val area: String?,
+    val container: String?,
+    val sublocation: String?,
+    val photoUri: String?
+)
+
+data class WasteCategoryInfo(
+    val category: String,
+    val itemCount: Int,
+    val totalValue: Double
+)
+
+data class WasteDateInfo(
+    val date: String,
+    val itemCount: Int,
+    val totalValue: Double
+)
+
+/**
+ * 浪费报告相关的数据查询结果类
+ */
+data class WasteSummaryInfo(
+    val totalItems: Int,
+    val totalValue: Double,
+    val expiredItems: Int,
+    val discardedItems: Int
+) 

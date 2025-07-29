@@ -53,5 +53,7 @@ data class ItemEntity(
     val shelfLife: Int?,
     val warrantyPeriod: Int?,
     val warrantyEndDate: Date?,
-    val serialNumber: String?
+    val serialNumber: String?,
+    val isWishlistItem: Boolean = false,  // 是否加入心愿单
+    val isHighTurnover: Boolean = false   // 是否高周转
 ) 

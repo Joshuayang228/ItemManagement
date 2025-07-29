@@ -99,4 +99,7 @@ dependencies {
 
     // Google Flexbox
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+    
+    // AAInfographics (AAChartCore-Kotlin) for charts - 本地依赖
+    implementation(project(":charts"))
 } 

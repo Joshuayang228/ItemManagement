@@ -436,6 +436,8 @@ abstract class BaseItemFragment : Fragment() {
             warrantyPeriod = warrantyPeriodValue,
             warrantyEndDate = parseDate(values["保修到期时间"] as? String),
             serialNumber = values["序列号"] as? String,
+            isWishlistItem = (values["加入心愿单"] as? String)?.toBoolean() ?: false,
+            isHighTurnover = (values["高周转"] as? String)?.toBoolean() ?: false,
             photos = photoList,
             addDate = parseDate(values["添加日期"] as? String) ?: Date(),
             status = com.example.itemmanagement.data.model.ItemStatus.IN_STOCK,

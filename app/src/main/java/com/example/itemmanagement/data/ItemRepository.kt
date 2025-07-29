@@ -4,8 +4,7 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.itemmanagement.data.dao.ItemDao
 import com.example.itemmanagement.data.entity.*
 import com.example.itemmanagement.data.mapper.toItem
-import com.example.itemmanagement.data.model.Item
-import com.example.itemmanagement.data.model.WarehouseItem
+import com.example.itemmanagement.data.model.*
 import com.example.itemmanagement.data.query.ItemQueryBuilder
 import com.example.itemmanagement.data.relation.ItemWithDetails
 import com.example.itemmanagement.ui.warehouse.FilterState
@@ -18,7 +17,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class ItemRepository(private val itemDao: ItemDao) {
+class ItemRepository(private val itemDao: ItemDao, private val database: AppDatabase) {
     
     /**
      * 获取所有物品列表（包含详细信息）
@@ -253,5 +252,265 @@ class ItemRepository(private val itemDao: ItemDao) {
         val query = queryBuilder.build()
         
         return itemDao.getWarehouseItems(query)
+    }
+    
+    // ==================== 库存分析方法 ====================
+    
+    /**
+     * 获取库存分析数据
+     */
+    suspend fun getInventoryAnalysisData(): InventoryAnalysisData {
+        // 并行获取所有数据以提高性能
+        val coreMetrics = CoreMetrics(
+            totalItems = itemDao.getTotalItemsCount(),
+            totalValue = itemDao.getTotalValue(),
+            categoriesCount = itemDao.getCategoriesCount(),
+            locationsCount = itemDao.getLocationsCount(),
+            tagsCount = itemDao.getTagsCount()
+        )
+        
+        val categoryAnalysis = itemDao.getCategoryAnalysis().map {
+            CategoryValue(
+                category = it.category,
+                count = it.count,
+                totalValue = it.totalValue
+            )
+        }
+        
+        val locationAnalysis = itemDao.getLocationAnalysis().map {
+            LocationValue(
+                location = it.location,
+                count = it.count,
+                totalValue = it.totalValue
+            )
+        }
+        
+        val tagAnalysis = itemDao.getTagAnalysis().map {
+            TagValue(
+                tag = it.tag,
+                count = it.count,
+                totalValue = it.totalValue
+            )
+        }
+        
+        val monthlyTrends = itemDao.getMonthlyTrends().map {
+            MonthlyTrend(
+                month = it.month,
+                count = it.count,
+                totalValue = it.totalValue
+            )
+        }
+        
+        return InventoryAnalysisData(
+            coreMetrics = coreMetrics,
+            categoryAnalysis = categoryAnalysis,
+            locationAnalysis = locationAnalysis,
+            tagAnalysis = tagAnalysis,
+            monthlyTrends = monthlyTrends
+        )
+    }
+    
+    // ==================== 日历事件方法 ====================
+    
+    suspend fun getAllCalendarEvents() = database.calendarEventDao().getAllEvents()
+    
+    suspend fun getCalendarEventsBetweenDates(startDate: java.util.Date, endDate: java.util.Date) = 
+        database.calendarEventDao().getEventsBetweenDates(startDate, endDate)
+    
+    suspend fun insertCalendarEvent(event: CalendarEventEntity): Long =
+        database.calendarEventDao().insertEvent(event)
+    
+    suspend fun insertCalendarEvents(events: List<CalendarEventEntity>): List<Long> =
+        database.calendarEventDao().insertEvents(events)
+    
+    suspend fun markCalendarEventCompleted(eventId: Long) =
+        database.calendarEventDao().markEventCompleted(eventId)
+    
+    suspend fun deleteCalendarEvent(eventId: Long) =
+        database.calendarEventDao().deleteEventById(eventId)
+    
+    // ==================== 购物清单功能 (简化版本) ====================
+    
+    /**
+     * 获取所有购物清单项目
+     */
+    fun getAllShoppingItems(): Flow<List<ShoppingItemEntity>> {
+        return database.shoppingDao().getAllShoppingItems()
+    }
+    
+    /**
+     * 获取指定清单的待购买物品
+     */
+    fun getPendingShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>> {
+        return database.shoppingDao().getPendingShoppingItemsByListId(listId)
+    }
+    
+    /**
+     * 获取指定清单的已购买物品
+     */
+    fun getPurchasedShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>> {
+        return database.shoppingDao().getPurchasedShoppingItemsByListId(listId)
+    }
+    
+    /**
+     * 添加新的购物项目
+     */
+    suspend fun insertShoppingItemSimple(item: ShoppingItemEntity): Long {
+        return database.shoppingDao().insertShoppingItem(item)
+    }
+    
+    /**
+     * 更新购物项目（主要用于标记购买状态）
+     */
+    suspend fun updateShoppingItem(item: ShoppingItemEntity) {
+        database.shoppingDao().updateShoppingItem(item)
+    }
+    
+    /**
+     * 删除购物项目
+     */
+    suspend fun deleteShoppingItem(item: ShoppingItemEntity) {
+        database.shoppingDao().deleteShoppingItem(item)
+    }
+    
+    /**
+     * 通过ID删除购物项目
+     */
+    suspend fun deleteShoppingItemById(id: Long) {
+        database.shoppingDao().deleteShoppingItemById(id)
+    }
+    
+    /**
+     * 清除指定清单的已购买项目
+     */
+    suspend fun clearPurchasedShoppingItemsByListId(listId: Long) {
+        database.shoppingDao().clearPurchasedItemsByListId(listId)
+    }
+    
+    /**
+     * 获取指定清单的待购买项目数量
+     */
+    fun getPendingShoppingItemsCountByListId(listId: Long): Flow<Int> {
+        return database.shoppingDao().getPendingItemsCountByListId(listId)
+    }
+    
+    /**
+     * 从库存物品创建购物项目
+     */
+    suspend fun createShoppingItemFromInventory(itemId: Long, listId: Long): Long? {
+        val item = getItemWithDetailsById(itemId)?.toItem()
+        return if (item != null) {
+            val shoppingItem = ShoppingItemEntity(
+                listId = listId,
+                name = item.name,
+                quantity = 1.0, // 默认数量为1
+                category = item.category,
+                brand = item.brand,
+                sourceItemId = item.id,
+                customNote = "从库存物品 '${item.name}' 添加"
+            )
+            insertShoppingItemSimple(shoppingItem)
+        } else {
+            null
+        }
+    }
+    
+    // =================== 浪费报告相关方法 ===================
+
+    /**
+     * 获取指定时间范围内的浪费物品
+     */
+    suspend fun getWastedItemsInPeriod(startDate: Long, endDate: Long) = 
+        itemDao.getWastedItemsInPeriod(startDate, endDate)
+
+    /**
+     * 获取指定时间范围内按类别统计的浪费数据
+     */
+    suspend fun getWasteByCategoryInPeriod(startDate: Long, endDate: Long) = 
+        itemDao.getWasteByCategoryInPeriod(startDate, endDate)
+
+    /**
+     * 获取指定时间范围内按日期统计的浪费数据
+     */
+    suspend fun getWasteByDateInPeriod(startDate: Long, endDate: Long) = 
+        itemDao.getWasteByDateInPeriod(startDate, endDate)
+
+    /**
+     * 获取浪费报告统计概要
+     */
+    suspend fun getWasteSummaryInPeriod(startDate: Long, endDate: Long) = 
+        itemDao.getWasteSummaryInPeriod(startDate, endDate)
+
+    /**
+     * 检查并更新过期物品
+     * @param currentTime 当前时间戳
+     */
+    suspend fun checkAndUpdateExpiredItems(currentTime: Long) {
+        itemDao.updateExpiredItems(currentTime)
+    }
+
+    // ====================== 购物清单相关方法 ======================
+    
+    /**
+     * 获取所有购物清单
+     */
+    fun getAllShoppingLists(): Flow<List<ShoppingListEntity>> {
+        return database.shoppingListDao().getAllShoppingLists()
+    }
+    
+    /**
+     * 获取活跃的购物清单
+     */
+    fun getActiveShoppingLists(): Flow<List<ShoppingListEntity>> {
+        return database.shoppingListDao().getActiveShoppingLists()
+    }
+    
+    /**
+     * 根据ID获取购物清单
+     */
+    suspend fun getShoppingListById(id: Long): ShoppingListEntity? {
+        return database.shoppingListDao().getShoppingListById(id)
+    }
+    
+    /**
+     * 插入购物清单
+     */
+    suspend fun insertShoppingList(shoppingList: ShoppingListEntity): Long {
+        return database.shoppingListDao().insertShoppingList(shoppingList)
+    }
+    
+    /**
+     * 更新购物清单
+     */
+    suspend fun updateShoppingList(shoppingList: ShoppingListEntity) {
+        database.shoppingListDao().updateShoppingList(shoppingList)
+    }
+    
+    /**
+     * 删除购物清单
+     */
+    suspend fun deleteShoppingList(shoppingList: ShoppingListEntity) {
+        database.shoppingListDao().deleteShoppingList(shoppingList)
+    }
+    
+    /**
+     * 获取指定清单的物品列表
+     */
+    fun getShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>> {
+        return database.shoppingDao().getShoppingItemsByListId(listId)
+    }
+    
+    companion object {
+        @Volatile
+        private var INSTANCE: ItemRepository? = null
+        
+        fun getInstance(application: android.app.Application): ItemRepository {
+            return INSTANCE ?: synchronized(this) {
+                val database = AppDatabase.getDatabase(application)
+                val instance = ItemRepository(database.itemDao(), database)
+                INSTANCE = instance
+                instance
+            }
+        }
     }
 } 

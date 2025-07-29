@@ -11,6 +11,12 @@
         <action
             android:id="@+id/action_navigation_home_to_addItemFragment"
             app:destination="@id/addItemFragment" />
+        <action
+            android:id="@+id/action_navigation_home_to_itemListFragment"
+            app:destination="@id/navigation_item_list" />
+        <action
+            android:id="@+id/action_navigation_home_to_shopping_list"
+            app:destination="@id/navigation_shopping_list" />
     </fragment>
 
     <fragment
@@ -23,9 +29,34 @@
     </fragment>
 
     <fragment
-        android:id="@+id/navigation_statistics"
-        android:name="com.example.itemmanagement.ui.statistics.StatisticsFragment"
-        android:label="统计" />
+        android:id="@+id/navigation_function"
+        android:name="com.example.itemmanagement.ui.function.FunctionFragment"
+        android:label="功能">
+        <action
+            android:id="@+id/action_function_to_inventory_analysis"
+            app:destination="@id/navigation_inventory_analysis" />
+        <action
+            android:id="@+id/action_function_to_item_calendar"
+            app:destination="@id/navigation_item_calendar" />
+        <action
+            android:id="@+id/action_function_to_shopping_list"
+            app:destination="@id/navigation_shopping_list" />
+        <action
+            android:id="@+id/action_function_to_wishlist"
+            app:destination="@id/navigation_item_list">
+            <argument
+                android:name="listType"
+                app:argType="string"
+                android:defaultValue="wishlist" />
+            <argument
+                android:name="title"
+                app:argType="string"
+                android:defaultValue="心愿单" />
+        </action>
+        <action
+            android:id="@+id/action_function_to_waste_report"
+            app:destination="@id/navigation_waste_report" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_profile"
@@ -33,9 +64,51 @@
         android:label="我的" />
 
     <fragment
+        android:id="@+id/navigation_inventory_analysis"
+        android:name="com.example.itemmanagement.ui.analysis.InventoryAnalysisFragment"
+        android:label="库存分析" />
+
+    <fragment
+        android:id="@+id/navigation_item_calendar"
+        android:name="com.example.itemmanagement.ui.calendar.ItemCalendarFragment"
+        android:label="物品日历" />
+
+    <fragment
+        android:id="@+id/navigation_shopping_list"
+        android:name="com.example.itemmanagement.ui.shopping.ShoppingListFragment"
+        android:label="购物清单">
+        <action
+            android:id="@+id/action_shopping_list_to_add_from_shopping"
+            app:destination="@id/navigation_add_from_shopping" />
+        <action
+            android:id="@+id/action_shopping_list_to_add_shopping_item"
+            app:destination="@id/navigation_add_shopping_item" />
+    </fragment>
+
+    <!-- 购物清单管理页面 -->
+    <fragment
+        android:id="@+id/navigation_shopping_list_management"
+        android:name="com.example.itemmanagement.ui.shopping.ShoppingListManagementFragment"
+        android:label="购物清单管理" />
+
+    <fragment
+        android:id="@+id/navigation_waste_report"
+        android:name="com.example.itemmanagement.ui.waste.WasteReportFragment"
+        android:label="浪费报告" />
+
+    <fragment
         android:id="@+id/navigation_item_list"
-        android:name="com.example.itemmanagement.ui.itemlist.ItemListFragment"
-        android:label="物品列表" />
+        android:name="com.example.itemmanagement.ui.home.ItemListFragment"
+        android:label="物品列表">
+        <argument
+            android:name="listType"
+            app:argType="string"
+            android:defaultValue="all" />
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="物品列表" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_category"
@@ -101,5 +174,30 @@
                 app:argType="string"
                 android:defaultValue="edit" />
         </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_add_from_shopping"
+        android:name="com.example.itemmanagement.ui.shopping.AddFromShoppingListFragment"
+        android:label="物品入库">
+        <argument
+            android:name="shoppingItem"
+            app:argType="com.example.itemmanagement.data.entity.ShoppingItemEntity"
+            app:nullable="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_add_shopping_item"
+        android:name="com.example.itemmanagement.ui.shopping.AddShoppingItemFragment"
+        android:label="添加购物物品">
+        <argument
+            android:name="listId"
+            app:argType="long"
+            android:defaultValue="1L" />
+        <argument
+            android:name="shoppingItem"
+            app:argType="com.example.itemmanagement.data.entity.ShoppingItemEntity"
+            app:nullable="true"
+            android:defaultValue="@null" />
     </fragment>
 </navigation> 

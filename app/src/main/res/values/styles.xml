@@ -226,4 +226,111 @@
         <item name="android:focusable">false</item>
         <item name="android:focusableInTouchMode">false</item>
     </style>
+
+    <!-- 图表切换按钮样式 -->
+    <style name="ChartToggleButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:minHeight">36dp</item>
+        <item name="android:minWidth">90dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/chart_toggle_text_selector</item>
+        <item name="backgroundTint">@color/chart_toggle_background_selector</item>
+        <item name="strokeColor">@color/primary</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cornerRadius">12dp</item>
+    </style>
+
+    <!-- 图表内部覆盖按钮样式 - 更紧凑，黑白色系 -->
+    <style name="ChartOverlayButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:paddingTop">4dp</item>
+        <item name="android:paddingBottom">4dp</item>
+        <item name="android:minHeight">24dp</item>
+        <item name="android:minWidth">40dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/chart_overlay_text_selector</item>
+        <item name="backgroundTint">@color/chart_overlay_background_selector</item>
+        <item name="strokeColor">@android:color/black</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cornerRadius">0dp</item>
+    </style>
+
+    <!-- 图表切换按钮组样式 -->
+    <style name="ChartToggleGroupStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="singleSelection">true</item>
+        <item name="android:theme">@style/ChartToggleGroupTheme</item>
+    </style>
+
+    <!-- 图表内部覆盖按钮组样式 -->
+    <style name="ChartOverlayGroupStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="singleSelection">true</item>
+        <item name="android:theme">@style/ChartToggleGroupTheme</item>
+    </style>
+
+    <!-- 图表切换按钮组主题 - 重写primary颜色 -->
+    <style name="ChartToggleGroupTheme">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/text_secondary</item>
+    </style>
+
+    <!-- 图表内部数据类型切换按钮样式 -->
+    <style name="ChartInnerToggleButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:minHeight">20dp</item>
+        <item name="android:minWidth">32dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/chart_inner_toggle_text_selector</item>
+        <item name="backgroundTint">@color/chart_inner_toggle_background_selector</item>
+        <item name="strokeColor">@color/chart_inner_border</item>
+        <item name="strokeWidth">0.5dp</item>
+        <item name="cornerRadius">4dp</item>
+    </style>
+
+    <!-- 图表内部数据类型切换按钮组样式 -->
+    <style name="ChartInnerToggleGroupStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">20dp</item>
+        <item name="singleSelection">true</item>
+        <item name="android:theme">@style/ChartInnerToggleGroupTheme</item>
+    </style>
+
+    <!-- 图表内部数据类型切换按钮组主题 -->
+    <style name="ChartInnerToggleGroupTheme">
+        <item name="colorPrimary">@color/chart_inner_accent</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/chart_inner_bg</item>
+        <item name="colorOnSurface">@color/chart_inner_text</item>
+    </style>
 </resources> 
