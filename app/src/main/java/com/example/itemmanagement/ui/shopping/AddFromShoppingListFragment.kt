@@ -1,0 +1,86 @@
+package com.example.itemmanagement.ui.shopping
+
+import android.os.Bundle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
+import com.example.itemmanagement.ItemManagementApplication
+import com.example.itemmanagement.data.entity.ShoppingItemEntity
+import com.example.itemmanagement.ui.add.AddItemViewModelFactory
+import com.example.itemmanagement.ui.base.BaseItemFragment
+import kotlinx.coroutines.launch
+
+class AddFromShoppingListFragment : BaseItemFragment() {
+
+    private val args: AddFromShoppingListFragmentArgs by navArgs()
+
+    override fun initializeMode(savedInstanceState: Bundle?) {
+        // 从导航参数获取购物清单项目并预填充表单
+        args.shoppingItem?.let { shoppingItem ->
+            initializeViewModelFromShoppingItem(shoppingItem)
+        }
+    }
+
+    override fun setupTitleAndButtons() {
+        // 设置标题为"物品入库"
+        activity?.title = "物品入库"
+        
+        // 可以在这里自定义保存按钮的文本或行为
+        // 基类会处理大部分UI设置
+    }
+
+    override fun observeSaveResult() {
+        // 观察保存结果
+        viewModel.saveResult.observe(viewLifecycleOwner) { success ->
+            if (success) {
+                // 保存成功后，删除对应的购物清单项目
+                args.shoppingItem?.let { shoppingItem ->
+                    deleteShoppingItemAfterSuccess(shoppingItem.id)
+                }
+                // 导航返回
+                findNavController().navigateUp()
+            }
+        }
+    }
+
+    override fun getItemId(): Long {
+        // 这是添加模式，返回-1表示新建
+        return -1L
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        
+        // 初始化ViewModel - 传递repository和owner两个参数
+        viewModel = ViewModelProvider(
+            this,
+            AddItemViewModelFactory(
+                (requireActivity().application as ItemManagementApplication).repository,
+                this
+            )
+        ).get(com.example.itemmanagement.ui.add.AddItemViewModel::class.java)
+    }
+
+    /**
+     * 从购物清单项目初始化ViewModel数据
+     */
+    private fun initializeViewModelFromShoppingItem(shoppingItem: ShoppingItemEntity) {
+        viewModel.prepareFormFromShoppingItem(shoppingItem)
+    }
+
+    /**
+     * 成功入库后删除购物清单项目
+     */
+    private fun deleteShoppingItemAfterSuccess(shoppingItemId: Long) {
+        // 在后台删除购物清单项目
+        lifecycleScope.launch {
+            try {
+                val repository = (requireActivity().application as ItemManagementApplication).repository
+                repository.deleteShoppingItemById(shoppingItemId)
+            } catch (e: Exception) {
+                // 删除失败不影响主流程，只是清单项目不会自动清除
+            }
+        }
+    }
+} 

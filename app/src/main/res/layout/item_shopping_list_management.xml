@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 头部信息 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- 清单名称 -->
+                <TextView
+                    android:id="@+id/tvListName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="购物清单名称"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black" />
+
+                <!-- 清单描述 -->
+                <TextView
+                    android:id="@+id/tvListDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="清单描述"
+                    android:textSize="14sp"
+                    android:textColor="@color/text_secondary"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+            <!-- 状态指示器 -->
+            <TextView
+                android:id="@+id/tvListStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="进行中"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:padding="6dp"
+                android:background="@drawable/bg_status_tag"
+                 android:textColor="@color/primary" />
+
+        </LinearLayout>
+
+        <!-- 清单信息 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- 清单类型 -->
+            <TextView
+                android:id="@+id/tvListType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                                 android:text="日常补充"
+                 android:textSize="12sp"
+                 android:textColor="@color/text_secondary"
+                android:background="@drawable/bg_category_tag"
+                android:padding="4dp" />
+
+            <!-- 创建日期 -->
+            <TextView
+                android:id="@+id/tvListDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                                 android:text="创建于 12-25"
+                 android:textSize="12sp"
+                 android:textColor="@color/text_secondary" />
+
+            <!-- 预算信息 -->
+            <TextView
+                android:id="@+id/tvListBudget"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="预算: ¥200.00"
+                android:textSize="12sp"
+                                 android:textColor="@color/accent"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- 操作按钮 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <!-- 完成/重新激活按钮 -->
+            <ImageButton
+                android:id="@+id/btnComplete"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                                 android:src="@drawable/ic_save"
+                android:contentDescription="完成清单"
+                android:layout_marginEnd="8dp" />
+
+            <!-- 编辑按钮 -->
+            <ImageButton
+                android:id="@+id/btnEdit"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                                 android:src="@drawable/ic_edit_modern"
+                android:contentDescription="编辑清单"
+                android:layout_marginEnd="8dp" />
+
+            <!-- 删除按钮 -->
+            <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete"
+                android:contentDescription="删除清单" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView> 

@@ -1,0 +1,516 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_color"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 加载状态 -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="32dp"
+            android:visibility="gone" />
+
+        <!-- 错误信息 -->
+        <TextView
+            android:id="@+id/errorText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:gravity="center"
+            android:textColor="@color/error"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <!-- 内容容器 -->
+        <LinearLayout
+            android:id="@+id/contentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- 卡片一：核心指标 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/card_background">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="核心指标"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginBottom="16dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- 物品总数 -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:background="@drawable/rounded_background"
+                            android:backgroundTint="@color/primary_light"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:id="@+id/totalItemsValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="32sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="物品总数"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary"
+                                android:layout_marginTop="4dp" />
+
+                        </LinearLayout>
+
+                        <!-- 总价值 -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:background="@drawable/rounded_background"
+                            android:backgroundTint="@color/smart_assistant_bg"
+                            android:padding="20dp">
+
+                            <TextView
+                                android:id="@+id/totalValueText"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="¥0.00"
+                                android:textSize="28sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/smart_assistant_accent" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="总价值"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary"
+                                android:layout_marginTop="4dp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 卡片二：分类分析 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/card_background">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 标题和切换按钮行 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <!-- 第一行：标题和图表类型切换 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="分类分析"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary" />
+
+                            <!-- 图表类型切换按钮组 -->
+                            <com.google.android.material.button.MaterialButtonToggleGroup
+                                android:id="@+id/categoryChartTypeToggle"
+                                style="@style/ChartToggleGroupStyle"
+                                app:checkedButton="@id/categoryPieButton">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/categoryPieButton"
+                                    style="@style/ChartToggleButtonStyle"
+                                    android:text="饼图" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/categoryBarButton"
+                                    style="@style/ChartToggleButtonStyle"
+                                    android:text="柱状图" />
+
+                            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- 图表容器（包含内部按钮） -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp">
+
+                        <!-- 图表 -->
+                        <com.github.aachartmodel.aainfographics.aachartcreator.AAChartView
+                            android:id="@+id/categoryAnalysisChart"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/rounded_background"
+                            android:backgroundTint="@color/data_insights_bg" />
+
+                        <!-- 数量/价格切换按钮组（集成到图表内） -->
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/categoryDataTypeToggle"
+                            style="@style/ChartInnerToggleGroupStyle"
+                            android:layout_gravity="top|end"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginEnd="12dp"
+                            app:checkedButton="@id/categoryCountButton">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/categoryCountButton"
+                                style="@style/ChartInnerToggleButtonStyle"
+                                android:text="数量" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/categoryValueButton"
+                                style="@style/ChartInnerToggleButtonStyle"
+                                android:text="价格" />
+
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 卡片三：位置分析 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/card_background">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 标题和切换按钮行 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <!-- 第一行：标题和图表类型切换 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="位置分析"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary" />
+
+                            <!-- 图表类型切换按钮组 -->
+                            <com.google.android.material.button.MaterialButtonToggleGroup
+                                android:id="@+id/locationChartTypeToggle"
+                                style="@style/ChartToggleGroupStyle"
+                                app:checkedButton="@id/locationBarButton">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/locationBarButton"
+                                    style="@style/ChartToggleButtonStyle"
+                                    android:text="柱状图" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/locationHorizontalBarButton"
+                                    style="@style/ChartToggleButtonStyle"
+                                    android:text="横向柱状图" />
+
+                            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- 图表容器（包含内部按钮） -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp">
+
+                        <!-- 图表 -->
+                        <com.github.aachartmodel.aainfographics.aachartcreator.AAChartView
+                            android:id="@+id/locationAnalysisChart"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/rounded_background"
+                            android:backgroundTint="@color/utilities_bg" />
+
+                        <!-- 数量/价格切换按钮组（集成到图表内） -->
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/locationDataTypeToggle"
+                            style="@style/ChartInnerToggleGroupStyle"
+                            android:layout_gravity="top|end"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginEnd="12dp"
+                            app:checkedButton="@id/locationCountButton">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/locationCountButton"
+                                style="@style/ChartInnerToggleButtonStyle"
+                                android:text="数量" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/locationValueButton"
+                                style="@style/ChartInnerToggleButtonStyle"
+                                android:text="价格" />
+
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 卡片四：标签分析 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/card_background">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 标题和切换按钮行 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <!-- 第一行：标题和图表类型切换 -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="标签分析"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary" />
+
+                            <!-- 图表类型切换按钮组 -->
+                            <com.google.android.material.button.MaterialButtonToggleGroup
+                                android:id="@+id/tagChartTypeToggle"
+                                style="@style/ChartToggleGroupStyle"
+                                app:checkedButton="@id/tagBarButton">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/tagBarButton"
+                                    style="@style/ChartToggleButtonStyle"
+                                    android:text="柱状图" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/tagPieButton"
+                                    style="@style/ChartToggleButtonStyle"
+                                    android:text="饼图" />
+
+                            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- 图表容器（包含内部按钮） -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp">
+
+                        <!-- 图表 -->
+                        <com.github.aachartmodel.aainfographics.aachartcreator.AAChartView
+                            android:id="@+id/tagAnalysisChart"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/rounded_background"
+                            android:backgroundTint="@color/accent_color" />
+
+                        <!-- 数量/价格切换按钮组（集成到图表内） -->
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/tagDataTypeToggle"
+                            style="@style/ChartInnerToggleGroupStyle"
+                            android:layout_gravity="top|end"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginEnd="12dp"
+                            app:checkedButton="@id/tagCountButton">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/tagCountButton"
+                                style="@style/ChartInnerToggleButtonStyle"
+                                android:text="数量" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/tagValueButton"
+                                style="@style/ChartInnerToggleButtonStyle"
+                                android:text="价格" />
+
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    </FrameLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 卡片五：购入趋势 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                app:cardBackgroundColor="@color/card_background">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- 标题和切换按钮行 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="购入趋势"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/text_primary" />
+
+                        <!-- 图表类型切换按钮组 -->
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/trendChartTypeToggle"
+                            style="@style/ChartToggleGroupStyle"
+                            app:checkedButton="@id/trendLineButton">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/trendLineButton"
+                                style="@style/ChartToggleButtonStyle"
+                                android:text="折线图" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/trendAreaButton"
+                                style="@style/ChartToggleButtonStyle"
+                                android:text="面积图" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/trendBarButton"
+                                style="@style/ChartToggleButtonStyle"
+                                android:text="柱状图" />
+
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    </LinearLayout>
+
+                    <!-- 图表容器 -->
+                    <com.github.aachartmodel.aainfographics.aachartcreator.AAChartView
+                        android:id="@+id/trendAnalysisChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="300dp"
+                        android:background="@drawable/rounded_background"
+                        android:backgroundTint="@color/primary_light" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView> 

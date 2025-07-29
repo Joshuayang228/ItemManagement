@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="1dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <!-- 物品图片 -->
+        <ImageView
+            android:id="@+id/imageViewItem"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/bg_circle"
+            android:backgroundTint="@color/surface_variant"
+            android:contentDescription="物品图片"
+            android:padding="8dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_inventory_24"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/on_surface_variant" />
+
+        <!-- 物品名称 -->
+        <TextView
+            android:id="@+id/textViewItemName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="@color/on_surface"
+            app:layout_constraintEnd_toStartOf="@id/textViewValue"
+            app:layout_constraintStart_toEndOf="@id/imageViewItem"
+            app:layout_constraintTop_toTopOf="@id/imageViewItem"
+            tools:text="苹果" />
+
+        <!-- 物品详情 -->
+        <TextView
+            android:id="@+id/textViewItemDetails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+            android:textColor="@color/on_surface_variant"
+            app:layout_constraintEnd_toStartOf="@id/textViewValue"
+            app:layout_constraintStart_toEndOf="@id/imageViewItem"
+            app:layout_constraintTop_toBottomOf="@id/textViewItemName"
+            tools:text="水果 • 2.5kg" />
+
+        <!-- 浪费原因和日期 -->
+        <LinearLayout
+            android:id="@+id/layoutWasteInfo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toStartOf="@id/textViewValue"
+            app:layout_constraintStart_toEndOf="@id/imageViewItem"
+            app:layout_constraintTop_toBottomOf="@id/textViewItemDetails">
+
+            <!-- 浪费原因标签 -->
+            <TextView
+                android:id="@+id/textViewWasteReason"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_detail_tag"
+                android:backgroundTint="@color/error_container"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:text="已过期"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="@color/on_error_container" />
+
+            <!-- 浪费日期 -->
+            <TextView
+                android:id="@+id/textViewWasteDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="2024-01-15"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="@color/on_surface_variant" />
+
+        </LinearLayout>
+
+        <!-- 价值 -->
+        <TextView
+            android:id="@+id/textViewValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="¥12.50"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="@color/error"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/imageViewItem" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView> 
