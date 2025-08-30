@@ -1,0 +1,177 @@
+package com.example.itemmanagement.data.dao
+
+import androidx.room.*
+import com.example.itemmanagement.data.entity.DeletedItemEntity
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * 回收站数据访问对象
+ * 管理已删除物品的数据操作
+ */
+@Dao
+interface RecycleBinDao {
+    
+    // ==================== 基本CRUD操作 ====================
+    
+    /**
+     * 添加物品到回收站
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(deletedItem: DeletedItemEntity)
+    
+    /**
+     * 批量添加物品到回收站
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(deletedItems: List<DeletedItemEntity>)
+    
+    /**
+     * 从回收站彻底删除物品
+     */
+    @Delete
+    suspend fun delete(deletedItem: DeletedItemEntity)
+    
+    /**
+     * 根据原始ID从回收站彻底删除
+     */
+    @Query("DELETE FROM deleted_items WHERE originalId = :originalId")
+    suspend fun deleteByOriginalId(originalId: Long)
+    
+    /**
+     * 批量彻底删除
+     */
+    @Query("DELETE FROM deleted_items WHERE originalId IN (:originalIds)")
+    suspend fun deleteByOriginalIds(originalIds: List<Long>)
+    
+    // ==================== 查询操作 ====================
+    
+    /**
+     * 获取回收站中的所有物品（Flow）
+     */
+    @Query("SELECT * FROM deleted_items ORDER BY deletedDate DESC")
+    fun getAllDeletedItemsFlow(): Flow<List<DeletedItemEntity>>
+    
+    /**
+     * 获取回收站中的所有物品（一次性）
+     */
+    @Query("SELECT * FROM deleted_items ORDER BY deletedDate DESC")
+    suspend fun getAllDeletedItems(): List<DeletedItemEntity>
+    
+    /**
+     * 根据原始ID获取已删除物品
+     */
+    @Query("SELECT * FROM deleted_items WHERE originalId = :originalId")
+    suspend fun getDeletedItemByOriginalId(originalId: Long): DeletedItemEntity?
+    
+    /**
+     * 搜索回收站中的物品
+     */
+    @Query("""
+        SELECT * FROM deleted_items 
+        WHERE name LIKE '%' || :query || '%' 
+           OR category LIKE '%' || :query || '%'
+           OR brand LIKE '%' || :query || '%'
+        ORDER BY deletedDate DESC
+    """)
+    suspend fun searchDeletedItems(query: String): List<DeletedItemEntity>
+    
+    /**
+     * 按分类获取已删除物品
+     */
+    @Query("SELECT * FROM deleted_items WHERE category = :category ORDER BY deletedDate DESC")
+    suspend fun getDeletedItemsByCategory(category: String): List<DeletedItemEntity>
+    
+    // ==================== 统计查询 ====================
+    
+    /**
+     * 获取回收站物品总数
+     */
+    @Query("SELECT COUNT(*) FROM deleted_items")
+    suspend fun getDeletedItemCount(): Int
+    
+    /**
+     * 获取回收站物品总数（Flow）
+     */
+    @Query("SELECT COUNT(*) FROM deleted_items")
+    fun getDeletedItemCountFlow(): Flow<Int>
+    
+    /**
+     * 按分类统计已删除物品数量
+     */
+    @Query("""
+        SELECT category, COUNT(*) as count 
+        FROM deleted_items 
+        GROUP BY category 
+        ORDER BY count DESC
+    """)
+    suspend fun getDeletedItemCountByCategory(): List<CategoryCount>
+    
+    /**
+     * 获取即将自动清理的物品数量（3天内）
+     */
+    @Query("""
+        SELECT COUNT(*) FROM deleted_items 
+        WHERE (julianday('now') - julianday(deletedDate)) >= 27
+    """)
+    suspend fun getNearAutoCleanCount(): Int
+    
+    /**
+     * 获取已过期需要清理的物品
+     */
+    @Query("""
+        SELECT * FROM deleted_items 
+        WHERE (julianday('now') - julianday(deletedDate)) >= 30
+    """)
+    suspend fun getExpiredItems(): List<DeletedItemEntity>
+    
+    // ==================== 批量操作 ====================
+    
+    /**
+     * 清空回收站
+     */
+    @Query("DELETE FROM deleted_items")
+    suspend fun clearRecycleBin()
+    
+    /**
+     * 清理过期物品（超过30天）
+     */
+    @Query("""
+        DELETE FROM deleted_items 
+        WHERE (julianday('now') - julianday(deletedDate)) >= 30
+    """)
+    suspend fun cleanExpiredItems(): Int
+    
+    /**
+     * 标记物品为不可恢复
+     */
+    @Query("UPDATE deleted_items SET canRestore = 0 WHERE originalId = :originalId")
+    suspend fun markAsNonRestorable(originalId: Long)
+    
+    /**
+     * 批量标记为不可恢复
+     */
+    @Query("UPDATE deleted_items SET canRestore = 0 WHERE originalId IN (:originalIds)")
+    suspend fun markAsNonRestorable(originalIds: List<Long>)
+    
+    // ==================== 检查操作 ====================
+    
+    /**
+     * 检查物品是否在回收站中
+     */
+    @Query("SELECT COUNT(*) > 0 FROM deleted_items WHERE originalId = :originalId")
+    suspend fun isItemInRecycleBin(originalId: Long): Boolean
+    
+    /**
+     * 检查物品是否可以恢复
+     */
+    @Query("SELECT canRestore FROM deleted_items WHERE originalId = :originalId")
+    suspend fun canItemBeRestored(originalId: Long): Boolean?
+}
+
+/**
+ * 分类统计结果
+ */
+data class CategoryCount(
+    val category: String,
+    val count: Int
+)

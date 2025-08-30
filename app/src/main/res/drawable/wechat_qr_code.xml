@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 微信收款码占位符 - 需要替换为实际的PNG/JPG图片 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- 微信绿色背景 -->
+    <path
+        android:fillColor="#00C851"
+        android:pathData="M0,0h200v200H0z" />
+    
+    <!-- QR码模拟图案 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,20h20v20h-20z M60,20h20v20h-20z M160,20h20v20h-20z M20,60h20v20h-20z M160,60h20v20h-20z M20,160h20v20h-20z M60,160h20v20h-20z M100,100h20v20h-20z" />
+    
+</vector>

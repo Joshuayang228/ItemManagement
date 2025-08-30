@@ -1,0 +1,103 @@
+package com.example.itemmanagement.ui.edit
+
+import android.os.Bundle
+import android.view.View
+import android.widget.Toast
+import androidx.navigation.fragment.findNavController
+import com.example.itemmanagement.R
+import com.example.itemmanagement.ui.add.PhotoManager
+import com.example.itemmanagement.ui.base.BaseItemFragment
+import com.example.itemmanagement.ui.add.ItemMode
+
+/**
+ * 编辑物品Fragment
+ * 继承自BaseItemFragment，专门用于编辑物品
+ */
+@Deprecated(
+    message = "请使用新架构：NewEditItemFragment + NewBaseItemFragment",
+    replaceWith = ReplaceWith("NewEditItemFragment")
+)
+class EditItemFragment : BaseItemFragment() {
+
+    private lateinit var photoManager: PhotoManager
+    private var itemId: Long = -1L
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // 初始化照片管理器
+        photoManager = PhotoManager(this, viewModel, dialogFactory)
+    }
+
+    override fun initializeMode(savedInstanceState: Bundle?) {
+        // 处理导航参数
+        arguments?.let { args ->
+            // 设置为编辑模式
+            viewModel.setMode("edit")
+            
+            // 获取itemId并加载物品
+            itemId = args.getLong("itemId", -1L)
+            if (itemId != -1L) {
+                // 根据ID加载物品
+                viewModel.loadItemById(itemId)
+            }
+        }
+    }
+
+    override fun setupTitleAndButtons() {
+        // 强制设置标题为"编辑物品"
+        requireActivity().title = getString(R.string.title_edit_item)
+        
+        // 设置保存按钮文本
+        binding.saveButton.text = "更新物品"
+    }
+
+    override fun observeSaveResult() {
+        // 观察保存结果
+        viewModel.saveResult.observe(viewLifecycleOwner) { success ->
+            if (success == true) {
+                Toast.makeText(context, "更新成功", Toast.LENGTH_SHORT).show()
+                
+                // 清除所有数据和草稿，确保下次进入是全新状态
+                viewModel.clearAllData()
+                
+                // 导航回上一个页面
+                findNavController().navigateUp()
+                // 重置保存结果的状态，防止再次进入时触发
+                viewModel.onSaveResultConsumed()
+            }
+        }
+    }
+
+    override fun getItemId(): Long {
+        // 返回正在编辑的物品ID
+        return viewModel.getEditingItemId() ?: itemId
+    }
+
+    // 重写照片相关方法，使用PhotoManager
+    override fun showPhotoSelectionDialog() {
+        photoManager.showPhotoSelectionDialog(
+            checkAndRequestCameraPermission = { checkAndRequestCameraPermission() },
+            checkAndRequestStoragePermission = { checkAndRequestStoragePermission() }
+        )
+    }
+
+    override fun launchCamera() {
+        photoManager.launchCamera { uri ->
+            takePicture.launch(uri)
+        }
+    }
+
+    override fun showPhotoViewDialog(uri: android.net.Uri) {
+        photoManager.showPhotoViewDialog(uri)
+    }
+
+    // 重写权限请求结果处理
+    override val takePicture = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { success ->
+        photoManager.handleCameraResult(success, isFragmentActive = { isFragmentActive() })
+    }
+
+    override val pickImage = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
+        photoManager.handleGalleryResult(uri, isFragmentActive = { isFragmentActive() })
+    }
+} 

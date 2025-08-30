@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 支付宝收款码占位符 - 需要替换为实际的PNG/JPG图片 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- 支付宝蓝色背景 -->
+    <path
+        android:fillColor="#1677FF"
+        android:pathData="M0,0h200v200H0z" />
+    
+    <!-- QR码模拟图案 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M25,25h15v15h-15z M65,25h15v15h-15z M160,25h15v15h-15z M25,65h15v15h-15z M160,65h15v15h-15z M25,160h15v15h-15z M65,160h15v15h-15z M95,95h15v15h-15z M120,120h15v15h-15z" />
+    
+</vector>
