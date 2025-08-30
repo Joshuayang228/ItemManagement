@@ -51,7 +51,14 @@ import androidx.lifecycle.lifecycleScope
 /**
  * 物品管理基础Fragment
  * 这个抽象类包含AddItemFragment和EditItemFragment的共享逻辑
+ * 
+ * @deprecated 此类已被新架构替代，请使用 NewBaseItemFragment + NewAddItemFragment/NewEditItemFragment
+ * 新架构提供了更清晰的职责分离和更好的可维护性。
  */
+@Deprecated(
+    message = "请使用新架构：NewBaseItemFragment + NewAddItemFragment/NewEditItemFragment",
+    replaceWith = ReplaceWith("NewBaseItemFragment")
+)
 abstract class BaseItemFragment : Fragment() {
 
     protected var _binding: FragmentAddItemBinding? = null
@@ -82,8 +89,8 @@ abstract class BaseItemFragment : Fragment() {
 
         // 初始化工具类
         dialogFactory = DialogFactory(requireContext())
-        fieldViewFactory = FieldViewFactory(requireContext(), viewModel, dialogFactory, resources)
-        fieldValueManager = FieldValueManager(requireContext(), viewModel, dialogFactory)
+        fieldViewFactory = FieldViewFactory(requireContext(), viewModel as FieldInteractionViewModel, dialogFactory, resources)
+        fieldValueManager = FieldValueManager(requireContext(), viewModel as FieldInteractionViewModel, dialogFactory)
         
         // 处理子类特定的初始化
         initializeMode(savedInstanceState)
@@ -260,7 +267,7 @@ abstract class BaseItemFragment : Fragment() {
                         // 添加新的标签
                         val tagsToAdd = selectedTags - currentTags
                         if (tagsToAdd.isNotEmpty()) {
-                            val tagManager = TagManager(requireContext(), dialogFactory, viewModel, fieldName)
+                            val tagManager = TagManager(requireContext(), dialogFactory, viewModel as FieldInteractionViewModel, fieldName)
                             tagsToAdd.forEach { tag ->
                                 tagManager.addChipToGroup(chipGroup, tag)
                             }
@@ -286,7 +293,7 @@ abstract class BaseItemFragment : Fragment() {
     }
 
     protected fun showEditFieldsDialog() {
-        com.example.itemmanagement.ui.add.EditFieldsFragment.newInstance().show(
+        com.example.itemmanagement.ui.add.NewEditFieldsFragment.newInstance(viewModel as FieldInteractionViewModel, false).show(
             childFragmentManager,
             "EditFieldsFragment"
         )

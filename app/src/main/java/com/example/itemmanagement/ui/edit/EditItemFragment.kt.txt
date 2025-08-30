@@ -13,6 +13,10 @@ import com.example.itemmanagement.ui.add.ItemMode
  * 编辑物品Fragment
  * 继承自BaseItemFragment，专门用于编辑物品
  */
+@Deprecated(
+    message = "请使用新架构：NewEditItemFragment + NewBaseItemFragment",
+    replaceWith = ReplaceWith("NewEditItemFragment")
+)
 class EditItemFragment : BaseItemFragment() {
 
     private lateinit var photoManager: PhotoManager

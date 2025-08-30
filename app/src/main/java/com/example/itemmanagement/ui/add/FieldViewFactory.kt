@@ -13,6 +13,10 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.content.ContextCompat
 import com.example.itemmanagement.R
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
+import com.example.itemmanagement.ui.common.FieldProperties
+import com.example.itemmanagement.ui.common.ValidationType
+import com.example.itemmanagement.ui.common.DisplayStyle
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import java.text.SimpleDateFormat
@@ -25,7 +29,7 @@ import android.widget.Switch
  */
 class FieldViewFactory(
     private val context: Context,
-    private val viewModel: AddItemViewModel,
+    private val viewModel: FieldInteractionViewModel,
     private val dialogFactory: DialogFactory,
     private val resources: android.content.res.Resources
 ) {
@@ -123,15 +127,15 @@ class FieldViewFactory(
         val input = when {
             field.name == "开封状态" -> createRadioGroup()
             field.name == "加入心愿单" || field.name == "高周转" -> createSwitchView(field.name, properties)
-            properties.displayStyle == AddItemViewModel.DisplayStyle.TAG -> createTagSelector(field.name, properties)
-            properties.displayStyle == AddItemViewModel.DisplayStyle.RATING_STAR -> createRatingBar()
-            properties.displayStyle == AddItemViewModel.DisplayStyle.PERIOD_SELECTOR -> createPeriodSelector(field.name, properties)
-            properties.displayStyle == AddItemViewModel.DisplayStyle.LOCATION_SELECTOR -> createLocationSelector()
-            properties.validationType == AddItemViewModel.ValidationType.DATE -> createDatePicker(properties)
+            properties.displayStyle == DisplayStyle.TAG -> createTagSelector(field.name, properties)
+            properties.displayStyle == DisplayStyle.RATING_STAR -> createRatingBar()
+            properties.displayStyle == DisplayStyle.PERIOD_SELECTOR -> createPeriodSelector(field.name, properties)
+            properties.displayStyle == DisplayStyle.LOCATION_SELECTOR -> createLocationSelector()
+            properties.validationType == ValidationType.DATE -> createDatePicker(properties)
             properties.isMultiline -> createMultilineInput(properties)
             properties.unitOptions != null -> createNumberWithUnitInput(field.name, properties)
             properties.options != null -> createSpinner(field.name, properties)
-            properties.validationType == AddItemViewModel.ValidationType.NUMBER -> createNumberInput(properties)
+            properties.validationType == ValidationType.NUMBER -> createNumberInput(properties)
             else -> createTextInput(properties)
         }
 
@@ -147,7 +151,7 @@ class FieldViewFactory(
 
         when (input) {
             is LinearLayout -> {
-                if (properties.displayStyle == AddItemViewModel.DisplayStyle.RATING_STAR) {
+                if (properties.displayStyle == DisplayStyle.RATING_STAR) {
                     // 直接使用我们已经创建的带有评分控件的LinearLayout容器
                     container.addView(input)
                     return container
@@ -196,7 +200,7 @@ class FieldViewFactory(
         return container
     }
 
-    private fun createSpinner(fieldName: String, properties: AddItemViewModel.FieldProperties): View {
+    private fun createSpinner(fieldName: String, properties: FieldProperties): View {
         return TextView(context).apply {
             val spinnerTextView = this // Capture the TextView instance
             layoutParams = LinearLayout.LayoutParams(
@@ -540,7 +544,7 @@ class FieldViewFactory(
         }
     }
 
-    private fun createTagSelector(fieldName: String, properties: AddItemViewModel.FieldProperties): View {
+    private fun createTagSelector(fieldName: String, properties: FieldProperties): View {
         // 创建一个容器来包含标签选择器和提示文本
         val containerLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -653,7 +657,7 @@ class FieldViewFactory(
         return relativeLayout
     }
 
-    private fun createNumberWithUnitInput(fieldName: String, properties: AddItemViewModel.FieldProperties): View {
+    private fun createNumberWithUnitInput(fieldName: String, properties: FieldProperties): View {
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
@@ -772,7 +776,7 @@ class FieldViewFactory(
         return container
     }
 
-    private fun createPeriodSelector(fieldName: String, properties: AddItemViewModel.FieldProperties): View {
+    private fun createPeriodSelector(fieldName: String, properties: FieldProperties): View {
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
@@ -912,7 +916,7 @@ class FieldViewFactory(
         return container
     }
 
-    private fun createTextInput(properties: AddItemViewModel.FieldProperties): EditText {
+    private fun createTextInput(properties: FieldProperties): EditText {
         return EditText(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -927,14 +931,14 @@ class FieldViewFactory(
         }
     }
 
-    private fun createNumberInput(properties: AddItemViewModel.FieldProperties): EditText {
+    private fun createNumberInput(properties: FieldProperties): EditText {
         return createTextInput(properties).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
             properties.defaultValue?.let { setText(it) }
         }
     }
 
-    private fun createMultilineInput(properties: AddItemViewModel.FieldProperties): EditText {
+    private fun createMultilineInput(properties: FieldProperties): EditText {
         return createTextInput(properties).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
             minLines = 1
@@ -943,7 +947,7 @@ class FieldViewFactory(
         }
     }
 
-    private fun createDatePicker(properties: AddItemViewModel.FieldProperties): TextView {
+    private fun createDatePicker(properties: FieldProperties): TextView {
         return TextView(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -1092,7 +1096,7 @@ class FieldViewFactory(
         return container
     }
 
-    private fun createSwitchView(fieldName: String, properties: AddItemViewModel.FieldProperties): View {
+    private fun createSwitchView(fieldName: String, properties: FieldProperties): View {
         return Switch(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,

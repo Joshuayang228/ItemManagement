@@ -11,6 +11,10 @@ import com.example.itemmanagement.ui.add.AddItemViewModelFactory
 import com.example.itemmanagement.ui.base.BaseItemFragment
 import kotlinx.coroutines.launch
 
+@Deprecated(
+    message = "请使用新架构：NewAddFromShoppingListFragment + NewBaseItemFragment",
+    replaceWith = ReplaceWith("NewAddFromShoppingListFragment")
+)
 class AddFromShoppingListFragment : BaseItemFragment() {
 
     private val args: AddFromShoppingListFragmentArgs by navArgs()

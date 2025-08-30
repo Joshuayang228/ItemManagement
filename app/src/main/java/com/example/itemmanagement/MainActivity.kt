@@ -13,8 +13,6 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.itemmanagement.databinding.ActivityMainBinding
-import com.example.itemmanagement.ui.add.AddItemViewModel
-import com.example.itemmanagement.ui.add.AddItemViewModelFactory
 import com.google.android.material.navigation.NavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -22,8 +20,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var drawerLayout: DrawerLayout
-    private lateinit var viewModel: AddItemViewModel
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -57,30 +53,8 @@ class MainActivity : AppCompatActivity() {
         // 设置底部导航栏
         binding.navView.setupWithNavController(navController)
         
-        // 初始化ViewModel
-        val repository = (application as ItemManagementApplication).repository
-        val factory = AddItemViewModelFactory(repository, this)
-        viewModel = ViewModelProvider(this, factory)[AddItemViewModel::class.java]
-        
-        // 监听导航变化
-        setupNavigationListener()
-    }
-    
-    private fun setupNavigationListener() {
-        // 监听导航目的地变化
-        navController.addOnDestinationChangedListener { _, destination, arguments ->
-            // 当导航到添加物品页面时，如果是从主页过来且当前ViewModel处于编辑模式
-            if (destination.id == R.id.addItemFragment) {
-                val mode = arguments?.getString("mode") ?: "add"
-                
-                // 如果导航到添加物品页面，但没有指定mode或mode是add，并且当前是编辑模式
-                // 这表示用户从编辑页面返回到主页后又点击了添加按钮
-                if (mode == "add" && viewModel.isInEditMode()) {
-                    // 从编辑模式切换回添加模式，恢复之前的草稿
-                    viewModel.returnFromEditToAdd()
-                }
-            }
-        }
+        // 注意：新架构不再需要Activity级别的ViewModel和导航监听器
+        // 每个Fragment都有自己独立的ViewModel，避免数据污染
     }
 
     override fun onSupportNavigateUp(): Boolean {

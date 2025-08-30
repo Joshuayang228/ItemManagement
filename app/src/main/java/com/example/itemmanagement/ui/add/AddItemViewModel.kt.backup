@@ -14,6 +14,10 @@ import com.example.itemmanagement.data.mapper.toItem
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.data.model.OpenStatus
 import com.example.itemmanagement.data.model.CustomLocationData
+import com.example.itemmanagement.ui.common.FieldProperties
+import com.example.itemmanagement.ui.common.ValidationType
+import com.example.itemmanagement.ui.common.DisplayStyle
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 import kotlinx.coroutines.launch
 import java.io.Serializable
 import java.text.SimpleDateFormat
@@ -28,10 +32,43 @@ enum class ItemMode {
     EDIT    // 编辑模式
 }
 
+/**
+ * @deprecated 此类已被新架构替代，仅保留作为历史参考。
+ * 
+ * 新架构使用：
+ * - NewAddItemViewModel: 专门负责添加物品
+ * - NewEditItemViewModel: 专门负责编辑物品  
+ * - BaseItemViewModel: 提供共享逻辑并实现FieldInteractionViewModel接口
+ * - FieldInteractionViewModel: 统一的UI交互接口
+ * 
+ * 新架构的优势：
+ * 1. 职责分离：每个ViewModel只负责单一功能
+ * 2. 接口解耦：UI组件通过接口与ViewModel交互，更灵活
+ * 3. 代码简化：消除了复杂的双模式状态管理
+ * 4. 维护性提升：逻辑更清晰，易于测试和扩展
+ * 
+ * 如果需要UI交互功能，请使用FieldInteractionViewModel接口。
+ * 如果需要添加物品功能，请使用NewAddItemViewModel。
+ * 如果需要编辑物品功能，请使用NewEditItemViewModel。
+ * 
+ * 此文件保留仅用于：
+ * - 历史参考
+ * - 问题排查
+ * - 回滚保险
+ * - 学习研究
+ */
+@Deprecated(
+    message = "请使用新架构：NewAddItemViewModel + NewEditItemViewModel + BaseItemViewModel + FieldInteractionViewModel",
+    replaceWith = ReplaceWith(
+        "NewAddItemViewModel 或 NewEditItemViewModel",
+        "com.example.itemmanagement.ui.add.NewAddItemViewModel",
+        "com.example.itemmanagement.ui.edit.NewEditItemViewModel"
+    )
+)
 class AddItemViewModel(
     private val repository: ItemRepository,
     private val savedStateHandle: SavedStateHandle
-) : ViewModel() {
+) : ViewModel(), FieldInteractionViewModel {
 
     // 添加模式变量，使用枚举类型
     private val _mode = MutableLiveData<ItemMode>(ItemMode.ADD)
@@ -64,7 +101,7 @@ class AddItemViewModel(
 
     // 添加一个 LiveData 来跟踪选中的标签
     private val _selectedTags = MutableLiveData<Map<String, Set<String>>>(mapOf())
-    val selectedTags: LiveData<Map<String, Set<String>>> = _selectedTags
+    override val selectedTags: LiveData<Map<String, Set<String>>> = _selectedTags
 
     private var editingItemId: Long? = null
     
@@ -77,43 +114,8 @@ class AddItemViewModel(
     // 用于标记是否已经初始化过（防止重复初始化）
     private var isInitialized = false
 
-    // 字段属性定义
-    data class FieldProperties(
-        val fieldName: String? = null,
-        val defaultValue: String? = null,
-        val options: List<String>? = null,
-        val min: Number? = null,
-        val max: Number? = null,
-        val unit: String? = null,
-        val isRequired: Boolean = false,
-        val validationType: ValidationType? = null,
-        val hint: String? = null,
-        val isMultiline: Boolean = false,
-        val isCustomizable: Boolean = false,  // 是否允许自定义选项
-        val defaultDate: Boolean = false,     // 是否默认选择当前日期
-        val maxLines: Int? = null,           // 最大行数
-        val unitOptions: List<String>? = null, // 单位选项
-        val isMultiSelect: Boolean = false,   // 是否允许多选
-        val displayStyle: DisplayStyle = DisplayStyle.DEFAULT, // 显示样式
-        val periodRange: IntRange? = null,    // 期限范围（如1-36个月）
-        val periodUnits: List<String>? = null // 期限单位（如年、月、日）
-    ) : Serializable {
-        companion object {
-            private const val serialVersionUID = 1L
-        }
-    }
-
-    enum class ValidationType : Serializable {
-        TEXT, NUMBER, DATE, DATETIME, EMAIL, PHONE, URL
-    }
-
-    enum class DisplayStyle : Serializable {
-        DEFAULT,           // 默认显示
-        TAG,              // 标签样式
-        RATING_STAR,      // 评分星星
-        PERIOD_SELECTOR,  // 期限选择器
-        LOCATION_SELECTOR // 位置选择器（三级）
-    }
+    // 字段属性定义已迁移到 com.example.itemmanagement.ui.common.FieldDefinitions
+    // 这里保留注释以便历史参考
 
     // 字段属性映射
     private val fieldProperties = mutableMapOf<String, FieldProperties>()
@@ -132,7 +134,7 @@ class AddItemViewModel(
         // 这样可以避免在Fragment重建时意外恢复草稿
     }
 
-    fun updateFieldSelection(field: Field, isSelected: Boolean) {
+    override fun updateFieldSelection(field: Field, isSelected: Boolean) {
         val currentFields = _selectedFields.value?.toMutableSet() ?: mutableSetOf()
 
         if (isSelected) {
@@ -160,19 +162,24 @@ class AddItemViewModel(
     }
 
     // 设置字段属性
-    fun setFieldProperties(fieldName: String, properties: FieldProperties) {
+    override fun setFieldProperties(fieldName: String, properties: FieldProperties) {
         // 确保FieldProperties包含字段名
         val updatedProperties = properties.copy(fieldName = fieldName)
         fieldProperties[fieldName] = updatedProperties
     }
 
     // 获取字段属性
-    fun getFieldProperties(fieldName: String): FieldProperties {
+    override fun getFieldProperties(fieldName: String): FieldProperties {
         return fieldProperties[fieldName] ?: FieldProperties()
+    }
+    
+    // 获取所有字段属性
+    override fun getAllFieldProperties(): Map<String, FieldProperties> {
+        return fieldProperties.toMap()
     }
 
     // 保存字段值
-    fun saveFieldValue(fieldName: String, value: Any?) {
+    override fun saveFieldValue(fieldName: String, value: Any?) {
         // 如果值不为null，或者是明确设置为空，则更新
         if (value != null || fieldValues.containsKey(fieldName)) {
             // 直接设置到fieldValues和savedStateHandle
@@ -210,7 +217,7 @@ class AddItemViewModel(
     }
 
     // 获取字段值
-    fun getFieldValue(fieldName: String): Any? {
+    override fun getFieldValue(fieldName: String): Any? {
         // 对于"添加日期"字段，如果没有值则返回当前日期
         if (fieldName == "添加日期" && !fieldValues.containsKey(fieldName)) {
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -255,18 +262,18 @@ class AddItemViewModel(
     }
 
     // 获取所有字段值
-    fun getAllFieldValues(): Map<String, Any?> {
+    override fun getAllFieldValues(): Map<String, Any?> {
         return fieldValues.toMap()
     }
 
     // 清除字段值
-    fun clearFieldValue(fieldName: String) {
+    override fun clearFieldValue(fieldName: String) {
         fieldValues.remove(fieldName)
         savedStateHandle["field_values"] = fieldValues
     }
 
     // 清除所有字段值
-    fun clearAllFieldValues() {
+    override fun clearAllFieldValues() {
         fieldValues.clear()
         savedStateHandle["field_values"] = fieldValues
     }
@@ -486,7 +493,7 @@ class AddItemViewModel(
     )
 
     // 获取指定分类的子分类列表
-    fun getSubCategoriesForCategory(category: String): List<String> {
+    override fun getSubCategoriesForCategory(category: String): List<String> {
         val defaultSubCategories = subCategoryMap[category] ?: emptyList()
         val customOptions = getCustomOptions("子分类")
         
@@ -518,19 +525,19 @@ class AddItemViewModel(
     }
 
     // 获取原始的（未经处理的）子分类列表
-    fun getOriginalSubCategoriesForCategory(category: String): List<String> {
+    override fun getOriginalSubCategoriesForCategory(category: String): List<String> {
         return subCategoryMap[category] ?: emptyList()
     }
 
     // 检查分类是否已选择
-    fun isCategorySelected(): Boolean {
+    override fun isCategorySelected(): Boolean {
         val categoryValue = getFieldValue("分类")
         return categoryValue != null && categoryValue.toString().isNotBlank() && 
                categoryValue.toString() != "选择分类" && categoryValue.toString() != "请选择分类"
     }
 
     // 更新子分类选项
-    fun updateSubCategoryOptions(category: String) {
+    override fun updateSubCategoryOptions(category: String) {
         val defaultSubCategories = getSubCategoriesForCategory(category)
         val properties = getFieldProperties("子分类")
         
@@ -575,7 +582,7 @@ class AddItemViewModel(
     }
 
     // 获取字段的自定义选项
-    fun getCustomOptions(fieldName: String): MutableList<String> {
+    override fun getCustomOptions(fieldName: String): MutableList<String> {
         if (!customOptionsMap.containsKey(fieldName)) {
             customOptionsMap[fieldName] = mutableListOf()
             savedStateHandle["custom_options"] = customOptionsMap
@@ -584,13 +591,13 @@ class AddItemViewModel(
     }
 
     // 设置字段的自定义选项
-    fun setCustomOptions(fieldName: String, options: MutableList<String>) {
+    override fun setCustomOptions(fieldName: String, options: MutableList<String>) {
         customOptionsMap[fieldName] = options
         savedStateHandle["custom_options"] = customOptionsMap
     }
 
     // 添加字段的自定义选项
-    fun addCustomOption(fieldName: String, option: String) {
+    override fun addCustomOption(fieldName: String, option: String) {
         val options = getCustomOptions(fieldName)
         if (!options.contains(option)) {
             options.add(option)
@@ -599,14 +606,14 @@ class AddItemViewModel(
     }
 
     // 删除字段的自定义选项
-    fun removeCustomOption(fieldName: String, option: String) {
+    override fun removeCustomOption(fieldName: String, option: String) {
         val options = getCustomOptions(fieldName)
         options.remove(option)
         setCustomOptions(fieldName, options)
     }
 
     // 获取字段的自定义单位
-    fun getCustomUnits(fieldName: String): MutableList<String> {
+    override fun getCustomUnits(fieldName: String): MutableList<String> {
         if (!customUnitsMap.containsKey(fieldName)) {
             customUnitsMap[fieldName] = mutableListOf()
             savedStateHandle["custom_units"] = customUnitsMap
@@ -615,13 +622,13 @@ class AddItemViewModel(
     }
 
     // 设置字段的自定义单位
-    fun setCustomUnits(fieldName: String, units: MutableList<String>) {
+    override fun setCustomUnits(fieldName: String, units: MutableList<String>) {
         customUnitsMap[fieldName] = units
         savedStateHandle["custom_units"] = customUnitsMap
     }
 
     // 添加字段的自定义单位
-    fun addCustomUnit(fieldName: String, unit: String) {
+    override fun addCustomUnit(fieldName: String, unit: String) {
         val units = getCustomUnits(fieldName)
         if (!units.contains(unit)) {
             units.add(unit)
@@ -630,14 +637,14 @@ class AddItemViewModel(
     }
 
     // 删除字段的自定义单位
-    fun removeCustomUnit(fieldName: String, unit: String) {
+    override fun removeCustomUnit(fieldName: String, unit: String) {
         val units = getCustomUnits(fieldName)
         units.remove(unit)
         setCustomUnits(fieldName, units)
     }
 
     // 获取字段的自定义标签
-    fun getCustomTags(fieldName: String): MutableList<String> {
+    override fun getCustomTags(fieldName: String): MutableList<String> {
         if (!customTagsMap.containsKey(fieldName)) {
             customTagsMap[fieldName] = mutableListOf()
             savedStateHandle["custom_tags"] = customTagsMap
@@ -652,7 +659,7 @@ class AddItemViewModel(
     }
 
     // 添加字段的自定义标签
-    fun addCustomTag(fieldName: String, tag: String) {
+    override fun addCustomTag(fieldName: String, tag: String) {
         val tags = getCustomTags(fieldName)
         if (!tags.contains(tag)) {
             tags.add(tag)
@@ -661,7 +668,7 @@ class AddItemViewModel(
     }
 
     // 删除字段的自定义标签
-    fun removeCustomTag(fieldName: String, tag: String) {
+    override fun removeCustomTag(fieldName: String, tag: String) {
         val tags = getCustomTags(fieldName)
         tags.remove(tag)
         setCustomTags(fieldName, tags)
@@ -848,7 +855,7 @@ class AddItemViewModel(
     }
 
     // 保存自定义位置数据
-    fun saveCustomLocations(customData: CustomLocationData) {
+    override fun saveCustomLocations(customData: CustomLocationData) {
         try {
             savedStateHandle["custom_locations"] = customData
         } catch (e: Exception) {
@@ -856,7 +863,7 @@ class AddItemViewModel(
     }
 
     // 获取自定义位置数据
-    fun getCustomLocations(): CustomLocationData? {
+    override fun getCustomLocations(): CustomLocationData? {
         return try {
             val data = savedStateHandle.get<CustomLocationData>("custom_locations")
             data
@@ -866,7 +873,7 @@ class AddItemViewModel(
     }
 
     // 添加图片URI管理方法
-    fun addPhotoUri(uri: Uri) {
+    override fun addPhotoUri(uri: Uri) {
         val currentUris = _photoUris.value?.toMutableList() ?: mutableListOf()
         currentUris.add(uri)
         savedStateHandle["photo_uris"] = currentUris
@@ -879,7 +886,7 @@ class AddItemViewModel(
         }
     }
 
-    fun removePhotoUri(position: Int) {
+    override fun removePhotoUri(position: Int) {
         val currentUris = _photoUris.value?.toMutableList() ?: mutableListOf()
         if (position in currentUris.indices) {
             currentUris.removeAt(position)
@@ -932,7 +939,7 @@ class AddItemViewModel(
      * 只清除字段值和照片，但保留已选中的字段
      * 用于清除按钮功能
      */
-    fun clearFieldValuesOnly() {
+    override fun clearFieldValuesOnly() {
         // 清除所有字段值
         fieldValues.clear()
         savedStateHandle.remove<MutableMap<String, Any?>>("field_values")
@@ -1663,7 +1670,18 @@ class AddItemViewModel(
     /**
      * 获取Repository实例（供其他Fragment使用）
      */
-    fun getRepository(): com.example.itemmanagement.data.ItemRepository = repository
+    override fun getItemRepository(): com.example.itemmanagement.data.ItemRepository = repository
     
+    /**
+     * 更新选中的标签
+     */
+    override fun updateSelectedTags(fieldName: String, tags: Set<String>) {
+        val currentSelectedTags = _selectedTags.value?.toMutableMap() ?: mutableMapOf()
+        currentSelectedTags[fieldName] = tags
+        _selectedTags.value = currentSelectedTags
+        
+        // 同时更新字段值
+        saveFieldValue(fieldName, tags)
+    }
 
 }

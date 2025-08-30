@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.widget.*
 import androidx.core.content.ContextCompat
 import com.example.itemmanagement.R
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 
 /**
  * 自定义位置选择器视图
@@ -27,7 +28,7 @@ class LocationSelectorView @JvmOverloads constructor(
     private lateinit var locationManager: LocationManager
 
     // ViewModel引用
-    private lateinit var viewModel: AddItemViewModel
+    private lateinit var viewModel: FieldInteractionViewModel
 
     // 当前选择的值
     private var selectedArea: String? = null
@@ -68,7 +69,7 @@ class LocationSelectorView @JvmOverloads constructor(
     /**
      * 初始化位置管理器
      */
-    fun initialize(locationManager: LocationManager, viewModel: AddItemViewModel) {
+    fun initialize(locationManager: LocationManager, viewModel: FieldInteractionViewModel) {
         this.locationManager = locationManager
         this.viewModel = viewModel
 

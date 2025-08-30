@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog as MaterialAlertDialog
 import com.example.itemmanagement.R
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -165,7 +166,7 @@ class DialogFactory(private val context: Context) {
         allTags: MutableList<String>,
         selectedTagsContainer: ChipGroup,
         onTagSelected: (String) -> Unit,
-        viewModel: AddItemViewModel,
+        viewModel: FieldInteractionViewModel,
         fieldName: String
     ) {
         // 更新所有标签列表
@@ -265,7 +266,7 @@ class DialogFactory(private val context: Context) {
         selectedTagsContainer: ChipGroup,
         onTagAdded: (String) -> Unit,
         parentDialog: MaterialAlertDialog? = null,
-        viewModel: AddItemViewModel,
+        viewModel: FieldInteractionViewModel,
         fieldName: String
     ) {
         val editText = EditText(context).apply {
@@ -338,7 +339,7 @@ class DialogFactory(private val context: Context) {
         customTags: MutableList<String>,
         allTags: MutableList<String>,
         selectedTags: MutableSet<String>,
-        viewModel: AddItemViewModel,
+        viewModel: FieldInteractionViewModel,
         fieldName: String
     ) {
         // 更新所有标签列表

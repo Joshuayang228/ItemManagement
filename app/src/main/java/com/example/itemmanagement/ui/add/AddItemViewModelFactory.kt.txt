@@ -1,5 +1,13 @@
 package com.example.itemmanagement.ui.add
 
+/**
+ * @deprecated 此工厂类已被新架构替代
+ * 请使用新架构对应的工厂类：
+ * - NewAddItemViewModelFactory
+ * - NewEditItemViewModelFactory
+ * - AddShoppingItemViewModelFactory
+ */
+
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel

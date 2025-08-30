@@ -10,6 +10,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.databinding.FragmentFieldListBinding
 
+@Deprecated(
+    message = "请使用新架构：NewFieldListFragment",
+    replaceWith = ReplaceWith("NewFieldListFragment")
+)
 class FieldListFragment : Fragment() {
     private var _binding: FragmentFieldListBinding? = null
     private val binding get() = _binding!!

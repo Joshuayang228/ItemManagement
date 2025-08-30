@@ -21,6 +21,10 @@ import kotlinx.coroutines.launch
  * 购物物品添加/编辑页面
  * 复用BaseItemFragment，确保与库存物品操作体验一致
  */
+@Deprecated(
+    message = "请使用新架构：NewAddShoppingItemFragment + NewBaseItemFragment",
+    replaceWith = ReplaceWith("NewAddShoppingItemFragment")
+)
 class AddShoppingItemFragment : BaseItemFragment() {
 
     // 暂时使用传递的参数，后续可以通过 Safe Args 改进

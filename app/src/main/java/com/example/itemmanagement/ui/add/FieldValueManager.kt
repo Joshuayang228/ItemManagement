@@ -5,6 +5,10 @@ import android.widget.*
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.example.itemmanagement.R
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
+import com.example.itemmanagement.ui.common.FieldProperties
+import com.example.itemmanagement.ui.common.ValidationType
+import com.example.itemmanagement.ui.common.DisplayStyle
 import android.view.ViewGroup
 import java.text.SimpleDateFormat
 import java.util.*
@@ -25,7 +29,7 @@ import android.util.Log
  */
 class FieldValueManager(
     private val context: Context,
-    private val viewModel: AddItemViewModel,
+    private val viewModel: FieldInteractionViewModel,
     private val dialogFactory: DialogFactory
 ) {
     companion object {
@@ -77,7 +81,7 @@ class FieldValueManager(
                 val properties = viewModel.getFieldProperties(fieldName)
                 
                 when (properties.displayStyle) {
-                    AddItemViewModel.DisplayStyle.TAG -> {
+                    DisplayStyle.TAG -> {
                         val selectedTagsContainer = view.findViewById<ChipGroup>(R.id.selected_tags_container)
                         if (selectedTagsContainer != null) {
                             val tags = mutableSetOf<String>()
@@ -94,7 +98,7 @@ class FieldValueManager(
                             }
                         }
                     }
-                    AddItemViewModel.DisplayStyle.RATING_STAR -> {
+                    DisplayStyle.RATING_STAR -> {
                         val ratingBar = findRatingBarInView(view)
                         if (ratingBar != null && ratingBar.rating > 0) {
                             viewModel.saveFieldValue(fieldName, ratingBar.rating)
@@ -102,7 +106,7 @@ class FieldValueManager(
                             viewModel.clearFieldValue(fieldName)
                         }
                     }
-                    AddItemViewModel.DisplayStyle.LOCATION_SELECTOR -> {
+                    DisplayStyle.LOCATION_SELECTOR -> {
                         val locationSelector = findLocationSelectorInView(view)
                         if (locationSelector != null) {
                             val area = locationSelector.getSelectedArea()
@@ -144,7 +148,7 @@ class FieldValueManager(
                             }
                         }
                     }
-                    AddItemViewModel.DisplayStyle.PERIOD_SELECTOR -> {
+                    DisplayStyle.PERIOD_SELECTOR -> {
                         val container = view as? LinearLayout
                         if (container != null) {
                             val numberTextView = findTextViewInView(container, PERIOD_NUMBER_TAG_PREFIX, fieldName)
@@ -163,7 +167,7 @@ class FieldValueManager(
 
                     else -> {
                         when {
-                            properties.validationType == AddItemViewModel.ValidationType.DATE -> {
+                            properties.validationType == ValidationType.DATE -> {
                                 val dateTextView = findTextViewInView(view, DATE_TAG_PREFIX, fieldName)
                                 if (dateTextView != null && dateTextView.text.isNotEmpty() &&
                                     dateTextView.text.toString() != "点击选择日期" &&
@@ -233,7 +237,10 @@ class FieldValueManager(
                                 when (view) {
                                     is EditText -> {
                                         val value = view.text.toString()
-                                        if (value.isNotEmpty()) {
+                                        // 对于名称字段，即使为空也要保存，其他字段为空时清除
+                                        if (fieldName == "名称") {
+                                            viewModel.saveFieldValue(fieldName, value)
+                                        } else if (value.isNotEmpty()) {
                                             viewModel.saveFieldValue(fieldName, value)
                                         } else {
                                             viewModel.clearFieldValue(fieldName)
@@ -261,7 +268,10 @@ class FieldValueManager(
                                         when {
                                             editText != null -> {
                                                 val value = editText.text.toString()
-                                                if (value.isNotEmpty()) {
+                                                // 对于名称字段，即使为空也要保存，其他字段为空时清除
+                                                if (fieldName == "名称") {
+                                                    viewModel.saveFieldValue(fieldName, value)
+                                                } else if (value.isNotEmpty()) {
                                                     viewModel.saveFieldValue(fieldName, value)
                                                 } else {
                                                     viewModel.clearFieldValue(fieldName)
@@ -287,8 +297,8 @@ class FieldValueManager(
                                                 }
                                             }
                                             switchView != null -> {
-                                                // 保存Switch的状态
-                                                viewModel.saveFieldValue(fieldName, switchView.isChecked.toString())
+                                                // 保存Switch的状态为Boolean类型
+                                                viewModel.saveFieldValue(fieldName, switchView.isChecked)
                                             }
                                             spinnerTextView != null -> {
                                                 val value = spinnerTextView.text.toString()
@@ -344,7 +354,7 @@ class FieldValueManager(
                 ratingBar?.rating = 0f
                 
                 // 清除标签
-                if (properties.displayStyle == AddItemViewModel.DisplayStyle.TAG) {
+                if (properties.displayStyle == DisplayStyle.TAG) {
                     val selectedTagsContainer = view.findViewById<ChipGroup>(R.id.selected_tags_container)
                     selectedTagsContainer?.removeAllViews()
                     
@@ -354,7 +364,7 @@ class FieldValueManager(
                 }
                 
                 // 清除位置选择器
-                if (properties.displayStyle == AddItemViewModel.DisplayStyle.LOCATION_SELECTOR) {
+                if (properties.displayStyle == DisplayStyle.LOCATION_SELECTOR) {
                     val locationSelectorView = findLocationSelectorInView(view)
                     locationSelectorView?.clearSelection()
                 }
@@ -393,7 +403,7 @@ class FieldValueManager(
                 }
                 
                 // 清除日期选择
-                if (properties.validationType == AddItemViewModel.ValidationType.DATE) {
+                if (properties.validationType == ValidationType.DATE) {
                     val dateTextView = findTextViewInView(view, DATE_TAG_PREFIX, fieldName)
                     if (dateTextView != null) {
                         dateTextView.text = "点击选择日期"
@@ -437,7 +447,7 @@ class FieldValueManager(
             if (!areaValue.isNullOrEmpty() && areaValue != "未指定") {
                 fieldViews.forEach { (fieldName, view) ->
                     val properties = viewModel.getFieldProperties(fieldName)
-                    if (properties.displayStyle == AddItemViewModel.DisplayStyle.LOCATION_SELECTOR) {
+                    if (properties.displayStyle == DisplayStyle.LOCATION_SELECTOR) {
                         val locationSelector = findLocationSelectorInView(view)
                         locationSelector?.setSelectedLocation(areaValue, containerValue, sublocationValue)
                     }
@@ -446,38 +456,49 @@ class FieldValueManager(
             
             // 然后恢复有保存值的字段
             savedValues.forEach { (fieldName, value) ->
+                Log.d("FieldValueManager", "尝试恢复字段: $fieldName, 值: $value, 类型: ${value?.javaClass?.simpleName}")
+                
                 // 跳过开封状态字段，因为已经特殊处理过了
                 if (fieldName == "开封状态") {
+                    Log.d("FieldValueManager", "跳过开封状态字段")
                     return@forEach
                 }
                 
                 if (fieldName.endsWith("_unit")) {
+                    Log.d("FieldValueManager", "跳过单位字段: $fieldName")
                     return@forEach
                 }
                 
                 // 跳过位置相关字段，因为已经特殊处理过了
                 if (fieldName == "位置_area" || fieldName == "位置_container" || fieldName == "位置_sublocation") {
+                    Log.d("FieldValueManager", "跳过位置字段: $fieldName")
                     return@forEach
                 }
 
                 if (value == null) {
+                    Log.d("FieldValueManager", "跳过null值字段: $fieldName")
                     return@forEach
                 }
 
                 // 特殊处理所有字段，如果值是"未指定"或为空，则不恢复
                 if (value is String && (value == "未指定" || value.isBlank())) {
+                    Log.d("FieldValueManager", "跳过未指定/空值字段: $fieldName")
                     return@forEach
                 }
 
                 val view = fieldViews[fieldName]
                 if (view == null) {
+                    Log.d("FieldValueManager", "找不到字段视图: $fieldName")
+                    Log.d("FieldValueManager", "可用的字段视图: ${fieldViews.keys.joinToString(", ")}")
+                    Log.d("FieldValueManager", "fieldViews映射大小: ${fieldViews.size}")
                     return@forEach
                 }
 
                 val properties = viewModel.getFieldProperties(fieldName)
+                Log.d("FieldValueManager", "字段 $fieldName 的displayStyle: ${properties.displayStyle}")
 
                 when (properties.displayStyle) {
-                    AddItemViewModel.DisplayStyle.TAG -> {
+                    DisplayStyle.TAG -> {
                         val tags = value as? Set<String> ?: return@forEach
                         val selectedTagsContainer = view.findViewById<ChipGroup>(R.id.selected_tags_container)
                         selectedTagsContainer?.removeAllViews()
@@ -575,17 +596,29 @@ class FieldValueManager(
                             }
                         }
                     }
-                    AddItemViewModel.DisplayStyle.RATING_STAR -> {
+                    DisplayStyle.RATING_STAR -> {
                         val rating = when (value) {
                             is Float -> value
                             is Double -> value.toFloat()
                             is Int -> value.toFloat()
-                            else -> return@forEach
+                            is String -> {
+                                Log.d("FieldValueManager", "评分字段String值转换: $value")
+                                value.toFloatOrNull() ?: 0f
+                            }
+                            else -> {
+                                Log.d("FieldValueManager", "评分字段未知类型: ${value?.javaClass?.simpleName}")
+                                return@forEach
+                            }
                         }
                         val ratingBar = findRatingBarInView(view)
-                        ratingBar?.rating = rating
+                        if (ratingBar != null) {
+                            ratingBar.rating = rating
+                            Log.d("FieldValueManager", "成功设置评分值: $rating")
+                        } else {
+                            Log.d("FieldValueManager", "找不到RatingBar控件")
+                        }
                     }
-                    AddItemViewModel.DisplayStyle.PERIOD_SELECTOR -> {
+                    DisplayStyle.PERIOD_SELECTOR -> {
                         val periodValue = value as? Pair<*, *> ?: return@forEach
                         val container = view as? LinearLayout ?: return@forEach
                         val numberTextView = findTextViewInView(container, PERIOD_NUMBER_TAG_PREFIX, fieldName)
@@ -608,7 +641,7 @@ class FieldValueManager(
 
                     else -> {
                         when {
-                            properties.validationType == AddItemViewModel.ValidationType.DATE -> {
+                            properties.validationType == ValidationType.DATE -> {
                                 val dateTextView = findTextViewInView(view, DATE_TAG_PREFIX, fieldName)
                                 if (dateTextView != null && value is String) {
                                     dateTextView.text = value
@@ -616,10 +649,15 @@ class FieldValueManager(
                                 }
                             }
                             properties.options != null -> {
+                                Log.d("FieldValueManager", "恢复下拉选择字段: $fieldName, 值: $value")
                                 val spinnerTextView = findTextViewInView(view, SPINNER_TAG_PREFIX, fieldName)
+                                Log.d("FieldValueManager", "找到spinnerTextView: ${spinnerTextView != null}")
                                 if (spinnerTextView != null && value is String) {
                                     spinnerTextView.text = value
                                     spinnerTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                                    Log.d("FieldValueManager", "成功设置下拉选择值: $value")
+                                } else {
+                                    Log.d("FieldValueManager", "无法设置下拉选择值: spinnerTextView=${spinnerTextView != null}, value类型=${value?.javaClass?.simpleName}")
                                 }
                             }
                             properties.unitOptions != null -> {
@@ -686,14 +724,20 @@ class FieldValueManager(
                                                 }
                                             }
                                             ratingBar != null -> {
+                                                Log.d("FieldValueManager", "恢复评分字段: $fieldName, 原始值: $value")
                                                 val rating = when (value) {
                                                     is Float -> value
                                                     is Double -> value.toFloat()
                                                     is Int -> value.toFloat()
+                                                    is String -> value.toFloatOrNull() ?: 0f
                                                     else -> 0f
                                                 }
+                                                Log.d("FieldValueManager", "转换后的评分值: $rating")
                                                 if (rating > 0) {
                                                     ratingBar.rating = rating
+                                                    Log.d("FieldValueManager", "成功设置评分: $rating")
+                                                } else {
+                                                    Log.d("FieldValueManager", "评分值为0，跳过设置")
                                                 }
                                             }
                                             switchView != null -> {

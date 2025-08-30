@@ -1,16 +1,18 @@
 package com.example.itemmanagement.ui.shopping
 
 import androidx.lifecycle.SavedStateHandle
-import com.example.itemmanagement.ui.add.AddItemViewModel
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 import com.example.itemmanagement.ui.add.Field
 
 /**
  * 购物数据管理器
  * 负责购物专用的数据存储，避免与添加库存物品的数据混合
  * 使用唯一的键值前缀来分离数据存储
+ * 
+ * 现在使用FieldInteractionViewModel接口，与具体实现解耦
  */
 class ShoppingDataManager(
-    private val viewModel: AddItemViewModel
+    private val viewModel: FieldInteractionViewModel
 ) {
     
     companion object {

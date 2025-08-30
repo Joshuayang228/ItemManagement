@@ -57,6 +57,10 @@ import com.example.itemmanagement.ui.add.ItemMode
  * 添加物品Fragment
  * 继承自BaseItemFragment，专门用于添加新物品
  */
+@Deprecated(
+    message = "请使用新架构：NewAddItemFragment + NewBaseItemFragment",
+    replaceWith = ReplaceWith("NewAddItemFragment")
+)
 class AddItemFragment : BaseItemFragment() {
 
     private lateinit var photoManager: PhotoManager

@@ -2,13 +2,14 @@ package com.example.itemmanagement.ui.add
 
 import android.content.Context
 import com.example.itemmanagement.data.model.CustomLocationData
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 
 /**
  * 位置管理器，负责管理位置的层级关系
  */
 class LocationManager(
     private val context: Context,
-    private val viewModel: AddItemViewModel
+    private val viewModel: FieldInteractionViewModel
 ) {
     companion object {
         // 默认区域列表

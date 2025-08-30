@@ -18,13 +18,17 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
+
 /**
  * 照片管理器类
  * 负责处理照片相关的所有操作，包括拍照、从相册选择、压缩等
+ * 
+ * 现在使用FieldInteractionViewModel接口，与具体实现解耦
  */
 class PhotoManager(
     private val fragment: Fragment,
-    private val viewModel: AddItemViewModel,
+    private val viewModel: FieldInteractionViewModel,
     private val dialogFactory: DialogFactory
 ) {
     private var currentPhotoUri: Uri? = null

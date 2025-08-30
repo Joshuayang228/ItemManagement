@@ -63,9 +63,9 @@ class WarehouseFragment : Fragment() {
                 findNavController().navigate(R.id.navigation_item_detail, bundle)
             },
             onEdit = { itemId ->
-                // 导航到编辑页面
+                // 导航到编辑页面（使用新架构）
                 val bundle = androidx.core.os.bundleOf("itemId" to itemId)
-                findNavController().navigate(R.id.editItemFragment, bundle)
+                findNavController().navigate(R.id.action_navigation_warehouse_to_newEditItemFragment, bundle)
             },
             onDelete = { itemId ->
                 // 显示删除确认对话框
@@ -227,8 +227,8 @@ class WarehouseFragment : Fragment() {
     }
 
     private fun observeItems() {
-        // 使用lifecycleScope观察StateFlow
-        lifecycleScope.launch {
+        // 使用viewLifecycleOwner.lifecycleScope观察StateFlow，确保在View销毁时自动取消
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.warehouseItems.collectLatest { items ->
                 
                 if (items.isEmpty()) {
@@ -247,8 +247,8 @@ class WarehouseFragment : Fragment() {
     }
     
     private fun observeFilterState() {
-        // 使用lifecycleScope观察StateFlow
-        lifecycleScope.launch {
+        // 使用viewLifecycleOwner.lifecycleScope观察StateFlow，确保在View销毁时自动取消
+        viewLifecycleOwner.lifecycleScope.launch {
             viewModel.filterState.collectLatest { filterState ->
                 updateFilterChips(filterState)
                 updateSortButtonsState(filterState)

@@ -16,6 +16,7 @@ import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.HomeAdapter
 import com.example.itemmanagement.databinding.FragmentHomeBinding
+import com.example.itemmanagement.test.TestDataInserter
 
 class HomeFragment : Fragment() {
 
@@ -143,6 +144,12 @@ class HomeFragment : Fragment() {
         binding.addButton.setOnClickListener {
             onAddButtonClick()
         }
+        
+        // 长按悬浮按钮插入测试数据（临时功能）
+        binding.addButton.setOnLongClickListener {
+            insertTestData()
+            true
+        }
     }
     
     private fun navigateToItemList(listType: String, title: String) {
@@ -154,8 +161,24 @@ class HomeFragment : Fragment() {
     }
 
     private fun onAddButtonClick() {
-        // 导航到添加物品页面
-        findNavController().navigate(R.id.action_navigation_home_to_addItemFragment)
+        // 导航到添加物品页面（使用新架构）
+        findNavController().navigate(R.id.action_navigation_home_to_newAddItemFragment)
+    }
+    
+    /**
+     * 插入测试数据（临时功能）
+     * 长按悬浮按钮触发
+     */
+    private fun insertTestData() {
+        Toast.makeText(context, "正在生成测试数据...", Toast.LENGTH_SHORT).show()
+        
+        TestDataInserter.insertTestData(requireContext()) { success, message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            if (success) {
+                // 刷新数据显示
+                viewModel.refreshData()
+            }
+        }
     }
 
     private fun performSearch(query: String) {

@@ -136,8 +136,8 @@ class ItemDetailFragment : Fragment() {
     }
     
     private fun navigateToEditItem() {
-        // 导航到编辑物品页面
-        val action = ItemDetailFragmentDirections.actionNavigationItemDetailToEditItemFragment(
+        // 导航到编辑物品页面（使用新架构）
+        val action = ItemDetailFragmentDirections.actionNavigationItemDetailToNewEditItemFragment(
             itemId = args.itemId
         )
         findNavController().navigate(action)

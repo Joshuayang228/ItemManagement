@@ -12,6 +12,9 @@
             android:id="@+id/action_navigation_home_to_addItemFragment"
             app:destination="@id/addItemFragment" />
         <action
+            android:id="@+id/action_navigation_home_to_newAddItemFragment"
+            app:destination="@id/newAddItemFragment" />
+        <action
             android:id="@+id/action_navigation_home_to_itemListFragment"
             app:destination="@id/navigation_item_list" />
         <action
@@ -26,6 +29,9 @@
         <action
             android:id="@+id/action_navigation_warehouse_to_navigation_item_detail"
             app:destination="@id/navigation_item_detail" />
+        <action
+            android:id="@+id/action_navigation_warehouse_to_newEditItemFragment"
+            app:destination="@id/newEditItemFragment" />
     </fragment>
 
     <fragment
@@ -158,6 +164,37 @@
             android:defaultValue="-1L" />
     </fragment>
     
+    <!-- 新架构的添加Fragment -->
+    <fragment
+        android:id="@+id/newAddItemFragment"
+        android:name="com.example.itemmanagement.ui.add.NewAddItemFragment"
+        android:label="@string/title_add_item">
+        <argument
+            android:name="item"
+            app:argType="com.example.itemmanagement.data.model.Item"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="mode"
+            app:argType="string"
+            android:defaultValue="add" />
+        <argument
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+    
+    <!-- 新架构的编辑Fragment -->
+    <fragment
+        android:id="@+id/newEditItemFragment"
+        android:name="com.example.itemmanagement.ui.edit.NewEditItemFragment"
+        android:label="@string/title_edit_item">
+        <argument
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+    
     <fragment
         android:id="@+id/navigation_item_detail"
         android:name="com.example.itemmanagement.ui.detail.ItemDetailFragment"
@@ -174,22 +211,53 @@
                 app:argType="string"
                 android:defaultValue="edit" />
         </action>
+        <action
+            android:id="@+id/action_navigation_item_detail_to_newEditItemFragment"
+            app:destination="@id/newEditItemFragment" />
     </fragment>
 
+    <!-- 新架构的购物清单入库Fragment -->
     <fragment
         android:id="@+id/navigation_add_from_shopping"
-        android:name="com.example.itemmanagement.ui.shopping.AddFromShoppingListFragment"
+        android:name="com.example.itemmanagement.ui.shopping.NewAddFromShoppingListFragment"
         android:label="物品入库">
         <argument
             android:name="shoppingItem"
             app:argType="com.example.itemmanagement.data.entity.ShoppingItemEntity"
             app:nullable="true" />
     </fragment>
+    
+    <!-- 旧架构的购物清单入库Fragment (已废弃) -->
+    <fragment
+        android:id="@+id/old_navigation_add_from_shopping"
+        android:name="com.example.itemmanagement.ui.shopping.AddFromShoppingListFragment"
+        android:label="物品入库(旧)">
+        <argument
+            android:name="shoppingItem"
+            app:argType="com.example.itemmanagement.data.entity.ShoppingItemEntity"
+            app:nullable="true" />
+    </fragment>
 
+    <!-- 新架构的购物物品添加Fragment -->
     <fragment
         android:id="@+id/navigation_add_shopping_item"
-        android:name="com.example.itemmanagement.ui.shopping.AddShoppingItemFragment"
+        android:name="com.example.itemmanagement.ui.shopping.NewAddShoppingItemFragment"
         android:label="添加购物物品">
+        <argument
+            android:name="listId"
+            app:argType="long"
+            android:defaultValue="1L" />
+        <argument
+            android:name="sourceItemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+    
+    <!-- 旧架构的购物物品添加Fragment (已废弃) -->
+    <fragment
+        android:id="@+id/old_navigation_add_shopping_item"
+        android:name="com.example.itemmanagement.ui.shopping.AddShoppingItemFragment"
+        android:label="添加购物物品(旧)">
         <argument
             android:name="listId"
             app:argType="long"

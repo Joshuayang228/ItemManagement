@@ -15,6 +15,10 @@ import com.example.itemmanagement.ui.shopping.ShoppingFieldManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.tabs.TabLayoutMediator
 
+@Deprecated(
+    message = "请使用新架构：NewEditFieldsFragment",
+    replaceWith = ReplaceWith("NewEditFieldsFragment")
+)
 class EditFieldsFragment : BottomSheetDialogFragment() {
 
     private var _binding: FragmentEditFieldsBinding? = null

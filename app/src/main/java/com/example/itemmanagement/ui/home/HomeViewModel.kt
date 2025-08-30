@@ -75,6 +75,15 @@ class HomeViewModel(private val repository: ItemRepository) : ViewModel() {
         return _searchQuery.value
     }
     
+    /**
+     * 刷新数据
+     * 通过重新设置搜索关键词来触发数据刷新
+     */
+    fun refreshData() {
+        val currentQuery = _searchQuery.value ?: ""
+        _searchQuery.value = currentQuery
+    }
+    
     // 删除物品
     fun deleteItem(itemId: Long) {
         viewModelScope.launch {

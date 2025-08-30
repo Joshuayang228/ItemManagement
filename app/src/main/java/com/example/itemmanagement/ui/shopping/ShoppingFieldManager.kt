@@ -1,6 +1,8 @@
 package com.example.itemmanagement.ui.shopping
 
-import com.example.itemmanagement.ui.add.AddItemViewModel
+import com.example.itemmanagement.ui.common.FieldProperties
+import com.example.itemmanagement.ui.common.ValidationType
+import com.example.itemmanagement.ui.common.DisplayStyle
 import com.example.itemmanagement.ui.add.Field
 
 /**
@@ -117,67 +119,67 @@ object ShoppingFieldManager {
     /**
      * 获取购物字段的属性定义
      */
-    fun getShoppingFieldProperties(): Map<String, AddItemViewModel.FieldProperties> = mapOf(
+    fun getShoppingFieldProperties(): Map<String, FieldProperties> = mapOf(
         // 购物特有字段属性
-        "预估价格" to AddItemViewModel.FieldProperties(
-            validationType = AddItemViewModel.ValidationType.NUMBER,
+        "预估价格" to FieldProperties(
+            validationType = ValidationType.NUMBER,
             min = 0,
             hint = "预估价格",
             unit = "元"
         ),
         
-        "实际价格" to AddItemViewModel.FieldProperties(
-            validationType = AddItemViewModel.ValidationType.NUMBER,
+        "实际价格" to FieldProperties(
+            validationType = ValidationType.NUMBER,
             min = 0,
             hint = "实际价格",
             unit = "元"
         ),
         
-        "预算上限" to AddItemViewModel.FieldProperties(
-            validationType = AddItemViewModel.ValidationType.NUMBER,
+        "预算上限" to FieldProperties(
+            validationType = ValidationType.NUMBER,
             min = 0,
             hint = "预算上限",
             unit = "元"
         ),
         
-        "首选商店" to AddItemViewModel.FieldProperties(
+        "首选商店" to FieldProperties(
             options = listOf("超市", "便利店", "网购", "专卖店", "商场", "菜市场"),
             isCustomizable = true,
             hint = "首选购买地点"
         ),
         
-        "紧急程度" to AddItemViewModel.FieldProperties(
+        "紧急程度" to FieldProperties(
             options = listOf("不急", "普通", "急需", "非常急需"),
             defaultValue = "普通"
         ),
         
-        "截止日期" to AddItemViewModel.FieldProperties(
-            validationType = AddItemViewModel.ValidationType.DATE,
+        "截止日期" to FieldProperties(
+            validationType = ValidationType.DATE,
             defaultDate = false,
             hint = "需要购买的截止日期"
         ),
         
-        "提醒日期" to AddItemViewModel.FieldProperties(
-            validationType = AddItemViewModel.ValidationType.DATE,
+        "提醒日期" to FieldProperties(
+            validationType = ValidationType.DATE,
             defaultDate = false,
             hint = "提醒购买的日期"
         ),
         
-        "周期性购买" to AddItemViewModel.FieldProperties(
+        "周期性购买" to FieldProperties(
             options = listOf("否", "是"),
             defaultValue = "否"
         ),
         
-        "周期间隔" to AddItemViewModel.FieldProperties(
-            validationType = AddItemViewModel.ValidationType.NUMBER,
+        "周期间隔" to FieldProperties(
+            validationType = ValidationType.NUMBER,
             min = 1,
             max = 365,
             hint = "间隔天数",
             unit = "天"
         ),
         
-        "推荐原因" to AddItemViewModel.FieldProperties(
-            validationType = AddItemViewModel.ValidationType.TEXT,
+        "推荐原因" to FieldProperties(
+            validationType = ValidationType.TEXT,
             hint = "为什么推荐购买此物品",
             isMultiline = true,
             maxLines = 3
