@@ -11,6 +11,13 @@ import com.example.itemmanagement.data.dao.ItemDao
 import com.example.itemmanagement.data.dao.CalendarEventDao
 import com.example.itemmanagement.data.dao.ShoppingDao
 import com.example.itemmanagement.data.dao.ShoppingListDao
+import com.example.itemmanagement.data.dao.ReminderSettingsDao
+import com.example.itemmanagement.data.dao.CategoryThresholdDao
+import com.example.itemmanagement.data.dao.CustomRuleDao
+import com.example.itemmanagement.data.dao.WarrantyDao
+import com.example.itemmanagement.data.dao.BorrowDao
+import com.example.itemmanagement.data.dao.RecycleBinDao
+import com.example.itemmanagement.data.dao.UserProfileDao
 import com.example.itemmanagement.data.entity.*
 
 @Database(
@@ -22,9 +29,16 @@ import com.example.itemmanagement.data.entity.*
         ItemTagCrossRef::class,
         CalendarEventEntity::class,
         ShoppingItemEntity::class,
-    ShoppingListEntity::class
+        ShoppingListEntity::class,
+        ReminderSettingsEntity::class,
+        CategoryThresholdEntity::class,
+        CustomRuleEntity::class,
+        WarrantyEntity::class,
+        BorrowEntity::class,
+        DeletedItemEntity::class,
+        UserProfileEntity::class
     ],
-    version = 12,
+    version = 19,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -33,6 +47,13 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun calendarEventDao(): CalendarEventDao
     abstract fun shoppingDao(): ShoppingDao
     abstract fun shoppingListDao(): ShoppingListDao
+    abstract fun reminderSettingsDao(): ReminderSettingsDao
+    abstract fun categoryThresholdDao(): CategoryThresholdDao
+    abstract fun customRuleDao(): CustomRuleDao
+    abstract fun warrantyDao(): WarrantyDao
+    abstract fun borrowDao(): BorrowDao
+    abstract fun recycleBinDao(): RecycleBinDao
+    abstract fun userProfileDao(): UserProfileDao
 
     companion object {
         @Volatile
@@ -45,7 +66,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
+                .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
                 instance
@@ -635,6 +657,356 @@ abstract class AppDatabase : RoomDatabase() {
                 
                 // 6. 清理备份表
                 database.execSQL("DROP TABLE shopping_items_backup")
+            }
+        }
+        
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建提醒设置表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `reminder_settings` (
+                        `id` INTEGER NOT NULL,
+                        `expirationAdvanceDays` INTEGER NOT NULL DEFAULT 7,
+                        `includeWarranty` INTEGER NOT NULL DEFAULT 1,
+                        `notificationTime` TEXT NOT NULL DEFAULT '09:00',
+                        `stockReminderEnabled` INTEGER NOT NULL DEFAULT 1,
+                        `pushNotificationEnabled` INTEGER NOT NULL DEFAULT 1,
+                        `inAppReminderEnabled` INTEGER NOT NULL DEFAULT 1,
+                        `quietHourStart` TEXT NOT NULL DEFAULT '22:00',
+                        `quietHourEnd` TEXT NOT NULL DEFAULT '08:00',
+                        `weekendPause` INTEGER NOT NULL DEFAULT 0,
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                """)
+                
+                // 创建分类阈值表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `category_thresholds` (
+                        `category` TEXT NOT NULL,
+                        `minQuantity` REAL NOT NULL DEFAULT 1.0,
+                        `enabled` INTEGER NOT NULL DEFAULT 1,
+                        `unit` TEXT NOT NULL DEFAULT '个',
+                        `description` TEXT NOT NULL DEFAULT '',
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`category`)
+                    )
+                """)
+                
+                // 创建自定义规则表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `custom_rules` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `description` TEXT NOT NULL,
+                        `targetCategory` TEXT,
+                        `targetItemName` TEXT,
+                        `ruleType` TEXT NOT NULL,
+                        `advanceDays` INTEGER,
+                        `minQuantity` REAL,
+                        `maxQuantity` REAL,
+                        `customMessage` TEXT NOT NULL DEFAULT '',
+                        `priority` TEXT NOT NULL DEFAULT 'NORMAL',
+                        `enabled` INTEGER NOT NULL DEFAULT 1,
+                        `createdAt` INTEGER NOT NULL,
+                        `updatedAt` INTEGER NOT NULL,
+                        `lastTriggeredAt` INTEGER
+                    )
+                """)
+                
+                // 插入默认提醒设置
+                database.execSQL("""
+                    INSERT OR IGNORE INTO reminder_settings (
+                        id, createdAt, updatedAt
+                    ) VALUES (
+                        1, ${System.currentTimeMillis()}, ${System.currentTimeMillis()}
+                    )
+                """)
+            }
+        }
+        
+        /**
+         * 迁移 13 -> 14: 添加保修管理功能
+         * 创建warranties表来存储完整的保修信息
+         */
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建保修信息表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `warranties` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `itemId` INTEGER NOT NULL,
+                        `purchaseDate` INTEGER NOT NULL,
+                        `warrantyPeriodMonths` INTEGER NOT NULL,
+                        `warrantyEndDate` INTEGER NOT NULL,
+                        `receiptImageUris` TEXT,
+                        `notes` TEXT,
+                        `status` TEXT NOT NULL DEFAULT 'ACTIVE',
+                        `warrantyProvider` TEXT,
+                        `contactInfo` TEXT,
+                        `createdDate` INTEGER NOT NULL,
+                        `updatedDate` INTEGER NOT NULL,
+                        FOREIGN KEY(`itemId`) REFERENCES `items`(`id`) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 创建索引以优化查询性能
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_warranties_itemId` ON `warranties` (`itemId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_warranties_warrantyEndDate` ON `warranties` (`warrantyEndDate`)")
+                
+                // 从现有的items表迁移保修信息到新的warranties表
+                // 只迁移有保修信息的物品（warrantyPeriod不为null且大于0）
+                database.execSQL("""
+                    INSERT INTO warranties (
+                        itemId, purchaseDate, warrantyPeriodMonths, warrantyEndDate, 
+                        status, createdDate, updatedDate
+                    )
+                    SELECT 
+                        id as itemId,
+                        COALESCE(purchaseDate, addDate) as purchaseDate,
+                        COALESCE(warrantyPeriod, 12) as warrantyPeriodMonths,
+                        COALESCE(warrantyEndDate, 
+                            datetime(COALESCE(purchaseDate, addDate)/1000 + COALESCE(warrantyPeriod, 12) * 30 * 24 * 3600, 'unixepoch') * 1000
+                        ) as warrantyEndDate,
+                        CASE 
+                            WHEN warrantyEndDate IS NOT NULL AND warrantyEndDate < ${System.currentTimeMillis()} THEN 'EXPIRED'
+                            ELSE 'ACTIVE'
+                        END as status,
+                        ${System.currentTimeMillis()} as createdDate,
+                        ${System.currentTimeMillis()} as updatedDate
+                    FROM items 
+                    WHERE warrantyPeriod IS NOT NULL AND warrantyPeriod > 0
+                """)
+            }
+        }
+        
+        /**
+         * 数据库版本14到15的迁移
+         * 添加借还管理功能，创建borrows表
+         */
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建借还记录表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `borrows` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `itemId` INTEGER NOT NULL,
+                        `borrowerName` TEXT NOT NULL,
+                        `borrowerContact` TEXT,
+                        `borrowDate` INTEGER NOT NULL,
+                        `expectedReturnDate` INTEGER NOT NULL,
+                        `actualReturnDate` INTEGER,
+                        `status` TEXT NOT NULL DEFAULT 'BORROWED',
+                        `notes` TEXT,
+                        `createdDate` INTEGER NOT NULL,
+                        `updatedDate` INTEGER NOT NULL,
+                        FOREIGN KEY(`itemId`) REFERENCES `items`(`id`) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 创建索引以优化查询性能
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_borrows_itemId` ON `borrows` (`itemId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_borrows_status` ON `borrows` (`status`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_borrows_borrowDate` ON `borrows` (`borrowDate`)")
+            }
+        }
+        
+        /**
+         * 数据库版本15到16的迁移
+         * 添加回收站功能，创建deleted_items表
+         */
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建已删除物品表（回收站）
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `deleted_items` (
+                        `originalId` INTEGER PRIMARY KEY NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `category` TEXT NOT NULL,
+                        `quantity` REAL,
+                        `unit` TEXT,
+                        `price` REAL,
+                        `purchaseDate` INTEGER,
+                        `expirationDate` INTEGER,
+                        `warrantyEndDate` INTEGER,
+                        `customNote` TEXT,
+                        `addDate` INTEGER NOT NULL,
+                        `locationId` INTEGER,
+                        `locationArea` TEXT,
+                        `locationContainer` TEXT,
+                        `locationSublocation` TEXT,
+                        `photoUris` TEXT,
+                        `tagNames` TEXT,
+                        `deletedDate` INTEGER NOT NULL,
+                        `deletedReason` TEXT,
+                        `canRestore` INTEGER NOT NULL,
+                        `hasWarranty` INTEGER NOT NULL,
+                        `hasBorrowRecord` INTEGER NOT NULL
+                    )
+                """)
+                
+                // 创建索引优化查询性能
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_deleted_items_deletedDate` ON `deleted_items` (`deletedDate`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_deleted_items_category` ON `deleted_items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_deleted_items_canRestore` ON `deleted_items` (`canRestore`)")
+            }
+        }
+        
+        /**
+         * 数据库版本16到17的迁移
+         * 添加用户资料功能，创建user_profile表
+         */
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建用户资料表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `user_profile` (
+                        `id` INTEGER PRIMARY KEY NOT NULL,
+                        `nickname` TEXT NOT NULL DEFAULT '物品管家用户',
+                        `avatarUri` TEXT,
+                        `joinDate` INTEGER NOT NULL,
+                        `totalItemsManaged` INTEGER NOT NULL DEFAULT 0,
+                        `currentItemCount` INTEGER NOT NULL DEFAULT 0,
+                        `expiredItemsAvoided` INTEGER NOT NULL DEFAULT 0,
+                        `totalSavedValue` REAL NOT NULL DEFAULT 0.0,
+                        `consecutiveDays` INTEGER NOT NULL DEFAULT 0,
+                        `lastActiveDate` INTEGER NOT NULL,
+                        `achievementLevel` INTEGER NOT NULL DEFAULT 1,
+                        `experiencePoints` INTEGER NOT NULL DEFAULT 0,
+                        `unlockedBadges` TEXT NOT NULL DEFAULT '',
+                        `preferredTheme` TEXT NOT NULL DEFAULT 'AUTO',
+                        `preferredLanguage` TEXT NOT NULL DEFAULT 'zh',
+                        `enableNotifications` INTEGER NOT NULL DEFAULT 1,
+                        `enableSoundEffects` INTEGER NOT NULL DEFAULT 1,
+                        `defaultCategory` TEXT,
+                        `defaultUnit` TEXT NOT NULL DEFAULT '个',
+                        `enableAppLock` INTEGER NOT NULL DEFAULT 0,
+                        `lockType` TEXT NOT NULL DEFAULT 'NONE',
+                        `showStatsInProfile` INTEGER NOT NULL DEFAULT 1,
+                        `dataBackupEnabled` INTEGER NOT NULL DEFAULT 1,
+                        `autoBackupFreq` TEXT NOT NULL DEFAULT 'WEEKLY',
+                        `reminderFreq` TEXT NOT NULL DEFAULT 'DAILY',
+                        `compactModeEnabled` INTEGER NOT NULL DEFAULT 0,
+                        `showTutorialTips` INTEGER NOT NULL DEFAULT 1,
+                        `createdDate` INTEGER NOT NULL,
+                        `updatedDate` INTEGER NOT NULL,
+                        `appVersion` TEXT NOT NULL DEFAULT '1.0.0',
+                        `profileVersion` INTEGER NOT NULL DEFAULT 1
+                    )
+                """)
+                
+                // 创建默认用户资料
+                val currentTime = System.currentTimeMillis()
+                database.execSQL("""
+                    INSERT INTO user_profile (
+                        id, nickname, joinDate, lastActiveDate, createdDate, updatedDate
+                    ) VALUES (
+                        1, '物品管家用户', $currentTime, $currentTime, $currentTime, $currentTime
+                    )
+                """)
+            }
+        }
+        
+        /**
+         * 数据库版本17到18的迁移
+         * 修复deleted_items表的默认值问题
+         */
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 重新创建deleted_items表，移除默认值设置
+                // 先备份现有数据（如果存在）
+                database.execSQL("DROP TABLE IF EXISTS `deleted_items_temp`")
+                
+                // 创建正确的表结构
+                database.execSQL("""
+                    CREATE TABLE `deleted_items_temp` (
+                        `originalId` INTEGER PRIMARY KEY NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `category` TEXT NOT NULL,
+                        `quantity` REAL,
+                        `unit` TEXT,
+                        `price` REAL,
+                        `purchaseDate` INTEGER,
+                        `expirationDate` INTEGER,
+                        `warrantyEndDate` INTEGER,
+                        `customNote` TEXT,
+                        `addDate` INTEGER NOT NULL,
+                        `locationId` INTEGER,
+                        `locationArea` TEXT,
+                        `locationContainer` TEXT,
+                        `locationSublocation` TEXT,
+                        `photoUris` TEXT,
+                        `tagNames` TEXT,
+                        `deletedDate` INTEGER NOT NULL,
+                        `deletedReason` TEXT,
+                        `canRestore` INTEGER NOT NULL,
+                        `hasWarranty` INTEGER NOT NULL,
+                        `hasBorrowRecord` INTEGER NOT NULL
+                    )
+                """)
+                
+                // 复制现有数据（如果表存在）
+                database.execSQL("""
+                    INSERT OR IGNORE INTO `deleted_items_temp` 
+                    SELECT * FROM `deleted_items`
+                    WHERE EXISTS (SELECT name FROM sqlite_master WHERE type='table' AND name='deleted_items')
+                """)
+                
+                // 删除旧表并重命名新表
+                database.execSQL("DROP TABLE IF EXISTS `deleted_items`")
+                database.execSQL("ALTER TABLE `deleted_items_temp` RENAME TO `deleted_items`")
+                
+                // 重新创建索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_deleted_items_deletedDate` ON `deleted_items` (`deletedDate`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_deleted_items_category` ON `deleted_items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_deleted_items_canRestore` ON `deleted_items` (`canRestore`)")
+            }
+        }
+        
+        /**
+         * 数据库版本18到19的迁移
+         * 完全重建deleted_items表以解决结构验证问题
+         */
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 完全删除旧的deleted_items表
+                database.execSQL("DROP TABLE IF EXISTS `deleted_items`")
+                
+                // 重新创建deleted_items表，严格按照Entity定义
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `deleted_items` (
+                        `originalId` INTEGER PRIMARY KEY NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `category` TEXT NOT NULL,
+                        `quantity` REAL,
+                        `unit` TEXT,
+                        `price` REAL,
+                        `purchaseDate` INTEGER,
+                        `expirationDate` INTEGER,
+                        `warrantyEndDate` INTEGER,
+                        `customNote` TEXT,
+                        `addDate` INTEGER NOT NULL,
+                        `locationId` INTEGER,
+                        `locationArea` TEXT,
+                        `locationContainer` TEXT,
+                        `locationSublocation` TEXT,
+                        `photoUris` TEXT,
+                        `tagNames` TEXT,
+                        `deletedDate` INTEGER NOT NULL,
+                        `deletedReason` TEXT,
+                        `canRestore` INTEGER NOT NULL,
+                        `hasWarranty` INTEGER NOT NULL,
+                        `hasBorrowRecord` INTEGER NOT NULL
+                    )
+                """)
             }
         }
     }

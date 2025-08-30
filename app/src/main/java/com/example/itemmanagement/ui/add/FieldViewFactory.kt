@@ -558,7 +558,7 @@ class FieldViewFactory(
         val selectedTagsContainer = LayoutInflater.from(context).inflate(R.layout.tag_selector_layout, null, false) as ChipGroup
 
         // 为当前字段创建一个专用的 TagManager 实例
-        val tagManager = TagManager(context, dialogFactory, viewModel, fieldName)
+        val tagManager = TagManager(context, viewModel, fieldName)
 
         // 初始化 TagManager 的默认标签
         tagManager.initialize(properties.options)

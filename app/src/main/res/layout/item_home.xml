@@ -4,22 +4,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    android:layout_margin="6dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="3dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- 物品图片 - 宽度固定，高度根据图片宽高比自适应 -->
+        <!-- 物品图片 - 固定合适的高度，避免占用太多空间 -->
         <ImageView
             android:id="@+id/itemImage"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:adjustViewBounds="true"
-            android:scaleType="fitCenter"
+            android:layout_height="120dp"
+            android:scaleType="centerCrop"
             android:contentDescription="@string/item_image" />
 
         <!-- 物品信息 -->
@@ -27,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="12dp">
 
             <!-- 物品名称 -->
             <TextView
@@ -35,9 +34,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:textColor="@color/black"
                 android:textSize="16sp"
+                android:textStyle="bold"
                 tools:text="物品名称" />
 
             <!-- 单价和添加日期（在同一行） -->
@@ -45,7 +45,7 @@
                 android:id="@+id/priceAndDateLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:orientation="horizontal">
 
                 <!-- 单价 -->
@@ -75,9 +75,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:ellipsize="end"
-                android:maxLines="2"
+                android:maxLines="1"
                 android:textColor="@android:color/darker_gray"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 tools:text="这是一段备注信息" />
 
         </LinearLayout>

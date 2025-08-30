@@ -11,6 +11,7 @@ import com.example.itemmanagement.ui.warehouse.FilterState
 import com.example.itemmanagement.ui.warehouse.SortDirection
 import com.example.itemmanagement.ui.warehouse.SortOption
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -36,6 +37,13 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
      */
     suspend fun getItemWithDetailsById(id: Long): ItemWithDetails? {
         return itemDao.getItemWithDetailsById(id)
+    }
+    
+    /**
+     * 获取所有物品的详细信息（包括标签、照片等）
+     */
+    fun getAllItemsWithDetails(): Flow<List<ItemWithDetails>> {
+        return itemDao.getAllItemsWithDetails()
     }
 
     /**
@@ -498,6 +506,83 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
      */
     fun getShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>> {
         return database.shoppingDao().getShoppingItemsByListId(listId)
+    }
+    
+    // ==================== 到期提醒功能 ====================
+    
+    /**
+     * 获取今日到期的物品
+     */
+    suspend fun getTodayExpiringItems(): List<ItemWithDetails> {
+        val today = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 23)
+            set(java.util.Calendar.MINUTE, 59)
+            set(java.util.Calendar.SECOND, 59)
+        }.time
+        
+        val allItems = database.itemDao().getAllItemsWithDetails().first()
+        return allItems.filter { item ->
+            item.item.expirationDate?.let { it <= today } == true ||
+            item.item.warrantyEndDate?.let { it <= today } == true
+        }
+    }
+    
+    /**
+     * 获取即将到期的物品（1-7天内）
+     */
+    suspend fun getUpcomingExpiringItems(): List<ItemWithDetails> {
+        val today = java.util.Date()
+        val nextWeek = java.util.Calendar.getInstance().apply {
+            add(java.util.Calendar.DAY_OF_YEAR, 7)
+            set(java.util.Calendar.HOUR_OF_DAY, 23)
+            set(java.util.Calendar.MINUTE, 59)
+            set(java.util.Calendar.SECOND, 59)
+        }.time
+        
+        val allItems = database.itemDao().getAllItemsWithDetails().first()
+        return allItems.filter { item ->
+            val expirationDate = item.item.expirationDate
+            val warrantyEndDate = item.item.warrantyEndDate
+            
+            (expirationDate != null && expirationDate.after(today) && expirationDate <= nextWeek) ||
+            (warrantyEndDate != null && warrantyEndDate.after(today) && warrantyEndDate <= nextWeek)
+        }
+    }
+    
+    /**
+     * 获取已过期的物品
+     */
+    suspend fun getExpiredItems(): List<ItemWithDetails> {
+        val today = java.util.Date()
+        
+        val allItems = database.itemDao().getAllItemsWithDetails().first()
+        return allItems.filter { item ->
+            item.item.expirationDate?.let { it.before(today) } == true ||
+            item.item.warrantyEndDate?.let { it.before(today) } == true
+        }
+    }
+    
+    /**
+     * 获取指定天数内到期的物品
+     */
+    suspend fun getItemsExpiringInDays(days: Int): List<ItemWithDetails> {
+        val targetDate = java.util.Calendar.getInstance().apply {
+            add(java.util.Calendar.DAY_OF_YEAR, days)
+            set(java.util.Calendar.HOUR_OF_DAY, 23)
+            set(java.util.Calendar.MINUTE, 59)
+            set(java.util.Calendar.SECOND, 59)
+        }.time
+        
+        val today = java.util.Date()
+        
+        val allItems = database.itemDao().getAllItemsWithDetails().first()
+        return allItems.filter { item ->
+            val expirationDate = item.item.expirationDate
+            val warrantyEndDate = item.item.warrantyEndDate
+            
+            (expirationDate != null && expirationDate.after(today) && expirationDate <= targetDate) ||
+            (warrantyEndDate != null && warrantyEndDate.after(today) && warrantyEndDate <= targetDate)
+        }
     }
     
     companion object {

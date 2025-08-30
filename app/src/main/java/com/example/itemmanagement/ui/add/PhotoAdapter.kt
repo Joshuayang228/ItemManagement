@@ -17,6 +17,10 @@ import com.example.itemmanagement.databinding.ItemAddPhotoBinding
 import android.widget.Toast
 import android.view.View
 
+/**
+ * 新架构的照片适配器
+ * 为新架构设计，功能与旧版本完全一致，但更加简洁和独立
+ */
 class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     companion object {
         private const val MAX_PHOTOS = 9 // 最大照片数量限制
@@ -157,28 +161,19 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             is AddPhotoViewHolder -> {
                 // 设置添加按钮点击事件
                 holder.binding.root.setOnClickListener {
-                    onAddPhotoClickListener?.invoke()
-                }
-                // 只有在未达到最大数量时才显示添加按钮
-                holder.itemView.visibility = if (photos.size < MAX_PHOTOS) {
-                    View.VISIBLE
-                } else {
-                    View.GONE
+                    if (photos.size < MAX_PHOTOS) {
+                        onAddPhotoClickListener?.invoke()
+                    } else {
+                        Toast.makeText(holder.binding.root.context, "最多只能添加${MAX_PHOTOS}张照片", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }
     }
 
     override fun getItemCount(): Int {
-        return if (photos.size >= MAX_PHOTOS) {
-            MAX_PHOTOS
-        } else {
-            photos.size + 1
-        }
+        return if (photos.size < MAX_PHOTOS) photos.size + 1 else photos.size
     }
-
-    inner class PhotoViewHolder(val binding: ItemPhotoBinding) : RecyclerView.ViewHolder(binding.root)
-    inner class AddPhotoViewHolder(val binding: ItemAddPhotoBinding) : RecyclerView.ViewHolder(binding.root)
 
     fun setOnDeleteClickListener(listener: (Int) -> Unit) {
         onDeleteClickListener = listener
@@ -191,4 +186,8 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     fun setOnPhotoClickListener(listener: (Uri) -> Unit) {
         onPhotoClickListener = listener
     }
-} 
+
+    // ViewHolder classes
+    inner class PhotoViewHolder(val binding: ItemPhotoBinding) : RecyclerView.ViewHolder(binding.root)
+    inner class AddPhotoViewHolder(val binding: ItemAddPhotoBinding) : RecyclerView.ViewHolder(binding.root)
+}

@@ -11,9 +11,7 @@
         <action
             android:id="@+id/action_navigation_home_to_addItemFragment"
             app:destination="@id/addItemFragment" />
-        <action
-            android:id="@+id/action_navigation_home_to_newAddItemFragment"
-            app:destination="@id/newAddItemFragment" />
+
         <action
             android:id="@+id/action_navigation_home_to_itemListFragment"
             app:destination="@id/navigation_item_list" />
@@ -30,8 +28,8 @@
             android:id="@+id/action_navigation_warehouse_to_navigation_item_detail"
             app:destination="@id/navigation_item_detail" />
         <action
-            android:id="@+id/action_navigation_warehouse_to_newEditItemFragment"
-            app:destination="@id/newEditItemFragment" />
+            android:id="@+id/action_navigation_warehouse_to_editItemFragment"
+            app:destination="@id/editItemFragment" />
     </fragment>
 
     <fragment
@@ -62,12 +60,37 @@
         <action
             android:id="@+id/action_function_to_waste_report"
             app:destination="@id/navigation_waste_report" />
+        <action
+            android:id="@+id/action_function_to_expiration_reminder"
+            app:destination="@id/navigation_expiration_reminder" />
+        <action
+            android:id="@+id/action_function_to_warranty_list"
+            app:destination="@id/navigation_warranty_list" />
+        <action
+            android:id="@+id/action_function_to_borrow_list"
+            app:destination="@id/navigation_borrow_list" />
+        <action
+            android:id="@+id/action_function_to_data_export"
+            app:destination="@id/navigation_data_export" />
     </fragment>
 
     <fragment
         android:id="@+id/navigation_profile"
         android:name="com.example.itemmanagement.ui.profile.ProfileFragment"
-        android:label="我的" />
+        android:label="我的">
+        <action
+            android:id="@+id/action_profile_to_app_settings"
+            app:destination="@id/navigation_app_settings" />
+        <action
+            android:id="@+id/action_profile_to_edit_profile"
+            app:destination="@id/navigation_edit_profile" />
+        <action
+            android:id="@+id/action_profile_to_recycle_bin"
+            app:destination="@id/navigation_recycle_bin" />
+        <action
+            android:id="@+id/action_profile_to_donation"
+            app:destination="@id/navigation_donation" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_inventory_analysis"
@@ -103,6 +126,18 @@
         android:label="浪费报告" />
 
     <fragment
+        android:id="@+id/navigation_expiration_reminder"
+        android:name="com.example.itemmanagement.ui.expiration.ExpirationReminderFragment"
+        android:label="周期提醒">
+        <action
+            android:id="@+id/action_expiration_reminder_to_item_detail"
+            app:destination="@id/navigation_item_detail" />
+        <action
+            android:id="@+id/action_expiration_reminder_to_reminder_settings"
+            app:destination="@id/navigation_reminder_settings" />
+    </fragment>
+
+    <fragment
         android:id="@+id/navigation_item_list"
         android:name="com.example.itemmanagement.ui.home.ItemListFragment"
         android:label="物品列表">
@@ -127,6 +162,55 @@
         android:label="设置" />
 
     <fragment
+        android:id="@+id/navigation_reminder_settings"
+        android:name="com.example.itemmanagement.ui.reminder.ReminderSettingsFragment"
+        android:label="提醒设置" />
+
+    <!-- 保修管理相关页面 -->
+    <fragment
+        android:id="@+id/navigation_warranty_list"
+        android:name="com.example.itemmanagement.ui.warranty.WarrantyListFragment"
+        android:label="保修管理">
+        <action
+            android:id="@+id/action_warranty_list_to_add_edit_warranty"
+            app:destination="@id/navigation_add_edit_warranty" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_add_edit_warranty"
+        android:name="com.example.itemmanagement.ui.warranty.AddEditWarrantyFragment"
+        android:label="保修信息">
+        <argument
+            android:name="warrantyId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+        <argument
+            android:name="preSelectedItemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+
+    <!-- 借还管理相关页面 -->
+    <fragment
+        android:id="@+id/navigation_borrow_list"
+        android:name="com.example.itemmanagement.ui.borrow.BorrowListFragment"
+        android:label="借还管理">
+        <action
+            android:id="@+id/action_borrow_list_to_add_borrow"
+            app:destination="@id/navigation_add_borrow" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_add_borrow"
+        android:name="com.example.itemmanagement.ui.borrow.AddBorrowFragment"
+        android:label="添加借出记录">
+        <argument
+            android:name="preSelectedItemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+
+    <fragment
         android:id="@+id/addItemFragment"
         android:name="com.example.itemmanagement.ui.add.AddItemFragment"
         android:label="@string/title_add_item">
@@ -145,49 +229,10 @@
             android:defaultValue="-1L" />
     </fragment>
     
+    <!-- 编辑Fragment -->
     <fragment
         android:id="@+id/editItemFragment"
         android:name="com.example.itemmanagement.ui.edit.EditItemFragment"
-        android:label="@string/title_edit_item">
-        <argument
-            android:name="item"
-            app:argType="com.example.itemmanagement.data.model.Item"
-            app:nullable="true"
-            android:defaultValue="@null" />
-        <argument
-            android:name="mode"
-            app:argType="string"
-            android:defaultValue="edit" />
-        <argument
-            android:name="itemId"
-            app:argType="long"
-            android:defaultValue="-1L" />
-    </fragment>
-    
-    <!-- 新架构的添加Fragment -->
-    <fragment
-        android:id="@+id/newAddItemFragment"
-        android:name="com.example.itemmanagement.ui.add.NewAddItemFragment"
-        android:label="@string/title_add_item">
-        <argument
-            android:name="item"
-            app:argType="com.example.itemmanagement.data.model.Item"
-            app:nullable="true"
-            android:defaultValue="@null" />
-        <argument
-            android:name="mode"
-            app:argType="string"
-            android:defaultValue="add" />
-        <argument
-            android:name="itemId"
-            app:argType="long"
-            android:defaultValue="-1L" />
-    </fragment>
-    
-    <!-- 新架构的编辑Fragment -->
-    <fragment
-        android:id="@+id/newEditItemFragment"
-        android:name="com.example.itemmanagement.ui.edit.NewEditItemFragment"
         android:label="@string/title_edit_item">
         <argument
             android:name="itemId"
@@ -211,15 +256,12 @@
                 app:argType="string"
                 android:defaultValue="edit" />
         </action>
-        <action
-            android:id="@+id/action_navigation_item_detail_to_newEditItemFragment"
-            app:destination="@id/newEditItemFragment" />
     </fragment>
 
     <!-- 新架构的购物清单入库Fragment -->
     <fragment
         android:id="@+id/navigation_add_from_shopping"
-        android:name="com.example.itemmanagement.ui.shopping.NewAddFromShoppingListFragment"
+        android:name="com.example.itemmanagement.ui.shopping.AddFromShoppingListFragment"
         android:label="物品入库">
         <argument
             android:name="shoppingItem"
@@ -241,7 +283,7 @@
     <!-- 新架构的购物物品添加Fragment -->
     <fragment
         android:id="@+id/navigation_add_shopping_item"
-        android:name="com.example.itemmanagement.ui.shopping.NewAddShoppingItemFragment"
+        android:name="com.example.itemmanagement.ui.shopping.AddShoppingItemFragment"
         android:label="添加购物物品">
         <argument
             android:name="listId"
@@ -263,9 +305,36 @@
             app:argType="long"
             android:defaultValue="1L" />
         <argument
-            android:name="shoppingItem"
-            app:argType="com.example.itemmanagement.data.entity.ShoppingItemEntity"
-            app:nullable="true"
-            android:defaultValue="@null" />
+            android:name="sourceItemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
     </fragment>
+
+    <!-- 数据导出页面 -->
+    <fragment
+        android:id="@+id/navigation_data_export"
+        android:name="com.example.itemmanagement.ui.export.DataExportFragment"
+        android:label="数据导出" />
+
+    <!-- 个人设置相关页面 -->
+    <fragment
+        android:id="@+id/navigation_app_settings"
+        android:name="com.example.itemmanagement.ui.profile.settings.AppSettingsFragment"
+        android:label="应用设置" />
+
+    <fragment
+        android:id="@+id/navigation_edit_profile"
+        android:name="com.example.itemmanagement.ui.profile.edit.EditProfileFragment"
+        android:label="编辑资料" />
+
+    <fragment
+        android:id="@+id/navigation_recycle_bin"
+        android:name="com.example.itemmanagement.ui.profile.recycle.RecycleBinFragment"
+        android:label="回收站" />
+
+    <fragment
+        android:id="@+id/navigation_donation"
+        android:name="com.example.itemmanagement.ui.profile.donation.DonationFragment"
+        android:label="打赏支持" />
+
 </navigation> 

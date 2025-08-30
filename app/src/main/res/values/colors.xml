@@ -101,4 +101,12 @@
     <color name="orange">#FF9800</color>
     <color name="orange_container">#FFEDD5</color>
     <color name="on_orange_container">#3D2500</color>
+    
+    <!-- 借还管理状态颜色 -->
+    <color name="color_success">#4CAF50</color>
+    <color name="color_warning">#FF9800</color>
+    <color name="color_error">#F44336</color>
+    <color name="color_surface">#FFFBFE</color>
+    <color name="color_warning_surface">#FFF8E1</color>
+    <color name="color_error_surface">#FFEBEE</color>
 </resources> 

@@ -67,7 +67,7 @@ class FunctionViewModel(private val repository: ItemRepository) : ViewModel() {
             FunctionCard(
                 id = "recurring_reminders",
                 title = "周期提醒",
-                description = "定期检查、维护、订阅服务提醒",
+                description = "到期提醒、库存预警、自定义规则设置",
                 iconResId = com.example.itemmanagement.R.drawable.ic_calendar,
                 type = FunctionCard.Type.REMINDER
             ),
@@ -209,18 +209,22 @@ class FunctionViewModel(private val repository: ItemRepository) : ViewModel() {
                 _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_wishlist
             }
             "recurring_reminders" -> {
-                // 导航到周期提醒设置页面，创建和管理定期任务
+                // 导航到到期提醒页面，查看即将过期的物品
+                _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_expiration_reminder
             }
             "warranty_management" -> {
                 // 导航到保修管理页面，管理保修信息和提醒
+                _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_warranty_list
             }
             
             // 实用工具类
             "lending_tracker" -> {
                 // 导航到借还管理页面，记录借出借入
+                _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_borrow_list
             }
             "data_backup" -> {
-                // 执行数据导出功能，生成备份文件
+                // 导航到数据导出页面
+                _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_data_export
             }
         }
     }

@@ -12,7 +12,7 @@
 
     <item
         android:id="@+id/navigation_function"
-        android:icon="@drawable/ic_statistics"
+        android:icon="@drawable/ic_function_new"
         android:title="@string/title_function" />
 
     <item

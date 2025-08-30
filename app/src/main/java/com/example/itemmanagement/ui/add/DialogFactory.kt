@@ -7,6 +7,7 @@ import android.content.DialogInterface
 import android.content.SharedPreferences
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog as MaterialAlertDialog
@@ -241,6 +242,65 @@ class DialogFactory(private val context: Context) {
                 }
             }
             .setPositiveButton("确定") { _, _ ->
+                // 先清除容器中的所有标签
+                selectedTagsContainer.removeAllViews()
+                
+                // 根据最终选中状态重新添加标签到UI
+                selectedTags.forEach { tagName ->
+                    val chip = Chip(context).apply {
+                        text = tagName
+                        isCheckable = false
+                        isCloseIconVisible = true
+                        
+                        // 设置样式
+                        chipMinHeight = android.util.TypedValue.applyDimension(
+                            android.util.TypedValue.COMPLEX_UNIT_DIP,
+                            28f,
+                            context.resources.displayMetrics
+                        )
+                        
+                        // 点击关闭图标移除标签
+                        setOnCloseIconClickListener {
+                            selectedTagsContainer.removeView(this)
+                            // 从最终保存的数据中移除
+                            val currentSavedTags = viewModel.getFieldValue(fieldName) as? Set<String> ?: setOf()
+                            val updatedTags = currentSavedTags.toMutableSet()
+                            updatedTags.remove(tagName)
+                            viewModel.saveFieldValue(fieldName, updatedTags)
+                            
+                            // 如果没有标签了，显示提示文本
+                            if (selectedTagsContainer.childCount == 0) {
+                                selectedTagsContainer.parent?.let { parent ->
+                                    if (parent is ViewGroup) {
+                                        for (i in 0 until parent.childCount) {
+                                            val child = parent.getChildAt(i)
+                                            if (child is TextView && child.text == "点击选择标签") {
+                                                child.visibility = View.VISIBLE
+                                                break
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    selectedTagsContainer.addView(chip)
+                }
+                
+                // 控制提示文本显示/隐藏
+                val hasSelectedTags = selectedTags.isNotEmpty()
+                selectedTagsContainer.parent?.let { parent ->
+                    if (parent is ViewGroup) {
+                        for (i in 0 until parent.childCount) {
+                            val child = parent.getChildAt(i)
+                            if (child is TextView && child.text == "点击选择标签") {
+                                child.visibility = if (hasSelectedTags) View.GONE else View.VISIBLE
+                                break
+                            }
+                        }
+                    }
+                }
+                
                 // 保存最终的选中状态到ViewModel
                 viewModel.saveFieldValue(fieldName, selectedTags.toSet())
             }

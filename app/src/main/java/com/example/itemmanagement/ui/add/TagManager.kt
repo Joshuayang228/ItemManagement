@@ -6,16 +6,17 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.RelativeLayout
-import com.example.itemmanagement.ui.base.FieldInteractionViewModel
+import androidx.appcompat.app.AlertDialog
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 
 /**
- * 负责管理标签相关的逻辑
+ * 新架构的标签管理器
+ * 负责管理标签相关的逻辑，基于FieldInteractionViewModel接口
  */
 class TagManager(
     private val context: Context,
-    private val dialogFactory: DialogFactory,
     private val viewModel: FieldInteractionViewModel,
     private val fieldName: String = "标签" // 默认字段名
 ) {
@@ -23,8 +24,6 @@ class TagManager(
     // 标签集合
     private val selectedTags = mutableSetOf<String>()
     private val defaultTags = mutableListOf<String>()
-    private val customTags: MutableList<String>
-        get() = viewModel.getCustomTags(fieldName)
 
     /**
      * 初始化标签管理器
@@ -37,10 +36,17 @@ class TagManager(
     }
 
     /**
+     * 获取自定义标签
+     */
+    private fun getCustomTags(): List<String> {
+        return viewModel.getCustomOptions(fieldName)
+    }
+
+    /**
      * 获取所有标签
      */
     private fun getAllTags(): List<String> {
-        return defaultTags + customTags
+        return defaultTags + getCustomTags()
     }
 
     /**
@@ -102,17 +108,85 @@ class TagManager(
 
             // 长按编辑或删除标签
             setOnLongClickListener {
-                dialogFactory.showTagActionDialog(
-                    tagName,
-                    this,
-                    selectedTags,
-                    defaultTags,
-                    customTags,
-                    getAllTags().toMutableList()
-                )
+                showTagActionDialog(tagName, this)
                 true
             }
         }
+    }
+
+    /**
+     * 显示标签操作对话框（长按时）
+     */
+    private fun showTagActionDialog(tagName: String, chip: Chip) {
+        val options = arrayOf("编辑标签", "删除标签")
+        
+        AlertDialog.Builder(context)
+            .setTitle(tagName)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showEditTagDialog(tagName, chip)
+                    1 -> showDeleteTagDialog(tagName, chip)
+                }
+            }
+            .show()
+    }
+
+    /**
+     * 显示编辑标签对话框
+     */
+    private fun showEditTagDialog(oldTagName: String, chip: Chip) {
+        val editText = android.widget.EditText(context).apply {
+            setText(oldTagName)
+            selectAll()
+        }
+        
+        AlertDialog.Builder(context)
+            .setTitle("编辑标签")
+            .setView(editText)
+            .setPositiveButton("确定") { _, _ ->
+                val newTagName = editText.text.toString().trim()
+                if (newTagName.isNotEmpty() && newTagName != oldTagName) {
+                    // 更新标签
+                    selectedTags.remove(oldTagName)
+                    selectedTags.add(newTagName)
+                    chip.text = newTagName
+                    
+                    // 如果是自定义标签，更新自定义标签列表
+                    if (!defaultTags.contains(oldTagName)) {
+                        viewModel.removeCustomOption(fieldName, oldTagName)
+                        viewModel.addCustomOption(fieldName, newTagName)
+                    }
+                    
+                    // 保存到ViewModel
+                    viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    /**
+     * 显示删除标签确认对话框
+     */
+    private fun showDeleteTagDialog(tagName: String, chip: Chip) {
+        AlertDialog.Builder(context)
+            .setTitle("删除标签")
+            .setMessage("确定要删除标签 \"$tagName\" 吗？")
+            .setPositiveButton("删除") { _, _ ->
+                // 从容器中移除chip
+                (chip.parent as? ChipGroup)?.removeView(chip)
+                selectedTags.remove(tagName)
+                
+                // 如果是自定义标签，从自定义标签列表中删除
+                if (!defaultTags.contains(tagName)) {
+                    viewModel.removeCustomOption(fieldName, tagName)
+                }
+                
+                // 保存到ViewModel
+                viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+            }
+            .setNegativeButton("取消", null)
+            .show()
     }
 
     /**
@@ -132,47 +206,73 @@ class TagManager(
      * 显示标签选择对话框
      */
     fun showTagSelectionDialog(container: ChipGroup) {
-        // 先从 ViewModel 获取最新的选中状态
-        val savedTags = viewModel.getFieldValue(fieldName) as? Set<String>
-        if (savedTags != null) {
-            // 同步内存中的选中状态与 ViewModel 中的状态
-            selectedTags.clear()
-            selectedTags.addAll(savedTags)
-        } else {
-            // 如果 ViewModel 中没有数据，清空选中状态
-            selectedTags.clear()
-        }
-
-        // 同步UI中的选中状态
-        val uiTags = mutableSetOf<String>()
+        // 使用DialogFactory创建完整的标签选择对话框
+        val dialogFactory = DialogFactory(context)
+        val selectedTagsSet = mutableSetOf<String>()
+        val allTags = mutableListOf<String>()
+        val customTags = viewModel.getCustomOptions(fieldName).toMutableList()
+        
+        // 添加当前已选中的标签
         for (i in 0 until container.childCount) {
             val chip = container.getChildAt(i) as? Chip
             if (chip != null) {
-                uiTags.add(chip.text.toString())
+                selectedTagsSet.add(chip.text.toString())
             }
         }
-
-        // 确保selectedTags与UI一致
+        
+        // 同步内存中的选中状态
         selectedTags.clear()
-        selectedTags.addAll(uiTags)
-
-        // 保存最新状态到ViewModel
-        viewModel.saveFieldValue(fieldName, selectedTags.toSet())
-
+        selectedTags.addAll(selectedTagsSet)
+        
         dialogFactory.showTagSelectionDialog(
-            selectedTags,
-            defaultTags,
-            customTags,
-            getAllTags().toMutableList(),
-            container,
-            { selectedTag ->
-                addTagToContainer(selectedTag, container)
-                // 隐藏提示文本
-                findPlaceholderTextView(container)?.visibility = View.GONE
+            selectedTags = selectedTagsSet,
+            defaultTags = defaultTags,
+            customTags = customTags,
+            allTags = allTags,
+            selectedTagsContainer = container,
+            onTagSelected = { tagName ->
+                // 只添加到对话框的选中列表，UI更新在确定时统一处理
+                selectedTagsSet.add(tagName)
             },
-            viewModel,
-            fieldName
+            viewModel = viewModel,
+            fieldName = fieldName
         )
+    }
+    
+    /**
+     * 同步选中状态到内存
+     */
+    fun syncSelectedTags(container: ChipGroup) {
+        selectedTags.clear()
+        for (i in 0 until container.childCount) {
+            val chip = container.getChildAt(i) as? Chip
+            if (chip != null) {
+                selectedTags.add(chip.text.toString())
+            }
+        }
+        viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+    }
+
+
+
+    /**
+     * 从容器中移除标签
+     */
+    private fun removeTagFromContainer(tagName: String, container: ChipGroup) {
+        for (i in 0 until container.childCount) {
+            val chip = container.getChildAt(i) as? Chip
+            if (chip?.text.toString() == tagName) {
+                container.removeView(chip)
+                selectedTags.remove(tagName)
+                viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+                
+                // 如果没有标签了，显示提示文本
+                if (container.childCount == 0) {
+                    findPlaceholderTextView(container)?.visibility = View.VISIBLE
+                }
+                break
+            }
+        }
     }
 
     /**

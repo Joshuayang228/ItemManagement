@@ -441,13 +441,13 @@ abstract class BaseItemViewModel(
             hint = "请输入名称"
         ))
 
-        // 数量字段
+        // 数量字段 - 只使用计数单位
         setFieldProperties("数量", FieldProperties(
             defaultValue = null,
             validationType = ValidationType.NUMBER,
             min = 0,
             hint = "请输入数量",
-            unitOptions = listOf("个", "件", "包", "盒", "瓶", "袋", "箱", "克", "千克", "升", "毫升"),
+            unitOptions = listOf("个", "件", "包", "盒", "瓶", "袋", "箱"),
             isCustomizable = true
         ))
 
@@ -478,9 +478,9 @@ abstract class BaseItemViewModel(
             hint = "请评分"
         ))
 
-        // 季节字段
+        // 季节字段 - 多选字段，类似标签
         setFieldProperties("季节", FieldProperties(
-            displayStyle = DisplayStyle.DEFAULT,
+            displayStyle = DisplayStyle.TAG,
             options = listOf("春", "夏", "秋", "冬", "全年"),
             isCustomizable = true
         ))
@@ -503,12 +503,12 @@ abstract class BaseItemViewModel(
             isCustomizable = true
         ))
 
-        // 容量字段
+        // 容量字段 - 包含重量和体积单位
         setFieldProperties("容量", FieldProperties(
             validationType = ValidationType.NUMBER,
             min = 0,
             hint = "请输入容量",
-            unitOptions = listOf("克", "千克", "升", "毫升"),
+            unitOptions = listOf("毫升", "升", "克", "千克", "公斤", "磅", "盎司"),
             isCustomizable = true
         ))
 

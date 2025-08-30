@@ -86,9 +86,10 @@ class LocationManager(
         // 添加默认区域
         areas.addAll(DEFAULT_AREAS)
         
-        // 添加自定义区域
+        // 添加自定义区域（过滤掉标记项目）
         customAreas.forEach { area ->
-            if (!areas.contains(area)) {
+            // 只添加不是删除标记和编辑标记的自定义区域
+            if (!area.startsWith("DELETED:") && !area.startsWith("EDIT:") && !areas.contains(area)) {
                 areas.add(area)
             }
         }

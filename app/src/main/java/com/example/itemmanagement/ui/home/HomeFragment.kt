@@ -162,7 +162,7 @@ class HomeFragment : Fragment() {
 
     private fun onAddButtonClick() {
         // 导航到添加物品页面（使用新架构）
-        findNavController().navigate(R.id.action_navigation_home_to_newAddItemFragment)
+        findNavController().navigate(R.id.action_navigation_home_to_addItemFragment)
     }
     
     /**

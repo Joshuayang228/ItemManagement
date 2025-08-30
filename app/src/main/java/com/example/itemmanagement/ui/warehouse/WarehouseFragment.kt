@@ -65,7 +65,7 @@ class WarehouseFragment : Fragment() {
             onEdit = { itemId ->
                 // 导航到编辑页面（使用新架构）
                 val bundle = androidx.core.os.bundleOf("itemId" to itemId)
-                findNavController().navigate(R.id.action_navigation_warehouse_to_newEditItemFragment, bundle)
+                findNavController().navigate(R.id.action_navigation_warehouse_to_editItemFragment, bundle)
             },
             onDelete = { itemId ->
                 // 显示删除确认对话框
