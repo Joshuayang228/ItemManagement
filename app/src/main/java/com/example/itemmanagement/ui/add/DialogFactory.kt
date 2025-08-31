@@ -1,7 +1,7 @@
 package com.example.itemmanagement.ui.add
 
 import android.app.AlertDialog
-import android.app.DatePickerDialog
+import com.example.itemmanagement.ui.utils.Material3DatePicker
 import android.content.Context
 import android.content.DialogInterface
 import android.content.SharedPreferences
@@ -46,12 +46,43 @@ class DialogFactory(private val context: Context) {
     }
 
     /**
-     * 显示日期选择器
+     * 显示Material 3日期选择器
+     * 注意：此方法需要在Fragment或Activity中调用
      */
+    fun showMaterial3DatePicker(
+        textView: TextView,
+        fragmentManager: androidx.fragment.app.FragmentManager,
+        title: String = "选择日期"
+    ) {
+        // 尝试解析TextView中的现有日期
+        val currentDate = try {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            textView.text.toString().takeIf { it.isNotEmpty() }?.let { 
+                dateFormat.parse(it) 
+            }
+        } catch (e: Exception) {
+            null
+        }
+        
+        Material3DatePicker.showDatePicker(
+            fragmentManager = fragmentManager,
+            title = title,
+            selectedDate = currentDate
+        ) { selectedDate ->
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            textView.text = dateFormat.format(selectedDate)
+        }
+    }
+
+    /**
+     * 显示日期选择器（保留兼容性）
+     * @deprecated 推荐使用showMaterial3DatePicker
+     */
+    @Deprecated("推荐使用showMaterial3DatePicker以获得Material 3体验")
     fun showDatePicker(textView: TextView) {
         val calendar = Calendar.getInstance()
 
-        DatePickerDialog(
+        android.app.DatePickerDialog(
             context,
             { _, year, month, day ->
                 calendar.set(year, month, day)

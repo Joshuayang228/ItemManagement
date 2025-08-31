@@ -11,6 +11,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentProfileBinding
+import com.example.itemmanagement.ui.utils.Material3Feedback
 // import com.example.itemmanagement.utils.formatCurrency
 import java.text.SimpleDateFormat
 import java.util.*
@@ -70,7 +71,7 @@ class ProfileFragment : Fragment() {
         // 观察操作结果
         viewModel.operationResult.observe(viewLifecycleOwner) { message ->
             message?.let {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                view?.let { v -> Material3Feedback.showInfo(v, it) }
                 viewModel.clearOperationResult()
             }
         }

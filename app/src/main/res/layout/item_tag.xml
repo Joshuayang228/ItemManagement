@@ -8,4 +8,4 @@
     app:chipCornerRadius="16dp"
     app:chipMinHeight="32dp"
     android:textSize="14sp"
-    style="@style/Widget.MaterialComponents.Chip.Choice" /> 
+    style="@style/Widget.Material3.Chip.Filter" /> 

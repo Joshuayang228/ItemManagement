@@ -1,6 +1,6 @@
 package com.example.itemmanagement.ui.warehouse
 
-import android.app.DatePickerDialog
+import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
 import android.os.Bundle
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
@@ -415,20 +415,15 @@ class FilterBottomSheetFragment : BottomSheetDialogFragment() {
         }
     }
     
+    /**
+     * 显示Material 3日期选择器
+     */
     private fun showDatePicker(onDateSelected: (Long) -> Unit) {
-        val calendar = Calendar.getInstance()
-        DatePickerDialog(
-            requireContext(),
-            { _, year, month, dayOfMonth ->
-                val selectedCalendar = Calendar.getInstance().apply {
-                    set(year, month, dayOfMonth)
-                }
-                onDateSelected(selectedCalendar.timeInMillis)
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        showMaterial3DatePicker(
+            title = "选择日期"
+        ) { selectedDate ->
+            onDateSelected(selectedDate.time)
+        }
     }
     
     private fun setupButtons() {

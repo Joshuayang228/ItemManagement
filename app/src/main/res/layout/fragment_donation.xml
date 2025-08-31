@@ -13,17 +13,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- 顶部工具栏 -->
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:layout_marginBottom="16dp"
-            android:background="?attr/colorPrimary"
-            app:titleTextColor="?attr/colorOnPrimary"
-            app:title="支持开发"
-            app:navigationIcon="@drawable/ic_arrow_back_24"
-            app:navigationIconTint="?attr/colorOnPrimary" />
+        <!-- Toolbar移除，使用MainActivity统一管理导航 -->
 
         <!-- 感谢卡片 -->
         <androidx.cardview.widget.CardView

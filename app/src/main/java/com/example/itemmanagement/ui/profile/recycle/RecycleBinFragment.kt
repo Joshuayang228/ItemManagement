@@ -42,7 +42,7 @@ class RecycleBinFragment : Fragment() {
         
         setupViewModel()
         setupRecyclerView()
-        setupToolbar()
+        setupSearchView()
         setupClickListeners()
         observeViewModel()
     }
@@ -79,22 +79,47 @@ class RecycleBinFragment : Fragment() {
         }
     }
     
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-        
-        // 设置搜索功能
-        binding.searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
+    private fun setupSearchView() {
+        // 搜索输入监听
+        binding.searchEditText.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s?.toString()?.trim()
+                if (query.isNullOrBlank()) {
+                    viewModel.clearSearch()
+                    binding.clearSearchIcon.visibility = View.GONE
+                } else {
+                    viewModel.searchDeletedItems(query)
+                    binding.clearSearchIcon.visibility = View.VISIBLE
+                }
             }
             
-            override fun onQueryTextChange(newText: String?): Boolean {
-                viewModel.searchDeletedItems(newText ?: "")
-                return true
-            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
         })
+        
+        // 搜索按钮点击
+        binding.searchEditText.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                val query = binding.searchEditText.text.toString().trim()
+                if (query.isNotBlank()) {
+                    viewModel.searchDeletedItems(query)
+                }
+                // 隐藏键盘
+                val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                imm.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
+                true
+            } else {
+                false
+            }
+        }
+        
+        // 清除搜索
+        binding.clearSearchIcon.setOnClickListener {
+            binding.searchEditText.setText("")
+            viewModel.clearSearch()
+            binding.clearSearchIcon.visibility = View.GONE
+        }
     }
     
     private fun setupClickListeners() {

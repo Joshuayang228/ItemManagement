@@ -1,7 +1,7 @@
 package com.example.itemmanagement.ui.warranty
 
 import android.Manifest
-import android.app.DatePickerDialog
+import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -291,21 +291,18 @@ class AddEditWarrantyFragment : Fragment() {
     /**
      * 显示日期选择器
      */
+    /**
+     * 显示Material 3日期选择器
+     */
     private fun showDatePicker(onDateSelected: (Date) -> Unit) {
-        val calendar = Calendar.getInstance()
         val currentDate = viewModel.purchaseDate.value ?: Date()
-        calendar.time = currentDate
         
-        DatePickerDialog(
-            requireContext(),
-            { _, year, month, dayOfMonth ->
-                calendar.set(year, month, dayOfMonth)
-                onDateSelected(calendar.time)
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        showMaterial3DatePicker(
+            title = "选择购买日期",
+            selectedDate = currentDate
+        ) { selectedDate ->
+            onDateSelected(selectedDate)
+        }
     }
 
     /**

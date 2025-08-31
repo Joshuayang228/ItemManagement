@@ -7,25 +7,12 @@
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="添加借出记录"
-            app:navigationIcon="@drawable/ic_arrow_back_24"
-            app:titleTextAppearance="@style/TextAppearance.AppCompat.Large" />
-
-    </com.google.android.material.appbar.AppBarLayout>
+    <!-- Toolbar移除，使用MainActivity统一管理导航 -->
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+>
 
         <LinearLayout
             android:layout_width="match_parent"

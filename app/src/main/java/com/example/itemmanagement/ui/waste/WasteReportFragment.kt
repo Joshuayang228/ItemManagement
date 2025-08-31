@@ -1,6 +1,6 @@
 package com.example.itemmanagement.ui.waste
 
-import android.app.DatePickerDialog
+import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -154,36 +154,31 @@ class WasteReportFragment : Fragment() {
         binding.layoutCustomDateRange.visibility = View.GONE
     }
 
+    /**
+     * 显示Material 3日期选择器
+     */
     private fun showDatePicker(isStartDate: Boolean) {
-        val calendar = Calendar.getInstance()
         val currentDate = if (isStartDate) customStartDate else customEndDate
-        currentDate?.let { calendar.time = it }
+        val title = if (isStartDate) "选择开始日期" else "选择结束日期"
+        
+        showMaterial3DatePicker(
+            title = title,
+            selectedDate = currentDate
+        ) { selectedDate ->
+            if (isStartDate) {
+                customStartDate = selectedDate
+            } else {
+                customEndDate = selectedDate
+            }
 
-        DatePickerDialog(
-            requireContext(),
-            { _, year, month, dayOfMonth ->
-                val selectedCalendar = Calendar.getInstance()
-                selectedCalendar.set(year, month, dayOfMonth)
-                val selectedDate = selectedCalendar.time
+            updateCustomDateButtons()
 
-                if (isStartDate) {
-                    customStartDate = selectedDate
-                } else {
-                    customEndDate = selectedDate
-                }
-
-                updateCustomDateButtons()
-
-                // 如果两个日期都已设置，生成报告
-                if (customStartDate != null && customEndDate != null) {
-                    val dateRange = DateRange(customStartDate!!, customEndDate!!)
-                    viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.CUSTOM, dateRange)
-                }
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).show()
+            // 如果两个日期都已设置，生成报告
+            if (customStartDate != null && customEndDate != null) {
+                val dateRange = DateRange(customStartDate!!, customEndDate!!)
+                viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.CUSTOM, dateRange)
+            }
+        }
     }
 
     private fun updateCustomDateButtons() {

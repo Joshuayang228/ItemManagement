@@ -266,6 +266,14 @@ class RecycleBinViewModel(
         }
     }
     
+    /**
+     * 清除搜索
+     */
+    fun clearSearch() {
+        _searchQuery.value = ""
+        _searchResults.value = emptyList()
+    }
+    
     // ==================== 选择管理 ====================
     
     /**

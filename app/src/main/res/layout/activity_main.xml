@@ -10,21 +10,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <!-- 条件显示的工具栏 - 根据页面动态显示 -->
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            android:visibility="gone"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <androidx.appcompat.widget.Toolbar
+            <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
+                style="@style/Widget.App.Toolbar.Material3"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="?attr/colorPrimary"
-                app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+                android:layout_height="?attr/actionBarSize" />
 
         </com.google.android.material.appbar.AppBarLayout>
 
@@ -35,17 +35,20 @@
             android:layout_height="0dp"
             app:defaultNavHost="true"
             app:navGraph="@navigation/mobile_navigation"
-            app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toTopOf="@id/nav_view"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
+        <!-- Material 3 标准底部导航栏 -->
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/nav_view"
+            style="@style/Widget.App.BottomNavigationView.Material3"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:background="?android:attr/windowBackground"
-            app:menu="@menu/bottom_nav_menu"
+            android:fitsSystemWindows="true"
+            app:menu="@menu/bottom_nav_menu_material3"
+            app:labelVisibilityMode="selected"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -54,10 +57,16 @@
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_drawer_view"
+        style="@style/Widget.Material3.NavigationView"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        android:fitsSystemWindows="true"
-        app:menu="@menu/drawer_menu" />
+        android:fitsSystemWindows="false"
+        android:background="?attr/colorSurface"
+        app:menu="@menu/drawer_menu"
+        app:itemShapeAppearance="@style/ShapeAppearance.Material3.Corner.Full"
+        app:itemIconTint="?attr/colorOnSurface"
+        app:itemTextColor="?attr/colorOnSurface"
+        app:headerLayout="@layout/nav_header_main" />
 
 </androidx.drawerlayout.widget.DrawerLayout> 

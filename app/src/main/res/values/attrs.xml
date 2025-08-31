@@ -1,5 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+应用自定义属性定义
+包含Material 3扩展颜色属性和自定义组件属性
+-->
 <resources>
+    <!-- Material 3 扩展颜色属性 -->
+    <attr name="colorWarning" format="color" />
+    <attr name="colorOnWarning" format="color" />
+    <attr name="colorWarningContainer" format="color" />
+    <attr name="colorOnWarningContainer" format="color" />
+    
+    <attr name="colorSuccess" format="color" />
+    <attr name="colorOnSuccess" format="color" />
+    <attr name="colorSuccessContainer" format="color" />
+    <attr name="colorOnSuccessContainer" format="color" />
+    
+    <attr name="colorInfo" format="color" />
+    <attr name="colorOnInfo" format="color" />
+    <attr name="colorInfoContainer" format="color" />
+    <attr name="colorOnInfoContainer" format="color" />
+    
+    <!-- Material 3 标准属性 -->
+    <attr name="colorSurfaceTint" format="color" />
+    <attr name="colorScrim" format="color" />
+    <attr name="colorShadow" format="color" />
+    <attr name="colorSurfaceDim" format="color" />
+    <attr name="colorSurfaceBright" format="color" />
+    <attr name="colorSurfaceContainer" format="color" />
+    <attr name="colorSurfaceContainerHigh" format="color" />
+    <attr name="colorSurfaceContainerHighest" format="color" />
+    <attr name="colorSurfaceContainerLow" format="color" />
+    <attr name="colorSurfaceContainerLowest" format="color" />
+    <attr name="colorSurfaceInverse" format="color" />
+    <attr name="colorOnSurfaceInverse" format="color" />
+    <attr name="colorPrimaryInverse" format="color" />
+    <attr name="colorOutline" format="color" />
+    <attr name="colorOutlineVariant" format="color" />
+
+    <!-- 自定义组件属性 -->
     <declare-styleable name="ExpirationStatusView">
         <attr name="barHeight" format="dimension" />
         <attr name="cornerRadius" format="dimension" />

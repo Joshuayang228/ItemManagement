@@ -1,112 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3主颜色文件 - 清洁版本
+只包含必需的基础颜色引用，避免重复定义
+-->
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
+    <!-- 基础黑白色保持不变 -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="hint_text_color">#FF757575</color>
-    <color name="colorAccent">#FF6200EE</color>
-    
-    <!-- 详情页配色方案 -->
-    <color name="primary">#1976D2</color>
-    <color name="accent">#FFC107</color>
-    <color name="background">#FAFAFA</color>
-    <color name="card_background">#FFFFFF</color>
-    <color name="text_primary">#212121</color>
-    <color name="text_secondary">#757575</color>
-    <color name="divider">#EEEEEE</color>
-    <color name="error">#F44336</color>
-    <color name="success">#4CAF50</color>
-    <color name="warning">#FF9800</color>
-    
-    <!-- 分类专属颜色 -->
-    <color name="category_food">#FF9800</color>
-    <color name="category_medicine">#4CAF50</color>
-    <color name="category_electronics">#2196F3</color>
-    <color name="category_clothing">#9C27B0</color>
-    <color name="category_other">#607D8B</color>
-    
-    <!-- 状态标签颜色 -->
-    <color name="status_new">#4CAF50</color>
-    <color name="status_expiring_soon">#FF9800</color>
-    <color name="status_expired">#F44336</color>
-    <color name="status_low_stock">#FF9800</color>
-    
-    <!-- 状态颜色 -->
-    <color name="status_good">#4CAF50</color>
-    <color name="status_warning">#FF9800</color>
-    <color name="status_error">#F44336</color>
-    
-    <!-- 进度条背景色 -->
-    <color name="background_light">#F0F0F0</color>
-    
-    <!-- 保质期状态颜色 -->
-    <color name="normal_color">#4CAF50</color>
-    <color name="warning_color">#FF9800</color>
-    <color name="expired_color">#F44336</color>
-    
-    <!-- 价格颜色 -->
-    <color name="price_color">#F44336</color>
-    
-    <!-- 功能按钮颜色 -->
-    <color name="orange_500">#FF9800</color>
-    <color name="red_500">#F44336</color>
-    <color name="yellow_500">#FFC107</color>
-    
-    <!-- 功能界面颜色 -->
-    <color name="primary_light">#E3F2FD</color>
-    <color name="background_color">#FAFAFA</color>
-    <color name="accent_color">#FF5722</color>
-    <color name="status_warning_bg">#FFF3E0</color>
-    <color name="status_error_bg">#FFEBEE</color>
-    
-    <!-- 功能分组颜色 -->
-    <color name="data_insights_bg">#E8F5E8</color>
-    <color name="data_insights_accent">#4CAF50</color>
-    <color name="smart_assistant_bg">#E3F2FD</color>
-    <color name="smart_assistant_accent">#2196F3</color>
-    <color name="utilities_bg">#FFF3E0</color>
-    <color name="utilities_accent">#FF9800</color>
-    
-    <!-- 图表切换按钮颜色 -->
-    <color name="chart_toggle_selected_bg">#1976D2</color>
-    <color name="chart_toggle_unselected_bg">#FFFFFF</color>
-    <color name="chart_toggle_selected_text">#FFFFFF</color>
-    <color name="chart_toggle_unselected_text">#757575</color>
-    <color name="chart_toggle_group_bg">#F5F5F5</color>
-    
-    <!-- 图表内部按钮和相关颜色 -->
-    <color name="chart_accent">#1976D2</color>
-    <color name="chart_bg">#FFFFFF</color>
-    <color name="chart_text">#757575</color>
-    <color name="chart_border">#E0E0E0</color>
-    
-    <!-- 图表内部按钮灰色系 -->
-    <color name="chart_inner_accent">#6E6E6E</color>
-    <color name="chart_inner_bg">#F5F5F5</color>
-    <color name="chart_inner_text">#757575</color>
-    <color name="chart_inner_border">#BDBDBD</color>
 
-    <!-- Material Design 3 颜色系统 -->
-    <color name="surface">#FFFBFE</color>
-    <color name="surface_variant">#F3F3F3</color>
-    <color name="on_surface">#1C1B1F</color>
-    <color name="on_surface_variant">#49454F</color>
-    <color name="on_primary">#FFFFFF</color>
-    <color name="error_container">#FFDAD6</color>
-    <color name="on_error_container">#410002</color>
-    <color name="orange">#FF9800</color>
-    <color name="orange_container">#FFEDD5</color>
-    <color name="on_orange_container">#3D2500</color>
-    
-    <!-- 借还管理状态颜色 -->
-    <color name="color_success">#4CAF50</color>
-    <color name="color_warning">#FF9800</color>
-    <color name="color_error">#F44336</color>
-    <color name="color_surface">#FFFBFE</color>
-    <color name="color_warning_surface">#FFF8E1</color>
-    <color name="color_error_surface">#FFEBEE</color>
 </resources> 

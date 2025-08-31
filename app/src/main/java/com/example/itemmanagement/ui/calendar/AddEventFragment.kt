@@ -1,6 +1,6 @@
 package com.example.itemmanagement.ui.calendar
 
-import android.app.DatePickerDialog
+import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
 import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -109,25 +109,17 @@ class AddEventFragment : Fragment() {
         }
     }
 
+    /**
+     * 显示Material 3日期选择器
+     */
     private fun showDatePicker() {
-        val calendar = Calendar.getInstance()
-        calendar.time = selectedDate
-
-        DatePickerDialog(
-            requireContext(),
-            { _, year, month, dayOfMonth ->
-                val newCalendar = Calendar.getInstance()
-                newCalendar.time = selectedDate
-                newCalendar.set(Calendar.YEAR, year)
-                newCalendar.set(Calendar.MONTH, month)
-                newCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                selectedDate = newCalendar.time
-                updateDateTimeDisplay()
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        ).show()
+        showMaterial3DatePicker(
+            title = "选择日期",
+            selectedDate = selectedDate
+        ) { date ->
+            selectedDate = date
+            updateDateTimeDisplay()
+        }
     }
 
     private fun showTimePicker() {

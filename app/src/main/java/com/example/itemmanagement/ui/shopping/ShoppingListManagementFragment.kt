@@ -50,7 +50,6 @@ class ShoppingListManagementFragment : Fragment() {
         setupRecyclerView()
         setupFab()
         observeViewModel()
-        setupToolbar()
     }
 
     private fun setupRecyclerView() {
@@ -92,14 +91,7 @@ class ShoppingListManagementFragment : Fragment() {
         }
     }
 
-    private fun setupToolbar() {
-        binding.toolbar.apply {
-            title = "购物清单管理"
-            setNavigationOnClickListener {
-                findNavController().navigateUp()
-            }
-        }
-    }
+    // Toolbar功能移除，导航由MainActivity统一管理
 
     private fun observeViewModel() {
         // 观察所有购物清单

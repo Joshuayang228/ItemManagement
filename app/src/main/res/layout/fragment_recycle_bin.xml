@@ -8,37 +8,73 @@
     android:background="?attr/colorSurface"
     tools:context=".ui.profile.recycle.RecycleBinFragment">
 
-    <!-- 顶部工具栏 -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <!-- 顶部搜索栏 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/searchContainer"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        app:titleTextColor="?attr/colorOnPrimary"
-        app:title="回收站"
-        app:navigationIcon="@drawable/ic_arrow_back_24"
-        app:navigationIconTint="?attr/colorOnPrimary">
+        android:layout_height="44dp"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="1dp"
+        app:strokeColor="#E0E0E0"
+        app:strokeWidth="1dp">
 
-        <!-- 搜索视图 -->
-        <androidx.appcompat.widget.SearchView
-            android:id="@+id/searchView"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginEnd="16dp"
-            app:iconifiedByDefault="true"
-            app:queryHint="搜索已删除的物品..."
-            app:searchIcon="@drawable/ic_search"
-            app:closeIcon="@drawable/ic_close" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-    </androidx.appcompat.widget.Toolbar>
+            <!-- 搜索图标 -->
+            <ImageView
+                android:id="@+id/searchIcon"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:src="@drawable/ic_search"
+                android:contentDescription="搜索"
+                app:tint="#757575" />
+
+            <!-- 搜索输入框 -->
+            <EditText
+                android:id="@+id/searchEditText"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="搜索已删除的物品..."
+                android:textColorHint="#9E9E9E"
+                android:textColor="#212121"
+                android:textSize="16sp"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp"
+                android:gravity="center_vertical" />
+
+            <!-- 清除搜索图标 -->
+            <ImageView
+                android:id="@+id/clearSearchIcon"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
+                android:src="@drawable/ic_clear"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:visibility="gone"
+                android:contentDescription="清除搜索"
+                app:tint="#757575" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- 统计信息卡片 -->
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
+        style="@style/Widget.App.Card.Statistics"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="2dp">
+        app:cardCornerRadius="12dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -106,7 +142,7 @@
 
         </LinearLayout>
 
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- 操作按钮栏 -->
     <LinearLayout
@@ -115,9 +151,9 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSelectMode"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/Widget.App.Button.Text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -127,29 +163,29 @@
             android:drawableTop="@drawable/ic_check"
             android:drawableTint="?attr/colorPrimary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnAutoClean"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/Widget.App.Button.Text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginHorizontal="8dp"
             android:text="自动清理"
-            android:textColor="@color/warning_color"
+            android:textColor="?attr/colorWarning"
             android:drawableTop="@drawable/ic_cleanup"
-            android:drawableTint="@color/warning_color" />
+            android:drawableTint="?attr/colorWarning" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnClearAll"
-            style="@style/Widget.AppCompat.Button.Borderless"
+            style="@style/Widget.App.Button.Text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:text="清空"
-            android:textColor="@color/color_error"
+            android:textColor="?attr/colorError"
             android:drawableTop="@drawable/ic_delete_modern"
-            android:drawableTint="@color/color_error" />
+            android:drawableTint="?attr/colorError" />
 
     </LinearLayout>
 
@@ -174,22 +210,22 @@
             android:textStyle="bold"
             tools:text="已选择 3 项" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBatchRestore"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button.Secondary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:text="恢复"
-            android:backgroundTint="@color/color_success" />
+            android:backgroundTint="?attr/colorSuccess" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBatchDelete"
-            style="@style/Widget.AppCompat.Button.Colored"
+            style="@style/Widget.App.Button.Secondary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="删除"
-            android:backgroundTint="@color/color_error" />
+            android:backgroundTint="?attr/colorError" />
 
     </LinearLayout>
 

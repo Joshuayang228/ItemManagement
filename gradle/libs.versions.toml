@@ -11,7 +11,7 @@ glide = "4.16.0" # Glide版本
 # AndroidX和其他库版本
 androidx-core = "1.13.1" # AndroidX Core最新稳定版本
 appcompat = "1.7.0" # AppCompat最新稳定版本
-material = "1.12.0" # Material Design最新稳定版本
+material = "1.12.0" # Material 3稳定版本 - 支持Material You设计规范
 activity = "1.9.0" # Activity KTX最新稳定版本
 constraintlayout = "2.1.4" # 修正为实际可用的版本
 junit = "4.13.2"

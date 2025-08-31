@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
+import com.example.itemmanagement.ui.utils.Material3Feedback
 import com.example.itemmanagement.adapter.WarehouseItemAdapter
 import com.example.itemmanagement.databinding.FragmentWarehouseBinding
 import com.google.android.material.chip.Chip
@@ -497,13 +498,17 @@ class WarehouseFragment : Fragment() {
     private fun observeDeleteResult() {
         viewModel.deleteResult.observe(viewLifecycleOwner) { success ->
             if (success) {
-                Toast.makeText(context, "物品已删除", Toast.LENGTH_SHORT).show()
+                view?.let { 
+                    Material3Feedback.showSuccess(it, "物品已删除")
+                }
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) { errorMessage ->
             if (!errorMessage.isNullOrEmpty()) {
-                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                view?.let { 
+                    Material3Feedback.showError(it, errorMessage)
+                }
             }
         }
     }

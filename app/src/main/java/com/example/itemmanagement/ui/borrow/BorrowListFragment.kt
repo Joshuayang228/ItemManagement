@@ -47,7 +47,6 @@ class BorrowListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        setupToolbar()
         setupRecyclerView()
         setupButtons()
         observeViewModel()
@@ -61,9 +60,7 @@ class BorrowListFragment : Fragment() {
     /**
      * 设置工具栏
      */
-    private fun setupToolbar() {
-        // 工具栏已在布局中设置，这里可以添加额外配置
-    }
+    // Toolbar功能移除，导航由MainActivity统一管理
 
     /**
      * 设置RecyclerView

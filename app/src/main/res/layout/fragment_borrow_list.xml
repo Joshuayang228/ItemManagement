@@ -7,24 +7,12 @@
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="借还管理"
-            app:titleTextAppearance="@style/TextAppearance.AppCompat.Large" />
-
-    </com.google.android.material.appbar.AppBarLayout>
+    <!-- Toolbar移除，使用MainActivity统一管理导航 -->
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -186,7 +174,7 @@
                 <!-- 筛选按钮 -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnFilter"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    style="@style/Widget.App.Button.Secondary"
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
                     android:text="全部"
@@ -273,6 +261,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="添加借出记录"
+        style="@style/Widget.App.FloatingActionButton"
         app:srcCompat="@drawable/ic_add_24dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

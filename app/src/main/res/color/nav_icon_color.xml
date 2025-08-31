@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Navigation Icon Color Selector
+符合Material You设计规范的导航图标颜色状态选择器
+-->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/primary" android:state_checked="true"/>
-    <item android:color="@color/primary" android:state_selected="true"/>
-    <item android:color="@color/text_secondary"/>
+    <!-- 选中状态 - 使用主色 -->
+    <item android:color="?attr/colorPrimary" android:state_checked="true"/>
+    <item android:color="?attr/colorPrimary" android:state_selected="true"/>
+    
+    <!-- 默认状态 - 使用表面文本颜色 -->
+    <item android:color="?attr/colorOnSurfaceVariant"/>
 </selector>

@@ -290,14 +290,14 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipUnopened"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="未开封" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipOpened"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="已开封" />
@@ -323,35 +323,35 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipRating1"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="1颗星" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipRating2"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="2颗星" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipRating3"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="3颗星" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipRating4"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="4颗星" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chipRating5"
-                            style="@style/Widget.MaterialComponents.Chip.Choice"
+                            style="@style/Widget.Material3.Chip.Filter"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="5颗星" />
@@ -851,7 +851,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/resetButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"

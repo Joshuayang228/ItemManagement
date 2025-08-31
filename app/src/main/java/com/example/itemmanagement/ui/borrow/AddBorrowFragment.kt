@@ -1,6 +1,6 @@
 package com.example.itemmanagement.ui.borrow
 
-import android.app.DatePickerDialog
+import com.example.itemmanagement.ui.utils.showFutureDatePicker
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -52,7 +52,6 @@ class AddBorrowFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        setupToolbar()
         setupFormInputs()
         setupButtons()
         observeViewModel()
@@ -73,11 +72,7 @@ class AddBorrowFragment : Fragment() {
     /**
      * 设置工具栏
      */
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-    }
+    // Toolbar功能移除，导航由MainActivity统一管理
 
     /**
      * 设置表单输入
@@ -222,37 +217,18 @@ class AddBorrowFragment : Fragment() {
     /**
      * 显示日期选择对话框
      */
+    /**
+     * 显示Material 3日期选择器
+     */
     private fun showDatePicker() {
-        val calendar = Calendar.getInstance()
-        val currentDate = viewModel.expectedReturnDate.value ?: calendar.time
-        calendar.time = currentDate
+        val currentDate = viewModel.expectedReturnDate.value
         
-        val datePickerDialog = DatePickerDialog(
-            requireContext(),
-            { _, year, month, dayOfMonth ->
-                val selectedCalendar = Calendar.getInstance()
-                selectedCalendar.set(year, month, dayOfMonth)
-                val selectedDate = selectedCalendar.time
-                
-                // 检查日期是否是未来时间
-                if (selectedDate.before(Date())) {
-                    Toast.makeText(requireContext(), "请选择未来的日期", Toast.LENGTH_SHORT).show()
-                    return@DatePickerDialog
-                }
-                
-                viewModel.setExpectedReturnDate(selectedDate)
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH)
-        )
-        
-        // 设置最小日期为明天
-        val tomorrow = Calendar.getInstance()
-        tomorrow.add(Calendar.DAY_OF_YEAR, 1)
-        datePickerDialog.datePicker.minDate = tomorrow.timeInMillis
-        
-        datePickerDialog.show()
+        showFutureDatePicker(
+            title = "选择预计归还日期",
+            selectedDate = currentDate
+        ) { selectedDate ->
+            viewModel.setExpectedReturnDate(selectedDate)
+        }
     }
 
     /**

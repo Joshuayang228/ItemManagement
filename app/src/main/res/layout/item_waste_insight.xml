@@ -38,7 +38,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle2"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textStyle="bold"
                 tools:text="洞察标题" />
 
@@ -47,7 +47,7 @@
                 android:id="@+id/textViewMessage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:lineSpacingExtra="2dp"
                 tools:text="这里是洞察的详细信息，提供有用的建议和分析结果。" />
 

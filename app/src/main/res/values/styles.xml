@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 全屏对话框样式 -->
-    <style name="Theme.ItemManagement.FullScreenDialog" parent="Theme.MaterialComponents.Light.Dialog">
+    <style name="Theme.ItemManagement.FullScreenDialog" parent="Theme.Material3.Light.Dialog">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">false</item>
         <item name="android:windowIsFloating">false</item>
@@ -9,11 +9,11 @@
     </style>
     
     <!-- 底部弹出对话框样式 -->
-    <style name="BottomSheetDialogTheme" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+    <style name="BottomSheetDialogTheme" parent="Theme.Material3.Light.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
     </style>
 
-    <style name="CustomBottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
+    <style name="CustomBottomSheetStyle" parent="Widget.Material3.BottomSheet.Modal">
         <item name="android:background">@android:color/transparent</item>
         <item name="behavior_peekHeight">600dp</item>
         <item name="behavior_fitToContents">true</item>
@@ -157,7 +157,7 @@
     </style>
 
     <!-- 底部操作按钮 -->
-    <style name="DetailActionButton" parent="Widget.MaterialComponents.Button">
+    <style name="DetailActionButton" parent="Widget.Material3.Button">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">@dimen/detail_button_height</item>
         <item name="android:layout_weight">1</item>
@@ -199,7 +199,7 @@
     </style>
 
     <!-- 扁平圆角输入框样式 -->
-    <style name="Widget.App.TextInputLayout.FlatRounded" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+    <style name="Widget.App.TextInputLayout.FlatRounded" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="boxBackgroundMode">outline</item>
         <item name="boxStrokeWidth">0dp</item>
         <item name="boxStrokeWidthFocused">0dp</item>
@@ -213,7 +213,7 @@
         <item name="android:focusableInTouchMode">false</item>
     </style>
 
-    <style name="Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+    <style name="Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
         <item name="boxBackgroundMode">outline</item>
         <item name="boxStrokeWidth">0dp</item>
         <item name="boxStrokeWidthFocused">0dp</item>

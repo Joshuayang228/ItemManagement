@@ -17,6 +17,11 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.HomeAdapter
 import com.example.itemmanagement.databinding.FragmentHomeBinding
 import com.example.itemmanagement.test.TestDataInserter
+import com.example.itemmanagement.ui.utils.CustomSmoothScroller
+import com.example.itemmanagement.ui.utils.Material3Performance
+import com.example.itemmanagement.ui.utils.Material3Animations
+import com.example.itemmanagement.ui.utils.fadeIn
+import com.example.itemmanagement.ui.utils.showWithAnimation
 
 class HomeFragment : Fragment() {
 
@@ -41,29 +46,42 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        
+        // Material 3 进入动画
+        view.fadeIn(100)
+        
         setupRecyclerView()
         setupSearchView()
         setupButtons()
         observeData()
+        
+        // 延迟显示添加按钮动画
+        binding.topAddButton.fadeIn(300)
     }
 
     private fun setupRecyclerView() {
         binding.recyclerView.apply {
-            // 使用StaggeredGridLayoutManager实现瀑布流布局
-            layoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL).apply {
-                // 设置间距
-                addItemDecoration(object : androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
-                    override fun getItemOffsets(
-                        outRect: android.graphics.Rect,
-                        view: View,
-                        parent: androidx.recyclerview.widget.RecyclerView,
-                        state: androidx.recyclerview.widget.RecyclerView.State
-                    ) {
-                        val spacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
-                        outRect.set(spacing, spacing, spacing, spacing)
-                    }
-                })
-            }
+            // 使用自定义的StaggeredGridLayoutManager实现瀑布流布局和滑动速度控制
+            layoutManager = createCustomStaggeredGridLayoutManager()
+            
+            // 设置间距装饰器
+            addItemDecoration(object : androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
+                override fun getItemOffsets(
+                    outRect: android.graphics.Rect,
+                    view: View,
+                    parent: androidx.recyclerview.widget.RecyclerView,
+                    state: androidx.recyclerview.widget.RecyclerView.State
+                ) {
+                    val spacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
+                    outRect.set(spacing, spacing, spacing, spacing)
+                }
+            })
+            
+            // Material 3性能优化
+            Material3Performance.optimizeRecyclerView(this)
+            Material3Performance.enableViewRecycling(this)
+            
+            // 设置适配器
             adapter = homeAdapter
         }
 
@@ -139,18 +157,9 @@ class HomeFragment : Fragment() {
         binding.topAddButton.setOnClickListener {
             onAddButtonClick()
         }
-        
-        // 设置悬浮添加按钮点击事件
-        binding.addButton.setOnClickListener {
-            onAddButtonClick()
-        }
-        
-        // 长按悬浮按钮插入测试数据（临时功能）
-        binding.addButton.setOnLongClickListener {
-            insertTestData()
-            true
-        }
     }
+    
+
     
     private fun navigateToItemList(listType: String, title: String) {
         val bundle = androidx.core.os.bundleOf(
@@ -185,12 +194,16 @@ class HomeFragment : Fragment() {
         val trimmedQuery = query.trim()
         if (trimmedQuery.isNotEmpty()) {
             viewModel.setSearchQuery(trimmedQuery)
-            // 显示搜索提示
-            Toast.makeText(context, "搜索: $trimmedQuery", Toast.LENGTH_SHORT).show()
+            // 使用Material3Feedback显示搜索提示
+            view?.let { v ->
+                com.example.itemmanagement.ui.utils.Material3Feedback.showInfo(v, "搜索: $trimmedQuery")
+            }
         } else {
             // 当搜索内容为空时，清空搜索结果
             viewModel.clearSearch()
-            Toast.makeText(context, "已清空搜索", Toast.LENGTH_SHORT).show()
+            view?.let { v ->
+                com.example.itemmanagement.ui.utils.Material3Feedback.showInfo(v, "已清空搜索")
+            }
         }
     }
     
@@ -198,7 +211,9 @@ class HomeFragment : Fragment() {
         binding.searchEditText.setText("")
         viewModel.clearSearch()
         hideKeyboard()
-        Toast.makeText(context, "已清空搜索", Toast.LENGTH_SHORT).show()
+        view?.let { v ->
+            com.example.itemmanagement.ui.utils.Material3Feedback.showInfo(v, "已清空搜索")
+        }
     }
     
     private fun hideKeyboard() {
@@ -240,6 +255,28 @@ class HomeFragment : Fragment() {
             // 有数据时隐藏所有空视图
             binding.emptyView.visibility = View.GONE
             binding.searchEmptyView.visibility = View.GONE
+        }
+    }
+
+    /**
+     * 创建支持自定义滑动速度的StaggeredGridLayoutManager
+     */
+    private fun createCustomStaggeredGridLayoutManager(): StaggeredGridLayoutManager {
+        return object : StaggeredGridLayoutManager(2, VERTICAL) {
+            override fun smoothScrollToPosition(
+                recyclerView: androidx.recyclerview.widget.RecyclerView?,
+                state: androidx.recyclerview.widget.RecyclerView.State?,
+                position: Int
+            ) {
+                recyclerView?.let { rv ->
+                    val smoothScroller = CustomSmoothScroller(
+                        rv.context,
+                        CustomSmoothScroller.SPEED_NORMAL // 使用正常速度（可调节）
+                    )
+                    smoothScroller.targetPosition = position
+                    startSmoothScroll(smoothScroller)
+                }
+            }
         }
     }
 

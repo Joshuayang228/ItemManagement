@@ -1,7 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Bottom Sheet Slide Up Animation
+底部弹窗向上滑入动画，使用Material Motion规范
+-->
 <set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 平移动画：从底部滑入 -->
     <translate
-        android:duration="300"
         android:fromYDelta="100%"
-        android:toYDelta="0%" />
+        android:toYDelta="0%"
+        android:duration="350"
+        android:interpolator="@android:anim/decelerate_interpolator" />
+        
+    <!-- 淡入动画：增加深度感 -->
+    <alpha
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0"
+        android:duration="250"
+        android:startOffset="50"
+        android:interpolator="@android:anim/linear_interpolator" />
+        
+    <!-- 轻微缩放：模拟从小到大的弹出效果 -->
+    <scale
+        android:fromXScale="0.95"
+        android:toXScale="1.0"
+        android:fromYScale="0.95"
+        android:toYScale="1.0"
+        android:pivotX="50%"
+        android:pivotY="100%"
+        android:duration="350"
+        android:interpolator="@android:anim/decelerate_interpolator" />
+        
 </set> 

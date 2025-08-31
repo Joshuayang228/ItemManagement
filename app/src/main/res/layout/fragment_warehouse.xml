@@ -5,33 +5,40 @@
     android:layout_height="match_parent">
 
     <!-- 搜索栏 -->
-    <androidx.cardview.widget.CardView
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/searchContainer"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="2dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="22dp"
+        app:cardElevation="1dp"
+        app:strokeColor="#E0E0E0"
+        app:strokeWidth="1dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="match_parent"
             android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:orientation="horizontal">
 
+            <!-- 搜索图标 -->
             <ImageView
                 android:id="@+id/searchIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
                 android:src="@drawable/ic_search"
-                android:layout_marginEnd="8dp"
-                app:tint="@android:color/darker_gray" />
+                android:contentDescription="搜索"
+                app:tint="#757575" />
 
+            <!-- 搜索输入框 -->
             <EditText
                 android:id="@+id/searchEditText"
                 android:layout_width="0dp"
@@ -39,24 +46,30 @@
                 android:layout_weight="1"
                 android:background="@null"
                 android:hint="搜索物品"
+                android:textColorHint="#9E9E9E"
+                android:textColor="#212121"
+                android:textSize="16sp"
                 android:imeOptions="actionSearch"
                 android:inputType="text"
                 android:maxLines="1"
-                android:textSize="16sp"
-                android:textColorHint="@android:color/darker_gray" />
+                android:paddingStart="4dp"
+                android:paddingEnd="8dp"
+                android:gravity="center_vertical" />
 
+            <!-- 清除搜索图标 -->
             <ImageView
                 android:id="@+id/clearButton"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:padding="10dp"
                 android:src="@drawable/ic_clear"
-                android:layout_marginStart="8dp"
-                android:visibility="gone"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                app:tint="@android:color/darker_gray" />
+                android:visibility="gone"
+                android:contentDescription="清除搜索"
+                app:tint="#757575" />
 
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- 排序栏 -->
     <com.google.android.material.card.MaterialCardView

@@ -11,6 +11,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.example.itemmanagement.ui.utils.Material3Feedback
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -53,17 +54,12 @@ class DonationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        setupToolbar()
         setupQRCodeInteractions()
         setupDonorList()
         setupMessageFunctionality()
     }
     
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-    }
+    // Toolbar功能移除，导航由MainActivity统一管理
     
     private fun setupQRCodeInteractions() {
         // 微信收款码长按保存
@@ -199,12 +195,12 @@ class DonationFragment : Fragment() {
     private fun sendMessage() {
         val message = binding.etMessage.text.toString().trim()
         if (message.isBlank()) {
-            Toast.makeText(requireContext(), "请输入留言内容", Toast.LENGTH_SHORT).show()
+            view?.let { Material3Feedback.showError(it, "请输入留言内容") }
             return
         }
         
         if (message.length > 200) {
-            Toast.makeText(requireContext(), "留言内容过长，请控制在200字内", Toast.LENGTH_SHORT).show()
+            view?.let { Material3Feedback.showError(it, "留言内容过长，请控制在200字内") }
             return
         }
         
@@ -221,11 +217,9 @@ class DonationFragment : Fragment() {
         messageList.add("用户留言：$message")
         binding.etMessage.text?.clear()
         
-        Toast.makeText(
-            requireContext(),
-            "留言发送成功，感谢您的支持！",
-            Toast.LENGTH_SHORT
-        ).show()
+        view?.let { 
+            Material3Feedback.showSuccess(it, "留言发送成功，感谢您的支持！")
+        }
         
         // 可以在这里更新留言显示区域
         updateMessageDisplay()

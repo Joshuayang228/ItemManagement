@@ -6,23 +6,11 @@
     android:layout_height="match_parent"
     tools:context=".ui.profile.settings.AppSettingsFragment">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="应用设置"
-            app:navigationIcon="?attr/homeAsUpIndicator" />
-
-    </com.google.android.material.appbar.AppBarLayout>
+    <!-- Toolbar移除，使用MainActivity统一管理导航 -->
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,12 +19,11 @@
             android:padding="16dp">
 
             <!-- 外观设置 -->
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                style="@style/Widget.App.Card.Settings">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -140,15 +127,14 @@
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 通知设置 -->
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                style="@style/Widget.App.Card.Settings">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -219,15 +205,14 @@
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 默认设置 -->
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                style="@style/Widget.App.Card.Settings">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -251,6 +236,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="12dp"
                         android:hint="默认单位"
+                        style="@style/Widget.App.TextInputLayout"
                         app:helperText="添加物品时的默认计量单位">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -268,6 +254,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
                         android:hint="默认分类"
+                        style="@style/Widget.App.TextInputLayout"
                         app:helperText="添加物品时的默认分类（可为空）">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -281,7 +268,7 @@
 
                     <Button
                         android:id="@+id/btnSaveDefaults"
-                        style="@style/Widget.AppCompat.Button.Colored"
+                        style="@style/Widget.App.Button.Primary"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="保存默认值"
@@ -289,15 +276,14 @@
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 其他设置 -->
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                style="@style/Widget.App.Card.Settings">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -347,15 +333,14 @@
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 危险区域 -->
-            <androidx.cardview.widget.CardView
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+                style="@style/Widget.App.Card.Settings">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -375,18 +360,18 @@
                         android:gravity="start|center_vertical"
                         android:layout_marginBottom="16dp" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnCleanupData"
-                        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                        style="@style/Widget.App.Button.Text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="清理过期数据"
                         android:textColor="?attr/colorError"
                         android:layout_marginBottom="8dp" />
 
-                    <Button
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnResetSettings"
-                        style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                        style="@style/Widget.App.Button.Text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="重置所有设置"
@@ -394,7 +379,7 @@
 
                 </LinearLayout>
 
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 底部间距 -->
             <View

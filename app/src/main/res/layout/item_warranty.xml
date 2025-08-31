@@ -1,15 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res/auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/Widget.App.Card.ListItem"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="6dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="3dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -39,8 +34,8 @@
                 android:layout_height="12dp"
                 android:layout_gravity="top|end"
                 android:background="@drawable/circle_background"
-                android:backgroundTint="#4CAF50"
-                tools:backgroundTint="#4CAF50" />
+                android:backgroundTint="?attr/colorSuccess"
+                tools:backgroundTint="?attr/colorSuccess" />
 
         </FrameLayout>
 
@@ -65,7 +60,7 @@
                     android:layout_weight="1"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:textColor="@android:color/black"
+                    android:textColor="?attr/colorOnSurface"
                     android:maxLines="1"
                     android:ellipsize="end"
                     tools:text="iPhone 14 Pro" />
@@ -75,13 +70,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_background"
-                    android:backgroundTint="#E8F5E8"
+                    android:backgroundTint="?attr/colorSuccessContainer"
                     android:paddingStart="8dp"
                     android:paddingEnd="8dp"
                     android:paddingTop="4dp"
                     android:paddingBottom="4dp"
                     android:textSize="11sp"
-                    android:textColor="#4CAF50"
+                    android:textColor="?attr/colorSuccess"
                     android:textStyle="bold"
                     tools:text="保修中" />
 
@@ -99,7 +94,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="#666666"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     tools:text="数码产品" />
 
                 <TextView
@@ -107,7 +102,7 @@
                     android:layout_height="wrap_content"
                     android:text="  •  "
                     android:textSize="13sp"
-                    android:textColor="#666666" />
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
                 <TextView
                     android:id="@+id/itemBrand"
@@ -115,7 +110,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:textSize="13sp"
-                    android:textColor="#666666"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:maxLines="1"
                     android:ellipsize="end"
                     tools:text="Apple" />
@@ -143,7 +138,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="#666666"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     tools:text="购买：2023-01-15" />
 
                 <TextView
@@ -156,7 +151,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="#666666"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     tools:text="12个月" />
 
             </LinearLayout>
@@ -182,7 +177,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:textSize="13sp"
-                    android:textColor="#FF9800"
+                    android:textColor="?attr/colorWarning"
                     tools:text="到期：2024-01-15" />
 
                 <TextView
@@ -190,13 +185,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_background"
-                    android:backgroundTint="#FFF3E0"
+                    android:backgroundTint="?attr/colorWarningContainer"
                     android:paddingStart="6dp"
                     android:paddingEnd="6dp"
                     android:paddingTop="2dp"
                     android:paddingBottom="2dp"
                     android:textSize="11sp"
-                    android:textColor="#FF9800"
+                    android:textColor="?attr/colorWarning"
                     android:textStyle="bold"
                     tools:text="剩余32天" />
 

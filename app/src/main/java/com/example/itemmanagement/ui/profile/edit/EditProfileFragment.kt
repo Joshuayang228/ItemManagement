@@ -82,26 +82,12 @@ class EditProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupToolbar()
         setupClickListeners()
         observeViewModel()
     }
 
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-
-        binding.toolbar.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.action_save -> {
-                    saveProfile()
-                    true
-                }
-                else -> false
-            }
-        }
-    }
+    // Toolbar功能移除，保存功能需要在UI中添加专门的保存按钮
+    // TODO: 在后续UI升级阶段添加FloatingActionButton或保存按钮
 
     private fun setupClickListeners() {
         binding.apply {

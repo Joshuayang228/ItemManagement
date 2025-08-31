@@ -13,12 +13,9 @@
 
         <!-- 顶部统计卡片 -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.App.Card.Statistics"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="16dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="4dp"
-            app:cardBackgroundColor="@android:color/white">
+            android:layout_height="wrap_content">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -32,7 +29,7 @@
                     android:text="保修概览"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="@android:color/black"
+                    android:textColor="?attr/colorOnSurface"
                     android:layout_marginBottom="12dp" />
 
                 <LinearLayout
@@ -222,7 +219,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="16dp"
         android:contentDescription="添加保修记录"
-        app:srcCompat="@drawable/ic_add_24dp"
-        app:tint="@android:color/white" />
+        style="@style/Widget.App.FloatingActionButton"
+        app:srcCompat="@drawable/ic_add_24dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

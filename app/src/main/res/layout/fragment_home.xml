@@ -1,190 +1,206 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 
+智能滚动首页布局 - 搜索框滚动隐藏/显示
+1. CoordinatorLayout：支持协调滚动行为
+2. AppBarLayout：包装搜索框，支持滚动消失/显现
+3. RecyclerView：优化滑动速度的信息流
+-->
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- 顶部搜索栏（可滑动隐藏） -->
+    <!-- 可滚动的搜索栏区域 -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        app:elevation="4dp">
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+        <!-- 搜索栏容器 - 支持滚动隐藏/显现 -->
+        <LinearLayout
+            android:id="@+id/searchContainer"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:paddingStart="12dp"
-            android:paddingEnd="4dp"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
             app:layout_scrollFlags="scroll|enterAlways|snap">
 
-            <!-- 搜索框布局 -->
+        <!-- 深色主题搜索卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="12dp"
+            app:cardBackgroundColor="#FFFFFF"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="1dp"
+            app:strokeColor="#E0E0E0"
+            app:strokeWidth="1dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <androidx.cardview.widget.CardView
+                <!-- 搜索图标 - 固定颜色 -->
+                <ImageView
+                    android:id="@+id/searchIcon"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_search"
+                    android:contentDescription="搜索"
+                    app:tint="#757575" />
+
+                <!-- 搜索输入框 - 固定颜色 -->
+                <EditText
+                    android:id="@+id/searchEditText"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    app:cardCornerRadius="20dp"
-                    app:cardElevation="2dp">
+                    android:background="@null"
+                    android:hint="搜索物品"
+                    android:textColorHint="#9E9E9E"
+                    android:textColor="#212121"
+                    android:textSize="16sp"
+                    android:imeOptions="actionSearch"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="8dp"
+                    android:gravity="center_vertical" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:id="@+id/searchIcon"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:padding="10dp"
-                            android:src="@drawable/ic_search" />
-
-                        <EditText
-                            android:id="@+id/searchEditText"
-                            android:layout_width="0dp"
-                            android:layout_height="match_parent"
-                            android:layout_weight="1"
-                            android:background="@null"
-                            android:hint="搜索物品"
-                            android:imeOptions="actionSearch"
-                            android:inputType="text"
-                            android:maxLines="1"
-                            android:textSize="16sp" />
-
-                        <ImageView
-                            android:id="@+id/clearSearchIcon"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:padding="10dp"
-                            android:src="@drawable/ic_clear"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:visibility="gone"
-                            android:contentDescription="清除搜索" />
-
-                    </LinearLayout>
-
-                </androidx.cardview.widget.CardView>
-
-                <!-- 顶部添加按钮 -->
-                <ImageButton
-                    android:id="@+id/topAddButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                <!-- 清除搜索图标 - 固定颜色 -->
+                <ImageView
+                    android:id="@+id/clearSearchIcon"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_clear"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_add"
-                    app:tint="@color/purple_500" />
+                    android:visibility="gone"
+                    android:contentDescription="清除搜索"
+                    app:tint="#757575" />
 
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        </androidx.appcompat.widget.Toolbar>
+        <!-- 添加按钮 - 纯图标设计 -->
+        <ImageButton
+            android:id="@+id/topAddButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_add"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="添加物品"
+            android:padding="12dp"
+            app:tint="?attr/colorPrimary" />
+
+        </LinearLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- 主要内容区域：功能区+信息流 -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
+    <!-- 内容区域 - 包含功能区和物品信息流，支持协调滚动 -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
-        
-    <!-- 空视图 -->
-    <LinearLayout
-        android:id="@+id/emptyView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:visibility="gone"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/ic_image_placeholder"
-            android:alpha="0.5"
-            android:contentDescription="空视图图标" />
+        <!-- 物品列表（包含功能区Header）- 优化滑动速度 -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="16dp"
+            android:scrollbars="vertical"
+            android:overScrollMode="ifContentScrolls" />
 
-        <TextView
-            android:id="@+id/emptyTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="暂无物品"
-            android:textSize="18sp"
-            android:textColor="@android:color/darker_gray" />
+        <!-- 空状态视图 -->
+        <LinearLayout
+            android:id="@+id/emptyView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:visibility="gone">
 
-        <TextView
-            android:id="@+id/emptySubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="点击添加按钮开始记录您的物品"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:gravity="center" />
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/ic_inventory"
+                android:alpha="0.3"
+                app:tint="#9E9E9E"
+                android:contentDescription="空状态图标" />
 
-    </LinearLayout>
-    
-    <!-- 搜索无结果视图 -->
-    <LinearLayout
-        android:id="@+id/searchEmptyView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:visibility="gone"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="暂无物品记录"
+                android:textSize="18sp"
+                android:textColor="#757575" />
 
-        <ImageView
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/ic_search"
-            android:alpha="0.5"
-            android:contentDescription="搜索图标" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="点击右上角的 + 按钮开始添加物品"
+                android:textSize="14sp"
+                android:textColor="#9E9E9E"
+                android:gravity="center" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="未找到相关物品"
-            android:textSize="18sp"
-            android:textColor="@android:color/darker_gray" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/searchEmptyHint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="试试更换关键词或清空搜索"
-            android:textSize="14sp"
-            android:textColor="@android:color/darker_gray"
-            android:gravity="center" />
+        <!-- 搜索无结果视图 -->
+        <LinearLayout
+            android:id="@+id/searchEmptyView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:visibility="gone">
 
-    </LinearLayout>
+            <ImageView
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/ic_search"
+                android:alpha="0.3"
+                app:tint="#9E9E9E"
+                android:contentDescription="搜索图标" />
 
-    <!-- 添加按钮 -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:src="@drawable/ic_add"
-        app:backgroundTint="@color/purple_500"
-        app:tint="@color/white" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="未找到相关物品"
+                android:textSize="18sp"
+                android:textColor="#757575" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout> 
+            <TextView
+                android:id="@+id/searchEmptyHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="尝试使用不同的关键词搜索"
+                android:textSize="14sp"
+                android:textColor="#9E9E9E"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

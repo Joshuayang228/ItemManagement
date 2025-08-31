@@ -40,16 +40,11 @@ class AppSettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupToolbar()
         observeViewModel()
         setupClickListeners()
     }
 
-    private fun setupToolbar() {
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().navigateUp()
-        }
-    }
+    // Toolbar功能移除，导航由MainActivity统一管理
 
     private fun observeViewModel() {
         viewModel.userProfile.observe(viewLifecycleOwner) { profile ->
@@ -97,7 +92,14 @@ class AppSettingsFragment : Fragment() {
                     R.id.rbThemeDark -> "DARK"
                     else -> "AUTO"
                 }
+                
+                // 先保存设置，再应用主题
                 viewModel.updateTheme(theme)
+                
+                // 提供视觉反馈，然后应用主题
+                view?.let { v ->
+                    com.example.itemmanagement.ui.utils.Material3Feedback.showInfo(v, "正在切换主题...")
+                }
                 applyTheme(theme)
             }
 
@@ -157,7 +159,23 @@ class AppSettingsFragment : Fragment() {
             "DARK" -> AppCompatDelegate.MODE_NIGHT_YES
             else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         }
-        AppCompatDelegate.setDefaultNightMode(mode)
+        
+        // 添加Material 3主题切换动画
+        view?.let { v ->
+            // 播放过渡动画
+            val animation = android.view.animation.AnimationUtils.loadAnimation(
+                requireContext(), 
+                com.example.itemmanagement.R.anim.material3_theme_transition
+            )
+            
+            v.startAnimation(animation)
+            
+            // 在动画播放时切换主题
+            v.postDelayed({
+                // 在主线程中应用主题切换
+                AppCompatDelegate.setDefaultNightMode(mode)
+            }, 200) // 与动画时长同步
+        }
     }
 
     private fun showResetConfirmation() {

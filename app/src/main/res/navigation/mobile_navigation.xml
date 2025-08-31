@@ -3,6 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/mobile_navigation"
     app:startDestination="@+id/navigation_home">
+    
+    <!-- Material 3 默认转场动画配置 -->
+    <action
+        android:id="@+id/action_global_with_animation"
+        app:enterAnim="@anim/fragment_slide_in_right"
+        app:exitAnim="@anim/fragment_slide_out_left"
+        app:popEnterAnim="@anim/fragment_slide_in_left"
+        app:popExitAnim="@anim/fragment_slide_out_right" />
 
     <fragment
         android:id="@+id/navigation_home"
@@ -10,7 +18,11 @@
         android:label="主页">
         <action
             android:id="@+id/action_navigation_home_to_addItemFragment"
-            app:destination="@id/addItemFragment" />
+            app:destination="@id/addItemFragment"
+            app:enterAnim="@anim/fragment_slide_in_right"
+            app:exitAnim="@anim/fragment_slide_out_left"
+            app:popEnterAnim="@anim/fragment_slide_in_left"
+            app:popExitAnim="@anim/fragment_slide_out_right" />
 
         <action
             android:id="@+id/action_navigation_home_to_itemListFragment"
@@ -18,6 +30,13 @@
         <action
             android:id="@+id/action_navigation_home_to_shopping_list"
             app:destination="@id/navigation_shopping_list" />
+        <action
+            android:id="@+id/action_home_to_expiration_reminder"
+            app:destination="@id/navigation_expiration_reminder"
+            app:enterAnim="@anim/material3_container_transform_enter"
+            app:exitAnim="@anim/material3_container_transform_exit"
+            app:popEnterAnim="@anim/material3_container_transform_exit"
+            app:popExitAnim="@anim/material3_container_transform_enter" />
     </fragment>
 
     <fragment
@@ -26,10 +45,18 @@
         android:label="仓库">
         <action
             android:id="@+id/action_navigation_warehouse_to_navigation_item_detail"
-            app:destination="@id/navigation_item_detail" />
+            app:destination="@id/navigation_item_detail"
+            app:enterAnim="@anim/material3_container_transform_enter"
+            app:exitAnim="@anim/material3_container_transform_exit"
+            app:popEnterAnim="@anim/material3_container_transform_exit"
+            app:popExitAnim="@anim/material3_container_transform_enter" />
         <action
             android:id="@+id/action_navigation_warehouse_to_editItemFragment"
-            app:destination="@id/editItemFragment" />
+            app:destination="@id/editItemFragment"
+            app:enterAnim="@anim/material3_container_transform_enter"
+            app:exitAnim="@anim/material3_container_transform_exit"
+            app:popEnterAnim="@anim/material3_container_transform_exit"
+            app:popExitAnim="@anim/material3_container_transform_enter" />
     </fragment>
 
     <fragment
@@ -38,13 +65,25 @@
         android:label="功能">
         <action
             android:id="@+id/action_function_to_inventory_analysis"
-            app:destination="@id/navigation_inventory_analysis" />
+            app:destination="@id/navigation_inventory_analysis"
+            app:enterAnim="@anim/fade_in_material"
+            app:exitAnim="@anim/fade_out_material"
+            app:popEnterAnim="@anim/fade_in_material"
+            app:popExitAnim="@anim/fade_out_material" />
         <action
             android:id="@+id/action_function_to_item_calendar"
-            app:destination="@id/navigation_item_calendar" />
+            app:destination="@id/navigation_item_calendar"
+            app:enterAnim="@anim/fade_in_material"
+            app:exitAnim="@anim/fade_out_material"
+            app:popEnterAnim="@anim/fade_in_material"
+            app:popExitAnim="@anim/fade_out_material" />
         <action
             android:id="@+id/action_function_to_shopping_list"
-            app:destination="@id/navigation_shopping_list" />
+            app:destination="@id/navigation_shopping_list"
+            app:enterAnim="@anim/fade_in_material"
+            app:exitAnim="@anim/fade_out_material"
+            app:popEnterAnim="@anim/fade_in_material"
+            app:popExitAnim="@anim/fade_out_material" />
         <action
             android:id="@+id/action_function_to_wishlist"
             app:destination="@id/navigation_item_list">
@@ -117,7 +156,7 @@
     <!-- 购物清单管理页面 -->
     <fragment
         android:id="@+id/navigation_shopping_list_management"
-        android:name="com.example.itemmanagement.ui.shopping.ShoppingListManagementFragment"
+        android:name="com.example.itemmanagement.ui.shopping.ShoppingListManagementM3Fragment"
         android:label="购物清单管理" />
 
     <fragment
@@ -334,7 +373,7 @@
 
     <fragment
         android:id="@+id/navigation_donation"
-        android:name="com.example.itemmanagement.ui.profile.donation.DonationFragment"
+        android:name="com.example.itemmanagement.ui.profile.donation.DonationM3Fragment"
         android:label="打赏支持" />
 
 </navigation> 

@@ -1,186 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 极简单行功能按钮布局 - 无背景纯图标文字设计 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="#F5F7FA"
-    android:padding="16dp">
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp">
 
-    <!-- 第一行 -->
+    <!-- 即将过期按钮 - 极简设计，优化显示 -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="12dp">
+        android:id="@+id/expiringItemsCard"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
 
-        <!-- 即将过期按钮 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/expiringItemsCard"
-            android:layout_width="0dp"
-            android:layout_height="88dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="3dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#FFF3E0"
-            android:foreground="?attr/selectableItemBackground">
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_calendar"
+            app:tint="@color/orange_500" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp">
-
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:src="@drawable/ic_calendar"
-                    app:tint="@color/orange_500" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="即将过期"
-                    android:textSize="13sp"
-                    android:textColor="@color/orange_500"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 过期物品按钮 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/expiredItemsCard"
-            android:layout_width="0dp"
-            android:layout_height="88dp"
-            android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="3dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#FFEBEE"
-            android:foreground="?attr/selectableItemBackground">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp">
-
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:src="@drawable/ic_error_placeholder"
-                    app:tint="@color/red_500" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="过期物品"
-                    android:textSize="13sp"
-                    android:textColor="@color/red_500"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="即将过期"
+            android:textSize="11sp"
+            android:textColor="#212121"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
     </LinearLayout>
 
-    <!-- 第二行 -->
+    <!-- 过期物品按钮 - 极简设计，优化显示 -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:id="@+id/expiredItemsCard"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
 
-        <!-- 库存不足按钮 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/lowStockCard"
-            android:layout_width="0dp"
-            android:layout_height="88dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="3dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#F3E5F5"
-            android:foreground="?attr/selectableItemBackground">
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_error_placeholder"
+            app:tint="@color/red_500" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="过期物品"
+            android:textSize="11sp"
+            android:textColor="#212121"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:src="@drawable/ic_stock_warning"
-                    app:tint="@color/purple_500" />
+    </LinearLayout>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="库存不足"
-                    android:textSize="13sp"
-                    android:textColor="@color/purple_500"
-                    android:textStyle="bold" />
+    <!-- 库存不足按钮 - 极简设计，优化显示 -->
+    <LinearLayout
+        android:id="@+id/lowStockCard"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
 
-            </LinearLayout>
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_stock_warning"
+            app:tint="@color/purple_500" />
 
-        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="库存不足"
+            android:textSize="11sp"
+            android:textColor="#212121"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
-        <!-- 购物清单按钮 -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/shoppingListCard"
-            android:layout_width="0dp"
-            android:layout_height="88dp"
-            android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="3dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="#E8F5E8"
-            android:foreground="?attr/selectableItemBackground">
+    </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="12dp">
+    <!-- 购物清单按钮 - 极简设计，优化显示 -->
+    <LinearLayout
+        android:id="@+id/shoppingListCard"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
 
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:src="@drawable/ic_list"
-                    app:tint="@color/success" />
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_list"
+            app:tint="@color/success" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="购物清单"
-                    android:textSize="13sp"
-                    android:textColor="@color/success"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="购物清单"
+            android:textSize="11sp"
+            android:textColor="#212121"
+            android:maxLines="1"
+            android:ellipsize="end" />
 
     </LinearLayout>
 

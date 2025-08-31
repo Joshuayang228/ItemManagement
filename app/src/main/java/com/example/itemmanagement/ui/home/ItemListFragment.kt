@@ -60,11 +60,10 @@ class ItemListFragment : Fragment() {
     }
     
     private fun setupUI(title: String) {
-        binding.titleText.text = title
-        
-        // 设置返回按钮
-        binding.backButton.setOnClickListener {
-            findNavController().navigateUp()
+        // 设置标题到ActionBar
+        (requireActivity() as? androidx.appcompat.app.AppCompatActivity)?.let { activity ->
+            activity.supportActionBar?.title = title
+            activity.supportActionBar?.setDisplayHomeAsUpEnabled(true)
         }
     }
 

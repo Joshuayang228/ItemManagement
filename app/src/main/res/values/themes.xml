@@ -1,12 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Theme System
+完整的Material You主题系统，支持动态配色和完整的设计Token
+-->
 <resources>
-    <style name="Theme.ItemManagement" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+    <!-- Base Material 3 Light Theme -->
+    <style name="Base.Theme.ItemManagement.Light" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/md_theme_light_primary</item>
+        <item name="colorOnPrimary">@color/md_theme_light_on_primary</item>
+        <item name="colorPrimaryContainer">@color/md_theme_light_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_light_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/md_theme_light_inverse_primary</item>
+
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/md_theme_light_secondary</item>
+        <item name="colorOnSecondary">@color/md_theme_light_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/md_theme_light_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/md_theme_light_on_secondary_container</item>
+
+        <!-- Tertiary colors -->
+        <item name="colorTertiary">@color/md_theme_light_tertiary</item>
+        <item name="colorOnTertiary">@color/md_theme_light_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/md_theme_light_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/md_theme_light_on_tertiary_container</item>
+
+        <!-- Error colors -->
+        <item name="colorError">@color/md_theme_light_error</item>
+        <item name="colorOnError">@color/md_theme_light_on_error</item>
+        <item name="colorErrorContainer">@color/md_theme_light_error_container</item>
+        <item name="colorOnErrorContainer">@color/md_theme_light_on_error_container</item>
+
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/md_theme_light_background</item>
+        <item name="colorOnBackground">@color/md_theme_light_on_background</item>
+
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/md_theme_light_surface</item>
+        <item name="colorOnSurface">@color/md_theme_light_on_surface</item>
+        <item name="colorSurfaceVariant">@color/md_theme_light_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/md_theme_light_on_surface_variant</item>
+        <item name="colorSurfaceInverse">@color/md_theme_light_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/md_theme_light_inverse_on_surface</item>
+
+        <!-- Surface container colors -->
+        <item name="colorSurfaceDim">@color/md_theme_light_surface_dim</item>
+        <item name="colorSurfaceBright">@color/md_theme_light_surface_bright</item>
+        <item name="colorSurfaceContainer">@color/md_theme_light_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/md_theme_light_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/md_theme_light_surface_container_highest</item>
+        <item name="colorSurfaceContainerLow">@color/md_theme_light_surface_container_low</item>
+        <item name="colorSurfaceContainerLowest">@color/md_theme_light_surface_container_lowest</item>
+
+        <!-- Outline colors -->
+        <item name="colorOutline">@color/md_theme_light_outline</item>
+        <item name="colorOutlineVariant">@color/md_theme_light_outline_variant</item>
+
+        <!-- Other colors -->
+        <item name="colorSurfaceTint">@color/md_theme_light_surface_tint</item>
+        <item name="colorScrim">@color/md_theme_light_scrim</item>
+        <item name="colorShadow">@color/md_theme_light_shadow</item>
+
+        <!-- Status bar and navigation bar - 透明化处理 -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        
+        <!-- Edge-to-Edge support -->
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowTranslucentNavigation">false</item>
+    </style>
+
+    <!-- Application Theme -->
+    <style name="Theme.ItemManagement" parent="Base.Theme.ItemManagement.Light">
+        <!-- App specific customizations -->
+        
+        <!-- 启用Material You动态颜色 (Android 12+) -->
+        <!-- 注意：这些会在运行时被DynamicColors.applyToActivityIfAvailable()覆盖 -->
+        
+        <!-- Custom attributes for app -->
+        <item name="colorWarning">@color/md_theme_light_warning</item>
+        <item name="colorOnWarning">@color/md_theme_light_on_warning</item>
+        <item name="colorWarningContainer">@color/md_theme_light_warning_container</item>
+        <item name="colorOnWarningContainer">@color/md_theme_light_on_warning_container</item>
+        
+        <item name="colorSuccess">@color/md_theme_light_success</item>
+        <item name="colorOnSuccess">@color/md_theme_light_on_success</item>
+        <item name="colorSuccessContainer">@color/md_theme_light_success_container</item>
+        <item name="colorOnSuccessContainer">@color/md_theme_light_on_success_container</item>
+        
+        <item name="colorInfo">@color/md_theme_light_info</item>
+        <item name="colorOnInfo">@color/md_theme_light_on_info</item>
+        <item name="colorInfoContainer">@color/md_theme_light_info_container</item>
+        <item name="colorOnInfoContainer">@color/md_theme_light_on_info_container</item>
     </style>
 </resources> 
