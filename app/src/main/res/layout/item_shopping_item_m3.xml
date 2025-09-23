@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 购物物品卡片 - 优化版 -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:cardBackgroundColor="@color/white"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- 购买状态复选框 -->
+        <CheckBox
+            android:id="@+id/checkboxPurchased"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:buttonTint="@color/shopping_primary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 物品信息容器 -->
+        <LinearLayout
+            android:id="@+id/itemInfoContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical"
+            app:layout_constraintStart_toEndOf="@id/checkboxPurchased"
+            app:layout_constraintEnd_toStartOf="@id/actionContainer"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <!-- 物品名称 -->
+            <TextView
+                android:id="@+id/itemName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="苹果"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="有机红富士苹果" />
+
+            <!-- 数量和单位 -->
+            <TextView
+                android:id="@+id/itemQuantity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="2.5 kg"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                tools:text="2.5 kg" />
+
+            <!-- 次要信息 Chip 组 -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                app:chipSpacingHorizontal="6dp"
+                app:chipSpacingVertical="2dp"
+                app:singleLine="false">
+
+                <!-- 分类 Chip -->
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/categoryChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="生鲜"
+                    style="@style/Widget.Material3.Chip.Assist"
+                    android:textSize="11sp"
+                    app:chipMinHeight="24dp"
+                    android:visibility="gone"
+                    tools:text="生鲜"
+                    tools:visibility="visible" />
+
+                <!-- 品牌 Chip -->
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/brandChip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="某某品牌"
+                    style="@style/Widget.Material3.Chip.Assist"
+                    android:textSize="11sp"
+                    app:chipMinHeight="24dp"
+                    android:visibility="gone"
+                    tools:text="某某品牌"
+                    tools:visibility="visible" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- 备注信息 -->
+            <TextView
+                android:id="@+id/itemNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="备注：要买甜一点的"
+                android:textSize="12sp"
+                android:textColor="#888888"
+                android:background="@drawable/bg_detail_tag"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone"
+                tools:text="备注：要买甜一点的"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- 右侧操作区域 -->
+        <LinearLayout
+            android:id="@+id/actionContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <!-- 删除按钮 -->
+            <ImageButton
+                android:id="@+id/buttonDelete"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_delete"
+                android:contentDescription="删除"
+                app:tint="#666666" />
+
+        </LinearLayout>
+
+        <!-- 底部操作区域 -->
+        <LinearLayout
+            android:id="@+id/bottomActionContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/itemInfoContainer"
+            tools:visibility="visible">
+
+            <!-- 添加入库按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonAddToInventory"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:text="添加入库"
+                android:textSize="11sp"
+                app:icon="@drawable/ic_add"
+                app:iconSize="14dp"
+                app:cornerRadius="16dp"
+                app:backgroundTint="@color/shopping_container"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
+

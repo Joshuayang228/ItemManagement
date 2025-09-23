@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Button Release Animation
+按钮释放时的恢复动画，提供弹性反馈
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 释放缩放：弹回正常尺寸 -->
+    <scale
+        android:fromXScale="0.95"
+        android:toXScale="1.0"
+        android:fromYScale="0.95"
+        android:toYScale="1.0"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="150"
+        android:interpolator="@android:anim/overshoot_interpolator" />
+        
+</set>
+
+

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 FAB Hide Animation
+浮动操作按钮隐藏动画，使用Material Motion规范
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 缩放动画：从正常尺寸到0 -->
+    <scale
+        android:fromXScale="1.0"
+        android:toXScale="0.0"
+        android:fromYScale="1.0"
+        android:toYScale="0.0"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="200"
+        android:interpolator="@android:anim/anticipate_interpolator" />
+        
+    <!-- 透明度动画：淡出 -->
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0"
+        android:duration="150"
+        android:interpolator="@android:anim/accelerate_interpolator" />
+        
+</set>
+
+

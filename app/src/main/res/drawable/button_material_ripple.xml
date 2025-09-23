@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Button Ripple Effect
+现代按钮触摸反馈效果，符合Material You规范
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?attr/colorPrimary">
+    
+    <!-- 按钮背景状态选择器 -->
+    <item android:id="@android:id/background">
+        <selector>
+            <!-- 按下状态 -->
+            <item android:state_pressed="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/colorPrimaryContainer" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+            
+            <!-- 聚焦状态 -->
+            <item android:state_focused="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/colorPrimaryContainer" />
+                    <corners android:radius="12dp" />
+                    <stroke 
+                        android:width="2dp" 
+                        android:color="?attr/colorPrimary" />
+                </shape>
+            </item>
+            
+            <!-- 默认状态 -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/colorSurface" />
+                    <corners android:radius="12dp" />
+                    <stroke 
+                        android:width="1dp" 
+                        android:color="?attr/colorOutlineVariant" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>
+

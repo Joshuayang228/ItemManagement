@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_select_all"
+        android:title="全选"
+        android:icon="@drawable/ic_select_all"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_batch_priority"
+        android:title="批量设置优先级"
+        android:icon="@drawable/ic_priority"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_batch_delete"
+        android:title="批量删除"
+        android:icon="@drawable/ic_delete"
+        app:showAsAction="never" />
+
+</menu>

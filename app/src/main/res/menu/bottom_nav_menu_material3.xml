@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Bottom Navigation Menu
+符合Material 3设计规范的底部导航菜单
+- 使用labelVisibilityMode="selected"实现点击显示文字的效果
+- 支持Material You动态颜色
+- 优化的图标和文字布局
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/ic_home"
+        android:title="@string/title_home"
+        android:contentDescription="@string/title_home" />
+
+    <item
+        android:id="@+id/navigation_warehouse"
+        android:icon="@drawable/ic_warehouse"
+        android:title="@string/title_warehouse"
+        android:contentDescription="@string/title_warehouse" />
+
+    <item
+        android:id="@+id/navigation_add_item"
+        android:icon="@drawable/ic_add_circle"
+        android:title="添加"
+        android:contentDescription="添加物品" />
+
+    <item
+        android:id="@+id/navigation_function"
+        android:icon="@drawable/ic_function_new"
+        android:title="@string/title_function"
+        android:contentDescription="@string/title_function" />
+
+    <item
+        android:id="@+id/navigation_profile"
+        android:icon="@drawable/ic_profile"
+        android:title="@string/title_profile"
+        android:contentDescription="@string/title_profile" />
+</menu>
+
+

@@ -1,0 +1,1705 @@
+package com.example.itemmanagement.ui.warehouse
+
+import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
+import android.os.Bundle
+import android.view.ContextThemeWrapper
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.itemmanagement.ItemManagementApplication
+import com.example.itemmanagement.R
+import com.example.itemmanagement.databinding.FragmentFilterBottomSheetBinding
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.chip.Chip
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
+
+class FilterBottomSheetFragment : BottomSheetDialogFragment() {
+    
+    private var _binding: FragmentFilterBottomSheetBinding? = null
+    private val binding get() = _binding!!
+    
+    private val viewModel: WarehouseViewModel by activityViewModels {
+        WarehouseViewModelFactory(
+            (requireActivity().application as ItemManagementApplication).repository
+        )
+    }
+    
+    private lateinit var navigationAdapter: FilterNavigationAdapter
+    private val filterCategories = FilterCategory.values().toList()
+    
+    // 日期相关
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    
+    // 滚动位置保存
+    private var savedScrollPosition = 0
+    private var isUpdatingUI = false
+    
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentFilterBottomSheetBinding.inflate(inflater, container, false)
+        return binding.root
+    }
+    
+    
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        
+        // 配置ScrollView和拖拽区域的触摸事件分层管理
+        setupTouchEventLayering()
+        
+        // 重写根视图的触摸分发，在更高层级区分拖拽和滚动区域
+        setupRootTouchDispatch()
+        
+        setupNavigationRecyclerView()
+        setupFilters()
+        setupButtons()
+        observeFilterState()
+        setupDropdowns()
+        setupDateInputs()
+        setupScrollSyncWithNavigation()
+        
+        // 配置BottomSheet行为 - 从底部向上显示
+        dialog?.setOnShowListener { dialogInterface ->
+            val bottomSheetDialog = dialogInterface as com.google.android.material.bottomsheet.BottomSheetDialog
+            val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let {
+                val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(it)
+                
+                // 配置多状态展开 - 从底部向上
+                behavior.isFitToContents = false        // 关键：支持多状态
+                behavior.halfExpandedRatio = 0.78f      // 半展开状态占屏幕78%（第二和第三之间）
+                
+                // 启用拖拽，让用户可以控制高度
+                behavior.isDraggable = true
+                behavior.skipCollapsed = false          // 支持折叠状态  
+                behavior.isHideable = true
+                
+                // 设置peek高度（折叠状态时的最小高度）
+                val displayMetrics = resources.displayMetrics
+                val screenHeight = displayMetrics.heightPixels
+                behavior.peekHeight = (screenHeight * 0.6f).toInt()   // 60%屏幕高度（原来的半展开高度）
+                
+                // 设置全展开状态的顶部偏移，保持圆角bottomsheet形态
+                // 计算状态栏高度 + 额外间距，确保不贴到最顶部
+                val statusBarHeight = resources.getIdentifier("status_bar_height", "dimen", "android")
+                    .let { id -> if (id > 0) resources.getDimensionPixelSize(id) else 0 }
+                val topOffset = statusBarHeight + resources.displayMetrics.density * 32 // 状态栏高度 + 32dp
+                behavior.expandedOffset = topOffset.toInt()
+                
+                // 设置初始状态为78%屏幕（半展开状态）
+                behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HALF_EXPANDED
+                
+                // 添加状态监听器
+                behavior.addBottomSheetCallback(object : com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback() {
+                    override fun onStateChanged(bottomSheet: View, newState: Int) {
+                        // 监控状态变化，确保内容滚动正常
+                    }
+                    
+                    override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                        // 处理滑动效果
+                    }
+                })
+            }
+        }
+    }
+    
+    /**
+     * 设置根视图的触摸分发 - 在最高层级区分拖拽和滚动区域
+     */
+    private fun setupRootTouchDispatch() {
+        // 创建一个自定义的触摸分发器，覆盖根视图的默认行为
+        binding.root.setOnTouchListener { _, event ->
+            // 获取拖拽区域和内容区域的边界
+            val dragZoneBottom = binding.dragHandleContainer.let { container ->
+                val location = IntArray(2)
+                container.getLocationInWindow(location)
+                location[1] + container.height
+            }
+            
+            val touchY = event.rawY
+            
+            // 判断触摸位置
+            if (touchY <= dragZoneBottom) {
+                // 在拖拽区域：允许BottomSheet正常处理拖拽
+                false // 不拦截，让事件继续传递
+            } else {
+                // 在内容区域：优先保护内容滚动
+                when (event.action) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        // 立即告诉BottomSheet不要拦截内容区域的事件
+                        // 检查ScrollView是否可以滚动
+                        val canScroll = binding.contentScrollView.canScrollVertically(-1) || 
+                                      binding.contentScrollView.canScrollVertically(1)
+                        
+                        if (canScroll) {
+                            // 有滚动内容时：优先滚动，阻止BottomSheet拦截
+                            binding.contentScrollView.parent?.requestDisallowInterceptTouchEvent(true)
+                        }
+                        // 如果没有滚动内容，则允许拖拽
+                        false // 继续传递给内容区域
+                    }
+                    else -> false
+                }
+            }
+        }
+    }
+
+    /**
+     * 设置触摸事件分层管理 - 解决拖拽与滚动冲突
+     */
+    private fun setupTouchEventLayering() {
+        // 1. 配置ScrollView的滚动保护
+        setupScrollViewTouchProtection()
+        
+        // 2. 设置拖拽区域的专用处理
+        setupDragZoneHandling()
+        
+        // 3. 配置ScrollView状态监听
+        setupScrollStateListener()
+    }
+    
+    /**
+     * 配置ScrollView的滚动保护 - 确保内容区域滚动优先
+     */
+    private fun setupScrollViewTouchProtection() {
+        // 1. 在内容容器层面设置强制保护 - 拦截所有子元素的触摸事件
+        binding.contentContainer.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    // 内容区域被触摸：立即请求父视图不要拦截
+                    // 这会阻止BottomSheetBehavior拦截内容区域的触摸事件
+                    view.parent?.requestDisallowInterceptTouchEvent(true)
+                    false // 继续传递给子视图（ScrollView）
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    // 保持保护状态
+                    view.parent?.requestDisallowInterceptTouchEvent(true) 
+                    false
+                }
+                android.view.MotionEvent.ACTION_UP, 
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    // 释放保护
+                    view.parent?.requestDisallowInterceptTouchEvent(false)
+                    false
+                }
+                else -> false
+            }
+        }
+        
+        // 2. 重写内容容器的触摸事件分发 - 更强的保护机制
+        setupContentContainerTouchIntercept()
+        
+        // 3. ScrollView基础配置和特殊区域保护
+        binding.contentScrollView.apply {
+            // 启用基本滚动功能
+            isFocusable = true
+            isFocusableInTouchMode = true
+            isScrollContainer = true
+            isNestedScrollingEnabled = true
+            
+            // 设置触摸监听器处理特殊区域（如品牌输入框）
+            setOnTouchListener { view, event ->
+                // 检查触摸点是否在品牌输入框区域
+                val brandDropdown = binding.brandDropdown
+                if (isTouchOnView(brandDropdown, event.rawX, event.rawY)) {
+                    // 品牌输入框区域：不拦截，让AutoCompleteTextView正常处理
+                    return@setOnTouchListener false
+                }
+                
+                // 其他区域：保持滚动保护（双重保险）
+                when (event.action) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        view.parent?.requestDisallowInterceptTouchEvent(true)
+                        false
+                    }
+                    android.view.MotionEvent.ACTION_MOVE -> {
+                        view.parent?.requestDisallowInterceptTouchEvent(true)
+                        false
+                    }
+                    android.view.MotionEvent.ACTION_UP, 
+                    android.view.MotionEvent.ACTION_CANCEL -> {
+                        view.parent?.requestDisallowInterceptTouchEvent(false)
+                        false
+                    }
+                    else -> false
+                }
+            }
+        }
+    }
+    
+    /**
+     * 设置内容容器的触摸事件拦截 - 解决子元素（Chip、输入框等）触摸时的拖拽问题
+     */
+    private fun setupContentContainerTouchIntercept() {
+        // 创建自定义的ViewGroup子类来重写触摸事件分发
+        // 但由于无法直接修改布局中的LinearLayout类型，我们使用强制触摸拦截的方式
+        
+        // 使用View.OnTouchListener + 事件拦截的方式实现强制保护
+        binding.contentContainer.setOnTouchListener { view, event ->
+            // 处理滚动保护逻辑
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    // 立即告知父视图不要拦截后续的触摸事件
+                    view.parent?.requestDisallowInterceptTouchEvent(true)
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    // 在滑动过程中持续保护
+                    view.parent?.requestDisallowInterceptTouchEvent(true)
+                    
+                    // 检查是否为垂直滚动手势
+                    // 如果是垂直滚动，确保ScrollView能接收到事件
+                    val scrollView = binding.contentScrollView
+                    if (scrollView.canScrollVertically(-1) || scrollView.canScrollVertically(1)) {
+                        // 有可滚动内容，强制让ScrollView处理
+                        return@setOnTouchListener false
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    // 手势结束时释放保护
+                    view.parent?.requestDisallowInterceptTouchEvent(false)
+                }
+            }
+            
+            // 继续传递事件给子视图
+            false
+        }
+        
+        // 额外的安全措施：为ScrollView设置强制拦截
+        setupScrollViewForcedProtection()
+    }
+    
+    /**
+     * 为ScrollView设置强制保护 - 确保滚动优先级最高
+     */
+    private fun setupScrollViewForcedProtection() {
+        // 使用ViewTreeObserver监听布局变化，确保保护始终有效
+        binding.contentScrollView.viewTreeObserver.addOnGlobalLayoutListener(object : android.view.ViewTreeObserver.OnGlobalLayoutListener {
+            override fun onGlobalLayout() {
+                // 布局完成后，为所有子视图设置触摸保护
+                applyTouchProtectionToAllChildren(binding.contentScrollView)
+                
+                // 移除监听器，避免重复调用
+                binding.contentScrollView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+            }
+        })
+    }
+    
+    /**
+     * 递归地为所有子视图应用触摸保护
+     */
+    private fun applyTouchProtectionToAllChildren(parentView: android.view.View) {
+        if (parentView is android.view.ViewGroup) {
+            for (i in 0 until parentView.childCount) {
+                val child = parentView.getChildAt(i)
+                
+                // 跳过品牌输入框，因为它有特殊的处理逻辑
+                if (child.id == binding.brandDropdown.id) {
+                    continue
+                }
+                
+                // 为每个子视图设置触摸监听器
+                // 注意：直接设置OnTouchListener可能会覆盖子视图的原有功能
+                // 但这是为了解决拖拽问题的必要措施
+                child.setOnTouchListener { view, event ->
+                    // 处理滚动保护
+                    when (event.action) {
+                        android.view.MotionEvent.ACTION_DOWN -> {
+                            // 子视图被触摸时，确保父级ScrollView的滚动保护
+                            binding.contentScrollView.parent?.requestDisallowInterceptTouchEvent(true)
+                        }
+                        android.view.MotionEvent.ACTION_MOVE -> {
+                            // 移动时保持保护
+                            binding.contentScrollView.parent?.requestDisallowInterceptTouchEvent(true)
+                        }
+                        android.view.MotionEvent.ACTION_UP,
+                        android.view.MotionEvent.ACTION_CANCEL -> {
+                            // 结束时释放保护
+                            binding.contentScrollView.parent?.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                    
+                    // 返回false让子视图的原有点击等功能正常工作
+                    false
+                }
+                
+                // 递归处理子视图的子视图
+                applyTouchProtectionToAllChildren(child)
+            }
+        }
+    }
+
+    /**
+     * 设置拖拽区域的专用处理 - 让手柄和标题区域响应拖拽
+     */
+    private fun setupDragZoneHandling() {
+        // 拖拽手柄容器的点击处理 - 移除自动切换状态，只保留视觉反馈
+        // binding.dragHandleContainer.setOnClickListener { } // 移除点击切换功能
+        
+        // 添加拖拽区域的视觉反馈
+        binding.dragHandleContainer.setOnTouchListener { view, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    // 按下时的视觉反馈
+                    view.alpha = 0.8f
+                    false // 让BottomSheetBehavior处理拖拽
+                }
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    // 释放时恢复透明度
+                    view.animate().alpha(1.0f).setDuration(150).start()
+                    false
+                }
+                else -> false
+            }
+        }
+    }
+    
+    /**
+     * 检查触摸点是否在指定View的区域内
+     */
+    private fun isTouchOnView(view: View, rawX: Float, rawY: Float): Boolean {
+        val location = IntArray(2)
+        view.getLocationOnScreen(location)
+        val viewLeft = location[0]
+        val viewTop = location[1]
+        val viewRight = viewLeft + view.width
+        val viewBottom = viewTop + view.height
+        
+        return rawX >= viewLeft && rawX <= viewRight && rawY >= viewTop && rawY <= viewBottom
+    }
+
+    /**
+     * 切换BottomSheet状态的辅助方法
+     */
+    private fun toggleBottomSheetState() {
+        dialog?.let { dialog ->
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let { sheet ->
+                val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
+                
+                when (behavior.state) {
+                    com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED -> {
+                        // 从折叠 -> 半展开
+                        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HALF_EXPANDED
+                    }
+                    com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HALF_EXPANDED -> {
+                        // 从半展开 -> 全展开
+                        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    }
+                    else -> {
+                        // 从全展开 -> 折叠
+                        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * 配置ScrollView状态监听 - 处理滚动到顶部时的特殊行为
+     */
+    private fun setupScrollStateListener() {
+        // 注意：这个方法会在 setupScrollSyncWithNavigation() 中合并实现
+        // 避免重复设置 setOnScrollChangeListener
+    }
+
+    /**
+     * 重新应用滚动保护机制 - 修复导航点击后滚动保护失效的问题
+     */
+    private fun reapplyScrollProtection() {
+        // 重新执行完整的触摸保护设置
+        setupScrollViewTouchProtection()
+    }
+
+    /**
+     * 设置滚动与导航同步 - 合并滚动状态监听
+     */
+    private fun setupScrollSyncWithNavigation() {
+        binding.contentScrollView.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+            // 功能1: 处理导航高亮同步
+            if (!isUpdatingUI) {
+                updateNavigationHighlight(scrollY)
+            }
+            
+            // 功能2: 处理BottomSheet拖拽与滚动的协调
+            dialog?.let { dialog ->
+                val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                bottomSheet?.let { sheet ->
+                    val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
+                    
+                    if (scrollY == 0 && oldScrollY > 0) {
+                        // 滚动到顶部：允许BottomSheet响应拖拽（可以继续下拉收起）
+                        behavior.isDraggable = true
+                        // 注意：不要释放滚动事件保护，因为这会导致导航点击后滚动失效
+                        // 只在用户实际从拖拽区域开始拖拽时才释放保护
+                    } else if (scrollY > 0) {
+                        // 在内容中滚动：确保拖拽不干扰内容滚动
+                        // 保持behavior.isDraggable = true，但滚动事件被保护
+                        // 确保滚动保护始终有效
+                        binding.contentScrollView.parent?.requestDisallowInterceptTouchEvent(true)
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * 根据滚动位置更新导航高亮
+     */
+    private fun updateNavigationHighlight(scrollY: Int) {
+        val sections = listOf(
+            FilterCategory.CORE to binding.coreSection,
+            FilterCategory.LOCATION to binding.locationSection,
+            FilterCategory.STATUS_RATING to binding.statusRatingSection,
+            FilterCategory.VALUE_RANGE to binding.valueRangeSection,
+            FilterCategory.DATE to binding.dateSection
+        )
+        
+        // 获取ScrollView的高度用于计算可见区域
+        val scrollViewHeight = binding.contentScrollView.height
+        val visibleCenter = scrollY + scrollViewHeight / 2
+        
+        // 找到距离可见区域中心最近的区域
+        var currentSection = FilterCategory.CORE
+        var minDistance = Int.MAX_VALUE
+        
+        for ((category, view) in sections) {
+            val viewTop = view.top
+            val viewBottom = view.bottom
+            val viewCenter = (viewTop + viewBottom) / 2
+            
+            val distance = kotlin.math.abs(visibleCenter - viewCenter)
+            if (distance < minDistance) {
+                minDistance = distance
+                currentSection = category
+            }
+        }
+        
+        // 更新导航适配器的选中状态
+        val position = filterCategories.indexOf(currentSection)
+        if (position >= 0) {
+            navigationAdapter.setSelectedPosition(position)
+        }
+    }
+    
+    private fun setupNavigationRecyclerView() {
+        navigationAdapter = FilterNavigationAdapter(filterCategories) { category, position ->
+            scrollToSection(category)
+        }
+        
+        binding.navigationRecyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = navigationAdapter
+        }
+    }
+    
+    private fun scrollToSection(category: FilterCategory) {
+        val targetView = when (category) {
+            FilterCategory.CORE -> binding.coreSection
+            FilterCategory.LOCATION -> binding.locationSection
+            FilterCategory.STATUS_RATING -> binding.statusRatingSection
+            FilterCategory.VALUE_RANGE -> binding.valueRangeSection
+            FilterCategory.DATE -> binding.dateSection
+        }
+        
+        binding.contentScrollView.post {
+            binding.contentScrollView.smoothScrollTo(0, targetView.top)
+            
+            // 导航点击后重新确保滚动保护有效
+            binding.contentScrollView.postDelayed({
+                reapplyScrollProtection()
+            }, 100) // 延迟100ms确保滚动完成后重新应用保护
+        }
+    }
+    
+    private fun setupFilters() {
+        setupStatusFilters()
+        setupRatingFilters()
+        setupCategoryFilters()
+        setupLocationAreaFilters()
+        setupContainerFilters()
+        setupSeasonFilters()
+        setupTagsFilters()
+    }
+    
+    private fun setupStatusFilters() {
+        val statusChips = mapOf(
+            R.id.chipUnopened to false,
+            R.id.chipOpened to true
+        )
+        
+        binding.openStatusChipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            // 清除焦点，防止滚动到有焦点的控件
+            clearAllFocus()
+            
+            val selectedStatuses = checkedIds.mapNotNull { chipId ->
+                statusChips[chipId]
+            }.toSet()
+            
+            viewModel.updateOpenStatuses(selectedStatuses)
+        }
+        
+        // 设置展开/收起功能
+        setupOpenStatusExpandCollapse()
+    }
+    
+    private fun setupRatingFilters() {
+        val ratingChips = mapOf(
+            R.id.chipRating1 to 1f,
+            R.id.chipRating2 to 2f,
+            R.id.chipRating3 to 3f,
+            R.id.chipRating4 to 4f,
+            R.id.chipRating5 to 5f
+        )
+        
+        binding.ratingChipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            // 清除焦点，防止滚动到有焦点的控件
+            clearAllFocus()
+            
+            val selectedRatings = checkedIds.mapNotNull { chipId ->
+                ratingChips[chipId]
+            }.toSet()
+            
+            viewModel.updateRatings(selectedRatings)
+        }
+        
+        // 设置展开/收起功能
+        setupRatingExpandCollapse()
+    }
+    
+    private fun setupCategoryFilters() {
+        // 观察可用分类列表
+        viewModel.categories.observe(viewLifecycleOwner) { availableCategories ->
+            updateCategoriesChipGroup(availableCategories)
+        }
+    }
+    
+    private fun updateCategoriesChipGroup(availableCategories: List<String>) {
+        // 保存当前滚动位置
+        val currentScrollY = binding.contentScrollView.scrollY
+        
+        // 清除焦点，防止后续UI更新时滚动到有焦点的控件
+        clearAllFocus()
+        
+        binding.categoryChipGroup.removeAllViews()
+        val currentSelectedCategories = viewModel.filterState.value.categories
+        
+        availableCategories.forEach { category ->
+            val layoutInflater = LayoutInflater.from(requireContext())
+            val chip = layoutInflater.inflate(R.layout.item_suggestion_chip, binding.categoryChipGroup, false) as Chip
+            chip.apply {
+                text = category
+                isCheckable = true
+                isChecked = currentSelectedCategories.contains(category)
+                // 移除单个chip的监听器，改用ChipGroup级别的监听
+            }
+            binding.categoryChipGroup.addView(chip)
+        }
+        
+        // 设置ChipGroup级别的多选监听器（类似开封状态）
+        binding.categoryChipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            // 清除焦点，防止滚动到有焦点的控件
+            clearAllFocus()
+            
+            val selectedCategories = checkedIds.mapNotNull { chipId ->
+                val chip = group.findViewById<Chip>(chipId)
+                chip?.text?.toString()
+            }.toSet()
+            
+            // 更新ViewModel中的多选状态
+            viewModel.updateCategories(selectedCategories)
+        }
+        
+        // 检查是否需要显示展开按钮并设置展开/收起逻辑
+        setupCategoryExpandCollapse()
+        
+        // 延迟恢复滚动位置
+        binding.contentScrollView.post {
+            binding.contentScrollView.scrollTo(0, currentScrollY)
+        }
+    }
+    
+    private fun setupLocationAreaFilters() {
+        // 观察可用区域列表
+        viewModel.locationAreas.observe(viewLifecycleOwner) { availableAreas ->
+            updateLocationAreasChipGroup(availableAreas)
+        }
+    }
+    
+    private fun updateLocationAreasChipGroup(availableAreas: List<String>) {
+        // 保存当前滚动位置
+        val currentScrollY = binding.contentScrollView.scrollY
+        
+        // 清除焦点，防止后续UI更新时滚动到有焦点的控件
+        clearAllFocus()
+        
+        binding.locationAreaChipGroup.removeAllViews()
+        val currentSelectedAreas = viewModel.filterState.value.locationAreas
+        
+        availableAreas.forEach { area ->
+            val layoutInflater = LayoutInflater.from(requireContext())
+            val chip = layoutInflater.inflate(R.layout.item_suggestion_chip, binding.locationAreaChipGroup, false) as Chip
+            chip.apply {
+                text = area
+                isCheckable = true
+                isChecked = currentSelectedAreas.contains(area)
+                // 移除单个chip的监听器，改用ChipGroup级别的监听
+            }
+            binding.locationAreaChipGroup.addView(chip)
+        }
+        
+        // 设置ChipGroup级别的多选监听器（类似开封状态）
+        binding.locationAreaChipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            // 清除焦点，防止滚动到有焦点的控件
+            clearAllFocus()
+            
+            val selectedAreas = checkedIds.mapNotNull { chipId ->
+                val chip = group.findViewById<Chip>(chipId)
+                chip?.text?.toString()
+            }.toSet()
+            
+            // 更新ViewModel中的多选状态
+            viewModel.updateLocationAreas(selectedAreas)
+        }
+        
+        // 检查是否需要显示展开按钮并设置展开/收起逻辑
+        setupLocationAreaExpandCollapse()
+        
+        // 延迟恢复滚动位置
+        binding.contentScrollView.post {
+            binding.contentScrollView.scrollTo(0, currentScrollY)
+        }
+    }
+    
+    /**
+     * 重新设置分类的多选监听器
+     */
+    private fun setupCategoryMultiSelectListener() {
+        binding.categoryChipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            // 清除焦点，防止滚动到有焦点的控件
+            clearAllFocus()
+            
+            val selectedCategories = checkedIds.mapNotNull { chipId ->
+                val chip = group.findViewById<Chip>(chipId)
+                chip?.text?.toString()
+            }.toSet()
+            
+            // 更新ViewModel中的多选状态
+            viewModel.updateCategories(selectedCategories)
+        }
+    }
+    
+    /**
+     * 重新设置位置区域的多选监听器
+     */
+    private fun setupLocationAreaMultiSelectListener() {
+        binding.locationAreaChipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            // 清除焦点，防止滚动到有焦点的控件
+            clearAllFocus()
+            
+            val selectedAreas = checkedIds.mapNotNull { chipId ->
+                val chip = group.findViewById<Chip>(chipId)
+                chip?.text?.toString()
+            }.toSet()
+            
+            // 更新ViewModel中的多选状态
+            viewModel.updateLocationAreas(selectedAreas)
+        }
+    }
+    
+    private fun setupContainerFilters() {
+        // 观察可用容器列表
+        viewModel.containers.observe(viewLifecycleOwner) { availableContainers ->
+            updateContainersChipGroup(availableContainers)
+        }
+    }
+    
+    private fun updateContainersChipGroup(availableContainers: List<String>) {
+        // 保存当前滚动位置
+        val currentScrollY = binding.contentScrollView.scrollY
+        
+        // 清除焦点，防止后续UI更新时滚动到有焦点的控件
+        clearAllFocus()
+        
+        binding.containerChipGroup.removeAllViews()
+        val currentSelectedContainers = setOf(viewModel.filterState.value.container).filter { it.isNotEmpty() }.toSet()
+        
+        availableContainers.forEach { container ->
+            val layoutInflater = LayoutInflater.from(requireContext())
+            val chip = layoutInflater.inflate(R.layout.item_suggestion_chip, binding.containerChipGroup, false) as Chip
+            chip.apply {
+                text = container
+                isCheckable = true
+                isChecked = currentSelectedContainers.contains(container)
+                setOnCheckedChangeListener { _, isChecked ->
+                    // 保存滚动位置，防止容器状态改变时跳转
+                    val scrollY = binding.contentScrollView.scrollY
+                    
+                    // 清除焦点，防止UI更新时跳转到有焦点的控件
+                    clearAllFocus()
+                    
+                    if (isChecked) {
+                        viewModel.setContainer(container)
+                    } else {
+                        viewModel.setContainer("")
+                    }
+                    
+                    // 延迟恢复滚动位置
+                    binding.contentScrollView.post {
+                        binding.contentScrollView.scrollTo(0, scrollY)
+                    }
+                }
+            }
+            binding.containerChipGroup.addView(chip)
+        }
+        
+        // 检查是否需要显示展开按钮并设置展开/收起逻辑
+        setupContainerExpandCollapse()
+        
+        // 延迟恢复滚动位置
+        binding.contentScrollView.post {
+            binding.contentScrollView.scrollTo(0, currentScrollY)
+        }
+    }
+    
+    private fun setupSeasonFilters() {
+        // 观察可用季节列表
+        viewModel.availableSeasons.observe(viewLifecycleOwner) { availableSeasons ->
+            updateSeasonsChipGroup(availableSeasons)
+        }
+    }
+    
+    private fun updateSeasonsChipGroup(availableSeasons: List<String>) {
+        // 保存当前滚动位置
+        val currentScrollY = binding.contentScrollView.scrollY
+        
+        // 清除焦点，防止后续UI更新时滚动到有焦点的控件
+        clearAllFocus()
+        
+        binding.seasonChipGroup.removeAllViews()
+        val currentSelectedSeasons = viewModel.filterState.value.seasons
+        
+        availableSeasons.forEach { season ->
+            val layoutInflater = LayoutInflater.from(requireContext())
+            val chip = layoutInflater.inflate(R.layout.item_suggestion_chip, binding.seasonChipGroup, false) as Chip
+            chip.apply {
+                text = season
+                isCheckable = true
+                isChecked = currentSelectedSeasons.contains(season)
+                setOnCheckedChangeListener { _, isChecked ->
+                    // 保存滚动位置，防止季节状态改变时跳转
+                    val scrollY = binding.contentScrollView.scrollY
+                    
+                    // 清除焦点，防止UI更新时跳转到有焦点的控件
+                    clearAllFocus()
+                    
+                    val currentSeasons = viewModel.filterState.value.seasons.toMutableSet()
+                    if (isChecked) {
+                        currentSeasons.add(season)
+                    } else {
+                        currentSeasons.remove(season)
+                    }
+                    viewModel.updateSeasons(currentSeasons)
+                    
+                    // 延迟恢复滚动位置
+                    binding.contentScrollView.post {
+                        binding.contentScrollView.scrollTo(0, scrollY)
+                    }
+                }
+            }
+            binding.seasonChipGroup.addView(chip)
+        }
+        
+        // 检查是否需要显示展开按钮并设置展开/收起逻辑
+        setupSeasonExpandCollapse()
+        
+        // 延迟恢复滚动位置
+        binding.contentScrollView.post {
+            binding.contentScrollView.scrollTo(0, currentScrollY)
+        }
+    }
+    
+    private fun setupTagsFilters() {
+        // 观察可用标签列表
+        viewModel.availableTags.observe(viewLifecycleOwner) { availableTags ->
+            updateTagsChipGroup(availableTags)
+        }
+    }
+    
+    private fun updateTagsChipGroup(availableTags: List<String>) {
+        // 保存当前滚动位置
+        val currentScrollY = binding.contentScrollView.scrollY
+        
+        // 清除焦点，防止后续UI更新时滚动到有焦点的控件
+        clearAllFocus()
+        
+        binding.tagsChipGroup.removeAllViews()
+        val currentSelectedTags = viewModel.filterState.value.tags
+        
+        availableTags.forEach { tag ->
+            val layoutInflater = LayoutInflater.from(requireContext())
+            val chip = layoutInflater.inflate(R.layout.item_suggestion_chip, binding.tagsChipGroup, false) as Chip
+            chip.apply {
+                text = tag
+                isCheckable = true
+                isChecked = currentSelectedTags.contains(tag)
+                setOnCheckedChangeListener { _, isChecked ->
+                    // 保存滚动位置，防止标签状态改变时跳转
+                    val scrollY = binding.contentScrollView.scrollY
+                    
+                    // 清除焦点，防止UI更新时跳转到有焦点的控件
+                    clearAllFocus()
+                    
+                    val currentTags = viewModel.filterState.value.tags.toMutableSet()
+                    if (isChecked) {
+                        currentTags.add(tag)
+                    } else {
+                        currentTags.remove(tag)
+                    }
+                    viewModel.updateTags(currentTags)
+                    
+                    // 延迟恢复滚动位置
+                    binding.contentScrollView.post {
+                        binding.contentScrollView.scrollTo(0, scrollY)
+                    }
+                }
+            }
+            binding.tagsChipGroup.addView(chip)
+        }
+        
+        // 检查是否需要显示展开按钮并设置展开/收起逻辑
+        setupTagsExpandCollapse()
+        
+        // 恢复滚动位置
+        binding.contentScrollView.post {
+            binding.contentScrollView.scrollTo(0, currentScrollY)
+        }
+    }
+    
+
+    
+    private fun setupDateInputs() {
+        // 过期日期范围
+        binding.expirationStartDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.expirationStartDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updateExpirationDateRange(date, viewModel.filterState.value.expirationEndDate)
+            }
+        }
+        
+        binding.expirationEndDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.expirationEndDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updateExpirationDateRange(viewModel.filterState.value.expirationStartDate, date)
+            }
+        }
+        
+        // 添加日期范围
+        binding.creationStartDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.creationStartDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updateCreationDateRange(date, viewModel.filterState.value.creationEndDate)
+            }
+        }
+        
+        binding.creationEndDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.creationEndDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updateCreationDateRange(viewModel.filterState.value.creationStartDate, date)
+            }
+        }
+        
+        // 购买日期范围
+        binding.purchaseStartDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.purchaseStartDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updatePurchaseDateRange(date, viewModel.filterState.value.purchaseEndDate)
+            }
+        }
+        
+        binding.purchaseEndDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.purchaseEndDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updatePurchaseDateRange(viewModel.filterState.value.purchaseStartDate, date)
+            }
+        }
+        
+        // 生产日期范围
+        binding.productionStartDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.productionStartDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updateProductionDateRange(date, viewModel.filterState.value.productionEndDate)
+            }
+        }
+        
+        binding.productionEndDateInput.setOnClickListener {
+            showDatePicker { date ->
+                binding.productionEndDateInput.setText(dateFormat.format(Date(date)))
+                viewModel.updateProductionDateRange(viewModel.filterState.value.productionStartDate, date)
+            }
+        }
+    }
+    
+    /**
+     * 显示Material 3日期选择器
+     */
+    private fun showDatePicker(onDateSelected: (Long) -> Unit) {
+        showMaterial3DatePicker(
+            title = "选择日期"
+        ) { selectedDate ->
+            onDateSelected(selectedDate.time)
+        }
+    }
+    
+    private fun setupButtons() {
+        binding.resetButton.setOnClickListener {
+            resetAllFilters()
+        }
+        
+        binding.applyButton.setOnClickListener {
+            dismiss()
+        }
+    }
+    
+    private fun resetAllFilters() {
+        // 重置所有筛选条件
+        viewModel.resetFilters()
+        
+        // 重置UI
+        resetUIComponents()
+    }
+    
+    private fun resetUIComponents() {
+        // 重置下拉框
+        // binding.categoryDropdown.setText("", false) // 已改为ChipGroup
+        // binding.subCategoryDropdown.setText("", false) // 已注释
+        binding.brandDropdown.setText("", false)
+        // binding.locationAreaDropdown.setText("", false) // 已改为ChipGroup
+        // binding.containerDropdown.setText("", false) // 已改为ChipGroup
+        // binding.sublocationDropdown.setText("", false) // 已注释
+        
+        // 重置输入框
+        binding.minQuantityInput.setText("")
+        binding.maxQuantityInput.setText("")
+        binding.minPriceInput.setText("")
+        binding.maxPriceInput.setText("")
+        
+        // 重置日期输入框
+        binding.expirationStartDateInput.setText("")
+        binding.expirationEndDateInput.setText("")
+        binding.creationStartDateInput.setText("")
+        binding.creationEndDateInput.setText("")
+        binding.purchaseStartDateInput.setText("")
+        binding.purchaseEndDateInput.setText("")
+        binding.productionStartDateInput.setText("")
+        binding.productionEndDateInput.setText("")
+        
+        // 重置芯片组
+        binding.openStatusChipGroup.clearCheck()
+        binding.ratingChipGroup.clearCheck()
+        binding.seasonChipGroup.clearCheck()
+        binding.tagsChipGroup.clearCheck()
+        binding.categoryChipGroup.clearCheck()
+        binding.locationAreaChipGroup.clearCheck()
+    }
+    
+    private fun observeFilterState() {
+        lifecycleScope.launch {
+            viewModel.filterState.collectLatest { filterState ->
+                // 保存当前滚动位置
+                savedScrollPosition = binding.contentScrollView.scrollY
+                
+                // 标记正在更新UI
+                isUpdatingUI = true
+                
+                updateUIFromFilterState(filterState)
+                
+                // 恢复滚动位置
+                binding.contentScrollView.post {
+                    binding.contentScrollView.scrollTo(0, savedScrollPosition)
+                    isUpdatingUI = false
+                }
+            }
+        }
+    }
+    
+    /**
+     * 清除所有输入框的焦点
+     */
+    private fun clearAllFocus() {
+        // 清除下拉框焦点
+        // binding.categoryDropdown.clearFocus() // 已改为ChipGroup
+        // binding.subCategoryDropdown.clearFocus() // 已注释
+        binding.brandDropdown.clearFocus()
+        // binding.locationAreaDropdown.clearFocus() // 已改为ChipGroup
+        // binding.containerDropdown.clearFocus() // 已改为ChipGroup
+        // binding.sublocationDropdown.clearFocus() // 已注释
+        
+        // 清除数值输入框焦点
+        binding.minQuantityInput.clearFocus()
+        binding.maxQuantityInput.clearFocus()
+        binding.minPriceInput.clearFocus()
+        binding.maxPriceInput.clearFocus()
+        
+        // 清除日期输入框焦点
+        binding.expirationStartDateInput.clearFocus()
+        binding.expirationEndDateInput.clearFocus()
+        binding.creationStartDateInput.clearFocus()
+        binding.creationEndDateInput.clearFocus()
+        binding.purchaseStartDateInput.clearFocus()
+        binding.purchaseEndDateInput.clearFocus()
+        binding.productionStartDateInput.clearFocus()
+        binding.productionEndDateInput.clearFocus()
+    }
+    
+    private fun updateUIFromFilterState(filterState: FilterState) {
+        // 暂时禁用监听器，防止无限循环
+        binding.openStatusChipGroup.setOnCheckedStateChangeListener(null)
+        binding.ratingChipGroup.setOnCheckedStateChangeListener(null)
+        binding.seasonChipGroup.setOnCheckedStateChangeListener(null)
+        binding.categoryChipGroup.setOnCheckedStateChangeListener(null)
+        binding.locationAreaChipGroup.setOnCheckedStateChangeListener(null)
+        
+        // 更新下拉框
+        // binding.categoryDropdown.setText(filterState.category, false) // 已改为ChipGroup
+        // binding.subCategoryDropdown.setText(filterState.subCategory, false) // 已注释
+        
+        // 品牌输入框：防止光标位置被重置的循环更新问题
+        val currentBrandText = binding.brandDropdown.text.toString()
+        if (currentBrandText != filterState.brand) {
+            // 保存当前光标位置
+            val currentSelection = binding.brandDropdown.selectionStart
+            binding.brandDropdown.setText(filterState.brand, false)
+            // 恢复光标位置到合理位置（文本末尾或原位置，取较小值）
+            val newSelection = minOf(currentSelection, filterState.brand.length)
+            binding.brandDropdown.setSelection(newSelection)
+        }
+        // binding.locationAreaDropdown.setText(filterState.locationArea, false) // 已改为ChipGroup  
+        // binding.containerDropdown.setText(filterState.container, false) // 已改为ChipGroup
+        // binding.sublocationDropdown.setText(filterState.sublocation, false) // 已注释
+        
+        // 更新数值输入框
+        binding.minQuantityInput.setText(filterState.minQuantity?.toString() ?: "")
+        binding.maxQuantityInput.setText(filterState.maxQuantity?.toString() ?: "")
+        binding.minPriceInput.setText(filterState.minPrice?.toString() ?: "")
+        binding.maxPriceInput.setText(filterState.maxPrice?.toString() ?: "")
+        
+        // 更新日期输入框
+        binding.expirationStartDateInput.setText(
+            filterState.expirationStartDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        binding.expirationEndDateInput.setText(
+            filterState.expirationEndDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        binding.creationStartDateInput.setText(
+            filterState.creationStartDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        binding.creationEndDateInput.setText(
+            filterState.creationEndDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        binding.purchaseStartDateInput.setText(
+            filterState.purchaseStartDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        binding.purchaseEndDateInput.setText(
+            filterState.purchaseEndDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        binding.productionStartDateInput.setText(
+            filterState.productionStartDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        binding.productionEndDateInput.setText(
+            filterState.productionEndDate?.let { dateFormat.format(Date(it)) } ?: ""
+        )
+        
+        // 更新开封状态（多选）- 直接设置每个chip状态，不使用clearCheck()
+        binding.chipUnopened.isChecked = filterState.openStatuses.contains(false)
+        binding.chipOpened.isChecked = filterState.openStatuses.contains(true)
+        
+        // 更新评分（多选）- 直接设置每个chip状态，不使用clearCheck()
+        binding.chipRating1.isChecked = filterState.ratings.contains(1f)
+        binding.chipRating2.isChecked = filterState.ratings.contains(2f)
+        binding.chipRating3.isChecked = filterState.ratings.contains(3f)
+        binding.chipRating4.isChecked = filterState.ratings.contains(4f)
+        binding.chipRating5.isChecked = filterState.ratings.contains(5f)
+        
+        // 更新分类选择状态（动态创建的分类chips）
+        updateCategoriesSelectionState(filterState.categories)
+        
+        // 更新区域选择状态（动态创建的区域chips）
+        updateLocationAreasSelectionState(filterState.locationAreas)
+        
+        // 更新容器选择状态（动态创建的容器chips）
+        updateContainersSelectionState(filterState.container)
+        
+        // 更新季节选择状态（动态创建的季节chips）
+        updateSeasonsSelectionState(filterState.seasons)
+        
+        // 更新标签选择状态
+        updateTagsSelectionState(filterState.tags)
+        
+        // 重新启用监听器
+        setupStatusFilters()
+        setupRatingFilters()
+        // 季节字段的监听器在动态创建时已设置，无需重新设置
+        // 分类和区域的监听器需要重新设置
+        setupCategoryMultiSelectListener()
+        setupLocationAreaMultiSelectListener()
+    }
+    
+    private fun updateCategoriesSelectionState(selectedCategories: Set<String>) {
+        for (i in 0 until binding.categoryChipGroup.childCount) {
+            val chip = binding.categoryChipGroup.getChildAt(i) as? Chip
+            chip?.let {
+                it.isChecked = selectedCategories.contains(it.text.toString())
+            }
+        }
+    }
+    
+    private fun updateLocationAreasSelectionState(selectedAreas: Set<String>) {
+        for (i in 0 until binding.locationAreaChipGroup.childCount) {
+            val chip = binding.locationAreaChipGroup.getChildAt(i) as? Chip
+            chip?.let {
+                it.isChecked = selectedAreas.contains(it.text.toString())
+            }
+        }
+    }
+    
+    private fun updateContainersSelectionState(selectedContainer: String) {
+        for (i in 0 until binding.containerChipGroup.childCount) {
+            val chip = binding.containerChipGroup.getChildAt(i) as? Chip
+            chip?.let {
+                it.isChecked = it.text.toString() == selectedContainer
+            }
+        }
+    }
+    
+    private fun updateTagsSelectionState(selectedTags: Set<String>) {
+        for (i in 0 until binding.tagsChipGroup.childCount) {
+            val chip = binding.tagsChipGroup.getChildAt(i) as? Chip
+            chip?.let {
+                it.isChecked = selectedTags.contains(it.text.toString())
+            }
+        }
+    }
+    
+    private fun updateSeasonsSelectionState(selectedSeasons: Set<String>) {
+        for (i in 0 until binding.seasonChipGroup.childCount) {
+            val chip = binding.seasonChipGroup.getChildAt(i) as? Chip
+            chip?.let {
+                it.isChecked = selectedSeasons.contains(it.text.toString())
+            }
+        }
+    }
+    
+    private fun setupDropdowns() {
+        /* 分类相关业务逻辑已改为ChipGroup
+        // 观察并设置分类列表
+        viewModel.categories.observe(viewLifecycleOwner) { categories ->
+            val adapter = ArrayAdapter(requireContext(), R.layout.item_dropdown, categories)
+            (binding.categoryDropdown as? AutoCompleteTextView)?.setAdapter(adapter)
+        }
+        
+        // 设置分类选择监听
+        (binding.categoryDropdown as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+            val selectedCategory = (binding.categoryDropdown as? AutoCompleteTextView)?.adapter?.getItem(position) as String
+            viewModel.setCategory(selectedCategory)
+        }
+        */
+        
+        /* 子分类相关业务逻辑已注释
+        // 观察并设置子分类列表
+        viewModel.subCategories.observe(viewLifecycleOwner) { subCategories ->
+            val adapter = ArrayAdapter(requireContext(), R.layout.item_dropdown, subCategories)
+            (binding.subCategoryDropdown as? AutoCompleteTextView)?.setAdapter(adapter)
+        }
+        
+        // 设置子分类选择监听
+        (binding.subCategoryDropdown as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+            val selectedSubCategory = (binding.subCategoryDropdown as? AutoCompleteTextView)?.adapter?.getItem(position) as String
+            viewModel.setSubCategory(selectedSubCategory)
+        }
+        */
+        
+        // 观察并设置品牌列表
+        viewModel.brands.observe(viewLifecycleOwner) { brands ->
+            val adapter = ArrayAdapter(requireContext(), R.layout.item_dropdown, brands)
+            (binding.brandDropdown as? AutoCompleteTextView)?.apply {
+                setAdapter(adapter)
+                // 设置阈值为0，这样不需要输入任何字符就能显示下拉菜单
+                threshold = 0
+            }
+        }
+        
+        // 设置品牌选择监听
+        (binding.brandDropdown as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+            val selectedBrand = (binding.brandDropdown as? AutoCompleteTextView)?.adapter?.getItem(position) as String
+            viewModel.setBrand(selectedBrand)
+        }
+        
+        // 配置品牌输入框的交互行为
+        (binding.brandDropdown as? AutoCompleteTextView)?.apply {
+            // 强制设置文本对齐和光标位置 - 多重保险
+            gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+            textAlignment = android.view.View.TEXT_ALIGNMENT_VIEW_START
+            textDirection = android.view.View.TEXT_DIRECTION_LTR
+            
+            // 确保光标能正常移动 - 在布局完成后再次设置
+            post {
+                gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+                // 将光标移动到文本末尾
+                if (text.isNotEmpty()) {
+                    setSelection(text.length)
+                }
+            }
+            
+            // 点击时显示下拉菜单
+            setOnClickListener {
+                // 当用户点击时，如果没有输入内容，显示所有品牌
+                if (text.isEmpty()) {
+                    showDropDown()
+                }
+                requestFocus()
+            }
+            
+            // 获得焦点时的处理
+            setOnFocusChangeListener { view, hasFocus ->
+                if (hasFocus && text.isEmpty()) {
+                    // 获得焦点且无内容时，显示所有选项
+                    (view as? AutoCompleteTextView)?.showDropDown()
+                }
+            }
+            
+            // 确保触摸模式下可以获得焦点
+            isFocusableInTouchMode = true
+        }
+        
+        // 设置品牌输入监听（支持直接输入搜索）
+        binding.brandDropdown.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val brandText = s?.toString() ?: ""
+                viewModel.setBrand(brandText)
+            }
+            
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        
+        // 设置位置相关下拉框
+        setupLocationDropdowns()
+        
+        // 设置数值输入框监听
+        setupValueInputListeners()
+    }
+    
+    private fun setupLocationDropdowns() {
+        /* 位置区域相关业务逻辑已改为ChipGroup
+        // 位置区域
+        viewModel.locationAreas.observe(viewLifecycleOwner) { areas ->
+            val adapter = ArrayAdapter(requireContext(), R.layout.item_dropdown, areas)
+            (binding.locationAreaDropdown as? AutoCompleteTextView)?.setAdapter(adapter)
+        }
+        
+        (binding.locationAreaDropdown as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+            val selectedArea = (binding.locationAreaDropdown as? AutoCompleteTextView)?.adapter?.getItem(position) as String
+            viewModel.setLocationArea(selectedArea)
+        }
+        */
+        
+        /* 容器相关业务逻辑已改为ChipGroup
+        // 容器
+        viewModel.containers.observe(viewLifecycleOwner) { containers ->
+            val adapter = ArrayAdapter(requireContext(), R.layout.item_dropdown, containers)
+            (binding.containerDropdown as? AutoCompleteTextView)?.setAdapter(adapter)
+        }
+        
+        (binding.containerDropdown as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+            val selectedContainer = (binding.containerDropdown as? AutoCompleteTextView)?.adapter?.getItem(position) as String
+            viewModel.setContainer(selectedContainer)
+        }
+        */
+        
+        /* 子位置相关业务逻辑已注释
+        // 子位置
+        viewModel.sublocations.observe(viewLifecycleOwner) { sublocations ->
+            val adapter = ArrayAdapter(requireContext(), R.layout.item_dropdown, sublocations)
+            (binding.sublocationDropdown as? AutoCompleteTextView)?.setAdapter(adapter)
+        }
+        
+        (binding.sublocationDropdown as? AutoCompleteTextView)?.setOnItemClickListener { _, _, position, _ ->
+            val selectedSublocation = (binding.sublocationDropdown as? AutoCompleteTextView)?.adapter?.getItem(position) as String
+            viewModel.setSublocation(selectedSublocation)
+        }
+        */
+    }
+    
+    private fun setupValueInputListeners() {
+        // 数量输入框失去焦点时更新
+        binding.minQuantityInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val minQuantity = binding.minQuantityInput.text.toString().toIntOrNull()
+                viewModel.updateQuantityRange(minQuantity, viewModel.filterState.value.maxQuantity)
+            }
+        }
+        
+        binding.maxQuantityInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val maxQuantity = binding.maxQuantityInput.text.toString().toIntOrNull()
+                viewModel.updateQuantityRange(viewModel.filterState.value.minQuantity, maxQuantity)
+            }
+        }
+        
+        // 价格输入框失去焦点时更新
+        binding.minPriceInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val minPrice = binding.minPriceInput.text.toString().toDoubleOrNull()
+                viewModel.updatePriceRange(minPrice, viewModel.filterState.value.maxPrice)
+            }
+        }
+        
+        binding.maxPriceInput.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val maxPrice = binding.maxPriceInput.text.toString().toDoubleOrNull()
+                viewModel.updatePriceRange(viewModel.filterState.value.minPrice, maxPrice)
+            }
+        }
+    }
+    
+    /**
+     * 设置分类ChipGroup的展开/收起功能
+     */
+    private fun setupCategoryExpandCollapse() {
+        val chipGroup = binding.categoryChipGroup
+        val expandButton = binding.categoryExpandButton
+        
+        // 计算ChipGroup高度，判断是否超过3行
+        chipGroup.post {
+            val chipHeight = if (chipGroup.childCount > 0) {
+                val firstChip = chipGroup.getChildAt(0)
+                firstChip.height + chipGroup.chipSpacingVertical
+            } else {
+                0
+            }
+            
+            val maxLines = 3
+            val maxHeight = chipHeight * maxLines
+            
+            if (chipGroup.height > maxHeight) {
+                // 需要显示展开按钮
+                expandButton.visibility = View.VISIBLE
+                chipGroup.layoutParams.height = maxHeight
+                chipGroup.requestLayout()
+                
+                var isExpanded = false
+                expandButton.setOnClickListener {
+                    if (isExpanded) {
+                        // 收起
+                        chipGroup.layoutParams.height = maxHeight
+                        expandButton.text = "展示全部"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_more)
+                    } else {
+                        // 展开
+                        chipGroup.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandButton.text = "收起"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_less)
+                    }
+                    chipGroup.requestLayout()
+                    isExpanded = !isExpanded
+                }
+            } else {
+                expandButton.visibility = View.GONE
+            }
+        }
+    }
+    
+    /**
+     * 设置区域ChipGroup的展开/收起功能
+     */
+    private fun setupLocationAreaExpandCollapse() {
+        val chipGroup = binding.locationAreaChipGroup
+        val expandButton = binding.locationAreaExpandButton
+        
+        // 计算ChipGroup高度，判断是否超过3行
+        chipGroup.post {
+            val chipHeight = if (chipGroup.childCount > 0) {
+                val firstChip = chipGroup.getChildAt(0)
+                firstChip.height + chipGroup.chipSpacingVertical
+            } else {
+                0
+            }
+            
+            val maxLines = 3
+            val maxHeight = chipHeight * maxLines
+            
+            if (chipGroup.height > maxHeight) {
+                // 需要显示展开按钮
+                expandButton.visibility = View.VISIBLE
+                chipGroup.layoutParams.height = maxHeight
+                chipGroup.requestLayout()
+                
+                var isExpanded = false
+                expandButton.setOnClickListener {
+                    if (isExpanded) {
+                        // 收起
+                        chipGroup.layoutParams.height = maxHeight
+                        expandButton.text = "展示全部"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_more)
+                    } else {
+                        // 展开
+                        chipGroup.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandButton.text = "收起"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_less)
+                    }
+                    chipGroup.requestLayout()
+                    isExpanded = !isExpanded
+                }
+            } else {
+                expandButton.visibility = View.GONE
+            }
+        }
+    }
+    
+    /**
+     * 设置容器ChipGroup的展开/收起功能
+     */
+    private fun setupContainerExpandCollapse() {
+        val chipGroup = binding.containerChipGroup
+        val expandButton = binding.containerExpandButton
+        
+        // 计算ChipGroup高度，判断是否超过3行
+        chipGroup.post {
+            val chipHeight = if (chipGroup.childCount > 0) {
+                val firstChip = chipGroup.getChildAt(0)
+                firstChip.height + chipGroup.chipSpacingVertical
+            } else {
+                0
+            }
+            
+            val maxLines = 3
+            val maxHeight = chipHeight * maxLines
+            
+            if (chipGroup.height > maxHeight) {
+                // 需要显示展开按钮
+                expandButton.visibility = View.VISIBLE
+                chipGroup.layoutParams.height = maxHeight
+                chipGroup.requestLayout()
+                
+                var isExpanded = false
+                expandButton.setOnClickListener {
+                    if (isExpanded) {
+                        // 收起
+                        chipGroup.layoutParams.height = maxHeight
+                        expandButton.text = "展示全部"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_more)
+                    } else {
+                        // 展开
+                        chipGroup.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandButton.text = "收起"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_less)
+                    }
+                    chipGroup.requestLayout()
+                    isExpanded = !isExpanded
+                }
+            } else {
+                expandButton.visibility = View.GONE
+            }
+        }
+    }
+    
+    /**
+     * 设置季节ChipGroup的展开/收起功能
+     */
+    private fun setupSeasonExpandCollapse() {
+        val chipGroup = binding.seasonChipGroup
+        val expandButton = binding.seasonExpandButton
+        
+        // 计算ChipGroup高度，判断是否超过3行
+        chipGroup.post {
+            val chipHeight = if (chipGroup.childCount > 0) {
+                val firstChip = chipGroup.getChildAt(0)
+                firstChip.height + chipGroup.chipSpacingVertical
+            } else {
+                0
+            }
+            
+            val maxLines = 3
+            val maxHeight = chipHeight * maxLines
+            
+            if (chipGroup.height > maxHeight) {
+                // 需要显示展开按钮
+                expandButton.visibility = View.VISIBLE
+                chipGroup.layoutParams.height = maxHeight
+                chipGroup.requestLayout()
+                
+                var isExpanded = false
+                expandButton.setOnClickListener {
+                    if (isExpanded) {
+                        // 收起
+                        chipGroup.layoutParams.height = maxHeight
+                        expandButton.text = "展示全部"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_more)
+                    } else {
+                        // 展开
+                        chipGroup.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandButton.text = "收起"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_less)
+                    }
+                    chipGroup.requestLayout()
+                    isExpanded = !isExpanded
+                }
+            } else {
+                expandButton.visibility = View.GONE
+            }
+        }
+    }
+    
+    /**
+     * 设置标签ChipGroup的展开/收起功能
+     */
+    private fun setupTagsExpandCollapse() {
+        val chipGroup = binding.tagsChipGroup
+        val expandButton = binding.tagsExpandButton
+        
+        // 计算ChipGroup高度，判断是否超过3行
+        chipGroup.post {
+            val chipHeight = if (chipGroup.childCount > 0) {
+                val firstChip = chipGroup.getChildAt(0)
+                firstChip.height + chipGroup.chipSpacingVertical
+            } else {
+                0
+            }
+            
+            val maxLines = 3
+            val maxHeight = chipHeight * maxLines
+            
+            if (chipGroup.height > maxHeight) {
+                // 需要显示展开按钮
+                expandButton.visibility = View.VISIBLE
+                chipGroup.layoutParams.height = maxHeight
+                chipGroup.requestLayout()
+                
+                var isExpanded = false
+                expandButton.setOnClickListener {
+                    if (isExpanded) {
+                        // 收起
+                        chipGroup.layoutParams.height = maxHeight
+                        expandButton.text = "展示全部"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_more)
+                    } else {
+                        // 展开
+                        chipGroup.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandButton.text = "收起"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_less)
+                    }
+                    chipGroup.requestLayout()
+                    isExpanded = !isExpanded
+                }
+            } else {
+                expandButton.visibility = View.GONE
+            }
+        }
+    }
+    
+    /**
+     * 设置开封状态和评分的展开/收起功能（虽然它们通常不会超过3行，但为了保持一致性）
+     */
+    private fun setupOpenStatusExpandCollapse() {
+        val chipGroup = binding.openStatusChipGroup
+        val expandButton = binding.openStatusExpandButton
+        
+        chipGroup.post {
+            val chipHeight = if (chipGroup.childCount > 0) {
+                val firstChip = chipGroup.getChildAt(0)
+                firstChip.height + chipGroup.chipSpacingVertical
+            } else {
+                0
+            }
+            
+            val maxLines = 3
+            val maxHeight = chipHeight * maxLines
+            
+            if (chipGroup.height > maxHeight) {
+                expandButton.visibility = View.VISIBLE
+                chipGroup.layoutParams.height = maxHeight
+                chipGroup.requestLayout()
+                
+                var isExpanded = false
+                expandButton.setOnClickListener {
+                    if (isExpanded) {
+                        chipGroup.layoutParams.height = maxHeight
+                        expandButton.text = "展示全部"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_more)
+                    } else {
+                        chipGroup.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandButton.text = "收起"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_less)
+                    }
+                    chipGroup.requestLayout()
+                    isExpanded = !isExpanded
+                }
+            } else {
+                expandButton.visibility = View.GONE
+            }
+        }
+    }
+    
+    /**
+     * 设置评分的展开/收起功能
+     */
+    private fun setupRatingExpandCollapse() {
+        val chipGroup = binding.ratingChipGroup
+        val expandButton = binding.ratingExpandButton
+        
+        chipGroup.post {
+            val chipHeight = if (chipGroup.childCount > 0) {
+                val firstChip = chipGroup.getChildAt(0)
+                firstChip.height + chipGroup.chipSpacingVertical
+            } else {
+                0
+            }
+            
+            val maxLines = 3
+            val maxHeight = chipHeight * maxLines
+            
+            if (chipGroup.height > maxHeight) {
+                expandButton.visibility = View.VISIBLE
+                chipGroup.layoutParams.height = maxHeight
+                chipGroup.requestLayout()
+                
+                var isExpanded = false
+                expandButton.setOnClickListener {
+                    if (isExpanded) {
+                        chipGroup.layoutParams.height = maxHeight
+                        expandButton.text = "展示全部"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_more)
+                    } else {
+                        chipGroup.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandButton.text = "收起"
+                        expandButton.chipIcon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_expand_less)
+                    }
+                    chipGroup.requestLayout()
+                    isExpanded = !isExpanded
+                }
+            } else {
+                expandButton.visibility = View.GONE
+            }
+        }
+    }
+    
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+    }
+} 

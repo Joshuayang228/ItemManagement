@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Card Ripple Effect
+现代卡片触摸反馈效果，符合Material You规范
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?attr/colorPrimary">
+    
+    <!-- 卡片背景状态选择器 -->
+    <item android:id="@android:id/background">
+        <selector>
+            <!-- 按下状态 -->
+            <item android:state_pressed="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/colorSurfaceContainerHigh" />
+                    <corners android:radius="16dp" />
+                </shape>
+            </item>
+            
+            <!-- 聚焦状态 -->
+            <item android:state_focused="true">
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/colorSurfaceContainer" />
+                    <corners android:radius="16dp" />
+                    <stroke 
+                        android:width="2dp" 
+                        android:color="?attr/colorPrimary" />
+                </shape>
+            </item>
+            
+            <!-- 默认状态 -->
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="?attr/colorSurface" />
+                    <corners android:radius="16dp" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>
+

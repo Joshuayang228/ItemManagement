@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 自定义RangeSlider样式 -->
+    <style name="Widget.App.Slider.Range" parent="Widget.Material3.Slider">
+        <!-- 轨道颜色 -->
+        <item name="trackColorActive">?attr/colorPrimary</item>
+        <item name="trackColorInactive">?attr/colorOutline</item>
+        <item name="trackHeight">4dp</item>
+        
+        <!-- Tick样式 -->
+        <item name="tickVisible">true</item>
+        <item name="tickColorActive">?attr/colorPrimary</item>
+        <item name="tickColorInactive">?attr/colorOutline</item>
+        
+        <!-- 拖拽手柄样式 -->
+        <item name="thumbColor">?attr/colorPrimary</item>
+        <item name="thumbRadius">10dp</item>
+        <item name="thumbStrokeColor">?attr/colorSurface</item>
+        <item name="thumbStrokeWidth">2dp</item>
+        
+        <!-- 标签样式 -->
+        <item name="labelBehavior">gone</item>
+        
+        <!-- Halo效果 -->
+        <item name="haloColor">?attr/colorPrimary</item>
+        <item name="haloRadius">20dp</item>
+    </style>
+</resources>

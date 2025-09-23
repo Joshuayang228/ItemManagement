@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 心愿单物品卡片 -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:rippleColor="@color/primary_light"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- 选择框（选择模式时显示） -->
+        <CheckBox
+            android:id="@+id/checkboxSelection"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+        <!-- 物品名称 -->
+        <TextView
+            android:id="@+id/textItemName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="@color/on_surface"
+            app:layout_constraintEnd_toStartOf="@id/buttonMore"
+            app:layout_constraintStart_toEndOf="@id/checkboxSelection"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="iPhone 15 Pro Max" />
+
+        <!-- 分类和规格 -->
+        <TextView
+            android:id="@+id/textCategory"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/on_surface_variant"
+            app:layout_constraintEnd_toStartOf="@id/buttonMore"
+            app:layout_constraintStart_toStartOf="@id/textItemName"
+            app:layout_constraintTop_toBottomOf="@id/textItemName"
+            tools:text="数码产品" />
+
+        <TextView
+            android:id="@+id/textSpecification"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="8dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/on_surface_variant"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@id/buttonMore"
+            app:layout_constraintStart_toStartOf="@id/textItemName"
+            app:layout_constraintTop_toBottomOf="@id/textCategory"
+            tools:text="1TB 自然钛金色"
+            tools:visibility="visible" />
+
+        <!-- 更多操作按钮 -->
+        <ImageButton
+            android:id="@+id/buttonMore"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="更多选项"
+            android:padding="8dp"
+            android:src="@drawable/ic_more_vert_24dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/on_surface_variant" />
+
+        <!-- 优先级芯片 -->
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipPriority"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:chipCornerRadius="8dp"
+            app:chipMinHeight="32dp"
+            app:layout_constraintStart_toStartOf="@id/textItemName"
+            app:layout_constraintTop_toBottomOf="@id/textSpecification"
+            app:textEndPadding="12dp"
+            app:textStartPadding="12dp"
+            tools:text="高优先级" />
+
+        <!-- 状态指示器 -->
+        <LinearLayout
+            android:id="@+id/layoutStatusIndicators"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="@id/chipPriority"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/chipPriority"
+            app:layout_constraintTop_toTopOf="@id/chipPriority">
+
+            <ImageView
+                android:id="@+id/iconPriceTracking"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_star"
+                android:visibility="gone"
+                app:tint="@color/primary"
+                tools:visibility="visible" />
+
+            <ImageView
+                android:id="@+id/iconPriceDrop"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_star"
+                android:visibility="gone"
+                app:tint="@color/success"
+                tools:visibility="visible" />
+
+            <ImageView
+                android:id="@+id/iconTargetReached"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_star"
+                android:visibility="gone"
+                app:tint="@color/success" />
+
+            <ImageView
+                android:id="@+id/iconUrgent"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_star"
+                android:visibility="gone"
+                app:tint="@color/error" />
+
+        </LinearLayout>
+
+        <!-- 价格信息区域 -->
+        <LinearLayout
+            android:id="@+id/layoutPriceInfo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="vertical"
+            android:padding="12dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/textItemName"
+            app:layout_constraintTop_toBottomOf="@id/chipPriority">
+
+            <!-- 当前价格行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/textCurrentPrice"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/primary"
+                    tools:text="¥9,999.00" />
+
+                <TextView
+                    android:id="@+id/textPriceChange"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/circle_background"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/success"
+                    android:visibility="gone"
+                    tools:text="-5.2%"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+            <!-- 目标价格 -->
+            <TextView
+                android:id="@+id/textTargetPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                android:visibility="gone"
+                tools:text="目标 ¥8,500.00"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- 时间信息 -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/textItemName"
+            app:layout_constraintTop_toBottomOf="@id/layoutPriceInfo">
+
+            <TextView
+                android:id="@+id/textAddedDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                tools:text="添加于 03/15" />
+
+            <TextView
+                android:id="@+id/textLastPriceCheck"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                android:visibility="gone"
+                tools:text="价格更新 03/16"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

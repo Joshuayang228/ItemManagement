@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Fragment Exit Animation - Enhanced
+使用Material Motion的Emphasized Accelerate，提供更自然的退出动画
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 平移动画：使用Material Motion的Emphasized Accelerate -->
+    <translate
+        android:fromXDelta="0%"
+        android:toXDelta="-100%"
+        android:duration="300"
+        android:interpolator="@android:anim/accelerate_interpolator" />
+        
+    <!-- 淡出动画：更快速的透明度变化 -->
+    <alpha
+        android:fromAlpha="1.0"
+        android:toAlpha="0.0"
+        android:duration="200"
+        android:startOffset="50"
+        android:interpolator="@android:anim/accelerate_interpolator" />
+        
+    <!-- 轻微的缩放效果，增加退出深度感 -->
+    <scale
+        android:fromXScale="1.0"
+        android:toXScale="0.95"
+        android:fromYScale="1.0"
+        android:toYScale="0.95"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="300"
+        android:interpolator="@android:anim/accelerate_interpolator" />
+        
+</set>
+

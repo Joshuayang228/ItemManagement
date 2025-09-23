@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Dark Theme Color System
+完整的Material You色彩系统 - 暗色主题
+与亮色主题配对的完整暗色调色板
+-->
+<resources>
+    <!-- Primary Color Family -->
+    <color name="md_theme_dark_primary">#90CAF9</color>
+    <color name="md_theme_dark_on_primary">#0D47A1</color>
+    <color name="md_theme_dark_primary_container">#1565C0</color>
+    <color name="md_theme_dark_on_primary_container">#E3F2FD</color>
+    <color name="md_theme_dark_inverse_primary">#1976D2</color>
+
+    <!-- Secondary Color Family -->
+    <color name="md_theme_dark_secondary">#FFD54F</color>
+    <color name="md_theme_dark_on_secondary">#F57F17</color>
+    <color name="md_theme_dark_secondary_container">#FF8F00</color>
+    <color name="md_theme_dark_on_secondary_container">#FFF9C4</color>
+
+    <!-- Tertiary Color Family -->
+    <color name="md_theme_dark_tertiary">#81C784</color>
+    <color name="md_theme_dark_on_tertiary">#2E7D32</color>
+    <color name="md_theme_dark_tertiary_container">#388E3C</color>
+    <color name="md_theme_dark_on_tertiary_container">#E8F5E8</color>
+
+    <!-- Error Color Family -->
+    <color name="md_theme_dark_error">#FF8A80</color>
+    <color name="md_theme_dark_on_error">#690005</color>
+    <color name="md_theme_dark_error_container">#93000A</color>
+    <color name="md_theme_dark_on_error_container">#FFDAD6</color>
+
+    <!-- Background & Surface Colors -->
+    <color name="md_theme_dark_background">#141218</color>
+    <color name="md_theme_dark_on_background">#E6E1E5</color>
+    <color name="md_theme_dark_surface">#141218</color>
+    <color name="md_theme_dark_on_surface">#E6E1E5</color>
+    <color name="md_theme_dark_surface_variant">#49454F</color>
+    <color name="md_theme_dark_on_surface_variant">#CAC4D0</color>
+    <color name="md_theme_dark_inverse_surface">#E6E1E5</color>
+    <color name="md_theme_dark_inverse_on_surface">#313033</color>
+
+    <!-- Surface Container Colors -->
+    <color name="md_theme_dark_surface_dim">#141218</color>
+    <color name="md_theme_dark_surface_bright">#3B383E</color>
+    <color name="md_theme_dark_surface_container_lowest">#0F0D13</color>
+    <color name="md_theme_dark_surface_container_low">#1D1B20</color>
+    <color name="md_theme_dark_surface_container">#211F26</color>
+    <color name="md_theme_dark_surface_container_high">#2B2930</color>
+    <color name="md_theme_dark_surface_container_highest">#36343B</color>
+
+    <!-- Outline Colors -->
+    <color name="md_theme_dark_outline">#938F99</color>
+    <color name="md_theme_dark_outline_variant">#49454F</color>
+
+    <!-- Shadow & Scrim -->
+    <color name="md_theme_dark_shadow">#000000</color>
+    <color name="md_theme_dark_scrim">#000000</color>
+
+    <!-- Surface Tint -->
+    <color name="md_theme_dark_surface_tint">#90CAF9</color>
+
+    <!-- Fixed Colors for branded elements -->
+    <color name="md_theme_dark_primary_fixed">#E3F2FD</color>
+    <color name="md_theme_dark_primary_fixed_dim">#BBDEFB</color>
+    <color name="md_theme_dark_on_primary_fixed">#0D47A1</color>
+    <color name="md_theme_dark_on_primary_fixed_variant">#1565C0</color>
+    
+    <color name="md_theme_dark_secondary_fixed">#FFF9C4</color>
+    <color name="md_theme_dark_secondary_fixed_dim">#FFF59D</color>
+    <color name="md_theme_dark_on_secondary_fixed">#F57F17</color>
+    <color name="md_theme_dark_on_secondary_fixed_variant">#FF8F00</color>
+    
+    <color name="md_theme_dark_tertiary_fixed">#E8F5E8</color>
+    <color name="md_theme_dark_tertiary_fixed_dim">#C8E6C9</color>
+    <color name="md_theme_dark_on_tertiary_fixed">#2E7D32</color>
+    <color name="md_theme_dark_on_tertiary_fixed_variant">#388E3C</color>
+
+    <!-- Custom App Colors -->
+    <!-- Warning system colors -->
+    <color name="md_theme_dark_warning">#FFB74D</color>
+    <color name="md_theme_dark_on_warning">#E65100</color>
+    <color name="md_theme_dark_warning_container">#FF8F00</color>
+    <color name="md_theme_dark_on_warning_container">#FFF3E0</color>
+
+    <!-- Success system colors -->
+    <color name="md_theme_dark_success">#81C784</color>
+    <color name="md_theme_dark_on_success">#1B5E20</color>
+    <color name="md_theme_dark_success_container">#2E7D32</color>
+    <color name="md_theme_dark_on_success_container">#E8F5E8</color>
+
+    <!-- Info system colors -->
+    <color name="md_theme_dark_info">#64B5F6</color>
+    <color name="md_theme_dark_on_info">#0D47A1</color>
+    <color name="md_theme_dark_info_container">#1565C0</color>
+    <color name="md_theme_dark_on_info_container">#E3F2FD</color>
+</resources>
+

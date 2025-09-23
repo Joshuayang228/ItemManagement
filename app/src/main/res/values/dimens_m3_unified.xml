@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <!-- Material 3 统一尺寸系统 -->
+    
+    <!-- 间距系统 - 4dp基础单位 -->
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+    <dimen name="spacing_xxl">48dp</dimen>
+    
+    <!-- 卡片间距 -->
+    <dimen name="card_margin_horizontal">12dp</dimen>
+    <dimen name="card_margin_vertical">6dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+    <dimen name="card_padding_large">20dp</dimen>
+    
+    <!-- 圆角半径 -->
+    <dimen name="corner_radius_xs">4dp</dimen>
+    <dimen name="corner_radius_sm">8dp</dimen>
+    <dimen name="corner_radius_md">12dp</dimen>
+    <dimen name="corner_radius_lg">16dp</dimen>
+    <dimen name="corner_radius_xl">20dp</dimen>
+    <dimen name="corner_radius_full">50dp</dimen>
+    
+    <!-- 阴影高度 -->
+    <dimen name="elevation_none">0dp</dimen>
+    <dimen name="elevation_sm">1dp</dimen>
+    <dimen name="elevation_md">2dp</dimen>
+    <dimen name="elevation_lg">4dp</dimen>
+    <dimen name="elevation_xl">6dp</dimen>
+    
+    <!-- 按钮高度 -->
+    <dimen name="button_height_sm">32dp</dimen>
+    <dimen name="button_height_md">40dp</dimen>
+    <dimen name="button_height_lg">48dp</dimen>
+    
+    <!-- 图标尺寸 -->
+    <dimen name="icon_size_xs">16dp</dimen>
+    <dimen name="icon_size_sm">20dp</dimen>
+    <dimen name="icon_size_md">24dp</dimen>
+    <dimen name="icon_size_lg">32dp</dimen>
+    <dimen name="icon_size_xl">48dp</dimen>
+    
+    <!-- 最小点击区域 -->
+    <dimen name="min_touch_target">48dp</dimen>
+    
+    <!-- 列表项高度 -->
+    <dimen name="list_item_height_sm">48dp</dimen>
+    <dimen name="list_item_height_md">56dp</dimen>
+    <dimen name="list_item_height_lg">72dp</dimen>
+    
+    <!-- 应用栏高度 -->
+    <dimen name="app_bar_height">56dp</dimen>
+    <dimen name="bottom_nav_height">80dp</dimen>
+    
+    <!-- 内容最大宽度（适应平板） -->
+    <dimen name="max_content_width">600dp</dimen>
+    
+    <!-- 边框宽度 -->
+    <dimen name="border_width_thin">0.5dp</dimen>
+    <dimen name="border_width_normal">1dp</dimen>
+    <dimen name="border_width_thick">2dp</dimen>
+    
+</resources>
+

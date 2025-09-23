@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Components Styles System
+完整的Material 3组件样式定义，确保设计一致性
+基于Material You设计规范构建
+-->
+<resources>
+    <!-- ===== Material 3 Card Styles ===== -->
+    
+    <!-- 主要卡片样式 - 用于内容展示 -->
+    <style name="Widget.App.Card.Primary" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">1dp</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="contentPadding">16dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="rippleColor">?attr/colorPrimary</item>
+    </style>
+    
+    <!-- 水平列表卡片样式 - 用于item_warranty, item_borrow等 -->
+    <style name="Widget.App.Card.ListItem" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">3dp</item>
+        <item name="android:layout_margin">6dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+    </style>
+    
+    <!-- 图片在上的卡片样式 - 用于item_home等 -->
+    <style name="Widget.App.Card.ImageTop" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">12dp</item>
+        <item name="cardElevation">3dp</item>
+        <item name="android:layout_margin">6dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="cardBackgroundColor">?attr/colorSurface</item>
+    </style>
+    
+    <!-- 统计信息卡片样式 - 用于概览和数据展示 -->
+    <style name="Widget.App.Card.Statistics" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">4dp</item>
+        <item name="android:layout_margin">16dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainer</item>
+    </style>
+    
+    <!-- 设置项卡片样式 - 用于配置和选项 -->
+    <style name="Widget.App.Card.Settings" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">8dp</item>
+        <item name="cardElevation">2dp</item>
+        <item name="android:layout_marginVertical">4dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainerLow</item>
+    </style>
+    
+
+
+    <!-- ===== Material 3 Button Styles ===== -->
+    
+    <!-- 主要按钮 -->
+    <style name="Widget.App.Button.Primary" parent="Widget.Material3.Button">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+    
+    <!-- 次要按钮 -->
+    <style name="Widget.App.Button.Secondary" parent="Widget.Material3.Button.TonalButton">
+        <item name="cornerRadius">12dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+    
+    <!-- 文本按钮 -->
+    <style name="Widget.App.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="cornerRadius">8dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <!-- 浮动操作按钮 -->
+    <style name="Widget.App.FloatingActionButton" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="android:layout_margin">16dp</item>
+        <item name="fabSize">normal</item>
+        <item name="elevation">3dp</item>
+        <item name="pressedTranslationZ">6dp</item>
+    </style>
+
+    <!-- ===== Material 3 Text Input Styles ===== -->
+    
+    <!-- 标准文本输入 -->
+    <style name="Widget.App.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="android:layout_margin">8dp</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="boxStrokeWidthFocused">3dp</item>
+    </style>
+    
+    <!-- 密集布局文本输入 -->
+    <style name="Widget.App.TextInputLayout.Dense" parent="Widget.Material3.TextInputLayout.OutlinedBox.Dense">
+        <item name="boxCornerRadiusTopStart">8dp</item>
+        <item name="boxCornerRadiusTopEnd">8dp</item>
+        <item name="boxCornerRadiusBottomStart">8dp</item>
+        <item name="boxCornerRadiusBottomEnd">8dp</item>
+        <item name="android:layout_margin">4dp</item>
+    </style>
+
+    <!-- ===== Material 3 Toolbar Styles ===== -->
+    
+    <!-- 现代 Material 3 Toolbar -->
+    <style name="Widget.App.Toolbar.Material3" parent="Widget.Material3.Toolbar">
+        <item name="android:background">?attr/colorSurfaceContainerHigh</item>
+        <item name="titleTextAppearance">@style/TextAppearance.App.Toolbar.Title</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+        <item name="navigationIconTint">?attr/colorOnSurface</item>
+        <item name="android:elevation">4dp</item>
+        <item name="elevation">4dp</item>
+        <item name="titleCentered">true</item>
+        <!-- 确保菜单项颜色清晰 -->
+        <item name="colorControlNormal">?attr/colorOnSurface</item>
+        <item name="actionMenuTextColor">?attr/colorOnSurface</item>
+    </style>
+    
+    <!-- 自定义TopBar标题样式 - 加粗 -->
+    <style name="TextAppearance.App.Toolbar.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="fontFamily">sans-serif-medium</item>
+    </style>
+    
+    <!-- 兼容旧版 Toolbar 样式 -->
+    <style name="Widget.App.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:layout_height">56dp</item>
+        <item name="titleTextAppearance">?attr/textAppearanceHeadlineSmall</item>
+        <item name="android:background">?attr/colorSurface</item>
+        <item name="android:elevation">0dp</item>
+    </style>
+
+    <!-- ===== Material 3 Bottom Navigation ===== -->
+    
+    <!-- Material 3 紧凑优化底部导航栏样式 -->
+    <style name="Widget.App.BottomNavigationView.Material3" parent="Widget.Material3.BottomNavigationView">
+        <!-- Material 3 标准配置 -->
+        <item name="itemIconSize">22dp</item>
+        <item name="itemTextAppearanceActive">?attr/textAppearanceLabelSmall</item>
+        <item name="itemTextAppearanceInactive">?attr/textAppearanceLabelSmall</item>
+        <item name="android:background">?attr/colorSurfaceContainer</item>
+        <item name="elevation">3dp</item>
+        
+        <!-- 紧凑但保持美感的间距设置 -->
+        <item name="itemPaddingTop">4dp</item>
+        <item name="itemPaddingBottom">6dp</item>
+        <item name="android:minHeight">56dp</item>
+        
+        <!-- Material 3 动态颜色和交互 -->
+        <item name="itemIconTint">@color/material3_nav_item_color</item>
+        <item name="itemTextColor">@color/material3_nav_item_color</item>
+        <item name="itemRippleColor">?attr/colorPrimaryContainer</item>
+        
+        <!-- Material 3 活动指示器 -->
+        <item name="itemActiveIndicatorStyle">@style/Widget.App.BottomNavigationView.ActiveIndicator</item>
+    </style>
+    
+    <!-- Material 3 紧凑活动指示器样式 -->
+    <style name="Widget.App.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">?attr/colorSecondaryContainer</item>
+        <item name="android:width">56dp</item>
+        <item name="android:height">28dp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Material3.Corner.Full</item>
+    </style>
+
+    <!-- ===== Material 3 Chip Styles ===== -->
+    
+    <style name="Widget.App.Chip.Filter" parent="Widget.Material3.Chip.Filter">
+        <item name="chipCornerRadius">16dp</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Widget.App.Chip.Input" parent="Widget.Material3.Chip.Input">
+        <item name="chipCornerRadius">12dp</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- ===== Material 3 Sort Bar Styles ===== -->
+    
+    <!-- 淘宝风格排序按钮 - 未选中状态 -->
+    <style name="Widget.App.SortButton" parent="@android:style/Widget.TextView">
+        <item name="android:layout_height">48dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:minWidth">48dp</item>
+    </style>
+    
+    <!-- 淘宝风格排序按钮 - 选中状态 -->
+    <style name="Widget.App.SortButton.Selected">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+</resources>

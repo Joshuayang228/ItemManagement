@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Button Press Animation
+按钮按下时的缩放动画，提供触觉反馈
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 按下缩放：轻微收缩 -->
+    <scale
+        android:fromXScale="1.0"
+        android:toXScale="0.95"
+        android:fromYScale="1.0"
+        android:toYScale="0.95"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="100"
+        android:interpolator="@android:anim/accelerate_interpolator" />
+        
+</set>
+
+

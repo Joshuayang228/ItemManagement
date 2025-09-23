@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Fragment Enter Animation - Enhanced
+使用Material Motion的Emphasized Easing，提供更自然的动画体验
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 平移动画：使用Material Motion的Emphasized Decelerate -->
+    <translate
+        android:fromXDelta="100%"
+        android:toXDelta="0%"
+        android:duration="400"
+        android:interpolator="@android:anim/decelerate_interpolator" />
+        
+    <!-- 淡入动画：更平滑的透明度过渡 -->
+    <alpha
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0"
+        android:duration="300"
+        android:startOffset="50"
+        android:interpolator="@android:anim/linear_interpolator" />
+        
+    <!-- 轻微的缩放效果，增加深度感 -->
+    <scale
+        android:fromXScale="0.95"
+        android:toXScale="1.0"
+        android:fromYScale="0.95"
+        android:toYScale="1.0"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="400"
+        android:interpolator="@android:anim/decelerate_interpolator" />
+        
+</set>
+

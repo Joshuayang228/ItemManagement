@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 Bottom Navigation Item Color Selector
+符合Material 3设计规范的导航项颜色状态选择器
+支持动态颜色和丰富的交互状态
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 选中状态 - 使用主色调 -->
+    <item android:color="?attr/colorOnSecondaryContainer" android:state_checked="true"/>
+    <item android:color="?attr/colorOnSecondaryContainer" android:state_selected="true"/>
+    
+    <!-- 按压状态 - 稍微变暗 -->
+    <item android:color="?attr/colorOnSurface" android:state_pressed="true"/>
+    
+    <!-- 悬停状态 - 中等透明度 -->
+    <item android:color="?attr/colorOnSurface" android:state_hovered="true"/>
+    
+    <!-- 默认状态 - 使用表面变体颜色 -->
+    <item android:color="?attr/colorOnSurfaceVariant"/>
+</selector>
+
+

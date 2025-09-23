@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+语义化颜色映射文件
+将现有应用中使用的颜色名称映射到Material 3色彩Token
+确保迁移过程中不会破坏现有功能
+-->
+<resources>
+    <!-- 基础颜色映射到Material 3 -->
+    <color name="primary">@color/md_theme_light_primary</color>
+    <color name="accent">@color/md_theme_light_secondary</color>
+    <color name="background">@color/md_theme_light_background</color>
+    <color name="card_background">@color/md_theme_light_surface_container_low</color>
+    <color name="text_primary">@color/md_theme_light_on_surface</color>
+    <color name="text_secondary">@color/md_theme_light_on_surface_variant</color>
+    <color name="divider">@color/md_theme_light_outline_variant</color>
+
+    <!-- 系统状态颜色保持独立（功能性） -->
+    <color name="error">@color/md_theme_light_error</color>
+    <color name="success">@color/md_theme_light_success</color>
+    <color name="warning">@color/md_theme_light_warning</color>
+
+    <!-- 基础黑白色在主colors.xml文件中定义 -->
+    <color name="hint_text_color">@color/md_theme_light_outline_variant</color>
+    
+    <!-- 通用文本颜色语义映射 -->
+    <color name="text_color_primary">@color/md_theme_light_on_surface</color>
+    <color name="text_color_secondary">@color/md_theme_light_on_surface_variant</color>
+    <color name="text_color_hint">@color/md_theme_light_outline_variant</color>
+    
+    <!-- 字段状态颜色语义映射 -->
+    <color name="field_hint_color">@color/md_theme_light_outline_variant</color>
+    <color name="field_value_color">@color/md_theme_light_on_surface</color>
+    <color name="field_placeholder_color">@color/md_theme_light_outline</color>
+    <color name="field_disabled_color">@color/md_theme_light_on_surface_variant</color>
+
+    <!-- 分类专属颜色保持原有业务逻辑 -->
+    <color name="category_food">#FF9800</color>
+    <color name="category_medicine">#4CAF50</color>
+    <color name="category_electronics">#2196F3</color>
+    <color name="category_clothing">#9C27B0</color>
+    <color name="category_other">#607D8B</color>
+
+    <!-- 状态标签颜色映射到Material 3语义颜色 -->
+    <color name="status_new">@color/md_theme_light_success</color>
+    <color name="status_expiring_soon">@color/md_theme_light_warning</color>
+    <color name="status_expired">@color/md_theme_light_error</color>
+    <color name="status_low_stock">@color/md_theme_light_warning</color>
+
+    <!-- 状态颜色使用Material 3语义化Token -->
+    <color name="status_good">@color/md_theme_light_success</color>
+    <color name="status_warning">@color/md_theme_light_warning</color>
+    <color name="status_error">@color/md_theme_light_error</color>
+
+    <!-- 保质期状态颜色 -->
+    <color name="normal_color">@color/md_theme_light_success</color>
+    <color name="warning_color">@color/md_theme_light_warning</color>
+    <color name="expired_color">@color/md_theme_light_error</color>
+
+    <!-- 功能按钮颜色 -->
+    <color name="orange_500">@color/md_theme_light_warning</color>
+    <color name="red_500">@color/md_theme_light_error</color>
+    <color name="yellow_500">@color/md_theme_light_secondary</color>
+
+    <!-- 功能界面颜色映射到Material 3 -->
+    <color name="primary_light">@color/md_theme_light_primary_container</color>
+    <color name="background_color">@color/md_theme_light_background</color>
+    <color name="accent_color">@color/md_theme_light_secondary</color>
+    <color name="background_light">@color/md_theme_light_surface_variant</color>
+    <color name="price_color">@color/md_theme_light_error</color>
+
+    <!-- 状态背景颜色 -->
+    <color name="status_warning_bg">@color/md_theme_light_warning_container</color>
+    <color name="status_error_bg">@color/md_theme_light_error_container</color>
+
+    <!-- 功能分组颜色更新到Material 3 -->
+    <color name="data_insights_bg">@color/md_theme_light_success_container</color>
+    <color name="data_insights_accent">@color/md_theme_light_success</color>
+    <color name="smart_assistant_bg">@color/md_theme_light_info_container</color>
+    <color name="smart_assistant_accent">@color/md_theme_light_info</color>
+    <color name="utilities_bg">@color/md_theme_light_warning_container</color>
+    <color name="utilities_accent">@color/md_theme_light_warning</color>
+
+    <!-- 图表相关颜色使用Material 3 -->
+    <color name="chart_toggle_selected_bg">@color/md_theme_light_primary</color>
+    <color name="chart_toggle_unselected_bg">@color/md_theme_light_surface</color>
+    <color name="chart_toggle_selected_text">@color/md_theme_light_on_primary</color>
+    <color name="chart_toggle_unselected_text">@color/md_theme_light_on_surface_variant</color>
+    <color name="chart_toggle_group_bg">@color/md_theme_light_surface_variant</color>
+
+    <color name="chart_accent">@color/md_theme_light_primary</color>
+    <color name="chart_bg">@color/md_theme_light_surface</color>
+    <color name="chart_text">@color/md_theme_light_on_surface_variant</color>
+    <color name="chart_border">@color/md_theme_light_outline_variant</color>
+
+    <!-- 图表内部颜色 -->
+    <color name="chart_inner_accent">@color/md_theme_light_on_surface</color>
+    <color name="chart_inner_bg">@color/md_theme_light_surface_variant</color>
+    <color name="chart_inner_text">@color/md_theme_light_on_surface_variant</color>
+    <color name="chart_inner_border">@color/md_theme_light_outline</color>
+
+    <!-- Material Design 3新增颜色 -->
+    <color name="surface">@color/md_theme_light_surface</color>
+    <color name="surface_variant">@color/md_theme_light_surface_variant</color>
+    <color name="on_surface">@color/md_theme_light_on_surface</color>
+    <color name="on_surface_variant">@color/md_theme_light_on_surface_variant</color>
+    <color name="on_primary">@color/md_theme_light_on_primary</color>
+    <color name="error_container">@color/md_theme_light_error_container</color>
+    <color name="on_error_container">@color/md_theme_light_on_error_container</color>
+
+    <!-- 借还管理状态颜色 -->
+    <color name="color_success">@color/md_theme_light_success</color>
+    <color name="color_warning">@color/md_theme_light_warning</color>
+    <color name="color_error">@color/md_theme_light_error</color>
+    <color name="color_surface">@color/md_theme_light_surface</color>
+    <color name="color_warning_surface">@color/md_theme_light_warning_container</color>
+    <color name="color_error_surface">@color/md_theme_light_error_container</color>
+
+    <!-- 额外的便捷颜色映射 -->
+    <color name="orange">@color/md_theme_light_warning</color>
+    <color name="orange_container">@color/md_theme_light_warning_container</color>
+    <color name="on_orange_container">@color/md_theme_light_on_warning_container</color>
+
+    <!-- 兼容性颜色 -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">@color/md_theme_light_primary</color>
+    <color name="purple_700">@color/md_theme_light_primary_container</color>
+    <color name="teal_200">@color/md_theme_light_secondary</color>
+    <color name="teal_700">@color/md_theme_light_secondary_container</color>
+    <color name="colorAccent">@color/md_theme_light_secondary</color>
+
+    <!-- 心愿单专用颜色 -->
+    <color name="primary_container">@color/md_theme_light_primary_container</color>
+</resources>

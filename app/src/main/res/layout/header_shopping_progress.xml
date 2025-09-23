@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 购物进度指示组件 - Material 3 设计 -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/shopping_surface"
+    app:strokeWidth="1dp"
+    app:strokeColor="@color/shopping_container">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 标题区域 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- 清单名称 -->
+            <TextView
+                android:id="@+id/tvShoppingListName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="本周生鲜采购"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/shopping_on_surface"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="本周生鲜采购" />
+
+            <!-- 状态标签 -->
+            <TextView
+                android:id="@+id/tvShoppingStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="进行中"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="3dp"
+                android:background="@drawable/bg_status_label_normal"
+                android:textColor="@color/shopping_primary"
+                tools:text="进行中" />
+
+        </LinearLayout>
+
+        <!-- 进度信息 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- 进度条容器 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- 进度条 -->
+                <ProgressBar
+                    android:id="@+id/progressBarShopping"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:progress="60"
+                    android:progressTint="@color/shopping_primary"
+                    android:progressBackgroundTint="@color/shopping_container"
+                    tools:progress="60" />
+
+                <!-- 进度说明 -->
+                <TextView
+                    android:id="@+id/tvProgressDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="已完成 12 项，还剩 8 项"
+                    android:textSize="11sp"
+                    android:textColor="#666666"
+                    tools:text="已完成 12 项，还剩 8 项" />
+
+            </LinearLayout>
+
+            <!-- 进度百分比 -->
+            <TextView
+                android:id="@+id/tvProgressPercentage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="60%"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@color/shopping_primary"
+                tools:text="60%" />
+
+        </LinearLayout>
+
+        <!-- 统计信息 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:baselineAligned="false">
+
+            <!-- 已完成数量 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tvCompletedCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/shopping_primary"
+                    tools:text="12" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="已完成"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+            </LinearLayout>
+
+            <!-- 分隔线 -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="30dp"
+                android:background="#E0E0E0" />
+
+            <!-- 剩余数量 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tvRemainingCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="8"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/expiring_primary"
+                    tools:text="8" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="待购买"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+            </LinearLayout>
+
+            <!-- 分隔线 -->
+            <View
+                android:layout_width="1dp"
+                android:layout_height="30dp"
+                android:background="#E0E0E0" />
+
+            <!-- 预算信息 -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:id="@+id/tvBudgetAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="¥180"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/normal_primary"
+                    tools:text="¥180" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="预计消费"
+                    android:textSize="11sp"
+                    android:textColor="#666666" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- 快速操作按钮 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <!-- 添加物品按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddItem"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:text="添加物品"
+                android:textSize="12sp"
+                app:icon="@drawable/ic_add"
+                app:iconSize="16dp"
+                app:cornerRadius="18dp"
+                app:backgroundTint="@color/shopping_container" />
+
+            <!-- 完成购物按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFinishShopping"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="完成购物"
+                android:textSize="12sp"
+                app:icon="@android:drawable/ic_menu_save"
+                app:iconSize="16dp"
+                app:cornerRadius="18dp"
+                app:backgroundTint="@color/shopping_primary" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
+

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+暗色主题语义化颜色映射文件
+将现有应用中使用的颜色名称映射到Material 3暗色Token
+确保暗色模式下的一致性体验
+-->
+<resources>
+    <!-- 基础颜色映射到Material 3 Dark -->
+    <color name="primary">@color/md_theme_dark_primary</color>
+    <color name="accent">@color/md_theme_dark_secondary</color>
+    <color name="background">@color/md_theme_dark_background</color>
+    <color name="card_background">@color/md_theme_dark_surface_container_low</color>
+    <color name="text_primary">@color/md_theme_dark_on_surface</color>
+    <color name="text_secondary">@color/md_theme_dark_on_surface_variant</color>
+    <color name="divider">@color/md_theme_dark_outline_variant</color>
+    <color name="hint_text_color">@color/md_theme_dark_outline_variant</color>
+    
+    <!-- 通用文本颜色语义映射 -->
+    <color name="text_color_primary">@color/md_theme_dark_on_surface</color>
+    <color name="text_color_secondary">@color/md_theme_dark_on_surface_variant</color>
+    <color name="text_color_hint">@color/md_theme_dark_outline_variant</color>
+    
+    <!-- 字段状态颜色语义映射 -->
+    <color name="field_hint_color">@color/md_theme_dark_outline_variant</color>
+    <color name="field_value_color">@color/md_theme_dark_on_surface</color>
+    <color name="field_placeholder_color">@color/md_theme_dark_outline</color>
+    <color name="field_disabled_color">@color/md_theme_dark_on_surface_variant</color>
+
+    <!-- 系统状态颜色映射到Material 3 Dark -->
+    <color name="error">@color/md_theme_dark_error</color>
+    <color name="success">@color/md_theme_dark_success</color>
+    <color name="warning">@color/md_theme_dark_warning</color>
+
+    <!-- 状态标签颜色 -->
+    <color name="status_new">@color/md_theme_dark_success</color>
+    <color name="status_expiring_soon">@color/md_theme_dark_warning</color>
+    <color name="status_expired">@color/md_theme_dark_error</color>
+    <color name="status_low_stock">@color/md_theme_dark_warning</color>
+
+    <!-- 状态颜色 -->
+    <color name="status_good">@color/md_theme_dark_success</color>
+    <color name="status_warning">@color/md_theme_dark_warning</color>
+    <color name="status_error">@color/md_theme_dark_error</color>
+
+    <!-- 保质期状态颜色 -->
+    <color name="normal_color">@color/md_theme_dark_success</color>
+    <color name="warning_color">@color/md_theme_dark_warning</color>
+    <color name="expired_color">@color/md_theme_dark_error</color>
+
+    <!-- 功能按钮颜色 -->
+    <color name="orange_500">@color/md_theme_dark_warning</color>
+    <color name="red_500">@color/md_theme_dark_error</color>
+    <color name="yellow_500">@color/md_theme_dark_secondary</color>
+
+    <!-- 功能界面颜色 -->
+    <color name="primary_light">@color/md_theme_dark_primary_container</color>
+    <color name="background_color">@color/md_theme_dark_background</color>
+    <color name="accent_color">@color/md_theme_dark_secondary</color>
+    <color name="background_light">@color/md_theme_dark_surface_variant</color>
+    <color name="price_color">@color/md_theme_dark_error</color>
+
+    <!-- 状态背景颜色 -->
+    <color name="status_warning_bg">@color/md_theme_dark_warning_container</color>
+    <color name="status_error_bg">@color/md_theme_dark_error_container</color>
+
+    <!-- 功能分组颜色 -->
+    <color name="data_insights_bg">@color/md_theme_dark_success_container</color>
+    <color name="data_insights_accent">@color/md_theme_dark_success</color>
+    <color name="smart_assistant_bg">@color/md_theme_dark_info_container</color>
+    <color name="smart_assistant_accent">@color/md_theme_dark_info</color>
+    <color name="utilities_bg">@color/md_theme_dark_warning_container</color>
+    <color name="utilities_accent">@color/md_theme_dark_warning</color>
+
+    <!-- 图表相关颜色 -->
+    <color name="chart_toggle_selected_bg">@color/md_theme_dark_primary</color>
+    <color name="chart_toggle_unselected_bg">@color/md_theme_dark_surface</color>
+    <color name="chart_toggle_selected_text">@color/md_theme_dark_on_primary</color>
+    <color name="chart_toggle_unselected_text">@color/md_theme_dark_on_surface_variant</color>
+    <color name="chart_toggle_group_bg">@color/md_theme_dark_surface_variant</color>
+
+    <color name="chart_accent">@color/md_theme_dark_primary</color>
+    <color name="chart_bg">@color/md_theme_dark_surface</color>
+    <color name="chart_text">@color/md_theme_dark_on_surface_variant</color>
+    <color name="chart_border">@color/md_theme_dark_outline_variant</color>
+
+    <!-- 图表内部颜色 -->
+    <color name="chart_inner_accent">@color/md_theme_dark_on_surface</color>
+    <color name="chart_inner_bg">@color/md_theme_dark_surface_variant</color>
+    <color name="chart_inner_text">@color/md_theme_dark_on_surface_variant</color>
+    <color name="chart_inner_border">@color/md_theme_dark_outline</color>
+
+    <!-- Material Design 3 颜色 -->
+    <color name="surface">@color/md_theme_dark_surface</color>
+    <color name="surface_variant">@color/md_theme_dark_surface_variant</color>
+    <color name="on_surface">@color/md_theme_dark_on_surface</color>
+    <color name="on_surface_variant">@color/md_theme_dark_on_surface_variant</color>
+    <color name="on_primary">@color/md_theme_dark_on_primary</color>
+    <color name="error_container">@color/md_theme_dark_error_container</color>
+    <color name="on_error_container">@color/md_theme_dark_on_error_container</color>
+
+    <!-- 借还管理状态颜色 -->
+    <color name="color_success">@color/md_theme_dark_success</color>
+    <color name="color_warning">@color/md_theme_dark_warning</color>
+    <color name="color_error">@color/md_theme_dark_error</color>
+    <color name="color_surface">@color/md_theme_dark_surface</color>
+    <color name="color_warning_surface">@color/md_theme_dark_warning_container</color>
+    <color name="color_error_surface">@color/md_theme_dark_error_container</color>
+
+    <!-- 额外的便捷颜色映射 -->
+    <color name="orange">@color/md_theme_dark_warning</color>
+    <color name="orange_container">@color/md_theme_dark_warning_container</color>
+    <color name="on_orange_container">@color/md_theme_dark_on_warning_container</color>
+
+    <!-- 兼容性颜色 -->
+    <color name="purple_500">@color/md_theme_dark_primary</color>
+    <color name="purple_700">@color/md_theme_dark_primary_container</color>
+    <color name="teal_200">@color/md_theme_dark_secondary</color>
+    <color name="teal_700">@color/md_theme_dark_secondary_container</color>
+    <color name="colorAccent">@color/md_theme_dark_secondary</color>
+</resources>
+

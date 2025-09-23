@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Material 3 List Item Enter Animation
+列表项进入动画，模拟从列表底部浮现的效果
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 垂直平移：从下方进入 -->
+    <translate
+        android:fromYDelta="20%"
+        android:toYDelta="0%"
+        android:duration="300"
+        android:interpolator="@android:anim/decelerate_interpolator" />
+        
+    <!-- 淡入动画：平滑显现 -->
+    <alpha
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0"
+        android:duration="250"
+        android:interpolator="@android:anim/linear_interpolator" />
+        
+    <!-- 轻微缩放：增加进入感 -->
+    <scale
+        android:fromXScale="0.95"
+        android:toXScale="1.0"
+        android:fromYScale="0.95"
+        android:toYScale="1.0"
+        android:pivotX="50%"
+        android:pivotY="50%"
+        android:duration="300"
+        android:interpolator="@android:anim/decelerate_interpolator" />
+        
+</set>
+
+

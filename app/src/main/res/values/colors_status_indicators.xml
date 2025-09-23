@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 状态指示色彩系统 - Material 3 -->
+    
+    <!-- 过期物品 - 红色主题 -->
+    <color name="expired_primary">#D32F2F</color>
+    <color name="expired_surface">#FFEBEE</color>
+    <color name="expired_on_surface">#B71C1C</color>
+    <color name="expired_container">#FFCDD2</color>
+    <color name="expired_on_container">#D32F2F</color>
+    
+    <!-- 即将过期 - 橙色主题 -->
+    <color name="expiring_primary">#FF9800</color>
+    <color name="expiring_surface">#FFF3E0</color>
+    <color name="expiring_on_surface">#E65100</color>
+    <color name="expiring_container">#FFE0B2</color>
+    <color name="expiring_on_container">#FF9800</color>
+    
+    <!-- 库存不足 - 蓝色主题 -->
+    <color name="low_stock_primary">#1976D2</color>
+    <color name="low_stock_surface">#E3F2FD</color>
+    <color name="low_stock_on_surface">#0D47A1</color>
+    <color name="low_stock_container">#BBDEFB</color>
+    <color name="low_stock_on_container">#1976D2</color>
+    
+    <!-- 正常状态 - 中性色调 -->
+    <color name="normal_primary">#6750A4</color>
+    <color name="normal_surface">#FFFBFE</color>
+    <color name="normal_on_surface">#1C1B1F</color>
+    <color name="normal_container">#F3F1F4</color>
+    <color name="normal_on_container">#49454F</color>
+    
+    <!-- 状态标签背景色 -->
+    <color name="status_label_expired">#FFCDD2</color>
+    <color name="status_label_expiring">#FFE0B2</color>
+    <color name="status_label_low_stock">#BBDEFB</color>
+    <color name="status_label_normal">#E0E0E0</color>
+    
+    <!-- 状态标签文字色 -->
+    <color name="status_text_expired">#B71C1C</color>
+    <color name="status_text_expiring">#E65100</color>
+    <color name="status_text_low_stock">#0D47A1</color>
+    <color name="status_text_normal">#424242</color>
+    
+    <!-- 购物清单 - 绿色系 -->
+    <color name="shopping_primary">#388E3C</color>
+    <color name="shopping_surface">#E8F5E8</color>
+    <color name="shopping_on_surface">#1B5E20</color>
+    <color name="shopping_container">#C8E6C9</color>
+    <color name="shopping_on_container">#388E3C</color>
+    
+</resources>
