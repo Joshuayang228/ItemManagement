@@ -4,7 +4,7 @@
     android:layout_width="120dp"
     android:layout_height="120dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardElevation="1dp">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
             android:background="@drawable/circle_background"
             android:contentDescription="删除照片"
             android:src="@drawable/ic_close"
-            app:tint="@android:color/white" />
+            app:tint="?attr/colorOnPrimaryContainer" />
     </FrameLayout>
 
 </com.google.android.material.card.MaterialCardView> 

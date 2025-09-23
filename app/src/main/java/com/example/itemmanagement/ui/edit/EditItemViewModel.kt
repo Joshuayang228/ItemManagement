@@ -395,11 +395,6 @@ class EditItemViewModel(
             fieldsToShow.add(Field("分类", "标签", true, getEditModeOrder("标签")))
         }
         
-        // 心愿单状态
-        if (item.isWishlistItem) {
-            saveFieldValue("加入心愿单", true)
-            fieldsToShow.add(Field("基础信息", "加入心愿单", true, getEditModeOrder("加入心愿单")))
-        }
         
         // 高周转状态
         if (item.isHighTurnover) {
@@ -477,7 +472,6 @@ class EditItemViewModel(
             warrantyPeriod = getWarrantyPeriodFromField(),
             warrantyEndDate = parseDate(getFieldValue("保修到期时间")?.toString()),
             serialNumber = getFieldValue("序列号")?.toString(),
-            isWishlistItem = getFieldValue("加入心愿单") as? Boolean ?: false,
             isHighTurnover = getFieldValue("高周转") as? Boolean ?: false
         )
     }
@@ -626,8 +620,7 @@ class EditItemViewModel(
         "购买渠道" -> 23
         "商家名称" -> 24
         "序列号" -> 25
-        "加入心愿单" -> 26
-        "高周转" -> 27
+        "高周转" -> 26
         // 旧编辑模式特有字段保持向后兼容
         "规格" -> 28
         else -> Int.MAX_VALUE

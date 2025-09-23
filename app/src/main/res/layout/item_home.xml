@@ -72,11 +72,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:maxLines="4"
                 android:ellipsize="end"
-                android:maxLines="1"
+                android:lineSpacingExtra="2dp"
                 android:textColor="@android:color/darker_gray"
                 android:textSize="11sp"
-                tools:text="这是一段备注信息" />
+                tools:text="这是一段备注信息，现在可以显示多行内容，包括推荐理由等详细信息" />
 
         </LinearLayout>
     </LinearLayout>

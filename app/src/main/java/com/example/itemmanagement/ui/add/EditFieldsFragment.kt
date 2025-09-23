@@ -84,10 +84,6 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
     }
 
     private fun setupViews() {
-        binding.closeButton.setOnClickListener {
-            dismiss()
-        }
-        
         // 全选按钮点击事件
         binding.selectAllButton.setOnClickListener {
             selectAllFields()

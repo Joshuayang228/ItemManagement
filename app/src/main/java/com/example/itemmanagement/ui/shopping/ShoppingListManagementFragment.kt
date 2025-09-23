@@ -14,6 +14,8 @@ import com.example.itemmanagement.data.entity.ShoppingListEntity
 import com.example.itemmanagement.databinding.FragmentShoppingListManagementBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.example.itemmanagement.adapter.ShoppingListProgress
+import kotlinx.coroutines.runBlocking
 
 /**
  * 购物清单管理页面
@@ -75,6 +77,12 @@ class ShoppingListManagementFragment : Fragment() {
                     else -> {
                         viewModel.reactivateShoppingList(shoppingList)
                     }
+                }
+            },
+            getProgressData = { listId ->
+                // 获取真实进度数据（旧版本Fragment的简化实现）
+                runBlocking {
+                    viewModel.getShoppingListProgress(listId)
                 }
             }
         )
@@ -154,6 +162,21 @@ class ShoppingListManagementFragment : Fragment() {
         val budgetEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
             com.example.itemmanagement.R.id.etListBudget
         )
+        val chipGroupType = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(
+            com.example.itemmanagement.R.id.chipGroupListType
+        )
+        val tilCustomType = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(
+            com.example.itemmanagement.R.id.tilCustomType
+        )
+        val etCustomType = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
+            com.example.itemmanagement.R.id.etCustomType
+        )
+
+        // 设置自定义标签的显示逻辑
+        chipGroupType.setOnCheckedStateChangeListener { _, checkedIds ->
+            val isCustomSelected = checkedIds.contains(com.example.itemmanagement.R.id.chipCustom)
+            tilCustomType.visibility = if (isCustomSelected) View.VISIBLE else View.GONE
+        }
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("创建购物清单")
@@ -163,15 +186,33 @@ class ShoppingListManagementFragment : Fragment() {
                 val description = descriptionEditText.text.toString()
                 val budgetText = budgetEditText.text.toString()
                 val budget = if (budgetText.isNotEmpty()) budgetText.toDoubleOrNull() else null
+                
+                // 获取选中的类型
+                val selectedType = getSelectedShoppingListType(chipGroupType, etCustomType)
 
                 if (name.isNotEmpty()) {
-                    viewModel.createShoppingList(name, description, estimatedBudget = budget)
+                    viewModel.createShoppingList(name, description, selectedType, estimatedBudget = budget)
                 } else {
                     Snackbar.make(binding.root, "请输入清单名称", Snackbar.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+    
+    private fun getSelectedShoppingListType(
+        chipGroup: com.google.android.material.chip.ChipGroup,
+        customTypeEditText: com.google.android.material.textfield.TextInputEditText
+    ): com.example.itemmanagement.data.entity.ShoppingListType {
+        return when (chipGroup.checkedChipId) {
+            com.example.itemmanagement.R.id.chipDaily -> com.example.itemmanagement.data.entity.ShoppingListType.DAILY
+            com.example.itemmanagement.R.id.chipWeekly -> com.example.itemmanagement.data.entity.ShoppingListType.WEEKLY
+            com.example.itemmanagement.R.id.chipParty -> com.example.itemmanagement.data.entity.ShoppingListType.PARTY
+            com.example.itemmanagement.R.id.chipTravel -> com.example.itemmanagement.data.entity.ShoppingListType.TRAVEL
+            com.example.itemmanagement.R.id.chipSpecial -> com.example.itemmanagement.data.entity.ShoppingListType.SPECIAL
+            com.example.itemmanagement.R.id.chipCustom -> com.example.itemmanagement.data.entity.ShoppingListType.CUSTOM
+            else -> com.example.itemmanagement.data.entity.ShoppingListType.DAILY
+        }
     }
 
     private fun showEditListDialog(shoppingList: ShoppingListEntity) {

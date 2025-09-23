@@ -20,6 +20,8 @@ import com.google.android.material.chip.Chip
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import androidx.navigation.fragment.findNavController
+import com.example.itemmanagement.ui.animation.SearchBoxAnimator
+import com.example.itemmanagement.ui.warehouse.FilterBottomSheetFragmentV2
 
 class WarehouseFragment : Fragment() {
 
@@ -50,9 +52,11 @@ class WarehouseFragment : Fragment() {
         setupSortBar()
         setupFilterButton()
         setupSearchView()
+        setupEmptyState()
         observeItems()
         observeDeleteResult()
         observeFilterState()
+        
     }
 
     private fun setupRecyclerView() {
@@ -142,16 +146,16 @@ class WarehouseFragment : Fragment() {
     }
     
     private fun updateSortButtonState(selectedButton: TextView) {
-        // 重置所有按钮的状态
-        binding.sortComprehensive.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortQuantity.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortPrice.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortRating.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortShelfLife.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortAddTime.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
+        // 重置所有按钮样式
+        resetButtonStyle(binding.sortComprehensive)
+        resetButtonStyle(binding.sortQuantity)
+        resetButtonStyle(binding.sortPrice)
+        resetButtonStyle(binding.sortRating)
+        resetButtonStyle(binding.sortShelfLife)
+        resetButtonStyle(binding.sortAddTime)
         
-        // 设置选中按钮的状态
-        selectedButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black))
+        // 设置选中按钮的状态 - 淘宝风格
+        setSelectedButtonStyle(selectedButton)
         
         // 重置按钮文本（除了选中的按钮）
         if (selectedButton != binding.sortComprehensive) {
@@ -174,9 +178,56 @@ class WarehouseFragment : Fragment() {
         }
     }
     
+    private fun resetButtonStyle(button: TextView) {
+        // 重置为默认样式 - 使用简单安全的颜色获取方式
+        val unselectedColor = com.google.android.material.R.attr.colorOnSurfaceVariant
+        val typedArray = requireContext().obtainStyledAttributes(intArrayOf(unselectedColor))
+        val color = typedArray.getColor(0, ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
+        typedArray.recycle()
+        
+        button.setTextColor(color)
+        button.typeface = android.graphics.Typeface.DEFAULT
+        
+        // 添加缩放动画
+        button.animate()
+            .scaleX(1.0f)
+            .scaleY(1.0f)
+            .setDuration(150)
+            .start()
+    }
+    
+    private fun setSelectedButtonStyle(button: TextView) {
+        // 设置选中样式 - 使用简单安全的颜色获取方式
+        val selectedAttr = com.google.android.material.R.attr.colorPrimary
+        val typedArray = requireContext().obtainStyledAttributes(intArrayOf(selectedAttr))
+        val color = typedArray.getColor(0, ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_primary))
+        typedArray.recycle()
+        
+        button.setTextColor(color)
+        button.typeface = android.graphics.Typeface.DEFAULT_BOLD
+        
+        // 添加淘宝风格的强调动画
+        button.animate()
+            .scaleX(1.05f)
+            .scaleY(1.05f)
+            .setDuration(150)
+            .start()
+    }
+    
     private fun setupFilterButton() {
         binding.filterButton.setOnClickListener {
             showFilterBottomSheet()
+        }
+    }
+    
+    private fun setupEmptyState() {
+        // 设置空状态按钮点击事件
+        binding.addFirstItemButton.setOnClickListener {
+            // 使用触觉反馈
+            view?.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+            
+            // 导航到添加物品页面
+            findNavController().navigate(R.id.addItemFragment)
         }
     }
     
@@ -189,11 +240,11 @@ class WarehouseFragment : Fragment() {
                 val searchText = s?.toString() ?: ""
                 viewModel.setSearchTerm(searchText)
                 
-                // 显示/隐藏清除按钮
-                binding.clearButton.visibility = if (searchText.isNotEmpty()) {
-                    android.view.View.VISIBLE
+                // 🎬 清除按钮动画控制
+                if (searchText.isNotEmpty()) {
+                    SearchBoxAnimator.animateClearButtonShow(binding.clearSearchIcon)
                 } else {
-                    android.view.View.GONE
+                    SearchBoxAnimator.animateClearButtonHide(binding.clearSearchIcon)
                 }
             }
 
@@ -201,7 +252,7 @@ class WarehouseFragment : Fragment() {
         })
         
         // 设置清除按钮点击事件
-        binding.clearButton.setOnClickListener {
+        binding.clearSearchIcon.setOnClickListener {
             binding.searchEditText.setText("")
             binding.searchEditText.clearFocus()
         }
@@ -223,8 +274,8 @@ class WarehouseFragment : Fragment() {
     }
     
     private fun showFilterBottomSheet() {
-        val filterBottomSheet = FilterBottomSheetFragment()
-        filterBottomSheet.show(childFragmentManager, "FilterBottomSheetFragment")
+        val filterBottomSheet = FilterBottomSheetFragmentV2()
+        filterBottomSheet.show(childFragmentManager, "FilterBottomSheetFragmentV2")
     }
 
     private fun observeItems() {
@@ -248,7 +299,6 @@ class WarehouseFragment : Fragment() {
     }
     
     private fun observeFilterState() {
-        // 使用viewLifecycleOwner.lifecycleScope观察StateFlow，确保在View销毁时自动取消
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.filterState.collectLatest { filterState ->
                 updateFilterChips(filterState)
@@ -259,12 +309,12 @@ class WarehouseFragment : Fragment() {
     
     private fun updateSortButtonsState(filterState: FilterState) {
         // 先重置所有按钮状态
-        binding.sortComprehensive.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortQuantity.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortPrice.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortRating.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortShelfLife.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
-        binding.sortAddTime.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
+        resetButtonStyle(binding.sortComprehensive)
+        resetButtonStyle(binding.sortQuantity)
+        resetButtonStyle(binding.sortPrice)
+        resetButtonStyle(binding.sortRating)
+        resetButtonStyle(binding.sortShelfLife)
+        resetButtonStyle(binding.sortAddTime)
         
         // 设置当前选中的按钮和显示文本
         val selectedButton = when (filterState.sortOption) {
@@ -276,7 +326,7 @@ class WarehouseFragment : Fragment() {
             SortOption.UPDATE_TIME -> binding.sortAddTime
         }
         
-        selectedButton.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.black))
+        setSelectedButtonStyle(selectedButton)
         
         val directionSymbol = if (filterState.sortDirection == SortDirection.ASC) "↑" else "↓"
         when (filterState.sortOption) {
@@ -332,8 +382,12 @@ class WarehouseFragment : Fragment() {
     }
     
     private fun updateFilterChips(filterState: FilterState) {
+        android.util.Log.d("WarehouseFragment", "🔄 updateFilterChips被调用")
+        android.util.Log.d("WarehouseFragment", "📊 当前filterChipGroup子视图数量: ${binding.filterChipGroup.childCount}")
+        
         // 清空当前的筛选条件指示器
         binding.filterChipGroup.removeAllViews()
+        android.util.Log.d("WarehouseFragment", "✅ 已清空filterChipGroup，当前子视图数量: ${binding.filterChipGroup.childCount}")
         
         // 检查是否有实际的筛选条件（排除排序和搜索相关的属性）
         val hasFilter = filterState.copy(
@@ -364,11 +418,35 @@ class WarehouseFragment : Fragment() {
             
             // 不显示搜索词的chip，搜索框本身已经显示搜索内容
             
-            // 添加分类筛选条件
-            if (filterState.category.isNotBlank()) {
+            // 添加分类筛选条件 - 支持多选显示
+            android.util.Log.d("WarehouseFragment", "🎯 updateFilterChips检查分类:")
+            android.util.Log.d("WarehouseFragment", "📊 categories: ${filterState.categories}")
+            android.util.Log.d("WarehouseFragment", "📊 category: '${filterState.category}'")
+            
+            if (filterState.categories.isNotEmpty()) {
+                val categoriesText = if (filterState.categories.size <= 3) {
+                    filterState.categories.joinToString(",")
+                } else {
+                    "${filterState.categories.take(3).joinToString(",")}..."
+                }
+                android.util.Log.d("WarehouseFragment", "✅ 显示多选分类chip: $categoriesText")
+                addFilterChip("分类: $categoriesText") {
+                    // 删除时获取最新的filterState，避免闭包捕获旧状态
+                    val currentState = viewModel.filterState.value
+                    android.util.Log.d("WarehouseFragment", "🔄 点击删除多选分类chip")
+                    android.util.Log.d("WarehouseFragment", "📊 创建时categories: ${filterState.categories}")
+                    android.util.Log.d("WarehouseFragment", "📊 删除时最新categories: ${currentState.categories}")
+                    viewModel.updateCategories(emptySet())
+                }
+            } else if (filterState.category.isNotBlank()) {
+                // 向后兼容旧的单选分类
+                android.util.Log.d("WarehouseFragment", "✅ 显示单选分类chip: ${filterState.category}")
                 addFilterChip("分类: ${filterState.category}") {
+                    android.util.Log.d("WarehouseFragment", "🔄 点击删除单选分类chip")
                     viewModel.setCategory("")
                 }
+            } else {
+                android.util.Log.d("WarehouseFragment", "❌ 没有分类筛选条件")
             }
             
             // 添加子分类筛选条件
@@ -385,8 +463,18 @@ class WarehouseFragment : Fragment() {
                 }
             }
             
-            // 添加位置区域筛选条件
-            if (filterState.locationArea.isNotBlank()) {
+            // 添加位置区域筛选条件 - 支持多选显示
+            if (filterState.locationAreas.isNotEmpty()) {
+                val areasText = if (filterState.locationAreas.size <= 3) {
+                    filterState.locationAreas.joinToString(",")
+                } else {
+                    "${filterState.locationAreas.take(3).joinToString(",")}..."
+                }
+                addFilterChip("区域: $areasText") {
+                    viewModel.updateLocationAreas(emptySet())
+                }
+            } else if (filterState.locationArea.isNotBlank()) {
+                // 向后兼容旧的单选区域
                 addFilterChip("区域: ${filterState.locationArea}") {
                     viewModel.setLocationArea("")
                 }
@@ -483,14 +571,17 @@ class WarehouseFragment : Fragment() {
     }
     
     private fun addFilterChip(text: String, onClose: () -> Unit) {
+        android.util.Log.d("WarehouseFragment", "🏷️ 创建FilterChip: '$text'")
         val chip = Chip(requireContext()).apply {
             this.text = text
             isCloseIconVisible = true
             setOnCloseIconClickListener {
+                android.util.Log.d("WarehouseFragment", "❌ 点击删除FilterChip: '$text'")
                 onClose()
             }
         }
         binding.filterChipGroup.addView(chip)
+        android.util.Log.d("WarehouseFragment", "✅ FilterChip已添加，当前总数: ${binding.filterChipGroup.childCount}")
     }
     
 

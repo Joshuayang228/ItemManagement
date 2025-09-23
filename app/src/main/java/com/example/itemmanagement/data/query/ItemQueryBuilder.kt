@@ -70,6 +70,18 @@ class ItemQueryBuilder {
     }
 
     /**
+     * 添加多选分类条件
+     */
+    fun withCategories(categories: Set<String>): ItemQueryBuilder {
+        if (categories.isNotEmpty()) {
+            val placeholders = categories.joinToString(",") { "?" }
+            conditions.add("i.category IN ($placeholders)")
+            arguments.addAll(categories)
+        }
+        return this
+    }
+
+    /**
      * 添加子分类条件
      */
     fun withSubCategory(subCategory: String): ItemQueryBuilder {
@@ -98,6 +110,18 @@ class ItemQueryBuilder {
         if (area.isNotBlank()) {
             conditions.add("l.area = ?")
             arguments.add(area)
+        }
+        return this
+    }
+
+    /**
+     * 添加多选位置区域条件
+     */
+    fun withLocationAreas(areas: Set<String>): ItemQueryBuilder {
+        if (areas.isNotEmpty()) {
+            val placeholders = areas.joinToString(",") { "?" }
+            conditions.add("l.area IN ($placeholders)")
+            arguments.addAll(areas)
         }
         return this
     }

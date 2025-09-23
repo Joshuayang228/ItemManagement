@@ -6,27 +6,27 @@
         android:id="@+id/action_test_fill"
         android:icon="@drawable/ic_star"
         android:title="测试填充"
-        app:iconTint="@android:color/white"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="always"/>
     
     <item
         android:id="@+id/action_scan"
         android:icon="@drawable/ic_scan"
         android:title="扫描条码"
-        app:iconTint="@android:color/white"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="always"/>
         
     <item
         android:id="@+id/action_camera"
         android:icon="@drawable/ic_camera"
         android:title="拍照"
-        app:iconTint="@android:color/white"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="always"/>
 
     <item
         android:id="@+id/action_clear"
         android:icon="@drawable/ic_cleanup"
         android:title="清除"
-        app:iconTint="@android:color/white"
+        app:iconTint="?attr/colorOnSurface"
         app:showAsAction="always"/>
 </menu> 

@@ -11,6 +11,17 @@ import com.example.itemmanagement.data.entity.ShoppingListEntity
 import com.example.itemmanagement.data.entity.ShoppingListStatus
 import com.example.itemmanagement.data.entity.ShoppingListType
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import com.example.itemmanagement.adapter.ShoppingListProgress
+
+/**
+ * 购物概览统计数据类
+ */
+data class ShoppingOverviewStats(
+    val activeListsCount: Int,
+    val totalPendingItems: Int,
+    val totalBudget: Double
+)
 
 /**
  * 购物清单管理ViewModel
@@ -45,6 +56,10 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
     // 导航事件
     private val _navigateToListDetail = MutableLiveData<Long?>()
     val navigateToListDetail: LiveData<Long?> = _navigateToListDetail
+    
+    // 概览统计数据
+    private val _overviewStats = MutableLiveData<ShoppingOverviewStats>()
+    val overviewStats: LiveData<ShoppingOverviewStats> = _overviewStats
     
     /**
      * 创建新的购物清单
@@ -178,6 +193,28 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
     }
     
     /**
+     * 获取购物清单的真实进度数据
+     */
+    suspend fun getShoppingListProgress(listId: Long): ShoppingListProgress {
+        return try {
+            val totalItems = repository.getShoppingItemsCountByListId(listId).first()
+            val pendingItems = repository.getPendingShoppingItemsCountByListId(listId).first()
+            val completedItems = totalItems - pendingItems
+            
+            val progress = if (totalItems > 0) {
+                (completedItems * 100) / totalItems
+            } else {
+                0
+            }
+            
+            ShoppingListProgress(totalItems, completedItems, progress)
+        } catch (e: Exception) {
+            // 如果出错，返回默认值
+            ShoppingListProgress(0, 0, 0)
+        }
+    }
+    
+    /**
      * 清除错误信息
      */
     fun clearError() {
@@ -189,6 +226,35 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
      */
     fun clearMessage() {
         _message.value = ""
+    }
+    
+    /**
+     * 加载购物概览统计数据
+     */
+    fun loadOverviewStats() {
+        viewModelScope.launch {
+            try {
+                val activeLists = repository.getActiveShoppingLists().first()
+                val activeListsCount = activeLists.size
+                
+                // 计算所有活跃清单的待购买物品总数
+                var totalPendingItems = 0
+                for (list in activeLists) {
+                    totalPendingItems += repository.getPendingShoppingItemsCountByListId(list.id).first()
+                }
+                
+                // 计算所有活跃清单的总预算
+                val totalBudget = activeLists.sumOf { it.estimatedBudget ?: 0.0 }
+                
+                _overviewStats.value = ShoppingOverviewStats(
+                    activeListsCount = activeListsCount,
+                    totalPendingItems = totalPendingItems,
+                    totalBudget = totalBudget
+                )
+            } catch (e: Exception) {
+                _error.value = "获取概览数据失败: ${e.message}"
+            }
+        }
     }
     
     /**

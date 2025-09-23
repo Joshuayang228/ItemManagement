@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    // id("kotlin-kapt")
+    id("kotlin-kapt")
     alias(libs.plugins.navigation.safeargs)
     id("kotlin-parcelize")
     id("com.google.devtools.ksp")
@@ -43,6 +43,11 @@ android {
         jvmTarget = "17"
         freeCompilerArgs = listOf("-Xjvm-default=all")
     }
+    
+    kapt {
+        correctErrorTypes = true
+        useBuildCache = true
+    }
     buildFeatures {
         viewBinding = true
         dataBinding = true
@@ -68,6 +73,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
     // Lifecycle组件
     implementation(libs.lifecycle.viewmodel)
@@ -91,6 +97,13 @@ dependencies {
 
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // SmartRefreshLayout 3.0.0-alpha - AndroidX完美支持版本 🌟
+    implementation("io.github.scwang90:refresh-layout-kernel:3.0.0-alpha")      // 核心必须依赖
+    implementation("io.github.scwang90:refresh-header-material:3.0.0-alpha")     // Material Design头部
+    implementation("io.github.scwang90:refresh-header-classics:3.0.0-alpha")     // 经典头部（备选）
+    implementation("io.github.scwang90:refresh-header-radar:3.0.0-alpha")        // 雷达头部（炫酷）
+    implementation("io.github.scwang90:refresh-footer-classics:3.0.0-alpha")     // 经典底部加载
     
     // Testing
     testImplementation(libs.junit)

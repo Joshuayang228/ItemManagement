@@ -49,6 +49,8 @@ class ItemCalendarFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        android.util.Log.d("CalendarFragment", "=== onViewCreated() 开始 ===")
+        
         setupRecyclerView()
         setupObservers()
         setupClickListeners()
@@ -56,11 +58,36 @@ class ItemCalendarFragment : Fragment() {
         // 直接设置为月视图模式
         viewModel.setViewMode(ItemCalendarViewModel.ViewMode.MONTH)
         
-        // 确保初始状态正确显示
+        // 设置初始的空状态
         binding.selectedDateEvents.visibility = View.GONE
         binding.emptyStateText.visibility = View.VISIBLE
         
         android.util.Log.d("CalendarFragment", "Fragment 初始化完成")
+        android.util.Log.d("CalendarFragment", "=== onViewCreated() 结束 ===")
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        android.util.Log.d("CalendarFragment", "=== onResume() 开始 ===")
+        
+        // Fragment恢复时，检查并恢复选中日期的状态
+        val selectedDate = viewModel.selectedDate.value
+        android.util.Log.d("CalendarFragment", "ViewModel中的selectedDate: $selectedDate")
+        
+        if (selectedDate != null) {
+            android.util.Log.d("CalendarFragment", "Fragment恢复时发现已选中日期: ${dateFormat.format(selectedDate)}")
+            android.util.Log.d("CalendarFragment", "准备调用 monthAdapter.setSelectedDate()")
+            monthAdapter.setSelectedDate(selectedDate)
+            android.util.Log.d("CalendarFragment", "准备强制刷新 showSelectedDateEvents()")
+            // 强制刷新，不受重复检查限制
+            forceShowSelectedDateEvents(selectedDate)
+            android.util.Log.d("CalendarFragment", "强制刷新完成")
+        } else {
+            android.util.Log.d("CalendarFragment", "ViewModel中没有选中日期，显示空状态")
+            hideSelectedDateEvents()
+        }
+        
+        android.util.Log.d("CalendarFragment", "=== onResume() 结束 ===")
     }
     
     private fun setupRecyclerView() {
@@ -72,10 +99,14 @@ class ItemCalendarFragment : Fragment() {
         
         // 设置月视图的日期点击监听器
         monthAdapter.setOnDateClickListener { date ->
-            android.util.Log.d("CalendarFragment", "日期被点击: ${dateFormat.format(date)}")
+            android.util.Log.d("CalendarFragment", "=== 日期被点击: ${dateFormat.format(date)} ===")
+            android.util.Log.d("CalendarFragment", "准备调用 viewModel.selectDate()")
             viewModel.selectDate(date)
+            android.util.Log.d("CalendarFragment", "准备调用 monthAdapter.setSelectedDate()")
             monthAdapter.setSelectedDate(date)
+            android.util.Log.d("CalendarFragment", "准备调用 showSelectedDateEvents()")
             showSelectedDateEvents(date)
+            android.util.Log.d("CalendarFragment", "日期点击处理完成")
         }
         
         // 设置选中日期事件列表适配器
@@ -84,15 +115,18 @@ class ItemCalendarFragment : Fragment() {
             adapter = selectedDateEventsAdapter
         }
         
-        selectedDateEventsAdapter.setOnEventActionListener { action, eventId ->
-            when (action) {
-                "complete" -> viewModel.markEventCompleted(eventId)
-                "delete" -> viewModel.deleteEvent(eventId)
-            }
-        }
         
         selectedDateEventsAdapter.setOnEventClickListener { event ->
-            // TODO: 导航到事件详情页面
+            // 导航到物品详情页面
+            android.util.Log.d("CalendarFragment", "=== 事件被点击，准备导航 ===")
+            android.util.Log.d("CalendarFragment", "事件标题: ${event.title}, 物品ID: ${event.itemId}")
+            android.util.Log.d("CalendarFragment", "当前选中日期: ${viewModel.selectedDate.value}")
+            
+            val action = ItemCalendarFragmentDirections
+                .actionItemCalendarToItemDetail(event.itemId)
+            findNavController().navigate(action)
+            
+            android.util.Log.d("CalendarFragment", "导航已发起")
         }
     }
 
@@ -142,10 +176,14 @@ class ItemCalendarFragment : Fragment() {
         }
         
         viewModel.selectedDate.observe(viewLifecycleOwner) { date ->
-            android.util.Log.d("CalendarFragment", "selectedDate Observer 触发: $date")
+            android.util.Log.d("CalendarFragment", "=== selectedDate Observer 触发 ===")
+            android.util.Log.d("CalendarFragment", "新的选中日期: ${date?.let { dateFormat.format(it) } ?: "null"}")
+            android.util.Log.d("CalendarFragment", "当前Fragment状态: isAdded=$isAdded, isVisible=$isVisible, isResumed=$isResumed")
             if (date != null) {
+                android.util.Log.d("CalendarFragment", "准备调用 showSelectedDateEvents")
                 showSelectedDateEvents(date)
             } else {
+                android.util.Log.d("CalendarFragment", "准备调用 hideSelectedDateEvents")
                 hideSelectedDateEvents()
             }
         }
@@ -161,14 +199,13 @@ class ItemCalendarFragment : Fragment() {
             viewModel.nextMonth()
         }
         
-        // 添加事件按钮
-        binding.addEventFab.setOnClickListener {
-            // TODO: 导航到添加事件页面
-            // findNavController().navigate(R.id.action_calendar_to_add_event)
-        }
     }
 
     private fun showSelectedDateEvents(date: Date) {
+        android.util.Log.d("CalendarFragment", "=== showSelectedDateEvents 开始 ===")
+        android.util.Log.d("CalendarFragment", "传入的日期: ${dateFormat.format(date)}")
+        android.util.Log.d("CalendarFragment", "当前选中日期: ${currentSelectedDate?.let { dateFormat.format(it) } ?: "null"}")
+        
         // 检查是否是相同的日期，避免重复处理
         if (currentSelectedDate != null && isSameDay(currentSelectedDate!!, date)) {
             android.util.Log.d("CalendarFragment", "相同日期，跳过重复处理: ${dateFormat.format(date)}")
@@ -176,30 +213,81 @@ class ItemCalendarFragment : Fragment() {
         }
         
         currentSelectedDate = date
-        android.util.Log.d("CalendarFragment", "showSelectedDateEvents 被调用，日期: ${dateFormat.format(date)}")
+        android.util.Log.d("CalendarFragment", "设置新的currentSelectedDate: ${dateFormat.format(date)}")
         
         binding.selectedDateTitle.text = "${dateFormat.format(date)}的事件"
+        android.util.Log.d("CalendarFragment", "已设置事件卡片标题")
         
         // 获取选中日期的事件
-        val eventsForDate = viewModel.calendarEvents.value?.filter { event ->
-            isSameDay(event.eventDate, date)
+        val allEvents = viewModel.calendarEvents.value
+        android.util.Log.d("CalendarFragment", "ViewModel中总共有 ${allEvents?.size ?: 0} 个事件")
+        
+        val eventsForDate = allEvents?.filter { event ->
+            val isSame = isSameDay(event.eventDate, date)
+            android.util.Log.d("CalendarFragment", "事件: ${event.title}, 日期: ${dateFormat.format(event.eventDate)}, 匹配: $isSame")
+            isSame
         } ?: emptyList()
         
-        android.util.Log.d("CalendarFragment", "找到 ${eventsForDate.size} 个事件")
+        android.util.Log.d("CalendarFragment", "筛选后找到 ${eventsForDate.size} 个事件")
         
         if (eventsForDate.isNotEmpty()) {
+            android.util.Log.d("CalendarFragment", "准备显示事件列表")
             selectedDateEventsAdapter.submitList(eventsForDate.sortedBy { it.eventDate })
             binding.selectedDateEvents.visibility = View.VISIBLE
             binding.emptyStateText.visibility = View.GONE
-            android.util.Log.d("CalendarFragment", "显示事件列表")
+            android.util.Log.d("CalendarFragment", "事件列表已显示，卡片可见性: ${binding.selectedDateEvents.visibility}")
         } else {
             // 显示空状态但保持事件区域可见
+            android.util.Log.d("CalendarFragment", "没有事件，显示空状态")
             binding.selectedDateTitle.text = "${dateFormat.format(date)}的事件 (暂无事件)"
             selectedDateEventsAdapter.submitList(emptyList())
             binding.selectedDateEvents.visibility = View.VISIBLE
             binding.emptyStateText.visibility = View.GONE
-            android.util.Log.d("CalendarFragment", "显示空状态")
+            android.util.Log.d("CalendarFragment", "空状态已显示，卡片可见性: ${binding.selectedDateEvents.visibility}")
         }
+        
+        android.util.Log.d("CalendarFragment", "=== showSelectedDateEvents 结束 ===")
+    }
+    
+    private fun forceShowSelectedDateEvents(date: Date) {
+        android.util.Log.d("CalendarFragment", "=== forceShowSelectedDateEvents 开始 ===")
+        android.util.Log.d("CalendarFragment", "强制刷新日期: ${dateFormat.format(date)}")
+        
+        currentSelectedDate = date
+        android.util.Log.d("CalendarFragment", "强制设置 currentSelectedDate: ${dateFormat.format(date)}")
+        
+        binding.selectedDateTitle.text = "${dateFormat.format(date)}的事件"
+        android.util.Log.d("CalendarFragment", "已设置事件卡片标题")
+        
+        // 获取选中日期的事件
+        val allEvents = viewModel.calendarEvents.value
+        android.util.Log.d("CalendarFragment", "ViewModel中总共有 ${allEvents?.size ?: 0} 个事件")
+        
+        val eventsForDate = allEvents?.filter { event ->
+            val isSame = isSameDay(event.eventDate, date)
+            android.util.Log.d("CalendarFragment", "事件: ${event.title}, 日期: ${dateFormat.format(event.eventDate)}, 匹配: $isSame")
+            isSame
+        } ?: emptyList()
+        
+        android.util.Log.d("CalendarFragment", "筛选后找到 ${eventsForDate.size} 个事件")
+        
+        if (eventsForDate.isNotEmpty()) {
+            android.util.Log.d("CalendarFragment", "准备强制显示事件列表")
+            selectedDateEventsAdapter.submitList(eventsForDate.sortedBy { it.eventDate })
+            binding.selectedDateEvents.visibility = View.VISIBLE
+            binding.emptyStateText.visibility = View.GONE
+            android.util.Log.d("CalendarFragment", "事件列表已强制显示，卡片可见性: ${binding.selectedDateEvents.visibility}")
+        } else {
+            // 显示空状态但保持事件区域可见
+            android.util.Log.d("CalendarFragment", "没有事件，强制显示空状态")
+            binding.selectedDateTitle.text = "${dateFormat.format(date)}的事件 (暂无事件)"
+            selectedDateEventsAdapter.submitList(emptyList())
+            binding.selectedDateEvents.visibility = View.VISIBLE
+            binding.emptyStateText.visibility = View.GONE
+            android.util.Log.d("CalendarFragment", "空状态已强制显示，卡片可见性: ${binding.selectedDateEvents.visibility}")
+        }
+        
+        android.util.Log.d("CalendarFragment", "=== forceShowSelectedDateEvents 结束 ===")
     }
     
     private fun hideSelectedDateEvents() {
@@ -241,8 +329,16 @@ class ItemCalendarFragment : Fragment() {
                 cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR)
     }
 
+    override fun onPause() {
+        super.onPause()
+        android.util.Log.d("CalendarFragment", "=== onPause() ===")
+        android.util.Log.d("CalendarFragment", "当前选中日期: ${currentSelectedDate?.let { dateFormat.format(it) } ?: "null"}")
+        android.util.Log.d("CalendarFragment", "ViewModel中选中日期: ${viewModel.selectedDate.value?.let { dateFormat.format(it) } ?: "null"}")
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        android.util.Log.d("CalendarFragment", "=== onDestroyView() ===")
         _binding = null
     }
 } 

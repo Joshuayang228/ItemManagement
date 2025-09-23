@@ -30,7 +30,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_calendar"
-            app:tint="@color/orange_500" />
+            app:tint="?attr/colorTertiary" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -38,7 +38,7 @@
             android:layout_marginTop="2dp"
             android:text="即将过期"
             android:textSize="11sp"
-            android:textColor="#212121"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -64,7 +64,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_error_placeholder"
-            app:tint="@color/red_500" />
+            app:tint="?attr/colorError" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -72,7 +72,7 @@
             android:layout_marginTop="2dp"
             android:text="过期物品"
             android:textSize="11sp"
-            android:textColor="#212121"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -98,7 +98,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_stock_warning"
-            app:tint="@color/purple_500" />
+            app:tint="?attr/colorPrimary" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -106,7 +106,7 @@
             android:layout_marginTop="2dp"
             android:text="库存不足"
             android:textSize="11sp"
-            android:textColor="#212121"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:ellipsize="end" />
 
@@ -132,7 +132,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@drawable/ic_list"
-            app:tint="@color/success" />
+            app:tint="?attr/colorSecondary" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -140,7 +140,7 @@
             android:layout_marginTop="2dp"
             android:text="购物清单"
             android:textSize="11sp"
-            android:textColor="#212121"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:maxLines="1"
             android:ellipsize="end" />
 

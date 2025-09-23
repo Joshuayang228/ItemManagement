@@ -24,21 +24,3 @@ data class UserStatsSummary(
     val levelColor: String
 )
 
-/**
- * 库存概览数据类
- */
-data class InventoryOverview(
-    val totalItems: Int,
-    val totalValue: Double,
-    val expiringSoon: Int,
-    val lowStock: Int,
-    val categoryStats: List<CategoryStat>
-)
-
-/**
- * 分类统计数据类
- */
-data class CategoryStat(
-    val category: String,
-    val count: Int
-)

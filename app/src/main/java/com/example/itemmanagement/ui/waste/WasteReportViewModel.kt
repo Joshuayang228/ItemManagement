@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+private const val EXPIRED_CHECK_INTERVAL_MS = 60 * 60 * 1000L // 1小时
+
 class WasteReportViewModel(
     private val repository: ItemRepository
 ) : ViewModel() {
@@ -35,6 +37,8 @@ class WasteReportViewModel(
 
     private val _customDateRange = MutableLiveData<DateRange?>()
     val customDateRange: LiveData<DateRange?> = _customDateRange
+    
+    private var lastExpiredCheckTime = 0L
 
     /**
      * 检查过期物品并生成浪费报告
@@ -42,14 +46,18 @@ class WasteReportViewModel(
     fun checkExpiredItemsAndGenerateReport(periodType: ReportPeriodType, customRange: DateRange? = null) {
         viewModelScope.launch {
             _isLoading.value = true
+            _errorMessage.value = null
+            
             try {
-                // 先更新过期物品状态
-                println("WasteReportViewModel: 开始检查过期物品...")
-                repository.checkAndUpdateExpiredItems(System.currentTimeMillis())
-                println("WasteReportViewModel: 过期物品状态更新完成")
+                // 智能检查：如果距离上次检查不足1小时，跳过过期检查
+                val shouldCheckExpired = shouldPerformExpiredCheck()
+                if (shouldCheckExpired) {
+                    repository.checkAndUpdateExpiredItems(System.currentTimeMillis())
+                    updateLastExpiredCheckTime()
+                }
                 
-                // 然后生成报告
-                generateWasteReport(periodType, customRange)
+                // 然后直接生成报告（避免嵌套协程）
+                generateWasteReportInternal(periodType, customRange)
             } catch (e: Exception) {
                 _errorMessage.value = "更新过期物品状态失败: ${e.message}"
                 _isLoading.value = false
@@ -58,7 +66,7 @@ class WasteReportViewModel(
     }
 
     /**
-     * 生成浪费报告
+     * 生成浪费报告（公共接口）
      */
     fun generateWasteReport(periodType: ReportPeriodType, customRange: DateRange? = null) {
         viewModelScope.launch {
@@ -66,56 +74,95 @@ class WasteReportViewModel(
             _errorMessage.value = null
             
             try {
-                val dateRange = when (periodType) {
-                    ReportPeriodType.LAST_WEEK -> getLastWeekRange()
-                    ReportPeriodType.LAST_MONTH -> getLastMonthRange()
-                    ReportPeriodType.LAST_THREE_MONTHS -> getLastThreeMonthsRange()
-                    ReportPeriodType.PAST_YEAR -> getPastYearRange()
-                    ReportPeriodType.THIS_YEAR -> getThisYearRange()
-                    ReportPeriodType.CUSTOM -> customRange ?: getLastMonthRange()
-                }
-
-                _currentPeriod.value = periodType
-                if (periodType == ReportPeriodType.CUSTOM) {
-                    _customDateRange.value = dateRange
-                }
-
-                val startTime = dateRange.startDate.time
-                val endTime = dateRange.endDate.time
-
-                // 并行获取所有数据
-                println("WasteReportViewModel: 查询时间范围 ${Date(startTime)} 到 ${Date(endTime)}")
-                val summary = repository.getWasteSummaryInPeriod(startTime, endTime)
-                val wastedItems = repository.getWastedItemsInPeriod(startTime, endTime)
-                val categoryData = repository.getWasteByCategoryInPeriod(startTime, endTime)
-                val dateData = repository.getWasteByDateInPeriod(startTime, endTime)
-                
-                println("WasteReportViewModel: 查询结果 - 总计: ${summary.totalItems}件, 价值: ${summary.totalValue}元")
-                println("WasteReportViewModel: 浪费物品详情: ${wastedItems.size}件")
-                println("WasteReportViewModel: 分类数据: ${categoryData.size}个类别")
-                println("WasteReportViewModel: 时间数据: ${dateData.size}个日期")
-
-                // 转换数据格式
-                val wasteReport = buildWasteReportData(
-                    summary = summary,
-                    wastedItems = wastedItems,
-                    categoryData = categoryData,
-                    dateData = dateData,
-                    dateRange = dateRange
-                )
-
-                _wasteReportData.value = wasteReport
-
-                // 生成智能洞察
-                val insights = WasteInsightGenerator.generateInsights(wasteReport)
-                _insights.value = insights
-
+                generateWasteReportInternal(periodType, customRange)
             } catch (e: Exception) {
                 _errorMessage.value = "生成浪费报告失败: ${e.message}"
-            } finally {
                 _isLoading.value = false
             }
         }
+    }
+    
+    /**
+     * 生成浪费报告（内部实现）
+     */
+    private suspend fun generateWasteReportInternal(periodType: ReportPeriodType, customRange: DateRange? = null) {
+        val dateRange = when (periodType) {
+            ReportPeriodType.LAST_WEEK -> getLastWeekRange()
+            ReportPeriodType.LAST_MONTH -> getLastMonthRange()
+            ReportPeriodType.LAST_THREE_MONTHS -> getLastThreeMonthsRange()
+            ReportPeriodType.PAST_YEAR -> getPastYearRange()
+            ReportPeriodType.THIS_YEAR -> getThisYearRange()
+            ReportPeriodType.CUSTOM -> customRange ?: getLastMonthRange()
+        }
+
+        _currentPeriod.value = periodType
+        if (periodType == ReportPeriodType.CUSTOM) {
+            _customDateRange.value = dateRange
+        }
+
+        val startTime = dateRange.startDate.time
+        val endTime = dateRange.endDate.time
+
+        // 使用事务获取所有数据确保一致性
+        val rawData = repository.getWasteReportData(startTime, endTime)
+        
+        // 调试信息
+        println("WasteReportViewModel调试:")
+        println("- 查询时间范围: ${Date(startTime)} 到 ${Date(endTime)}")
+        println("- 总结: 物品${rawData.summary.totalItems}件, 价值${rawData.summary.totalValue}元")
+        println("- 浪费物品详情:")
+        rawData.wastedItems.forEach { item ->
+            println("  * ${item.name}: 状态=${item.status}, 浪费时间=${Date(item.wasteDate)}, 价格=${item.totalPrice}")
+        }
+        
+        // 检查是否有浪费状态但没有wasteDate的物品
+        val wastedItemsWithoutDate = repository.getWastedItemsWithoutWasteDate()
+        if (wastedItemsWithoutDate.isNotEmpty()) {
+            println("- 发现${wastedItemsWithoutDate.size}个浪费物品没有wasteDate:")
+            wastedItemsWithoutDate.forEach { item ->
+                println("  ! ${item.name}: 状态=${item.status}, 添加时间=${Date(item.wasteDate)}, 价格=${item.totalPrice}")
+            }
+            
+            // 自动修复这些物品
+            val fixedCount = repository.fixWastedItemsWithoutWasteDate(System.currentTimeMillis())
+            println("- 已自动修复${fixedCount}个物品的wasteDate")
+            
+            // 修复后重新查询数据
+            val updatedRawData = repository.getWasteReportData(startTime, endTime)
+            println("- 修复后总结: 物品${updatedRawData.summary.totalItems}件, 价值${updatedRawData.summary.totalValue}元")
+            
+            // 使用修复后的数据
+            val wasteReport = buildWasteReportData(
+                summary = updatedRawData.summary,
+                wastedItems = updatedRawData.wastedItems,
+                categoryData = updatedRawData.categoryData,
+                dateData = updatedRawData.dateData,
+                dateRange = dateRange
+            )
+            
+            _wasteReportData.value = wasteReport
+            val insights = WasteInsightGenerator.generateInsights(wasteReport)
+            _insights.value = insights
+            _isLoading.value = false
+            return
+        }
+
+        // 转换数据格式
+        val wasteReport = buildWasteReportData(
+            summary = rawData.summary,
+            wastedItems = rawData.wastedItems,
+            categoryData = rawData.categoryData,
+            dateData = rawData.dateData,
+            dateRange = dateRange
+        )
+
+        _wasteReportData.value = wasteReport
+
+        // 生成智能洞察
+        val insights = WasteInsightGenerator.generateInsights(wasteReport)
+        _insights.value = insights
+        
+        _isLoading.value = false
     }
 
     /**
@@ -158,7 +205,7 @@ class WasteReportViewModel(
                 name = item.name,
                 category = item.category ?: "未分类",
                 wasteReason = if (item.status == "EXPIRED") WasteReason.EXPIRED else WasteReason.DISCARDED,
-                wasteDate = Date(item.addDate),
+                wasteDate = Date(item.wasteDate),
                 value = if (item.totalPrice > 0) item.totalPrice else null,
                 quantity = item.quantity,
                 unit = item.unit,
@@ -200,22 +247,50 @@ class WasteReportViewModel(
 
     private fun getLastWeekRange(): DateRange {
         val calendar = Calendar.getInstance()
-        val endDate = Date()
         
-        calendar.time = endDate
-        calendar.add(Calendar.DAY_OF_YEAR, -7)
+        // 设置为本周一
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        
+        // 移动到上周一
+        calendar.add(Calendar.WEEK_OF_YEAR, -1)
         val startDate = calendar.time
+        
+        // 移动到上周日结束
+        calendar.add(Calendar.DAY_OF_YEAR, 6)
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        calendar.set(Calendar.MILLISECOND, 999)
+        val endDate = calendar.time
         
         return DateRange(startDate, endDate)
     }
 
     private fun getLastMonthRange(): DateRange {
         val calendar = Calendar.getInstance()
-        val endDate = Date()
         
-        calendar.time = endDate
+        // 移动到上个月
         calendar.add(Calendar.MONTH, -1)
+        
+        // 设置为上个月第一天的开始
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
         val startDate = calendar.time
+        
+        // 移动到上个月最后一天的结束
+        calendar.set(Calendar.DAY_OF_MONTH, calendar.getActualMaximum(Calendar.DAY_OF_MONTH))
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        calendar.set(Calendar.MILLISECOND, 999)
+        val endDate = calendar.time
         
         return DateRange(startDate, endDate)
     }
@@ -256,5 +331,20 @@ class WasteReportViewModel(
         val startDate = calendar.time
         
         return DateRange(startDate, endDate)
+    }
+
+    /**
+     * 判断是否需要执行过期检查
+     */
+    private fun shouldPerformExpiredCheck(): Boolean {
+        val currentTime = System.currentTimeMillis()
+        return currentTime - lastExpiredCheckTime > EXPIRED_CHECK_INTERVAL_MS
+    }
+
+    /**
+     * 更新最后一次过期检查时间
+     */
+    private fun updateLastExpiredCheckTime() {
+        lastExpiredCheckTime = System.currentTimeMillis()
     }
 } 

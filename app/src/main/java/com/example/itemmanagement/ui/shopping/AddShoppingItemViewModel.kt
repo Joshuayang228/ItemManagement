@@ -173,7 +173,7 @@ class AddShoppingItemViewModel(
             brand = fieldValues["品牌"] as? String,
             specification = fieldValues["规格"] as? String,
             customNote = fieldValues["备注"] as? String,
-            estimatedPrice = estimatedPrice,
+            price = estimatedPrice,
             actualPrice = actualPrice,
             priceUnit = fieldValues["价格单位"] as? String ?: "元",
             budgetLimit = budgetLimit,
@@ -204,8 +204,8 @@ class AddShoppingItemViewModel(
         return when {
             item.name.isBlank() -> Pair(false, "物品名称不能为空")
             item.quantity <= 0.0 -> Pair(false, "数量必须大于0")
-            item.budgetLimit != null && item.estimatedPrice != null && 
-                item.estimatedPrice > item.budgetLimit -> Pair(false, "预估价格不能超过预算上限")
+            item.budgetLimit != null && item.price != null && 
+                item.price > item.budgetLimit -> Pair(false, "预估价格不能超过预算上限")
             else -> Pair(true, null)
         }
     }

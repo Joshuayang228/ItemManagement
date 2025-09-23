@@ -184,7 +184,7 @@
                                 android:paddingEnd="@dimen/detail_category_tag_padding_horizontal"
                                 android:paddingTop="@dimen/detail_category_tag_padding_vertical"
                                 android:paddingBottom="@dimen/detail_category_tag_padding_vertical"
-                                android:textColor="@color/white"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 tools:text="电子产品" />
 
                             <TextView
@@ -198,7 +198,7 @@
                                 android:paddingEnd="@dimen/detail_category_tag_padding_horizontal"
                                 android:paddingTop="@dimen/detail_category_tag_padding_vertical"
                                 android:paddingBottom="@dimen/detail_category_tag_padding_vertical"
-                                android:textColor="@color/white"
+                                android:textColor="?attr/colorOnSurfaceVariant"
                                 tools:text="笔记本电脑" />
                         </LinearLayout>
                     </LinearLayout>

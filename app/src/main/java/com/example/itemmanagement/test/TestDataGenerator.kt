@@ -51,7 +51,6 @@ object TestDataGenerator {
                 warrantyPeriod = null,
                 warrantyEndDate = null,
                 serialNumber = "BY2024001234",
-                isWishlistItem = false,
                 isHighTurnover = true
             ),
             location = LocationEntity(
@@ -60,8 +59,8 @@ object TestDataGenerator {
                 sublocation = "第一层抽屉"
             ),
             photos = listOf(
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/1001", isMain = true, displayOrder = 1),
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/1002", isMain = false, displayOrder = 2)
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=medicine1", isMain = true, displayOrder = 1),
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=medicine2", isMain = false, displayOrder = 2)
             ),
             tags = listOf(
                 TagEntity(name = "处方药", color = "#FF5722"),
@@ -104,7 +103,6 @@ object TestDataGenerator {
                 warrantyPeriod = null,
                 warrantyEndDate = null,
                 serialNumber = null,
-                isWishlistItem = false,
                 isHighTurnover = true
             ),
             location = LocationEntity(
@@ -113,7 +111,7 @@ object TestDataGenerator {
                 sublocation = "冷藏室"
             ),
             photos = listOf(
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/2001", isMain = true, displayOrder = 1)
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=milk1", isMain = true, displayOrder = 1)
             ),
             tags = listOf(
                 TagEntity(name = "有机", color = "#4CAF50"),
@@ -156,7 +154,6 @@ object TestDataGenerator {
                 warrantyPeriod = 365, // 1年保修
                 warrantyEndDate = getDateDaysFromNow(335), // 还有335天保修
                 serialNumber = "F2LMHV9HQ1MN",
-                isWishlistItem = false,
                 isHighTurnover = false
             ),
             location = LocationEntity(
@@ -165,9 +162,9 @@ object TestDataGenerator {
                 sublocation = "抽屉"
             ),
             photos = listOf(
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/3001", isMain = true, displayOrder = 1),
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/3002", isMain = false, displayOrder = 2),
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/3003", isMain = false, displayOrder = 3)
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=iphone1", isMain = true, displayOrder = 1),
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=iphone2", isMain = false, displayOrder = 2),
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=iphone3", isMain = false, displayOrder = 3)
             ),
             tags = listOf(
                 TagEntity(name = "数码", color = "#607D8B"),
@@ -210,7 +207,6 @@ object TestDataGenerator {
                 warrantyPeriod = 90, // 3个月质保
                 warrantyEndDate = getDateDaysFromNow(30), // 还有30天质保
                 serialNumber = "UQ2024WC001",
-                isWishlistItem = true, // 曾经是心愿单物品
                 isHighTurnover = false
             ),
             location = LocationEntity(
@@ -219,7 +215,7 @@ object TestDataGenerator {
                 sublocation = "挂衣区"
             ),
             photos = listOf(
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/4001", isMain = true, displayOrder = 1)
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=coat1", isMain = true, displayOrder = 1)
             ),
             tags = listOf(
                 TagEntity(name = "羊毛", color = "#8BC34A"),
@@ -262,7 +258,6 @@ object TestDataGenerator {
                 warrantyPeriod = null,
                 warrantyEndDate = null,
                 serialNumber = "LC2024030001",
-                isWishlistItem = true,
                 isHighTurnover = false
             ),
             location = LocationEntity(
@@ -271,7 +266,7 @@ object TestDataGenerator {
                 sublocation = "第二层"
             ),
             photos = listOf(
-                PhotoEntity(itemId = 0, uri = "content://media/external/images/media/5001", isMain = true, displayOrder = 1)
+                PhotoEntity(itemId = 0, uri = "https://picsum.photos/400/300?random=cosmetic1", isMain = true, displayOrder = 1)
             ),
             tags = listOf(
                 TagEntity(name = "护肤", color = "#E1BEE7"),

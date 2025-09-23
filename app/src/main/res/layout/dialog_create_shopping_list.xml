@@ -42,6 +42,89 @@
 
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- 清单类型标签 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="清单类型"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/primary" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupListType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        app:singleSelection="true"
+        app:selectionRequired="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipDaily"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="日常补充"
+            android:checked="true" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipWeekly"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="周采购" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipParty"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="聚会准备" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipTravel"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="旅行购物" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipSpecial"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="特殊场合" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipCustom"
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="自定义" />
+
+    </com.google.android.material.chip.ChipGroup>
+
+    <!-- 自定义标签输入 -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilCustomType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="自定义类型名称"
+        android:visibility="gone"
+        app:boxStrokeColor="@color/primary"
+        app:hintTextColor="@color/primary">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etCustomType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
     <!-- 预算 -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"

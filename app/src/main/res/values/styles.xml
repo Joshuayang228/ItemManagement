@@ -1,336 +1,139 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 全屏对话框样式 -->
-    <style name="Theme.ItemManagement.FullScreenDialog" parent="Theme.Material3.Light.Dialog">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:windowIsFloating">false</item>
-        <item name="android:windowBackground">@android:color/white</item>
+    <!-- Material Design 3 Shape Overlays -->
+    <style name="ShapeAppearanceOverlay.Material3.Corner.Medium" parent="">
+        <item name="cornerSize">12dp</item>
     </style>
     
-    <!-- 底部弹出对话框样式 -->
-    <style name="BottomSheetDialogTheme" parent="Theme.Material3.Light.BottomSheetDialog">
-        <item name="bottomSheetStyle">@style/CustomBottomSheetStyle</item>
-    </style>
-
-    <style name="CustomBottomSheetStyle" parent="Widget.Material3.BottomSheet.Modal">
-        <item name="android:background">@android:color/transparent</item>
-        <item name="behavior_peekHeight">600dp</item>
-        <item name="behavior_fitToContents">true</item>
-        <item name="behavior_hideable">true</item>
-        <item name="behavior_skipCollapsed">true</item>
+    <style name="ShapeAppearanceOverlay.Material3.Corner.Small" parent="">
+        <item name="cornerSize">8dp</item>
     </style>
     
-    <style name="ShapeAppearance.BottomSheet" parent="">
-        <item name="cornerFamily">rounded</item>
-        <item name="cornerSizeTopLeft">16dp</item>
-        <item name="cornerSizeTopRight">16dp</item>
+    <style name="ShapeAppearanceOverlay.Material3.Corner.Large" parent="">
+        <item name="cornerSize">16dp</item>
     </style>
     
-    <style name="BottomSheetAnimation">
-        <item name="android:windowEnterAnimation">@anim/slide_up</item>
-        <item name="android:windowExitAnimation">@anim/slide_down</item>
+    <style name="ShapeAppearanceOverlay.Material3.Corner.ExtraLarge" parent="">
+        <item name="cornerSize">24dp</item>
     </style>
 
-    <!-- 物品详情页样式 -->
-    
-    <!-- 卡片样式 -->
-    <style name="DetailCard">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="cardCornerRadius">@dimen/detail_card_corner_radius</item>
-        <item name="cardElevation">@dimen/detail_card_shadow</item>
-        <item name="cardBackgroundColor">@color/card_background</item>
-        <item name="android:layout_marginStart">@dimen/detail_card_margin</item>
-        <item name="android:layout_marginEnd">@dimen/detail_card_margin</item>
-        <item name="android:layout_marginTop">@dimen/detail_card_spacing</item>
-        <item name="android:layout_marginBottom">@dimen/detail_card_spacing</item>
-    </style>
-
-    <!-- 卡片内容容器 -->
-    <style name="DetailCardContent">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:orientation">vertical</item>
-        <item name="android:padding">@dimen/detail_card_padding</item>
-    </style>
-
-    <!-- 卡片标题 -->
-    <style name="DetailCardTitle">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">@dimen/detail_card_title_text_size</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:layout_marginBottom">@dimen/detail_card_content_spacing</item>
-    </style>
-
-    <!-- 物品名称 -->
-    <style name="DetailItemTitle">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">@dimen/detail_title_text_size</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:paddingTop">@dimen/detail_title_padding</item>
-        <item name="android:paddingBottom">@dimen/detail_title_padding</item>
-    </style>
-
-    <!-- 信息行 -->
-    <style name="DetailInfoRow">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:minHeight">@dimen/detail_row_height</item>
-        <item name="android:layout_marginTop">@dimen/detail_card_content_spacing</item>
-        <item name="android:gravity">center_vertical</item>
-    </style>
-
-    <!-- 信息行 - 水平布局 -->
-    <style name="DetailInfoRowHorizontal" parent="DetailInfoRow">
-        <item name="android:orientation">horizontal</item>
-    </style>
-
-    <!-- 标签文本 -->
-    <style name="DetailLabel">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">@dimen/detail_date_text_size</item>
-        <item name="android:textColor">@color/text_secondary</item>
-        <item name="android:gravity">start</item>
-        <item name="android:layout_marginEnd">@dimen/detail_card_content_spacing</item>
-    </style>
-
-    <!-- 值文本 -->
-    <style name="DetailValue">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">@dimen/detail_date_text_size</item>
-        <item name="android:textColor">@color/text_primary</item>
-        <item name="android:gravity">end</item>
-    </style>
-
-    <!-- 分类标签 -->
-    <style name="DetailCategoryTag">
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:background">@drawable/bg_category_tag</item>
-        <item name="android:paddingStart">@dimen/detail_category_tag_padding_horizontal</item>
-        <item name="android:paddingEnd">@dimen/detail_category_tag_padding_horizontal</item>
-        <item name="android:paddingTop">@dimen/detail_category_tag_padding_vertical</item>
-        <item name="android:paddingBottom">@dimen/detail_category_tag_padding_vertical</item>
-        <item name="android:textColor">@color/white</item>
-        <item name="android:textSize">@dimen/detail_secondary_text_size</item>
-    </style>
-
-    <!-- 进度条 -->
-    <style name="DetailProgressBar">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">@dimen/detail_progress_bar_height</item>
-        <item name="android:layout_marginTop">@dimen/detail_card_content_spacing</item>
-        <item name="android:progressDrawable">@drawable/progress_expiration</item>
-    </style>
-
-    <!-- 状态标签 -->
-    <style name="DetailStatusTag">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">@dimen/detail_tag_height</item>
-        <item name="android:paddingStart">@dimen/detail_tag_padding_horizontal</item>
-        <item name="android:paddingEnd">@dimen/detail_tag_padding_horizontal</item>
-        <item name="android:paddingTop">@dimen/detail_tag_padding_vertical</item>
-        <item name="android:paddingBottom">@dimen/detail_tag_padding_vertical</item>
-        <item name="android:textColor">@color/white</item>
-        <item name="android:textSize">@dimen/detail_tag_text_size</item>
-        <item name="android:gravity">center</item>
-        <item name="android:maxWidth">@dimen/detail_tag_max_width</item>
-        <item name="android:ellipsize">end</item>
-        <item name="android:maxLines">1</item>
-        <item name="android:textAlignment">center</item>
-    </style>
-
-    <!-- 价格文本 -->
-    <style name="DetailPriceText">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">@dimen/detail_price_text_size</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/primary</item>
-    </style>
-
-    <!-- 底部操作按钮 -->
-    <style name="DetailActionButton" parent="Widget.Material3.Button">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">@dimen/detail_button_height</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:layout_marginStart">@dimen/detail_button_spacing</item>
-        <item name="android:layout_marginEnd">@dimen/detail_button_spacing</item>
-        <item name="android:minWidth">@dimen/detail_button_min_width</item>
-        <item name="cornerRadius">@dimen/detail_button_corner_radius</item>
-        <item name="android:textColor">@color/white</item>
-    </style>
-    
-    <!-- 底部操作区容器 -->
-    <style name="DetailBottomActionContainer">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">@dimen/detail_bottom_area_height</item>
-        <item name="android:orientation">horizontal</item>
-        <item name="android:gravity">center_vertical</item>
-        <item name="android:background">@color/card_background</item>
-        <item name="android:elevation">@dimen/detail_card_shadow</item>
-        <item name="android:paddingStart">@dimen/detail_card_margin</item>
-        <item name="android:paddingEnd">@dimen/detail_card_margin</item>
-    </style>
-    
-    <!-- 照片指示器容器 -->
-    <style name="DetailPhotoIndicatorContainer">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_gravity">bottom|center_horizontal</item>
-        <item name="android:layout_marginBottom">@dimen/detail_indicator_bottom_margin</item>
-        <item name="android:orientation">horizontal</item>
-    </style>
-    
-    <!-- 照片指示器点 -->
-    <style name="DetailPhotoIndicatorDot">
-        <item name="android:layout_width">@dimen/detail_indicator_diameter</item>
-        <item name="android:layout_height">@dimen/detail_indicator_diameter</item>
-        <item name="android:layout_marginStart">@dimen/detail_indicator_spacing</item>
-        <item name="android:layout_marginEnd">@dimen/detail_indicator_spacing</item>
-        <item name="android:background">@drawable/dot_indicator</item>
-    </style>
-
-    <!-- 扁平圆角输入框样式 -->
+    <!-- Text Input Layout Styles -->
     <style name="Widget.App.TextInputLayout.FlatRounded" parent="Widget.Material3.TextInputLayout.OutlinedBox">
-        <item name="boxBackgroundMode">outline</item>
-        <item name="boxStrokeWidth">0dp</item>
-        <item name="boxStrokeWidthFocused">0dp</item>
-        <item name="boxBackgroundColor">@android:color/transparent</item>
-        <item name="android:background">@drawable/bg_flat_rounded_input_selector</item>
-        <item name="android:minHeight">48dp</item>
-        <item name="hintTextColor">#757575</item>
-        <item name="android:textColorHint">#757575</item>
-        <item name="hintEnabled">false</item>
-        <item name="android:focusable">false</item>
-        <item name="android:focusableInTouchMode">false</item>
+        <item name="boxCornerRadiusBottomEnd">8dp</item>
+        <item name="boxCornerRadiusBottomStart">8dp</item>
+        <item name="boxCornerRadiusTopEnd">8dp</item>
+        <item name="boxCornerRadiusTopStart">8dp</item>
     </style>
 
     <style name="Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
-        <item name="boxBackgroundMode">outline</item>
-        <item name="boxStrokeWidth">0dp</item>
-        <item name="boxStrokeWidthFocused">0dp</item>
-        <item name="boxBackgroundColor">@android:color/transparent</item>
-        <item name="android:background">@drawable/bg_flat_rounded_input_selector</item>
-        <item name="android:minHeight">48dp</item>
-        <item name="hintTextColor">#757575</item>
-        <item name="android:textColorHint">#757575</item>
-        <item name="hintEnabled">false</item>
-        <item name="android:focusable">false</item>
-        <item name="android:focusableInTouchMode">false</item>
+        <item name="boxCornerRadiusBottomEnd">8dp</item>
+        <item name="boxCornerRadiusBottomStart">8dp</item>
+        <item name="boxCornerRadiusTopEnd">8dp</item>
+        <item name="boxCornerRadiusTopStart">8dp</item>
     </style>
 
-    <!-- 图表切换按钮样式 -->
+    <!-- Chart Toggle Styles -->
+    <style name="ChartToggleGroupStyle" parent="Widget.Material3.MaterialButtonToggleGroup">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/chart_toggle_group_bg</item>
+        <item name="android:padding">4dp</item>
+    </style>
+
     <style name="ChartToggleButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/chart_toggle_unselected_text</item>
+        <item name="android:background">@color/chart_toggle_unselected_bg</item>
+    </style>
+
+    <style name="ChartInnerToggleGroupStyle" parent="Widget.Material3.MaterialButtonToggleGroup">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@color/chart_inner_bg</item>
+        <item name="android:padding">4dp</item>
+    </style>
+
+    <style name="ChartInnerToggleButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textColor">@color/chart_inner_text</item>
+        <item name="android:background">@color/chart_inner_bg</item>
+    </style>
+
+    <!-- Detail Styles -->
+    <style name="DetailPhotoIndicatorContainer" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
+    <style name="DetailStatusTag" parent="Widget.Material3.Button.TextButton">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textSize">12sp</item>
-        <item name="android:paddingStart">20dp</item>
-        <item name="android:paddingEnd">20dp</item>
-        <item name="android:paddingTop">8dp</item>
-        <item name="android:paddingBottom">8dp</item>
-        <item name="android:minHeight">36dp</item>
-        <item name="android:minWidth">90dp</item>
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetBottom">0dp</item>
-        <item name="android:insetLeft">0dp</item>
-        <item name="android:insetRight">0dp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textColor">@color/chart_toggle_text_selector</item>
-        <item name="backgroundTint">@color/chart_toggle_background_selector</item>
-        <item name="strokeColor">@color/primary</item>
-        <item name="strokeWidth">1dp</item>
-        <item name="cornerRadius">12dp</item>
     </style>
 
-    <!-- 图表内部覆盖按钮样式 - 更紧凑，黑白色系 -->
-    <style name="ChartOverlayButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="android:layout_width">wrap_content</item>
+    <style name="DetailItemTitle" parent="@style/TextAppearance.Material3.HeadlineMedium">
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">9sp</item>
-        <item name="android:paddingLeft">8dp</item>
-        <item name="android:paddingRight">8dp</item>
-        <item name="android:paddingTop">4dp</item>
-        <item name="android:paddingBottom">4dp</item>
-        <item name="android:minHeight">24dp</item>
-        <item name="android:minWidth">40dp</item>
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetBottom">0dp</item>
-        <item name="android:insetLeft">0dp</item>
-        <item name="android:insetRight">0dp</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textColor">@color/chart_overlay_text_selector</item>
-        <item name="backgroundTint">@color/chart_overlay_background_selector</item>
-        <item name="strokeColor">@android:color/black</item>
-        <item name="strokeWidth">1dp</item>
-        <item name="cornerRadius">0dp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
-    <!-- 图表切换按钮组样式 -->
-    <style name="ChartToggleGroupStyle">
-        <item name="android:layout_width">wrap_content</item>
+    <style name="DetailCard" parent="Widget.Material3.CardView.Elevated">
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="singleSelection">true</item>
-        <item name="android:theme">@style/ChartToggleGroupTheme</item>
+        <item name="android:layout_margin">8dp</item>
     </style>
 
-    <!-- 图表内部覆盖按钮组样式 -->
-    <style name="ChartOverlayGroupStyle">
-        <item name="android:layout_width">wrap_content</item>
+    <style name="DetailCardContent" parent="">
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="singleSelection">true</item>
-        <item name="android:theme">@style/ChartToggleGroupTheme</item>
+        <item name="android:padding">16dp</item>
     </style>
 
-    <!-- 图表切换按钮组主题 - 重写primary颜色 -->
-    <style name="ChartToggleGroupTheme">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSurface">@color/white</item>
-        <item name="colorOnSurface">@color/text_secondary</item>
-    </style>
-
-    <!-- 图表内部数据类型切换按钮样式 -->
-    <style name="ChartInnerToggleButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="android:layout_width">wrap_content</item>
+    <style name="DetailCardTitle" parent="@style/TextAppearance.Material3.TitleMedium">
+        <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:textSize">9sp</item>
-        <item name="android:paddingStart">8dp</item>
-        <item name="android:paddingEnd">8dp</item>
-        <item name="android:paddingTop">2dp</item>
-        <item name="android:paddingBottom">2dp</item>
-        <item name="android:minHeight">20dp</item>
-        <item name="android:minWidth">32dp</item>
-        <item name="android:insetTop">0dp</item>
-        <item name="android:insetBottom">0dp</item>
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textColor">@color/chart_inner_toggle_text_selector</item>
-        <item name="backgroundTint">@color/chart_inner_toggle_background_selector</item>
-        <item name="strokeColor">@color/chart_inner_border</item>
-        <item name="strokeWidth">0.5dp</item>
-        <item name="cornerRadius">4dp</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 
-    <!-- 图表内部数据类型切换按钮组样式 -->
-    <style name="ChartInnerToggleGroupStyle">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">20dp</item>
-        <item name="singleSelection">true</item>
-        <item name="android:theme">@style/ChartInnerToggleGroupTheme</item>
+    <style name="DetailInfoRowHorizontal" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:layout_marginVertical">4dp</item>
     </style>
 
-    <!-- 图表内部数据类型切换按钮组主题 -->
-    <style name="ChartInnerToggleGroupTheme">
-        <item name="colorPrimary">@color/chart_inner_accent</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSurface">@color/chart_inner_bg</item>
-        <item name="colorOnSurface">@color/chart_inner_text</item>
+    <style name="DetailLabel" parent="@style/TextAppearance.Material3.BodyMedium">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
-</resources> 
+
+    <style name="DetailValue" parent="@style/TextAppearance.Material3.BodyMedium">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="DetailPriceText" parent="@style/TextAppearance.Material3.BodyLarge">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="DetailProgressBar" parent="Widget.Material3.LinearProgressIndicator">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginVertical">8dp</item>
+    </style>
+</resources>

@@ -109,7 +109,7 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
         val repository = (requireActivity().application as ItemManagementApplication).repository
         
         // 初始化UI工厂组件（现在直接使用viewModel，它实现了FieldInteractionViewModel接口）
-        fieldViewFactory = FieldViewFactory(requireContext(), viewModel, dialogFactory, resources)
+        fieldViewFactory = FieldViewFactory(requireContext(), viewModel, dialogFactory, resources, parentFragmentManager)
         fieldValueManager = FieldValueManager(requireContext(), viewModel, dialogFactory)
         
         setupUI()

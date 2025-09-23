@@ -12,16 +12,23 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
+// SmartRefreshLayout 3.0 导入
+import com.scwang.smart.refresh.layout.SmartRefreshLayout
+import com.scwang.smart.refresh.layout.api.RefreshLayout
+import com.scwang.smart.refresh.layout.listener.OnRefreshListener
+import com.scwang.smart.refresh.layout.listener.OnLoadMoreListener
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.HomeAdapter
 import com.example.itemmanagement.databinding.FragmentHomeBinding
 import com.example.itemmanagement.test.TestDataInserter
+import com.example.itemmanagement.test.WishlistTestDataInserter
 import com.example.itemmanagement.ui.utils.CustomSmoothScroller
 import com.example.itemmanagement.ui.utils.Material3Performance
-import com.example.itemmanagement.ui.utils.Material3Animations
-import com.example.itemmanagement.ui.utils.fadeIn
-import com.example.itemmanagement.ui.utils.showWithAnimation
+// import com.example.itemmanagement.ui.utils.Material3Animations
+// import com.example.itemmanagement.ui.utils.fadeIn
+// import com.example.itemmanagement.ui.utils.showWithAnimation
+import com.example.itemmanagement.ui.animation.SearchBoxAnimator
 
 class HomeFragment : Fragment() {
 
@@ -48,15 +55,15 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         // Material 3 进入动画
-        view.fadeIn(100)
+        // view.fadeIn(100)
         
         setupRecyclerView()
         setupSearchView()
         setupButtons()
+        setupSmartRefresh()
         observeData()
         
-        // 延迟显示添加按钮动画
-        binding.topAddButton.fadeIn(300)
+        
     }
 
     private fun setupRecyclerView() {
@@ -64,7 +71,7 @@ class HomeFragment : Fragment() {
             // 使用自定义的StaggeredGridLayoutManager实现瀑布流布局和滑动速度控制
             layoutManager = createCustomStaggeredGridLayoutManager()
             
-            // 设置间距装饰器
+            // 设置智能间距装饰器
             addItemDecoration(object : androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
                 override fun getItemOffsets(
                     outRect: android.graphics.Rect,
@@ -72,8 +79,33 @@ class HomeFragment : Fragment() {
                     parent: androidx.recyclerview.widget.RecyclerView,
                     state: androidx.recyclerview.widget.RecyclerView.State
                 ) {
-                    val spacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
-                    outRect.set(spacing, spacing, spacing, spacing)
+                    val position = parent.getChildAdapterPosition(view)
+                    
+                    // 🛡️ 安全检查：防止position无效导致崩溃
+                    if (position == androidx.recyclerview.widget.RecyclerView.NO_POSITION || 
+                        position < 0 || 
+                        position >= homeAdapter.itemCount) {
+                        // 使用默认间距
+                        val itemSpacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
+                        outRect.set(itemSpacing, itemSpacing, itemSpacing, itemSpacing)
+                        return
+                    }
+                    
+                    val viewType = homeAdapter.getItemViewType(position)
+                    
+                    when (viewType) {
+                        HomeAdapter.TYPE_HEADER -> {
+                            // Header使用较小的间距
+                            val headerSpacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
+                            outRect.set(headerSpacing, headerSpacing, headerSpacing, 0)
+                        }
+                        // TYPE_FEED已被移除，不需要特殊处理
+                        else -> {
+                            // 普通物品使用标准间距
+                            val itemSpacing = resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
+                            outRect.set(itemSpacing, itemSpacing, itemSpacing, itemSpacing)
+                        }
+                    }
                 }
             })
             
@@ -83,6 +115,34 @@ class HomeFragment : Fragment() {
             
             // 设置适配器
             adapter = homeAdapter
+            
+            // 添加流畅滚动监听器
+            addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    
+                    // 搜索框常驻显示，无需处理显示/隐藏
+                    
+                    // 只有在非搜索状态下才支持无限刷新
+                    if (viewModel.isSearching.value != true && dy > 0) {
+                        val layoutManager = recyclerView.layoutManager as? StaggeredGridLayoutManager
+                        layoutManager?.let { lm ->
+                            val visibleItemCount = lm.childCount
+                            val totalItemCount = lm.itemCount
+                            val firstVisibleItemPositions = IntArray(2)
+                            lm.findFirstVisibleItemPositions(firstVisibleItemPositions)
+                            val firstVisibleItem = firstVisibleItemPositions.minOrNull() ?: 0
+                            
+                            // 提前触发加载（距离底部15个物品时开始，更积极的预加载）
+                            val itemsFromBottom = totalItemCount - (firstVisibleItem + visibleItemCount)
+                            
+                            if (itemsFromBottom <= 15) {
+                                loadMoreItemsSmoothly()
+                            }
+                        }
+                    }
+                }
+            })
         }
 
         // 设置物品点击事件
@@ -108,6 +168,9 @@ class HomeFragment : Fragment() {
                 }
             }
         }
+        
+        // 设置信息流卡片操作事件
+        // Feed action listener已移除，现在使用统一的Item处理
     }
 
     private fun setupSearchView() {
@@ -118,8 +181,13 @@ class HomeFragment : Fragment() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 val query = s?.toString()?.trim() ?: ""
-                // 只控制清除按钮的可见性，不触发搜索
-                binding.clearSearchIcon.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+                
+                // 🎬 清除按钮动画控制
+                if (query.isNotEmpty()) {
+                    SearchBoxAnimator.animateClearButtonShow(binding.clearSearchIcon)
+                } else {
+                    SearchBoxAnimator.animateClearButtonHide(binding.clearSearchIcon)
+                }
             }
         })
 
@@ -153,12 +221,48 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupButtons() {
-        // 设置顶部添加按钮点击事件
-        binding.topAddButton.setOnClickListener {
-            onAddButtonClick()
-        }
+        // 顶部添加按钮已移除，现在通过底部导航栏的添加按钮进行添加操作
     }
     
+    /**
+     * 设置SmartRefreshLayout 3.0 - 炫酷的AndroidX版本 🌟
+     */
+    private fun setupSmartRefresh() {
+        binding.smartRefreshLayout.apply {
+            // 🎨 设置Material Design主题色彩和动画参数
+            setReboundDuration(370)                    // 回弹动画时长（增加到500ms，让动画更流畅）
+            setHeaderHeight(60f)                  // 头部高度（增加到80，给动画更多空间）
+            setFooterHeight(60f)                       // 底部高度
+            
+            // 🔄 设置下拉刷新监听器
+            setOnRefreshListener(OnRefreshListener { refreshLayout ->
+                // 添加触觉反馈，增强体验
+                view?.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+                
+                // 🚀 立即调用ViewModel刷新数据（后台刷新速度不变）
+                viewModel.refreshData()
+                
+                // 🎬 延长动画完成时间，让用户看到完整的刷新效果
+                refreshLayout.finishRefresh(1000) // 增加到1200ms，让动画播放完整
+            })
+            
+            // ⬆️ 设置上拉加载更多监听器
+            setOnLoadMoreListener(OnLoadMoreListener { refreshLayout ->
+                // 触发无限滚动加载
+                viewModel.loadMoreItemsSmoothly()
+                
+                // 上拉加载保持较快的完成时间
+                refreshLayout.finishLoadMore(600) // 适中的时间，不影响滚动体验
+            })
+            
+            // ⚡ 启用功能配置
+            setEnableAutoLoadMore(false)               // 禁用自动加载，使用我们的无限滚动
+            setEnableLoadMore(true)                    // 启用上拉加载
+            setEnableRefresh(true)                     // 启用下拉刷新
+            setEnableOverScrollBounce(true)            // 启用越界回弹
+            setEnableOverScrollDrag(true)              // 启用越界拖拽
+        }
+    }
 
     
     private fun navigateToItemList(listType: String, title: String) {
@@ -179,9 +283,58 @@ class HomeFragment : Fragment() {
      * 长按悬浮按钮触发
      */
     private fun insertTestData() {
-        Toast.makeText(context, "正在生成测试数据...", Toast.LENGTH_SHORT).show()
+        val options = arrayOf(
+            "仅生成库存测试数据",
+            "仅生成心愿单测试数据", 
+            "生成库存+心愿单组合测试数据"
+        )
+        
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("选择测试数据类型")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> insertInventoryTestData()
+                    1 -> insertWishlistOnlyTestData()
+                    2 -> insertCombinedTestData()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+    
+    /**
+     * 插入库存测试数据
+     */
+    private fun insertInventoryTestData() {
+        Toast.makeText(context, "正在生成库存测试数据...", Toast.LENGTH_SHORT).show()
         
         TestDataInserter.insertTestData(requireContext()) { success, message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            if (success) {
+                // 刷新数据显示
+                viewModel.refreshData()
+            }
+        }
+    }
+    
+    /**
+     * 插入心愿单测试数据
+     */
+    private fun insertWishlistOnlyTestData() {
+        Toast.makeText(context, "正在生成心愿单测试数据...", Toast.LENGTH_SHORT).show()
+        
+        WishlistTestDataInserter.insertWishlistTestData(requireContext()) { success, message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    /**
+     * 插入组合测试数据（库存 + 心愿单）
+     */
+    private fun insertCombinedTestData() {
+        Toast.makeText(context, "正在生成组合测试数据（库存+心愿单）...", Toast.LENGTH_SHORT).show()
+        
+        WishlistTestDataInserter.insertCombinedTestData(requireContext()) { success, message ->
             Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             if (success) {
                 // 刷新数据显示
@@ -221,12 +374,30 @@ class HomeFragment : Fragment() {
             as android.view.inputmethod.InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(binding.searchEditText.windowToken, 0)
     }
+    
+    /**
+     * 流畅加载更多物品
+     */
+    private fun loadMoreItemsSmoothly() {
+        viewModel.loadMoreItemsSmoothly()
+    }
+    
+    // 搜索框现在常驻显示，无需动画处理
 
     private fun observeData() {
-        // 观察物品数据
-        viewModel.items.observe(viewLifecycleOwner) { items ->
-            homeAdapter.submitList(items)
-            updateEmptyView(items.isEmpty())
+        // 观察展示数据（包含推荐理由信息）
+        viewModel.items.observe(viewLifecycleOwner) { displayItems ->
+            updateItemsWithAnimation(displayItems)
+            updateEmptyView(displayItems.isEmpty())
+            
+            // SmartRefreshLayout自动处理刷新状态 ✨
+        }
+        
+        // 观察加载状态
+        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
+            // 更新适配器的loading状态
+            val currentItems = viewModel.items.value ?: emptyList()
+            homeAdapter.submitDisplayItems(currentItems, isLoading)
         }
         
         // 观察搜索状态
@@ -234,6 +405,16 @@ class HomeFragment : Fragment() {
             // 可以根据搜索状态更新UI，比如显示搜索指示器
             // 这里暂时不做特殊处理，搜索结果会直接显示在列表中
         }
+    }
+    
+    /**
+     * 流畅更新物品列表，支持动画效果
+     */
+    private fun updateItemsWithAnimation(newItems: List<HomeViewModel.HomeDisplayItem>) {
+        // 获取当前加载状态
+        val isLoading = viewModel.isLoading.value ?: false
+        // 使用新的submitDisplayItems方法，支持DiffUtil动画和loading状态
+        homeAdapter.submitDisplayItems(newItems, isLoading)
     }
     
     private fun updateEmptyView(isEmpty: Boolean) {
@@ -279,6 +460,8 @@ class HomeFragment : Fragment() {
             }
         }
     }
+    
+
 
     override fun onDestroyView() {
         super.onDestroyView()

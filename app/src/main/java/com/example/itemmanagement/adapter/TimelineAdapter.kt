@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -59,7 +60,13 @@ class TimelineAdapter : ListAdapter<TimelineEvent, TimelineAdapter.TimelineViewH
                 setupUrgencyDisplay(timelineEvent)
 
                 // 设置优先级颜色
-                val priorityColor = Color.parseColor(event.priority.color)
+                val priorityColorRes = when (event.priority.name.uppercase()) {
+                    "HIGH" -> R.color.red_500
+                    "MEDIUM" -> R.color.orange_500
+                    "LOW" -> R.color.green_500
+                    else -> R.color.green_500
+                }
+                val priorityColor = ContextCompat.getColor(root.context, priorityColorRes)
                 priorityIndicator.setBackgroundColor(priorityColor)
 
                 // 设置完成状态

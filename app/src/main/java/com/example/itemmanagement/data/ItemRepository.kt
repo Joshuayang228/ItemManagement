@@ -1,7 +1,12 @@
 package com.example.itemmanagement.data
 
+import androidx.room.withTransaction
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.example.itemmanagement.data.dao.ItemDao
+import com.example.itemmanagement.data.dao.WasteCategoryInfo
+import com.example.itemmanagement.data.dao.WasteDateInfo
+import com.example.itemmanagement.data.dao.WastedItemInfo
+import com.example.itemmanagement.data.dao.WasteSummaryInfo
 import com.example.itemmanagement.data.entity.*
 import com.example.itemmanagement.data.mapper.toItem
 import com.example.itemmanagement.data.model.*
@@ -222,12 +227,28 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
      * @return Flow<List<WarehouseItem>> 仓库物品列表的数据流
      */
     fun getWarehouseItems(filterState: FilterState): Flow<List<WarehouseItem>> {
+        // 构建动态查询
+        
         val queryBuilder = ItemQueryBuilder()
             .withSearchTerm(filterState.searchTerm)
-            .withCategory(filterState.category)
+            .apply {
+                // 🔑 核心修复：优先使用多选分类，如果没有则使用单选分类
+                if (filterState.categories.isNotEmpty()) {
+                    withCategories(filterState.categories)
+                } else if (filterState.category.isNotBlank()) {
+                    withCategory(filterState.category)
+                }
+            }
             .withSubCategory(filterState.subCategory)
             .withBrand(filterState.brand)
-            .withLocationArea(filterState.locationArea)
+            .apply {
+                // 🔑 核心修复：优先使用多选位置区域，如果没有则使用单选位置区域
+                if (filterState.locationAreas.isNotEmpty()) {
+                    withLocationAreas(filterState.locationAreas)
+                } else if (filterState.locationArea.isNotBlank()) {
+                    withLocationArea(filterState.locationArea)
+                }
+            }
             .withLocationContainer(filterState.container)
             .withLocationSublocation(filterState.sublocation)
             .withQuantityRange(filterState.minQuantity, filterState.maxQuantity)
@@ -268,14 +289,8 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
      * 获取库存分析数据
      */
     suspend fun getInventoryAnalysisData(): InventoryAnalysisData {
-        // 并行获取所有数据以提高性能
-        val coreMetrics = CoreMetrics(
-            totalItems = itemDao.getTotalItemsCount(),
-            totalValue = itemDao.getTotalValue(),
-            categoriesCount = itemDao.getCategoriesCount(),
-            locationsCount = itemDao.getLocationsCount(),
-            tagsCount = itemDao.getTagsCount()
-        )
+        // 获取完整的库存统计信息
+        val inventoryStats = getInventoryStats()
         
         val categoryAnalysis = itemDao.getCategoryAnalysis().map {
             CategoryValue(
@@ -310,11 +325,64 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
         }
         
         return InventoryAnalysisData(
-            coreMetrics = coreMetrics,
+            inventoryStats = inventoryStats,
             categoryAnalysis = categoryAnalysis,
             locationAnalysis = locationAnalysis,
             tagAnalysis = tagAnalysis,
             monthlyTrends = monthlyTrends
+        )
+    }
+
+    suspend fun getInventoryStats(): InventoryStats {
+        val allItems = getAllItems().first()
+        val totalItems = allItems.size
+        val totalValue = allItems.sumOf { it.price ?: 0.0 }
+        
+        val expiringItems = allItems.filter { item ->
+            item.expirationDate?.let { expDate ->
+                val diffDays = (expDate.time - Date().time) / (1000 * 60 * 60 * 24)
+                diffDays in 1..7 // 7天内过期
+            } ?: false
+        }.size
+        
+        val expiredItems = allItems.filter { item ->
+            item.expirationDate?.let { expDate ->
+                expDate.before(Date())
+            } ?: false
+        }.size
+        
+        val lowStockItems = allItems.filter { item ->
+            val threshold = item.stockWarningThreshold ?: 0
+            (item.quantity ?: 0.0) <= threshold && threshold > 0
+        }.size
+        
+        // 计算分类数量
+        val categoriesCount = allItems.mapNotNull { it.category }.distinct().size
+        
+        // 计算位置数量
+        val locationsCount = allItems.mapNotNull { it.location?.area }.distinct().size
+        
+        // 旧心愿单系统已移除，使用新心愿单系统
+        val wishlistItems = 0
+        
+        // 计算最近添加的物品数量 (7天内)
+        val sevenDaysAgo = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, -7)
+        }.time
+        val recentlyAddedItems = allItems.filter { item ->
+            item.addDate.after(sevenDaysAgo)
+        }.size
+
+        return InventoryStats(
+            totalItems = totalItems,
+            totalValue = totalValue,
+            expiringItems = expiringItems,
+            expiredItems = expiredItems,
+            lowStockItems = lowStockItems,
+            categoriesCount = categoriesCount,
+            locationsCount = locationsCount,
+            wishlistItems = wishlistItems,
+            recentlyAddedItems = recentlyAddedItems
         )
     }
     
@@ -426,6 +494,20 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
     // =================== 浪费报告相关方法 ===================
 
     /**
+     * 获取完整的浪费报告数据（使用事务确保数据一致性）
+     */
+    suspend fun getWasteReportData(startDate: Long, endDate: Long): WasteReportRawData {
+        return database.withTransaction {
+            WasteReportRawData(
+                summary = itemDao.getWasteSummaryInPeriod(startDate, endDate),
+                wastedItems = itemDao.getWastedItemsInPeriod(startDate, endDate),
+                categoryData = itemDao.getWasteByCategoryInPeriod(startDate, endDate),
+                dateData = itemDao.getWasteByDateInPeriod(startDate, endDate)
+            )
+        }
+    }
+
+    /**
      * 获取指定时间范围内的浪费物品
      */
     suspend fun getWastedItemsInPeriod(startDate: Long, endDate: Long) = 
@@ -456,6 +538,18 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
     suspend fun checkAndUpdateExpiredItems(currentTime: Long) {
         itemDao.updateExpiredItems(currentTime)
     }
+
+    /**
+     * 获取所有浪费状态但没有wasteDate的物品（用于调试）
+     */
+    suspend fun getWastedItemsWithoutWasteDate() = 
+        itemDao.getWastedItemsWithoutWasteDate()
+
+    /**
+     * 自动修复没有wasteDate的浪费物品
+     */
+    suspend fun fixWastedItemsWithoutWasteDate(fallbackTime: Long) = 
+        itemDao.fixWastedItemsWithoutWasteDate(fallbackTime)
 
     // ====================== 购物清单相关方法 ======================
     
@@ -506,6 +600,20 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
      */
     fun getShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>> {
         return database.shoppingDao().getShoppingItemsByListId(listId)
+    }
+    
+    /**
+     * 获取指定清单的总物品数
+     */
+    fun getShoppingItemsCountByListId(listId: Long): Flow<Int> {
+        return database.shoppingDao().getItemsCountByListId(listId)
+    }
+    
+    /**
+     * 获取指定清单的实际花费
+     */
+    fun getActualSpentByListId(listId: Long): Flow<Double?> {
+        return database.shoppingDao().getActualSpentByListId(listId)
     }
     
     // ==================== 到期提醒功能 ====================
@@ -598,4 +706,14 @@ class ItemRepository(private val itemDao: ItemDao, private val database: AppData
             }
         }
     }
-} 
+}
+
+/**
+ * 浪费报告原始数据
+ */
+data class WasteReportRawData(
+    val summary: WasteSummaryInfo,
+    val wastedItems: List<WastedItemInfo>,
+    val categoryData: List<WasteCategoryInfo>,
+    val dateData: List<WasteDateInfo>
+) 

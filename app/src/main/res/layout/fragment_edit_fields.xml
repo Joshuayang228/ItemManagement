@@ -1,64 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="?attr/colorSurface"
-    android:padding="16dp">
+    android:background="@drawable/bottom_sheet_background">
 
+    <!-- 主要内容容器 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:layout_width="0dp"
+        android:orientation="vertical">
+        
+        <!-- 拖拽响应区域容器 - 包含手柄和标题栏 -->
+        <LinearLayout
+            android:id="@+id/dragHandleContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="编辑字段"
-            android:textSize="18sp"
-            android:textStyle="bold"/>
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/selectAllButton"
-            style="@style/Widget.App.Button.Text"
-            android:layout_width="wrap_content"
+            <!-- 拖拽手柄 -->
+            <View
+                android:id="@+id/dragHandle"
+                android:layout_width="32dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bottom_sheet_drag_handle" />
+
+            <!-- 标题栏 -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerInParent="true"
+                    android:text="编辑字段"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/selectAllButton"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="全选"
+                    android:textSize="13sp"
+                    android:minWidth="50dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"/>
+            </RelativeLayout>
+        </LinearLayout>
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:text="全选"
-            android:textSize="13sp"
-            android:minWidth="50dp"
-            android:minHeight="32dp"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"/>
+            android:background="@android:color/transparent"
+            app:tabMode="scrollable"
+            app:tabGravity="start"
+            app:tabTextColor="?attr/colorOnSurfaceVariant"
+            app:tabSelectedTextColor="?attr/colorPrimary"
+            app:tabIndicatorColor="?attr/colorPrimary"/>
 
-        <ImageButton
-            android:id="@+id/closeButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_close"
-            android:padding="12dp"/>
+        <!-- TabLayout下方分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?attr/colorOutlineVariant" />
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="500dp"/>
     </LinearLayout>
-
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:tabMode="scrollable"
-        app:tabGravity="start"
-        app:tabTextColor="?attr/colorOnSurfaceVariant"
-        app:tabSelectedTextColor="?attr/colorPrimary"
-        app:tabIndicatorColor="?attr/colorPrimary"/>
-
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager"
-        android:layout_width="match_parent"
-        android:layout_height="400dp"/>
-
-</LinearLayout> 
+</FrameLayout> 

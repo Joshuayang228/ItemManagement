@@ -240,22 +240,53 @@ abstract class BaseItemViewModel(
      * 设置字段属性
      */
     override fun setFieldProperties(fieldName: String, properties: FieldProperties) {
+        android.util.Log.d("BaseItemViewModel", "🔧 设置字段属性: $fieldName")
+        android.util.Log.d("BaseItemViewModel", "   属性内容: $properties")
+        android.util.Log.d("BaseItemViewModel", "   ValidationType: ${properties.validationType}")
+        android.util.Log.d("BaseItemViewModel", "   DisplayStyle: ${properties.displayStyle}")
+        android.util.Log.d("BaseItemViewModel", "   Options: ${properties.options}")
+        
         val updatedProperties = properties.copy(fieldName = fieldName)
+        android.util.Log.d("BaseItemViewModel", "   🔄 复制属性并设置fieldName: $updatedProperties")
+        
         fieldProperties[fieldName] = updatedProperties
+        android.util.Log.d("BaseItemViewModel", "   ✅ 字段属性设置完成")
+        android.util.Log.d("BaseItemViewModel", "   📊 当前fieldProperties总数: ${fieldProperties.size}")
     }
 
     /**
      * 获取字段属性
      */
     override fun getFieldProperties(fieldName: String): FieldProperties {
-        return fieldProperties[fieldName] ?: FieldProperties()
+        android.util.Log.d("BaseItemViewModel", "🔍 获取字段属性: $fieldName")
+        android.util.Log.d("BaseItemViewModel", "   📋 当前fieldProperties总数: ${fieldProperties.size}")
+        
+        val properties = fieldProperties[fieldName]
+        if (properties != null) {
+            android.util.Log.d("BaseItemViewModel", "   ✅ 找到字段属性: $properties")
+            android.util.Log.d("BaseItemViewModel", "      ValidationType: ${properties.validationType}")
+            android.util.Log.d("BaseItemViewModel", "      DisplayStyle: ${properties.displayStyle}")
+            android.util.Log.d("BaseItemViewModel", "      Options: ${properties.options}")
+        } else {
+            android.util.Log.w("BaseItemViewModel", "   ⚠️ 未找到字段属性，使用默认属性")
+            android.util.Log.d("BaseItemViewModel", "   📋 当前所有字段属性键: ${fieldProperties.keys}")
+        }
+        
+        val result = properties ?: FieldProperties()
+        android.util.Log.d("BaseItemViewModel", "   📊 返回属性: $result")
+        return result
     }
 
     /**
      * 获取所有字段属性
      */
     override fun getAllFieldProperties(): Map<String, FieldProperties> {
-        return fieldProperties.toMap()
+        android.util.Log.d("BaseItemViewModel", "🗺️ 获取所有字段属性")
+        android.util.Log.d("BaseItemViewModel", "📊 字段属性总数: ${fieldProperties.size}")
+        
+        val result = fieldProperties.toMap()
+        android.util.Log.d("BaseItemViewModel", "📋 所有字段属性键: ${result.keys}")
+        return result
     }
 
     // --- 照片管理 ---
@@ -555,6 +586,11 @@ abstract class BaseItemViewModel(
         ))
 
         setFieldProperties("保修到期时间", FieldProperties(
+            validationType = ValidationType.DATE,
+            hint = "点击选择日期"
+        ))
+
+        setFieldProperties("保质过期时间", FieldProperties(
             validationType = ValidationType.DATE,
             hint = "点击选择日期"
         ))

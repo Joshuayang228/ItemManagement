@@ -121,6 +121,14 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
     }
     
     /**
+     * 更新多选分类列表
+     * @param categories 分类名称集合
+     */
+    fun updateCategories(categories: Set<String>) {
+        _filterState.value = _filterState.value.copy(categories = categories)
+    }
+    
+    /**
      * 设置子分类
      * @param subCategory 子分类名称
      */
@@ -144,6 +152,21 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
         _filterState.value = _filterState.value.copy(locationArea = area)
         // 当区域变化时，加载该区域的容器列表
         loadContainers(area)
+    }
+    
+    /**
+     * 更新多选位置区域列表
+     * @param areas 区域名称集合
+     */
+    fun updateLocationAreas(areas: Set<String>) {
+        _filterState.value = _filterState.value.copy(locationAreas = areas)
+        // 当区域变化时，重新加载所有选中区域的容器列表
+        if (areas.isNotEmpty()) {
+            // 加载第一个区域的容器（多选情况下的简化处理）
+            loadContainers(areas.first())
+        } else {
+            loadContainers("")
+        }
     }
     
     /**

@@ -60,7 +60,7 @@ data class ShoppingItemEntity(
     val customNote: String? = null,                           // 备注
     
     // === 价格相关字段（购物特有）===
-    val estimatedPrice: Double? = null,                       // 预估价格 *购物特有
+    val price: Double? = null,                                // 预估价格 *购物特有
     val actualPrice: Double? = null,                          // 实际价格 *购物特有
     val priceUnit: String? = "元",                            // 价格单位
     val budgetLimit: Double? = null,                          // 预算上限 *购物特有
@@ -90,7 +90,7 @@ data class ShoppingItemEntity(
     val addedReason: String? = "USER_MANUAL",                 // 添加原因 *购物特有
     
     // === 时间字段 ===
-    val createdDate: Date = Date(),                           // 创建日期
+    val addDate: Date = Date(),                               // 创建日期
     val completedDate: Date? = null,                          // 完成日期 *购物特有
     val remindDate: Date? = null,                             // 提醒日期 *购物特有
     

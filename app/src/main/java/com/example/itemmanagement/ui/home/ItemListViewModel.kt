@@ -146,42 +146,6 @@ class ItemListViewModel(private val repository: ItemRepository) : ViewModel() {
         }
     }
     
-    /**
-     * 加载心愿单物品
-     */
-    fun loadWishlistItems() {
-        viewModelScope.launch {
-            repository.getAllItems().map { allItems ->
-                allItems.filter { item ->
-                    item.isWishlistItem // 筛选出标记为心愿单的物品
-                }.map { item ->
-                    // 转换为WarehouseItem格式
-                    WarehouseItem(
-                        id = item.id,
-                        name = item.name,
-                        primaryPhotoUri = item.photos.firstOrNull()?.uri,
-                        quantity = item.quantity.toInt(),
-                        expirationDate = item.expirationDate?.time,
-                        locationArea = item.location?.area,
-                        locationContainer = item.location?.container,
-                        locationSublocation = item.location?.sublocation,
-                        category = item.category,
-                        subCategory = item.subCategory,
-                        brand = item.brand,
-                        rating = item.rating?.toFloat(),
-                        price = item.price,
-                        priceUnit = item.priceUnit,
-                        openStatus = item.openStatus == com.example.itemmanagement.data.model.OpenStatus.OPENED,
-                        addDate = item.addDate.time,
-                        tagsList = item.tags.joinToString(",") { it.name },
-                        customNote = item.customNote
-                    )
-                }
-            }.asLiveData().observeForever { itemList ->
-                _items.value = itemList
-            }
-        }
-    }
 }
 
 class ItemListViewModelFactory(private val repository: ItemRepository) : ViewModelProvider.Factory {

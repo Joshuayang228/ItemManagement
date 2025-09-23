@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingStart="16dp"
-    android:paddingTop="12dp"
+    android:paddingTop="8dp"
     android:paddingEnd="16dp"
-    android:paddingBottom="12dp"
+    android:paddingBottom="8dp"
     android:background="?android:attr/selectableItemBackground">
 
     <!-- 物品图片 - 左侧 (放大50%) -->
@@ -207,13 +207,25 @@
             app:layout_constraintBottom_toBottomOf="@id/itemPrice"
             tools:text="已开封"
             tools:visibility="visible" />
+
+        <!-- 添加时间 - 右对齐 -->
+        <TextView
+            android:id="@+id/itemAddTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/itemPrice"
+            app:layout_constraintBottom_toBottomOf="@id/itemPrice"
+            tools:text="25-01-15" />
             
-        <!-- 添加Group来管理第四行的单价和开封状态字段 -->
+        <!-- 添加Group来管理第四行的所有字段 -->
         <androidx.constraintlayout.widget.Group
             android:id="@+id/priceAndStatusGroup"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:constraint_referenced_ids="itemPrice,itemOpenStatus" />
+            app:constraint_referenced_ids="itemPrice,itemOpenStatus,itemAddTime" />
 
         <!-- 编辑和删除按钮 -->
         <ImageButton

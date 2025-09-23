@@ -58,12 +58,14 @@ data class FilterState(
     val searchTerm: String = "",
     
     // 核心分类
-    val category: String = "",
+    val category: String = "", // 保留向后兼容性
+    val categories: Set<String> = emptySet(), // 多选分类
     val subCategory: String = "",
     val brand: String = "",
     
     // 位置筛选
-    val locationArea: String = "",
+    val locationArea: String = "", // 保留向后兼容性
+    val locationAreas: Set<String> = emptySet(), // 多选位置区域
     val container: String = "",
     val sublocation: String = "",
     

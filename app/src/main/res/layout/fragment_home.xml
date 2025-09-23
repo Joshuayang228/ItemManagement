@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 
-智能滚动首页布局 - 搜索框滚动隐藏/显示
+智能首页布局 - 搜索框常驻显示
 1. CoordinatorLayout：支持协调滚动行为
-2. AppBarLayout：包装搜索框，支持滚动消失/显现
+2. AppBarLayout：包装搜索框，固定在顶部
 3. RecyclerView：优化滑动速度的信息流
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -18,7 +18,7 @@
         android:background="@android:color/transparent"
         app:elevation="0dp">
 
-        <!-- 搜索栏容器 - 支持滚动隐藏/显现 -->
+        <!-- 搜索栏容器 - 常驻显示 -->
         <LinearLayout
             android:id="@+id/searchContainer"
             android:layout_width="match_parent"
@@ -28,15 +28,12 @@
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
             android:gravity="center_vertical"
-            android:orientation="horizontal"
-            app:layout_scrollFlags="scroll|enterAlways|snap">
+            android:orientation="horizontal">
 
-        <!-- 深色主题搜索卡片 -->
+        <!-- 搜索卡片 - 填满整个宽度 -->
         <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="44dp"
-            android:layout_weight="1"
-            android:layout_marginEnd="12dp"
             app:cardBackgroundColor="#FFFFFF"
             app:cardCornerRadius="22dp"
             app:cardElevation="1dp"
@@ -92,49 +89,52 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 添加按钮 - 纯图标设计 -->
-        <ImageButton
-            android:id="@+id/topAddButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/ic_add"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="添加物品"
-            android:padding="12dp"
-            app:tint="?attr/colorPrimary" />
-
         </LinearLayout>
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- 内容区域 - 包含功能区和物品信息流，支持协调滚动 -->
-    <FrameLayout
+    <!-- SmartRefreshLayout 3.0 - 炫酷的AndroidX版本，直接放在CoordinatorLayout下 🌟 -->
+    <com.scwang.smart.refresh.layout.SmartRefreshLayout
+        android:id="@+id/smartRefreshLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- 物品列表（包含功能区Header）- 优化滑动速度 -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="16dp"
-            android:scrollbars="vertical"
-            android:overScrollMode="ifContentScrolls" />
+            <!-- BezierRadar 炫酷下拉刷新头部 - 类似Dropbox效果 -->
+            <com.scwang.smart.refresh.header.BezierRadarHeader
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
 
-        <!-- 空状态视图 -->
-        <LinearLayout
-            android:id="@+id/emptyView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="32dp"
-            android:visibility="gone">
+            <!-- 物品列表（包含功能区Header）- 无滚动条的无限信息流 -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="16dp"
+                android:scrollbars="none"
+                android:overScrollMode="ifContentScrolls" />
+
+            <!-- 经典加载更多底部 -->
+            <com.scwang.smart.refresh.footer.ClassicsFooter
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+
+    <!-- 空状态视图 -->
+    <LinearLayout
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <ImageView
                 android:layout_width="120dp"
@@ -156,22 +156,23 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="点击右上角的 + 按钮开始添加物品"
+                android:text="点击底部导航栏的 + 按钮开始添加物品"
                 android:textSize="14sp"
                 android:textColor="#9E9E9E"
                 android:gravity="center" />
 
-        </LinearLayout>
+    </LinearLayout>
 
-        <!-- 搜索无结果视图 -->
-        <LinearLayout
-            android:id="@+id/searchEmptyView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="32dp"
-            android:visibility="gone">
+    <!-- 搜索无结果视图 -->
+    <LinearLayout
+        android:id="@+id/searchEmptyView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <ImageView
                 android:layout_width="120dp"
@@ -199,8 +200,6 @@
                 android:textColor="#9E9E9E"
                 android:gravity="center" />
 
-        </LinearLayout>
-
-    </FrameLayout>
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

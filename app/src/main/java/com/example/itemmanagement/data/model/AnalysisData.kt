@@ -34,7 +34,7 @@ data class MonthlyTrend(
 )
 
 data class InventoryAnalysisData(
-    val coreMetrics: CoreMetrics,
+    val inventoryStats: InventoryStats, // 替换 coreMetrics 为完整的库存统计
     val categoryAnalysis: List<CategoryValue>,
     val locationAnalysis: List<LocationValue>,
     val tagAnalysis: List<TagValue>, // 新增标签分析

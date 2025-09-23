@@ -5,8 +5,8 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:cardBackgroundColor="@color/card_background"
+    app:cardElevation="1dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground">
@@ -25,7 +25,7 @@
             android:src="@drawable/ic_statistics"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/primary" />
+            app:tint="?attr/colorOnPrimaryContainer" />
 
         <TextView
             android:id="@+id/functionTitle"
@@ -34,7 +34,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
             android:text="功能标题"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toStartOf="@+id/badge"
@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:text="功能描述"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="@+id/functionTitle"
             app:layout_constraintStart_toStartOf="@+id/functionTitle"
@@ -58,10 +58,10 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:background="@drawable/bg_circle"
-            android:backgroundTint="@color/accent_color"
+            android:backgroundTint="?attr/colorSecondaryContainer"
             android:gravity="center"
             android:text="9"
-            android:textColor="@android:color/white"
+            android:textColor="?attr/colorOnSecondaryContainer"
             android:textSize="12sp"
             android:textStyle="bold"
             android:visibility="gone"
@@ -74,7 +74,7 @@
             android:src="@drawable/ic_chevron_right"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:tint="@color/text_secondary" />
+            app:tint="?attr/colorOnSurfaceVariant" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

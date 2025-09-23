@@ -32,6 +32,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var drawerLayout: DrawerLayout
     
+    // 🎯 跟踪TopBar当前状态，避免重复操作导致的闪现
+    private var isTopBarVisible: Boolean = false
+    private var isTopBarTitleEnabled: Boolean = false
+    
     // 通知权限申请器
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -59,6 +63,10 @@ class MainActivity : AppCompatActivity() {
 
         // 设置 Material 3 工具栏
         setSupportActionBar(binding.toolbar)
+        
+        // 🎯 初始化TopBar状态（默认显示，启用标题）
+        isTopBarVisible = true
+        isTopBarTitleEnabled = true
 
         // 初始化导航组件
         setupNavigation()
@@ -68,6 +76,7 @@ class MainActivity : AppCompatActivity() {
         
         // 检查并申请通知权限
         checkAndRequestNotificationPermission()
+        
         
         // 设置现代返回键处理
         setupBackPressedCallback()
@@ -159,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         
         // 设置Material 3底部导航栏
         setupMaterial3BottomNavigation()
+        
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -169,13 +179,26 @@ class MainActivity : AppCompatActivity() {
      * 设置Material 3底部导航栏
      */
     private fun setupMaterial3BottomNavigation() {
-        // 标准导航设置
-        binding.navView.setupWithNavController(navController)
-        
         // Material 3 特定优化
         with(binding.navView) {
             // 确保使用selected模式 - 只有选中的项显示文字
             labelVisibilityMode = com.google.android.material.bottomnavigation.BottomNavigationView.LABEL_VISIBILITY_SELECTED
+            
+            // 自定义项目选择监听器，处理加号按钮的特殊行为
+            setOnItemSelectedListener { item ->
+                when (item.itemId) {
+                    R.id.navigation_add_item -> {
+                        // 点击加号按钮，导航到添加物品页面
+                        navController.navigate(R.id.addItemFragment)
+                        // 返回false，不让底部导航栏切换选中状态
+                        false
+                    }
+                    else -> {
+                        // 其他导航项使用Navigation Component的标准行为
+                        androidx.navigation.ui.NavigationUI.onNavDestinationSelected(item, navController)
+                    }
+                }
+            }
             
             // 启用项目重选监听（点击当前选中项的行为）
             setOnItemReselectedListener { item ->
@@ -197,6 +220,8 @@ class MainActivity : AppCompatActivity() {
                         // 我的重选：返回个人页面顶部
                         navController.popBackStack(R.id.navigation_profile, false)
                     }
+                    // 加号按钮重选时什么都不做
+                    R.id.navigation_add_item -> { }
                 }
             }
             
@@ -207,7 +232,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
     }
-
+    
     /**
      * 设置现代返回键处理
      */
@@ -235,9 +260,16 @@ class MainActivity : AppCompatActivity() {
                 // 主要导航页面 - 隐藏TopBar
                 R.id.navigation_home,
                 R.id.navigation_warehouse,
-                R.id.navigation_function,
                 R.id.navigation_profile -> {
                     hideTopBar()
+                }
+                // 功能页面 - 隐藏TopBar（像首页一样）
+                R.id.navigation_function -> {
+                    hideTopBar()
+                }
+                // 添加物品页面 - 显示TopBar但禁用标题
+                R.id.addItemFragment -> {
+                    showTopBarWithoutTitle()
                 }
                 // 其他页面 - 显示TopBar
                 else -> {
@@ -251,20 +283,122 @@ class MainActivity : AppCompatActivity() {
      * 显示TopBar
      */
     private fun showTopBar() {
-        binding.appBarLayout.visibility = android.view.View.VISIBLE
-        supportActionBar?.setDisplayShowTitleEnabled(true)
-        // 重新调整Fragment约束
-        updateFragmentConstraints(true)
+        // ✅ 只在状态发生变化时才执行操作，避免重复导致的闪现
+        if (!isTopBarVisible) {
+            binding.appBarLayout.visibility = android.view.View.VISIBLE
+            isTopBarVisible = true
+            updateFragmentConstraints(true)
+        }
+        
+        // 标题状态单独管理
+        if (!isTopBarTitleEnabled) {
+            supportActionBar?.setDisplayShowTitleEnabled(true)
+            isTopBarTitleEnabled = true
+        }
+        
+        // 恢复默认背景色（从透明状态恢复）
+        restoreDefaultTopBarBackground()
+    }
+    
+    /**
+     * 显示TopBar并设置标题
+     */
+    private fun showTopBarWithTitle(title: String) {
+        // ✅ 只在状态发生变化时才执行操作，避免重复导致的闪现
+        if (!isTopBarVisible) {
+            binding.appBarLayout.visibility = android.view.View.VISIBLE
+            isTopBarVisible = true
+            updateFragmentConstraints(true)
+        }
+        
+        // 标题状态和内容管理
+        if (!isTopBarTitleEnabled) {
+            supportActionBar?.setDisplayShowTitleEnabled(true)
+            isTopBarTitleEnabled = true
+        }
+        supportActionBar?.title = title
+        
+        // 恢复默认背景色（从透明状态恢复）
+        restoreDefaultTopBarBackground()
+    }
+    
+    /**
+     * 显示透明TopBar并设置标题（专用于功能界面）
+     */
+    private fun showTransparentTopBarWithTitle(title: String) {
+        // ✅ 只在状态发生变化时才执行操作，避免重复导致的闪现
+        if (!isTopBarVisible) {
+            binding.appBarLayout.visibility = android.view.View.VISIBLE
+            isTopBarVisible = true
+            updateFragmentConstraints(true)
+        }
+        
+        // 标题状态和内容管理
+        if (!isTopBarTitleEnabled) {
+            supportActionBar?.setDisplayShowTitleEnabled(true)
+            isTopBarTitleEnabled = true
+        }
+        supportActionBar?.title = title
+        
+        // 设置透明背景 - 只影响当前TopBar
+        binding.toolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        binding.appBarLayout.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+    }
+    
+    /**
+     * 恢复TopBar的默认背景色
+     */
+    private fun restoreDefaultTopBarBackground() {
+        // 恢复Toolbar的默认背景色（从样式中获取）
+        val typedArray = theme.obtainStyledAttributes(intArrayOf(R.attr.colorSurfaceContainerHigh))
+        val defaultColor = typedArray.getColor(0, android.graphics.Color.WHITE)
+        typedArray.recycle()
+        
+        binding.toolbar.setBackgroundColor(defaultColor)
+        binding.appBarLayout.setBackgroundColor(defaultColor)
+    }
+    
+    /**
+     * 显示TopBar但禁用标题（用于添加物品页面）
+     */
+    private fun showTopBarWithoutTitle() {
+        // ✅ 只在TopBar不可见时才显示，避免重复操作
+        if (!isTopBarVisible) {
+            binding.appBarLayout.visibility = android.view.View.VISIBLE
+            isTopBarVisible = true
+            updateFragmentConstraints(true)
+        }
+        
+        // 标题状态管理
+        if (isTopBarTitleEnabled) {
+            supportActionBar?.setDisplayShowTitleEnabled(false)
+            isTopBarTitleEnabled = false
+        }
+        // 立即清空标题，防止闪现
+        supportActionBar?.title = ""
+        
+        // 恢复默认背景色（从透明状态恢复）
+        restoreDefaultTopBarBackground()
     }
     
     /**
      * 隐藏TopBar
      */
     private fun hideTopBar() {
-        binding.appBarLayout.visibility = android.view.View.GONE
-        supportActionBar?.setDisplayShowTitleEnabled(false)
-        // 重新调整Fragment约束
-        updateFragmentConstraints(false)
+        // ✅ 只在TopBar可见时才隐藏，避免重复操作导致的闪现
+        if (isTopBarVisible) {
+            // 立即清空标题，防止隐藏过程中的闪现
+            supportActionBar?.title = ""
+            supportActionBar?.setDisplayShowTitleEnabled(false)
+            binding.appBarLayout.visibility = android.view.View.GONE
+            
+            // 更新状态
+            isTopBarVisible = false
+            isTopBarTitleEnabled = false
+            
+            // 重新调整Fragment约束
+            updateFragmentConstraints(false)
+        }
     }
     
     /**
@@ -339,4 +473,5 @@ class MainActivity : AppCompatActivity() {
             true // Android 13以下版本不需要权限
         }
     }
+    
 } 

@@ -253,15 +253,16 @@ interface ItemDao {
      */
     @Query("""
         SELECT i.id, i.name, i.category, i.quantity, i.unit, i.status, 
-               i.addDate, i.totalPrice,
+               i.wasteDate, i.totalPrice,
                l.area, l.container, l.sublocation,
                (SELECT p.uri FROM photos p WHERE p.itemId = i.id 
                 ORDER BY p.isMain DESC, p.displayOrder ASC LIMIT 1) as photoUri
         FROM items i
         LEFT JOIN locations l ON i.locationId = l.id
         WHERE (i.status = 'EXPIRED' OR i.status = 'DISCARDED')
-        AND i.addDate BETWEEN :startDate AND :endDate
-        ORDER BY i.addDate DESC
+        AND i.wasteDate IS NOT NULL
+        AND i.wasteDate BETWEEN :startDate AND :endDate
+        ORDER BY i.totalPrice DESC, i.wasteDate DESC
     """)
     suspend fun getWastedItemsInPeriod(startDate: Long, endDate: Long): List<WastedItemInfo>
 
@@ -275,9 +276,10 @@ interface ItemDao {
             COALESCE(SUM(totalPrice), 0) as totalValue
         FROM items 
         WHERE (status = 'EXPIRED' OR status = 'DISCARDED')
-        AND addDate BETWEEN :startDate AND :endDate
+        AND wasteDate IS NOT NULL
+        AND wasteDate BETWEEN :startDate AND :endDate
         GROUP BY category
-        ORDER BY itemCount DESC
+        ORDER BY totalValue DESC, itemCount DESC
     """)
     suspend fun getWasteByCategoryInPeriod(startDate: Long, endDate: Long): List<WasteCategoryInfo>
 
@@ -286,13 +288,14 @@ interface ItemDao {
      */
     @Query("""
         SELECT 
-            DATE(addDate/1000, 'unixepoch') as date,
+            DATE(wasteDate/1000, 'unixepoch') as date,
             COUNT(*) as itemCount,
             COALESCE(SUM(totalPrice), 0) as totalValue
         FROM items 
         WHERE (status = 'EXPIRED' OR status = 'DISCARDED')
-        AND addDate BETWEEN :startDate AND :endDate
-        GROUP BY DATE(addDate/1000, 'unixepoch')
+        AND wasteDate IS NOT NULL
+        AND wasteDate BETWEEN :startDate AND :endDate
+        GROUP BY DATE(wasteDate/1000, 'unixepoch')
         ORDER BY date ASC
     """)
     suspend fun getWasteByDateInPeriod(startDate: Long, endDate: Long): List<WasteDateInfo>
@@ -308,7 +311,8 @@ interface ItemDao {
             SUM(CASE WHEN status = 'DISCARDED' THEN 1 ELSE 0 END) as discardedItems
         FROM items 
         WHERE (status = 'EXPIRED' OR status = 'DISCARDED')
-        AND addDate BETWEEN :startDate AND :endDate
+        AND wasteDate IS NOT NULL
+        AND wasteDate BETWEEN :startDate AND :endDate
     """)
     suspend fun getWasteSummaryInPeriod(startDate: Long, endDate: Long): WasteSummaryInfo
 
@@ -319,12 +323,43 @@ interface ItemDao {
      */
     @Query("""
         UPDATE items 
-        SET status = 'EXPIRED'
+        SET status = 'EXPIRED', wasteDate = :currentTime
         WHERE status = 'IN_STOCK' 
         AND expirationDate IS NOT NULL 
         AND expirationDate < :currentTime
     """)
     suspend fun updateExpiredItems(currentTime: Long)
+
+    /**
+     * 获取所有浪费状态但没有wasteDate的物品（用于调试）
+     */
+    @Query("""
+        SELECT i.id, i.name, i.category, i.quantity, i.unit, i.status, 
+               COALESCE(i.wasteDate, i.addDate) as wasteDate, i.totalPrice,
+               l.area, l.container, l.sublocation,
+               (SELECT p.uri FROM photos p WHERE p.itemId = i.id 
+                ORDER BY p.isMain DESC, p.displayOrder ASC LIMIT 1) as photoUri
+        FROM items i
+        LEFT JOIN locations l ON i.locationId = l.id
+        WHERE (i.status = 'EXPIRED' OR i.status = 'DISCARDED')
+        AND i.wasteDate IS NULL
+        ORDER BY i.addDate DESC
+    """)
+    suspend fun getWastedItemsWithoutWasteDate(): List<WastedItemInfo>
+
+    /**
+     * 自动修复没有wasteDate的浪费物品（这里使用addDate作为fallback）
+     */
+    @Query("""
+        UPDATE items 
+        SET wasteDate = CASE 
+            WHEN status = 'EXPIRED' AND expirationDate IS NOT NULL THEN expirationDate
+            ELSE :fallbackTime
+        END
+        WHERE (status = 'EXPIRED' OR status = 'DISCARDED')
+        AND wasteDate IS NULL
+    """)
+    suspend fun fixWastedItemsWithoutWasteDate(fallbackTime: Long): Int
 }
 
 // 分析查询结果数据类
@@ -361,7 +396,7 @@ data class WastedItemInfo(
     val quantity: Double,
     val unit: String,
     val status: String,
-    val addDate: Long,
+    val wasteDate: Long,
     val totalPrice: Double,
     val area: String?,
     val container: String?,

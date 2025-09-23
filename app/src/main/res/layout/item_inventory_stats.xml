@@ -5,8 +5,8 @@
     android:layout_height="wrap_content"
     android:layout_marginBottom="16dp"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:cardBackgroundColor="@color/card_background">
+    app:cardElevation="1dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -20,7 +20,7 @@
             android:text="库存概览"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/colorOnSurface"
             android:layout_marginBottom="16dp" />
 
         <!-- 第一行：总物品数和总价值 -->
@@ -36,8 +36,8 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/primary_light">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/colorPrimaryContainer">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -53,14 +53,14 @@
                         android:text="0"
                         android:textSize="20sp"
                         android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textColor="?attr/colorOnPrimaryContainer" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="总物品数"
                         android:textSize="12sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -72,8 +72,8 @@
                 android:layout_weight="1"
                 android:layout_marginStart="8dp"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/primary_light">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="?attr/colorPrimaryContainer">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -89,14 +89,14 @@
                         android:text="¥0.00"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:textColor="@color/primary" />
+                        android:textColor="?attr/colorOnPrimaryContainer" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="总价值"
                         android:textSize="12sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -118,7 +118,7 @@
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -134,14 +134,14 @@
                         android:text="0"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="即将过期"
                         android:textSize="10sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -155,7 +155,7 @@
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -171,14 +171,14 @@
                         android:text="0"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="已过期"
                         android:textSize="10sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -191,7 +191,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
                 app:cardCornerRadius="8dp"
-                app:cardElevation="2dp">
+                app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -207,14 +207,14 @@
                         android:text="0"
                         android:textSize="16sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="库存不足"
                         android:textSize="10sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -235,7 +235,7 @@
                 android:layout_marginEnd="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/background">
+                app:cardBackgroundColor="?attr/colorSurface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -251,14 +251,14 @@
                         android:text="0"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="分类"
                         android:textSize="10sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -272,7 +272,7 @@
                 android:layout_marginEnd="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/background">
+                app:cardBackgroundColor="?attr/colorSurface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -288,14 +288,14 @@
                         android:text="0"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="位置"
                         android:textSize="10sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -308,7 +308,7 @@
                 android:layout_marginStart="4dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
-                app:cardBackgroundColor="@color/background">
+                app:cardBackgroundColor="?attr/colorSurface">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -324,14 +324,14 @@
                         android:text="0"
                         android:textSize="14sp"
                         android:textStyle="bold"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="本周新增"
                         android:textSize="10sp"
-                        android:textColor="@color/text_secondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 

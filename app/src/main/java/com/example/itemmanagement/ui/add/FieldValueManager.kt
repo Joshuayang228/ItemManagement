@@ -629,12 +629,12 @@ class FieldValueManager(
 
                             if (number.isNotEmpty()) {
                                 numberTextView.text = number
-                                numberTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                                numberTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                             }
 
                             if (unit.isNotEmpty()) {
                                 unitTextView.text = unit
-                                unitTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                                unitTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                             }
                         }
                     }
@@ -645,7 +645,7 @@ class FieldValueManager(
                                 val dateTextView = findTextViewInView(view, DATE_TAG_PREFIX, fieldName)
                                 if (dateTextView != null && value is String) {
                                     dateTextView.text = value
-                                    dateTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                                    dateTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                                 }
                             }
                             properties.options != null -> {
@@ -654,7 +654,7 @@ class FieldValueManager(
                                 Log.d("FieldValueManager", "找到spinnerTextView: ${spinnerTextView != null}")
                                 if (spinnerTextView != null && value is String) {
                                     spinnerTextView.text = value
-                                    spinnerTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                                    spinnerTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                                     Log.d("FieldValueManager", "成功设置下拉选择值: $value")
                                 } else {
                                     Log.d("FieldValueManager", "无法设置下拉选择值: spinnerTextView=${spinnerTextView != null}, value类型=${value?.javaClass?.simpleName}")
@@ -678,7 +678,7 @@ class FieldValueManager(
 
                                 if (!unitValue.isNullOrEmpty()) {
                                     unitTextView.text = unitValue
-                                    unitTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                                    unitTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                                 } else if (value is String && value.isNotEmpty()) {
                                     unitTextView.text = "选择单位"
                                     unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
@@ -977,23 +977,23 @@ class FieldValueManager(
                     when {
                         tag.startsWith(SPINNER_TAG_PREFIX) -> savedStateHandle.get<String>(fieldKey)?.let { value ->
                             view.text = value
-                            view.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            view.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                         }
                         tag.startsWith(DATE_TAG_PREFIX) -> savedStateHandle.get<String>(fieldKey)?.let { value ->
                             view.text = value
-                            view.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            view.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                         }
                         tag.startsWith(UNIT_TAG_PREFIX) -> savedStateHandle.get<String>("${fieldKey}_unit")?.let { value ->
                             view.text = value
-                            view.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            view.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                         }
                         tag.startsWith(PERIOD_NUMBER_TAG_PREFIX) -> savedStateHandle.get<String>("${fieldKey}_number")?.let { value ->
                             view.text = value
-                            view.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            view.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                         }
                         tag.startsWith(PERIOD_UNIT_TAG_PREFIX) -> savedStateHandle.get<String>("${fieldKey}_unit")?.let { value ->
                             view.text = value
-                            view.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            view.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                         }
                         else -> savedStateHandle.get<String>(fieldKey)?.let { value ->
                             view.text = value
@@ -1024,7 +1024,7 @@ class FieldValueManager(
 
                             if (!unitValue.isNullOrEmpty()) {
                                 unitTextView.text = unitValue
-                                unitTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                                unitTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                             } else if (savedValue.isNotEmpty()) {
                                 unitTextView.text = "选择单位"
                                 unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
@@ -1033,11 +1033,11 @@ class FieldValueManager(
                     } else if (periodNumberTextView != null && periodUnitTextView != null) {
                         savedStateHandle.get<String>("${fieldKey}_number")?.let { value ->
                             periodNumberTextView.text = value
-                            periodNumberTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            periodNumberTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                         }
                         savedStateHandle.get<String>("${fieldKey}_unit")?.let { value ->
                             periodUnitTextView.text = value
-                            periodUnitTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            periodUnitTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
                         }
                     }
                 }

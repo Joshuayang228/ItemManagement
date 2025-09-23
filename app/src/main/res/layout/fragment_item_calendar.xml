@@ -345,7 +345,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="90dp"
         android:visibility="gone"
         app:cardCornerRadius="12dp"
         app:cardElevation="4dp"
@@ -376,6 +376,8 @@
                 android:layout_height="wrap_content"
                 android:maxHeight="300dp"
                 android:nestedScrollingEnabled="true"
+                android:paddingBottom="8dp"
+                android:clipToPadding="false"
                 tools:listitem="@layout/item_calendar_event_list" />
 
         </LinearLayout>
@@ -389,7 +391,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="32dp"
-        android:layout_marginBottom="100dp"
+        android:layout_marginBottom="90dp"
         android:gravity="center"
         android:text="👆 点击上方日期查看当天的事件"
         android:textSize="16sp"
@@ -406,14 +408,5 @@
 
 </ScrollView>
 
-<!-- 添加事件按钮 -->
-<com.google.android.material.floatingactionbutton.FloatingActionButton
-    android:id="@+id/addEventFab"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_margin="16dp"
-    android:src="@drawable/ic_add"
-    android:contentDescription="添加事件"
-    android:layout_gravity="bottom|end" />
 
 </FrameLayout> 

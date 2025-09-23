@@ -9,11 +9,11 @@ import kotlinx.coroutines.flow.Flow
 interface ShoppingDao {
     
     // 获取指定清单的所有物品
-    @Query("SELECT * FROM shopping_items WHERE listId = :listId ORDER BY isPurchased ASC, priority DESC, createdDate DESC")
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId ORDER BY isPurchased ASC, priority DESC, addDate DESC")
     fun getShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>>
     
     // 获取指定清单的待购买物品
-    @Query("SELECT * FROM shopping_items WHERE listId = :listId AND isPurchased = 0 ORDER BY priority DESC, createdDate DESC")
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId AND isPurchased = 0 ORDER BY priority DESC, addDate DESC")
     fun getPendingShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>>
     
     // 获取指定清单的已购买物品
@@ -21,7 +21,7 @@ interface ShoppingDao {
     fun getPurchasedShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>>
     
     // 获取所有购物物品（用于兼容旧接口）
-    @Query("SELECT * FROM shopping_items ORDER BY isPurchased ASC, priority DESC, createdDate DESC")
+    @Query("SELECT * FROM shopping_items ORDER BY isPurchased ASC, priority DESC, addDate DESC")
     fun getAllShoppingItems(): Flow<List<ShoppingItemEntity>>
     
     // 根据ID获取购物物品
@@ -61,10 +61,10 @@ interface ShoppingDao {
     fun getActualSpentByListId(listId: Long): Flow<Double?>
     
     // 获取指定清单的预估花费
-    @Query("SELECT SUM(estimatedPrice) FROM shopping_items WHERE listId = :listId AND estimatedPrice IS NOT NULL")
+    @Query("SELECT SUM(price) FROM shopping_items WHERE listId = :listId AND price IS NOT NULL")
     fun getEstimatedSpentByListId(listId: Long): Flow<Double?>
     
     // 根据优先级获取物品
-    @Query("SELECT * FROM shopping_items WHERE listId = :listId AND priority = :priority ORDER BY createdDate DESC")
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId AND priority = :priority ORDER BY addDate DESC")
     fun getShoppingItemsByPriority(listId: Long, priority: ShoppingItemPriority): Flow<List<ShoppingItemEntity>>
 } 

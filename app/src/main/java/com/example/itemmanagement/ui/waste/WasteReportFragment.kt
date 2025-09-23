@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
@@ -20,6 +21,7 @@ import com.github.aachartmodel.aainfographics.aachartcreator.AAChartType
 import com.github.aachartmodel.aainfographics.aachartcreator.AASeriesElement
 import com.github.aachartmodel.aainfographics.aachartcreator.AAChartAnimationType
 import com.github.aachartmodel.aainfographics.aachartcreator.AAChartZoomType
+import com.github.aachartmodel.aainfographics.aaoptionsmodel.AAStyle
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -65,18 +67,13 @@ class WasteReportFragment : Fragment() {
     }
 
     private fun setupUI() {
-        // 调试按钮：手动更新过期物品状态
-        binding.buttonUpdateExpired.setOnClickListener {
-            // 先调试检查数据库状态
-            debugDatabaseStatus()
-            // 然后更新和生成报告
-            viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.LAST_MONTH)
-        }
 
         // 设置浪费物品列表
         wastedItemAdapter = WastedItemAdapter { wastedItem ->
-            // 点击浪费物品，可以跳转到物品详情页面
-            // TODO: 实现跳转到物品详情
+            // 点击浪费物品，跳转到物品详情页面
+            val action = WasteReportFragmentDirections
+                .actionWasteReportToItemDetail(wastedItem.itemId)
+            findNavController().navigate(action)
         }
         
         binding.recyclerViewWastedItems.apply {
@@ -147,6 +144,10 @@ class WasteReportFragment : Fragment() {
             customStartDate = calendar.time
             
             updateCustomDateButtons()
+            
+            // 自动生成默认时间范围的报告
+            val dateRange = DateRange(customStartDate!!, customEndDate!!)
+            viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.CUSTOM, dateRange)
         }
     }
 
@@ -173,10 +174,12 @@ class WasteReportFragment : Fragment() {
 
             updateCustomDateButtons()
 
-            // 如果两个日期都已设置，生成报告
+            // 如果两个日期都已设置，验证并生成报告
             if (customStartDate != null && customEndDate != null) {
-                val dateRange = DateRange(customStartDate!!, customEndDate!!)
-                viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.CUSTOM, dateRange)
+                if (validateDateRange(customStartDate!!, customEndDate!!)) {
+                    val dateRange = DateRange(customStartDate!!, customEndDate!!)
+                    viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.CUSTOM, dateRange)
+                }
             }
         }
     }
@@ -190,6 +193,29 @@ class WasteReportFragment : Fragment() {
         }
     }
 
+    /**
+     * 验证日期范围
+     */
+    private fun validateDateRange(startDate: Date, endDate: Date): Boolean {
+        val currentTime = System.currentTimeMillis()
+        
+        when {
+            startDate.time > endDate.time -> {
+                Snackbar.make(binding.root, "开始日期不能晚于结束日期", Snackbar.LENGTH_SHORT).show()
+                return false
+            }
+            endDate.time > currentTime -> {
+                Snackbar.make(binding.root, "结束日期不能超过当前时间", Snackbar.LENGTH_SHORT).show()
+                return false
+            }
+            (endDate.time - startDate.time) > (365L * 24 * 60 * 60 * 1000) -> {
+                Snackbar.make(binding.root, "日期范围不能超过一年", Snackbar.LENGTH_SHORT).show()
+                return false
+            }
+            else -> return true
+        }
+    }
+
     private fun setupObservers() {
         // 观察加载状态
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
@@ -200,7 +226,14 @@ class WasteReportFragment : Fragment() {
         viewModel.errorMessage.observe(viewLifecycleOwner) { errorMessage ->
             errorMessage?.let {
                 Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG)
-                    .setAction("重试") { viewModel.refreshReport() }
+                    .setAction("重试") { 
+                        // 重试时使用当前选择的时间范围和参数
+                        val currentPeriod = viewModel.currentPeriod.value ?: ReportPeriodType.LAST_MONTH
+                        val customRange = if (currentPeriod == ReportPeriodType.CUSTOM) {
+                            viewModel.customDateRange.value
+                        } else null
+                        viewModel.checkExpiredItemsAndGenerateReport(currentPeriod, customRange)
+                    }
                     .show()
                 viewModel.clearError()
             }
@@ -275,13 +308,14 @@ class WasteReportFragment : Fragment() {
         // 准备饼图数据 - 按照文档格式
         val seriesData = categoryData.map { category ->
             arrayOf(category.category as Any, category.totalValue as Any)
-        }.toTypedArray() as Array<Any>
+        }.toTypedArray()
 
         // 创建饼图配置
         val aaChartModel = AAChartModel()
             .chartType(AAChartType.Pie)
-            .title("浪费分类统计")
-            .subtitle("按类别统计浪费金额")
+            .title("标题") // 使用实际文字
+            .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .subtitle("")
             .backgroundColor("#FFFFFF")
             .dataLabelsEnabled(true)
             .legendEnabled(true)
@@ -291,7 +325,7 @@ class WasteReportFragment : Fragment() {
             .series(arrayOf(
                 AASeriesElement()
                     .name("浪费金额")
-                    .data(seriesData)
+                    .data(seriesData as Array<Any>)
             ))
 
         // 显示图表
@@ -307,14 +341,15 @@ class WasteReportFragment : Fragment() {
         binding.cardTrendChart.visibility = View.VISIBLE
         
         // 准备时间趋势数据
-        val chartData = timeData.map { it.totalValue as Any }.toTypedArray()
+        val chartData = timeData.map { it.totalValue }.toTypedArray()
         val categories = timeData.map { dateFormat.format(it.date) }.toTypedArray()
 
         // 创建折线图配置
         val aaChartModel = AAChartModel()
             .chartType(AAChartType.Line)
-            .title("浪费趋势分析")
-            .subtitle("按时间统计浪费金额变化")
+            .title("标题") // 使用实际文字
+            .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .subtitle("")
             .backgroundColor("#FFFFFF")
             .dataLabelsEnabled(false)
             .categories(categories)
@@ -328,7 +363,7 @@ class WasteReportFragment : Fragment() {
             .series(arrayOf(
                 AASeriesElement()
                     .name("浪费金额")
-                    .data(chartData)
+                    .data(chartData as Array<Any>)
                     .color("#FF6B6B")
                     .lineWidth(3)
             ))
@@ -356,8 +391,9 @@ class WasteReportFragment : Fragment() {
         // 创建柱状图配置
         val aaChartModel = AAChartModel()
             .chartType(AAChartType.Column)
-            .title("浪费原因对比")
-            .subtitle("过期 vs 主动丢弃")
+            .title("标题") // 使用实际文字
+            .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .subtitle("")
             .backgroundColor("#FFFFFF")
             .dataLabelsEnabled(true)
             .categories(categories)
@@ -381,40 +417,6 @@ class WasteReportFragment : Fragment() {
         binding.layoutEmptyState.visibility = View.VISIBLE
     }
 
-    private fun debugDatabaseStatus() {
-        lifecycleScope.launch {
-            try {
-                val application = requireActivity().application as ItemManagementApplication
-                val repository = application.repository
-                
-                // 获取所有物品来检查状态
-                repository.getAllItems().collect { items ->
-                    val currentTime = System.currentTimeMillis()
-                    val expiredItems = items.filter { item ->
-                        item.expirationDate != null && item.expirationDate!!.time <= currentTime
-                    }
-                    
-                    println("=== 数据库状态调试 ===")
-                    println("总物品数: ${items.size}")
-                    println("已过期物品数: ${expiredItems.size}")
-                    
-                    expiredItems.forEach { item ->
-                        println("过期物品: ${item.name}, 状态: ${item.status}, 过期日期: ${item.expirationDate}")
-                    }
-                    
-                    val wastedItems = items.filter { 
-                        it.status == com.example.itemmanagement.data.model.ItemStatus.EXPIRED || 
-                        it.status == com.example.itemmanagement.data.model.ItemStatus.DISCARDED 
-                    }
-                    println("数据库中浪费状态物品数: ${wastedItems.size}")
-                    println("==================")
-                    return@collect
-                }
-            } catch (e: Exception) {
-                println("调试失败: ${e.message}")
-            }
-        }
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -47,11 +47,17 @@ object WasteInsightGenerator {
         val totalItems = reportData.totalWastedItems
 
         return when {
-            totalValue <= 0 -> WasteInsight(
+            totalItems == 0 -> WasteInsight(
                 type = InsightType.POSITIVE,
                 title = "太棒了！",
                 message = "在这个时间段内，您没有任何浪费！继续保持这种优秀的管理习惯。",
                 severity = InsightSeverity.LOW
+            )
+            totalValue <= 0 && totalItems > 0 -> WasteInsight(
+                type = InsightType.WARNING,
+                title = "有浪费但无价值记录",
+                message = "您浪费了${totalItems}件物品，但没有价值信息。建议为物品设置价格以便更好地分析浪费成本。",
+                severity = InsightSeverity.MEDIUM
             )
             totalValue <= 50 -> WasteInsight(
                 type = InsightType.POSITIVE,
@@ -113,23 +119,52 @@ object WasteInsightGenerator {
     }
 
     private fun generateTrendInsight(reportData: WasteReportData): WasteInsight {
-        val timeData = reportData.wasteByTime.takeLast(3)
-        val recentValues = timeData.map { it.totalValue }
+        val timeData = reportData.wasteByTime.sortedBy { it.date }
+        val values = timeData.map { it.totalValue }
         
-        val isIncreasing = recentValues[2] > recentValues[1] && recentValues[1] > recentValues[0]
-        val isDecreasing = recentValues[2] < recentValues[1] && recentValues[1] < recentValues[0]
-
-        return when {
-            isDecreasing -> WasteInsight(
-                type = InsightType.POSITIVE,
-                title = "浪费呈下降趋势",
-                message = "恭喜！您的浪费情况正在改善。继续保持当前的管理策略。",
+        if (values.size < 3) {
+            return WasteInsight(
+                type = InsightType.INFO,
+                title = "数据不足",
+                message = "需要更多数据才能分析趋势。建议持续记录浪费情况。",
                 severity = InsightSeverity.LOW
             )
-            isIncreasing -> WasteInsight(
+        }
+        
+        // 使用线性回归分析趋势
+        val trend = calculateLinearTrend(values)
+        val volatility = calculateVolatility(values)
+        
+
+        return when {
+            trend < -0.1 && volatility < 0.5 -> WasteInsight(
+                type = InsightType.POSITIVE,
+                title = "浪费显著减少",
+                message = "太棒了！您的浪费情况持续改善，减少了${String.format("%.1f", -trend * 100)}%。继续保持！",
+                severity = InsightSeverity.LOW
+            )
+            trend < -0.05 -> WasteInsight(
+                type = InsightType.POSITIVE,
+                title = "浪费稳步下降",
+                message = "您的浪费情况正在改善，继续保持当前的管理策略。",
+                severity = InsightSeverity.LOW
+            )
+            trend > 0.1 && volatility < 0.5 -> WasteInsight(
                 type = InsightType.WARNING,
-                title = "浪费呈上升趋势",
-                message = "最近浪费有所增加，建议重新审视购买和储存习惯。",
+                title = "浪费持续上升",
+                message = "浪费增加了${String.format("%.1f", trend * 100)}%，建议检查购买计划和储存方式。",
+                severity = InsightSeverity.HIGH
+            )
+            trend > 0.05 -> WasteInsight(
+                type = InsightType.WARNING,
+                title = "浪费有所增加",
+                message = "最近浪费有上升趋势，建议重新审视购买和储存习惯。",
+                severity = InsightSeverity.MEDIUM
+            )
+            volatility > 0.8 -> WasteInsight(
+                type = InsightType.INFO,
+                title = "浪费波动较大",
+                message = "浪费情况变化较大，建议建立更稳定的管理习惯。",
                 severity = InsightSeverity.MEDIUM
             )
             else -> WasteInsight(
@@ -139,6 +174,45 @@ object WasteInsightGenerator {
                 severity = InsightSeverity.LOW
             )
         }
+    }
+
+    /**
+     * 计算线性趋势（使用简单的斜率计算）
+     */
+    private fun calculateLinearTrend(values: List<Double>): Double {
+        if (values.size < 2) return 0.0
+        
+        val n = values.size
+        val x = (0 until n).map { it.toDouble() }
+        val y = values
+        
+        val meanX = x.average()
+        val meanY = y.average()
+        
+        var numerator = 0.0
+        var denominator = 0.0
+        
+        for (i in 0 until n) {
+            numerator += (x[i] - meanX) * (y[i] - meanY)
+            denominator += (x[i] - meanX) * (x[i] - meanX)
+        }
+        
+        return if (denominator != 0.0) numerator / denominator / meanY else 0.0
+    }
+
+    /**
+     * 计算波动性（变异系数）
+     */
+    private fun calculateVolatility(values: List<Double>): Double {
+        if (values.size < 2) return 0.0
+        
+        val mean = values.average()
+        if (mean == 0.0) return 0.0
+        
+        val variance = values.map { (it - mean) * (it - mean) }.average()
+        val standardDeviation = kotlin.math.sqrt(variance)
+        
+        return standardDeviation / mean
     }
 
     private fun generateSavingSuggestions(reportData: WasteReportData): List<WasteInsight> {

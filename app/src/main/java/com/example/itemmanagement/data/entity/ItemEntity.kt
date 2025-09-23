@@ -18,7 +18,12 @@ import java.util.Date
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("locationId")]
+    indices = [
+        Index("locationId"),
+        Index("category"),
+        Index("status"),
+        Index("expirationDate")
+    ]
 )
 data class ItemEntity(
     @PrimaryKey(autoGenerate = true)
@@ -54,6 +59,6 @@ data class ItemEntity(
     val warrantyPeriod: Int?,
     val warrantyEndDate: Date?,
     val serialNumber: String?,
-    val isWishlistItem: Boolean = false,  // 是否加入心愿单
-    val isHighTurnover: Boolean = false   // 是否高周转
+    val isHighTurnover: Boolean = false,   // 是否高周转
+    val wasteDate: Date? = null            // 物品变成浪费状态的时间
 ) 

@@ -197,11 +197,6 @@ class AddItemViewModel(
         val quantityUnit = fieldValues["数量_unit"] as? String ?: "个"
         
         // 获取布尔字段
-        val isWishlistItem = when (fieldValues["加入心愿单"]) {
-            is Boolean -> fieldValues["加入心愿单"] as Boolean
-            is String -> (fieldValues["加入心愿单"] as String).toBoolean()
-            else -> false
-        }
         
         val isHighTurnover = when (fieldValues["高周转"]) {
             is Boolean -> fieldValues["高周转"] as Boolean
@@ -284,7 +279,6 @@ class AddItemViewModel(
             warrantyEndDate = warrantyEndDate,
             serialNumber = fieldValues["序列号"] as? String,
             addDate = addDate,
-            isWishlistItem = isWishlistItem,
             isHighTurnover = isHighTurnover,
             tags = tags
         )
@@ -375,7 +369,6 @@ class AddItemViewModel(
             Field("分类", "分类", true),
             Field("分类", "标签", true),  // 添加标签为默认选中
             Field("日期类", "添加日期", true),
-            Field("基础信息", "加入心愿单", false),
             Field("基础信息", "高周转", false)
         )
         

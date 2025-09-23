@@ -23,6 +23,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 import android.widget.Toast
 import android.widget.Switch
+import androidx.fragment.app.FragmentManager
+import com.example.itemmanagement.ui.utils.Material3DatePicker
+import com.example.itemmanagement.ui.utils.Material3DialogFactory
 
 /**
  * 负责创建各种类型的字段视图的工厂类
@@ -31,7 +34,8 @@ class FieldViewFactory(
     private val context: Context,
     private val viewModel: FieldInteractionViewModel,
     private val dialogFactory: DialogFactory,
-    private val resources: android.content.res.Resources
+    private val resources: android.content.res.Resources,
+    private val fragmentManager: FragmentManager
 ) {
 
     // 查找子分类控件的辅助方法
@@ -96,6 +100,9 @@ class FieldViewFactory(
      * 创建字段视图
      */
     fun createFieldView(field: Field): View {
+        android.util.Log.d("FieldViewFactory", "🚀 开始创建字段视图: ${field.name}")
+        android.util.Log.d("FieldViewFactory", "   📦 字段信息: group=${field.group}, name=${field.name}, isSelected=${field.isSelected}")
+        
         val container = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(
@@ -106,6 +113,7 @@ class FieldViewFactory(
             }
             gravity = Gravity.CENTER_VERTICAL  // 整个容器垂直居中
         }
+        android.util.Log.d("FieldViewFactory", "   ✅ 容器创建完成")
 
         // 添加标签
         val label = TextView(context).apply {
@@ -116,30 +124,83 @@ class FieldViewFactory(
             text = field.name
             textSize = 14f
             gravity = Gravity.START or Gravity.CENTER_VERTICAL  // 左对齐且垂直居中
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
         }
         container.addView(label)
+        android.util.Log.d("FieldViewFactory", "   🏷️ 标签创建完成: ${field.name}")
 
         // 获取字段属性
+        android.util.Log.d("FieldViewFactory", "   🔍 开始获取字段属性: ${field.name}")
         val properties = viewModel.getFieldProperties(field.name)
+        android.util.Log.d("FieldViewFactory", "   📊 字段属性获取结果:")
+        android.util.Log.d("FieldViewFactory", "      🎨 DisplayStyle: ${properties.displayStyle}")
+        android.util.Log.d("FieldViewFactory", "      📝 ValidationType: ${properties.validationType}")
+        android.util.Log.d("FieldViewFactory", "      📋 Options: ${properties.options}")
+        android.util.Log.d("FieldViewFactory", "      📏 UnitOptions: ${properties.unitOptions}")
+        android.util.Log.d("FieldViewFactory", "      ✅ IsRequired: ${properties.isRequired}")
+        android.util.Log.d("FieldViewFactory", "      📄 IsMultiline: ${properties.isMultiline}")
+        android.util.Log.d("FieldViewFactory", "      🔧 IsCustomizable: ${properties.isCustomizable}")
+        android.util.Log.d("FieldViewFactory", "      💬 Hint: ${properties.hint}")
 
         // 根据字段类型创建不同的输入控件
+        android.util.Log.d("FieldViewFactory", "   🛠️ 开始判断控件类型...")
+        
         val input = when {
-            field.name == "开封状态" -> createRadioGroup()
-            field.name == "加入心愿单" || field.name == "高周转" -> createSwitchView(field.name, properties)
-            properties.displayStyle == DisplayStyle.TAG -> createTagSelector(field.name, properties)
-            properties.displayStyle == DisplayStyle.RATING_STAR -> createRatingBar()
-            properties.displayStyle == DisplayStyle.PERIOD_SELECTOR -> createPeriodSelector(field.name, properties)
-            properties.displayStyle == DisplayStyle.LOCATION_SELECTOR -> createLocationSelector()
-            properties.validationType == ValidationType.DATE -> createDatePicker(properties)
-            properties.isMultiline -> createMultilineInput(properties)
-            properties.unitOptions != null -> createNumberWithUnitInput(field.name, properties)
-            properties.options != null -> createSpinner(field.name, properties)
-            properties.validationType == ValidationType.NUMBER -> createNumberInput(properties)
-            else -> createTextInput(properties)
+            field.name == "开封状态" -> {
+                android.util.Log.d("FieldViewFactory", "   ⚪ 创建 RadioGroup (开封状态)")
+                createRadioGroup()
+            }
+            field.name == "加入心愿单" || field.name == "高周转" -> {
+                android.util.Log.d("FieldViewFactory", "   🔘 创建 Switch (${field.name})")
+                createSwitchView(field.name, properties)
+            }
+            properties.displayStyle == DisplayStyle.TAG -> {
+                android.util.Log.d("FieldViewFactory", "   🏷️ 创建 TagSelector (DisplayStyle.TAG)")
+                createTagSelector(field.name, properties)
+            }
+            properties.displayStyle == DisplayStyle.RATING_STAR -> {
+                android.util.Log.d("FieldViewFactory", "   ⭐ 创建 RatingBar (DisplayStyle.RATING_STAR)")
+                createRatingBar()
+            }
+            properties.displayStyle == DisplayStyle.PERIOD_SELECTOR -> {
+                android.util.Log.d("FieldViewFactory", "   📊 创建 PeriodSelector (DisplayStyle.PERIOD_SELECTOR)")
+                createPeriodSelector(field.name, properties)
+            }
+            properties.displayStyle == DisplayStyle.LOCATION_SELECTOR -> {
+                android.util.Log.d("FieldViewFactory", "   🏠 创建 LocationSelector (DisplayStyle.LOCATION_SELECTOR)")
+                createLocationSelector()
+            }
+            properties.validationType == ValidationType.DATE -> {
+                android.util.Log.d("FieldViewFactory", "   📅 创建 DatePicker (ValidationType.DATE)")
+                createDatePicker(properties)
+            }
+            properties.isMultiline -> {
+                android.util.Log.d("FieldViewFactory", "   📄 创建 MultilineInput (isMultiline=true)")
+                createMultilineInput(properties)
+            }
+            properties.unitOptions != null -> {
+                android.util.Log.d("FieldViewFactory", "   📏 创建 NumberWithUnitInput (unitOptions=${properties.unitOptions})")
+                createNumberWithUnitInput(field.name, properties)
+            }
+            properties.options != null -> {
+                android.util.Log.d("FieldViewFactory", "   📋 创建 Spinner (options=${properties.options})")
+                createSpinner(field.name, properties)
+            }
+            properties.validationType == ValidationType.NUMBER -> {
+                android.util.Log.d("FieldViewFactory", "   🔢 创建 NumberInput (ValidationType.NUMBER)")
+                createNumberInput(properties)
+            }
+            else -> {
+                android.util.Log.d("FieldViewFactory", "   📝 创建 TextInput (默认)")
+                android.util.Log.w("FieldViewFactory", "   ⚠️ 使用默认文本输入控件，可能存在配置问题!")
+                createTextInput(properties)
+            }
         }
+        
+        android.util.Log.d("FieldViewFactory", "   ✅ 控件创建完成，类型: ${input.javaClass.simpleName}")
 
         // 根据输入控件类型决定是否需要包装在容器中
+        android.util.Log.d("FieldViewFactory", "   📦 创建输入容器")
         val inputContainer = LinearLayout(context).apply {
             layoutParams = LinearLayout.LayoutParams(
                 0,
@@ -149,26 +210,34 @@ class FieldViewFactory(
             gravity = Gravity.CENTER_VERTICAL // Default gravity for the container
         }
 
+        android.util.Log.d("FieldViewFactory", "   🔧 开始包装控件到容器中...")
         when (input) {
             is LinearLayout -> {
+                android.util.Log.d("FieldViewFactory", "   📦 处理 LinearLayout 控件")
                 if (properties.displayStyle == DisplayStyle.RATING_STAR) {
+                    android.util.Log.d("FieldViewFactory", "   ⭐ 评分控件直接添加到主容器")
                     // 直接使用我们已经创建的带有评分控件的LinearLayout容器
                     container.addView(input)
+                    android.util.Log.d("FieldViewFactory", "   ✅ 字段视图创建完成: ${field.name} (RatingBar)")
                     return container
                 } else {
+                    android.util.Log.d("FieldViewFactory", "   📦 LinearLayout 添加到输入容器")
                     inputContainer.addView(input)
                 }
             }
             is RatingBar -> {
+                android.util.Log.d("FieldViewFactory", "   ⭐ 处理 RatingBar 控件（右对齐）")
                 // 右对齐评分控件
                 inputContainer.gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 inputContainer.addView(input)
             }
             is Spinner -> {
+                android.util.Log.d("FieldViewFactory", "   📋 处理 Spinner 控件（右对齐）")
                 inputContainer.gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 inputContainer.addView(input)
             }
             is EditText -> {
+                android.util.Log.d("FieldViewFactory", "   📝 处理 EditText 控件")
                 input.apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
@@ -177,26 +246,32 @@ class FieldViewFactory(
                     background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
                     textSize = 14f
                     gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                    setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                    setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                 }
                 inputContainer.addView(input) // EditText will fill the inputContainer by default
             }
             is TextView -> { // Handles DatePicker TextView primarily
+                android.util.Log.d("FieldViewFactory", "   📅 处理 TextView 控件（日期选择器，右对齐）")
                 // If the TextView (e.g., DatePicker) is WRAP_CONTENT, align it to the end.
                 inputContainer.gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 inputContainer.addView(input)
             }
             is Switch -> {
+                android.util.Log.d("FieldViewFactory", "   🔘 处理 Switch 控件（右对齐）")
                 // 右对齐Switch控件
                 inputContainer.gravity = Gravity.END or Gravity.CENTER_VERTICAL
                 inputContainer.addView(input)
             }
             else -> { // Handles other ViewGroups like RadioGroup, FlowLayout, or complex LinearLayouts
+                android.util.Log.d("FieldViewFactory", "   🔧 处理其他类型控件: ${input.javaClass.simpleName}")
                 inputContainer.addView(input)
             }
         }
+        
+        android.util.Log.d("FieldViewFactory", "   📦 将输入容器添加到主容器")
         container.addView(inputContainer)
 
+        android.util.Log.d("FieldViewFactory", "   ✅ 字段视图创建完成: ${field.name} (${input.javaClass.simpleName})")
         return container
     }
 
@@ -210,7 +285,7 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+            setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8, 8)
 
             // 设置唯一标识，包含字段名
@@ -221,7 +296,8 @@ class FieldViewFactory(
             val customOptions = viewModel.getCustomOptions(fieldName)
 
             // 根据字段名设置默认提示文本
-            spinnerTextView.text = when(fieldName) {
+            spinnerTextView.text = ""
+            spinnerTextView.hint = when(fieldName) {
                 "分类" -> "请选择分类"
                 "子分类" -> "请选择子分类"
                 "购买渠道" -> "选择渠道"
@@ -304,7 +380,7 @@ class FieldViewFactory(
                         spinnerTextView,
                         { selectedOption ->
                             spinnerTextView.text = selectedOption
-                            spinnerTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            spinnerTextView.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                             viewModel.saveFieldValue(fieldName, selectedOption)
                         },
                         { oldOption, newOption ->
@@ -392,8 +468,9 @@ class FieldViewFactory(
                                     spinnerTextView.text = remainingOptions.first()
                                     viewModel.saveFieldValue(fieldName, remainingOptions.first())
                                 } else {
-                                    spinnerTextView.text = "请选择子分类"
-                                    spinnerTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                                    spinnerTextView.text = ""
+                                    spinnerTextView.hint = "请选择子分类"
+                                    spinnerTextView.setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                                     viewModel.clearFieldValue(fieldName)
                                 }
                             }
@@ -432,8 +509,8 @@ class FieldViewFactory(
                         spinnerTextView,
                         { selectedOption ->
                             spinnerTextView.text = selectedOption
-                            // 选择后设置为黑色文本
-                            spinnerTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                            // 选择后设置文本颜色
+                            spinnerTextView.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                             
                             // 保存字段值到ViewModel
                             viewModel.saveFieldValue(fieldName, selectedOption)
@@ -447,8 +524,9 @@ class FieldViewFactory(
                                 // 查找子分类控件并重置其显示
                                 val subCategoryView = findSubCategoryView(this)
                                 subCategoryView?.let {
-                                    it.text = "请选择子分类"
-                                    it.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                                    it.text = ""
+                                    it.hint = "请选择子分类"
+                                    it.setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                                 }
                             }
                         },
@@ -491,8 +569,9 @@ class FieldViewFactory(
                                         "购买渠道" -> "选择渠道"
                                         else -> "请选择"
                                     }
-                                    spinnerTextView.text = defaultText
-                                    spinnerTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                                    spinnerTextView.text = ""
+                                    spinnerTextView.hint = defaultText
+                                    spinnerTextView.setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                                     viewModel.clearFieldValue(fieldName)
                                 }
                             }
@@ -569,10 +648,11 @@ class FieldViewFactory(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-            text = "点击选择标签"
+            text = ""
+            hint = "点击选择标签"
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
-            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+            setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             id = View.generateViewId() // 生成唯一ID以便后续引用
 
             // 设置点击事件，点击时显示标签选择对话框
@@ -680,8 +760,8 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setHintTextColor(ContextCompat.getColor(context, android.R.color.darker_gray))
+            setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+            setHintTextColor(ContextCompat.getColor(context, R.color.text_color_hint))
             minWidth = resources.getDimensionPixelSize(R.dimen.input_min_width)
         }
 
@@ -705,14 +785,15 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+            setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8, 8)
 
             // 设置唯一标识
             tag = "unit_textview_${fieldName}"  // 使用字段名创建唯一tag
 
             // 设置默认值
-            text = "选择单位"  // 修改默认值
+            text = ""
+            hint = "选择单位"
 
             // 添加下拉箭头图标
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
@@ -729,8 +810,8 @@ class FieldViewFactory(
                     this,
                     { selectedUnit ->
                         text = selectedUnit
-                        // 选择后设置为黑色文本
-                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                        // 选择后设置文本颜色
+                        setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                     },
                     { oldUnit, newUnit ->
                         // 更新单位
@@ -796,7 +877,7 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+            setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8 + resources.getDimensionPixelSize(R.dimen.margin_normal), 8)
 
             // 设置唯一标识，包含字段名
@@ -813,15 +894,16 @@ class FieldViewFactory(
             // 点击事件处理
             setOnClickListener { view ->
                 val numbers = (properties.periodRange ?: 1..36).toList().map { it.toString() }.toTypedArray()
-                AlertDialog.Builder(context)
-                    .setTitle("选择数值")
-                    .setItems(numbers) { dialog, which ->
-                        text = numbers[which]
-                        // 设置文本颜色为黑色表示已选择
-                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                Material3DialogFactory.createNumberSelectionDialog(
+                    context = context,
+                    title = "选择数值",
+                    numbers = numbers,
+                    onNumberSelected = { selectedNumber ->
+                        text = selectedNumber
+                        // 设置文本颜色表示已选择
+                        setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                     }
-                    .setNegativeButton("取消", null)
-                    .show()
+                ).show()
             }
         }
 
@@ -845,14 +927,15 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+            setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
             setPadding(8, 8, 8 + resources.getDimensionPixelSize(R.dimen.margin_normal), 8)
 
             // 设置唯一标识，包含字段名
             tag = "period_unit_textview_${fieldName}"
 
             // 设置默认值为空
-            text = "选择单位"
+            text = ""
+            hint = "选择单位"
 
             // 添加下拉箭头图标
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
@@ -869,8 +952,8 @@ class FieldViewFactory(
                     this,
                     { selectedUnit ->
                         text = selectedUnit
-                        // 设置文本颜色为黑色表示已选择
-                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                        // 设置文本颜色表示已选择
+                        setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                     },
                     { oldUnit, newUnit ->
                         // 更新单位
@@ -926,8 +1009,8 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            setHintTextColor(ContextCompat.getColor(context, android.R.color.darker_gray))
+            setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+            setHintTextColor(ContextCompat.getColor(context, R.color.text_color_hint))
         }
     }
 
@@ -958,7 +1041,7 @@ class FieldViewFactory(
             textSize = 14f
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             hint = "点击选择日期"
-            setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
 
             // 获取当前字段名
             val fieldName = properties.fieldName ?: ""
@@ -973,41 +1056,40 @@ class FieldViewFactory(
             if (properties.defaultDate) {  // 仅对"添加日期"使用当前日期
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 text = dateFormat.format(Date())
-                setTextColor(ContextCompat.getColor(context, android.R.color.black))
+                setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
             } else {
                 text = ""  // 其他日期字段默认为空
-                setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                setTextColor(ContextCompat.getColor(context, R.color.text_color_hint))
             }
 
             setOnClickListener {
-                val calendar = Calendar.getInstance()
+                // 解析当前显示的日期
                 val currentDate = if (text.isNotEmpty() && text != "点击选择日期") {
                     try {
                         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        dateFormat.parse(text.toString())?.let {
-                            calendar.time = it
-                            calendar
-                        } ?: calendar
+                        dateFormat.parse(text.toString())
                     } catch (e: Exception) {
-                        calendar
+                        null
                     }
                 } else {
-                    calendar
+                    null
                 }
 
-                DatePickerDialog(
-                    context,
-                    { _, year, month, day ->
-                        calendar.set(year, month, day)
+                // 使用Material3DatePicker
+                Material3DatePicker.showDatePicker(
+                    fragmentManager = fragmentManager,
+                    title = "选择日期",
+                    selectedDate = currentDate,
+                    onDateSelected = { selectedDate ->
                         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        text = dateFormat.format(calendar.time)
-                        // 用户选择日期后，设置文本颜色为黑色
-                        setTextColor(ContextCompat.getColor(context, android.R.color.black))
-                    },
-                    currentDate.get(Calendar.YEAR),
-                    currentDate.get(Calendar.MONTH),
-                    currentDate.get(Calendar.DAY_OF_MONTH)
-                ).show()
+                        text = dateFormat.format(selectedDate)
+                        // 用户选择日期后，设置文本颜色
+                        setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+                        
+                        // 保存字段值到ViewModel
+                        viewModel.saveFieldValue(fieldName, text.toString())
+                    }
+                )
             }
         }
     }

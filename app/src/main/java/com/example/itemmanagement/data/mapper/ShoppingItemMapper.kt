@@ -37,7 +37,7 @@ object ShoppingItemMapper {
             specification = shoppingItem.specification,
             status = ItemStatus.IN_STOCK, // 默认在库
             stockWarningThreshold = null, // 需要用户后续设置
-            price = shoppingItem.actualPrice ?: shoppingItem.estimatedPrice,
+            price = shoppingItem.actualPrice ?: shoppingItem.price,
             priceUnit = shoppingItem.priceUnit,
             purchaseChannel = shoppingItem.purchaseChannel,
             storeName = shoppingItem.storeName,
@@ -54,7 +54,6 @@ object ShoppingItemMapper {
             warrantyPeriod = null, // 需要用户后续补充
             warrantyEndDate = null,
             serialNumber = shoppingItem.serialNumber,
-            isWishlistItem = false,
             isHighTurnover = false
         )
     }
@@ -78,7 +77,7 @@ object ShoppingItemMapper {
             specification = item.specification,
             subCategory = item.subCategory,
             customNote = "从库存物品「${item.name}」添加",
-            estimatedPrice = item.price, // 使用原价格作为预估价格
+            price = item.price, // 使用原价格作为预估价格
             priceUnit = item.priceUnit,
             totalPrice = item.totalPrice,
             actualPrice = null, // 实际价格待购买时填写
@@ -90,7 +89,7 @@ object ShoppingItemMapper {
             rating = item.rating,
             isPurchased = false,
             priority = priority,
-            createdDate = Date(),
+            addDate = Date(),
             sourceItemId = item.id,
             serialNumber = item.serialNumber,
             season = item.season
@@ -112,7 +111,7 @@ object ShoppingItemMapper {
             "备注" to shoppingItem.customNote,
             
             // 购物特有价格字段
-            "预估价格" to shoppingItem.estimatedPrice,
+            "预估价格" to shoppingItem.price,
             "实际价格" to shoppingItem.actualPrice,
             "预算上限" to shoppingItem.budgetLimit,
             "总价" to shoppingItem.totalPrice,
@@ -164,7 +163,7 @@ object ShoppingItemMapper {
             customNote = fieldMap["备注"] as? String,
             
             // 购物特有价格字段
-            estimatedPrice = (fieldMap["预估价格"] as? Number)?.toDouble(),
+            price = (fieldMap["预估价格"] as? Number)?.toDouble(),
             actualPrice = (fieldMap["实际价格"] as? Number)?.toDouble(),
             budgetLimit = (fieldMap["预算上限"] as? Number)?.toDouble(),
             priceUnit = "元", // 默认价格单位
@@ -200,7 +199,7 @@ object ShoppingItemMapper {
             addedReason = "USER_MANUAL",
             
             // 时间字段
-            createdDate = Date(),
+            addDate = Date(),
             completedDate = null,
             
             // 其他字段

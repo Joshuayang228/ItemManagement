@@ -18,7 +18,11 @@ import com.example.itemmanagement.data.dao.WarrantyDao
 import com.example.itemmanagement.data.dao.BorrowDao
 import com.example.itemmanagement.data.dao.RecycleBinDao
 import com.example.itemmanagement.data.dao.UserProfileDao
+import com.example.itemmanagement.data.dao.wishlist.WishlistDao
+import com.example.itemmanagement.data.dao.wishlist.WishlistPriceHistoryDao
 import com.example.itemmanagement.data.entity.*
+import com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity
+import com.example.itemmanagement.data.entity.wishlist.WishlistPriceHistoryEntity
 
 @Database(
     entities = [
@@ -36,9 +40,11 @@ import com.example.itemmanagement.data.entity.*
         WarrantyEntity::class,
         BorrowEntity::class,
         DeletedItemEntity::class,
-        UserProfileEntity::class
+        UserProfileEntity::class,
+        WishlistItemEntity::class,
+        WishlistPriceHistoryEntity::class
     ],
-    version = 19,
+    version = 31,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -54,19 +60,21 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun borrowDao(): BorrowDao
     abstract fun recycleBinDao(): RecycleBinDao
     abstract fun userProfileDao(): UserProfileDao
+    abstract fun wishlistDao(): WishlistDao
+    abstract fun wishlistPriceHistoryDao(): WishlistPriceHistoryDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
         fun getDatabase(context: Context): AppDatabase {
-            return INSTANCE ?: synchronized(this) {
+            return             INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
@@ -1007,6 +1015,509 @@ abstract class AppDatabase : RoomDatabase() {
                         `hasBorrowRecord` INTEGER NOT NULL
                     )
                 """)
+            }
+        }
+        
+        /**
+         * 数据库版本19到20的迁移
+         * 添加wasteDate字段到items表
+         */
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 为items表添加wasteDate字段
+                database.execSQL("ALTER TABLE items ADD COLUMN wasteDate INTEGER")
+                
+                // 为现有的浪费状态物品设置wasteDate
+                // 对于已经是EXPIRED或DISCARDED状态的物品，使用addDate作为fallback
+                database.execSQL("""
+                    UPDATE items 
+                    SET wasteDate = addDate 
+                    WHERE status IN ('EXPIRED', 'DISCARDED') AND wasteDate IS NULL
+                """)
+            }
+        }
+        
+        /**
+         * 数据库版本20到21的迁移
+         * 心愿单功能重构：创建独立的心愿单表，移除items表的isWishlistItem字段
+         */
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 创建心愿单物品表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `wishlist_items` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `subCategory` TEXT,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `notes` TEXT,
+                        `estimatedPrice` REAL,
+                        `targetPrice` REAL,
+                        `priceUnit` TEXT NOT NULL DEFAULT '元',
+                        `currentPrice` REAL,
+                        `lowestPrice` REAL,
+                        `highestPrice` REAL,
+                        `priority` TEXT NOT NULL DEFAULT 'NORMAL',
+                        `urgency` TEXT NOT NULL DEFAULT 'NORMAL',
+                        `desiredQuantity` REAL NOT NULL DEFAULT 1.0,
+                        `quantityUnit` TEXT NOT NULL DEFAULT '个',
+                        `budgetLimit` REAL,
+                        `preferredStore` TEXT,
+                        `preferredBrand` TEXT,
+                        `isPriceTrackingEnabled` INTEGER NOT NULL DEFAULT 1,
+                        `priceDropThreshold` REAL,
+                        `lastPriceCheck` INTEGER,
+                        `priceCheckInterval` INTEGER NOT NULL DEFAULT 7,
+                        `isActive` INTEGER NOT NULL DEFAULT 1,
+                        `isPaused` INTEGER NOT NULL DEFAULT 0,
+                        `createdDate` INTEGER NOT NULL,
+                        `lastModified` INTEGER NOT NULL,
+                        `achievedDate` INTEGER,
+                        `sourceUrl` TEXT,
+                        `imageUrl` TEXT,
+                        `relatedItemId` INTEGER,
+                        `addedReason` TEXT,
+                        `viewCount` INTEGER NOT NULL DEFAULT 0,
+                        `lastViewDate` INTEGER,
+                        `priceChangeCount` INTEGER NOT NULL DEFAULT 0
+                    )
+                """)
+                
+                // 创建心愿单价格历史表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `wishlist_price_history` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `wishlistItemId` INTEGER NOT NULL,
+                        `price` REAL NOT NULL,
+                        `priceUnit` TEXT NOT NULL DEFAULT '元',
+                        `currency` TEXT NOT NULL DEFAULT 'CNY',
+                        `source` TEXT NOT NULL,
+                        `sourceUrl` TEXT,
+                        `storeName` TEXT,
+                        `platform` TEXT,
+                        `recordDate` INTEGER NOT NULL,
+                        `isManual` INTEGER NOT NULL DEFAULT 0,
+                        `isPromotional` INTEGER NOT NULL DEFAULT 0,
+                        `promotionalInfo` TEXT,
+                        `previousPrice` REAL,
+                        `priceChange` REAL,
+                        `changePercentage` REAL,
+                        `confidence` REAL NOT NULL DEFAULT 1.0,
+                        `verificationStatus` TEXT NOT NULL DEFAULT 'UNVERIFIED',
+                        `notes` TEXT,
+                        FOREIGN KEY(`wishlistItemId`) REFERENCES `wishlist_items`(`id`) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 创建索引以提高查询性能
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_category` ON `wishlist_items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_priority` ON `wishlist_items` (`priority`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_isActive` ON `wishlist_items` (`isActive`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_createdDate` ON `wishlist_items` (`createdDate`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_price_history_wishlistItemId` ON `wishlist_price_history` (`wishlistItemId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_price_history_recordDate` ON `wishlist_price_history` (`recordDate`)")
+                
+                // 渐进式迁移：创建心愿单表但保留isWishlistItem字段
+                // 这样用户可以继续使用原有的心愿单功能，同时可以逐步迁移到新功能
+                
+                // 迁移现有的心愿单数据（从items表的isWishlistItem=1的记录）
+                val currentTime = System.currentTimeMillis()
+                database.execSQL("""
+                    INSERT INTO wishlist_items (
+                        name, category, subCategory, brand, specification, 
+                        estimatedPrice, desiredQuantity, quantityUnit,
+                        createdDate, lastModified, addedReason
+                    )
+                    SELECT 
+                        name, category, subCategory, brand, specification,
+                        price, quantity, unit,
+                        addDate, $currentTime, 'migrated_from_inventory'
+                    FROM items 
+                    WHERE isWishlistItem = 1
+                """)
+                
+                // 为迁移的物品创建初始价格历史记录
+                database.execSQL("""
+                    INSERT INTO wishlist_price_history (
+                        wishlistItemId, price, source, recordDate, isManual, notes
+                    )
+                    SELECT 
+                        w.id, i.price, 'migration_initial', i.addDate, 1, '从库存迁移的初始价格'
+                    FROM wishlist_items w
+                    JOIN items i ON (w.name = i.name AND w.category = i.category AND i.isWishlistItem = 1)
+                    WHERE i.price IS NOT NULL
+                """)
+                
+                // 添加备注说明已有新的心愿单功能
+                database.execSQL("""
+                    UPDATE items 
+                    SET customNote = CASE 
+                        WHEN customNote IS NULL OR customNote = '' THEN 
+                            '已同步到新心愿单功能'
+                        ELSE 
+                            customNote || ' (已同步到新心愿单功能)'
+                    END
+                    WHERE isWishlistItem = 1
+                """)
+                
+                // 注意：保留isWishlistItem字段和数据，实现渐进式迁移
+                // 用户可以继续使用原有功能，同时可以尝试新的心愿单功能
+            }
+        }
+        
+        // 修复迁移问题：确保数据库结构一致性
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 这个迁移主要是为了修复之前的迁移不一致问题
+                // 由于 MIGRATION_20_21 已经处理了 isWishlistItem 字段的移除
+                // 这里我们只需要确保表结构是正确的
+                
+                // 检查并确保所有必要的索引存在
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_locationId` ON `items` (`locationId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_category` ON `items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_status` ON `items` (`status`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_expirationDate` ON `items` (`expirationDate`)")
+                
+                // 确保 wishlist 相关表和索引存在
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_category` ON `wishlist_items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_priority` ON `wishlist_items` (`priority`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_isActive` ON `wishlist_items` (`isActive`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_items_createdDate` ON `wishlist_items` (`createdDate`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_price_history_wishlistItemId` ON `wishlist_price_history` (`wishlistItemId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_wishlist_price_history_recordDate` ON `wishlist_price_history` (`recordDate`)")
+            }
+        }
+        
+        // 修复 isWishlistItem 字段默认值不匹配问题
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 修复 isWishlistItem 和 isHighTurnover 字段的默认值定义
+                // 重新创建 items 表以确保字段定义完全匹配 Entity
+                
+                // 1. 创建新的 items 表，确保所有字段定义与 Entity 完全一致
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `items_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `quantity` REAL NOT NULL,
+                        `unit` TEXT NOT NULL,
+                        `locationId` INTEGER,
+                        `category` TEXT NOT NULL,
+                        `addDate` INTEGER NOT NULL,
+                        `productionDate` INTEGER,
+                        `expirationDate` INTEGER,
+                        `openStatus` TEXT,
+                        `openDate` INTEGER,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `status` TEXT NOT NULL,
+                        `stockWarningThreshold` INTEGER,
+                        `price` REAL,
+                        `priceUnit` TEXT,
+                        `purchaseChannel` TEXT,
+                        `storeName` TEXT,
+                        `subCategory` TEXT,
+                        `customNote` TEXT,
+                        `season` TEXT,
+                        `capacity` REAL,
+                        `capacityUnit` TEXT,
+                        `rating` REAL,
+                        `totalPrice` REAL,
+                        `totalPriceUnit` TEXT,
+                        `purchaseDate` INTEGER,
+                        `shelfLife` INTEGER,
+                        `warrantyPeriod` INTEGER,
+                        `warrantyEndDate` INTEGER,
+                        `serialNumber` TEXT,
+                        `isWishlistItem` INTEGER NOT NULL DEFAULT 0,
+                        `isHighTurnover` INTEGER NOT NULL DEFAULT 0,
+                        `wasteDate` INTEGER,
+                        FOREIGN KEY(`locationId`) REFERENCES `locations`(`id`) ON DELETE SET NULL
+                    )
+                """)
+                
+                // 2. 复制数据，确保 Boolean 字段正确转换
+                database.execSQL("""
+                    INSERT INTO items_new SELECT 
+                        id, name, quantity, unit, locationId, category, addDate,
+                        productionDate, expirationDate, openStatus, openDate,
+                        brand, specification, status, stockWarningThreshold,
+                        price, priceUnit, purchaseChannel, storeName, subCategory,
+                        customNote, season, capacity, capacityUnit, rating,
+                        totalPrice, totalPriceUnit, purchaseDate, shelfLife,
+                        warrantyPeriod, warrantyEndDate, serialNumber,
+                        COALESCE(isWishlistItem, 0), COALESCE(isHighTurnover, 0), wasteDate
+                    FROM items
+                """)
+                
+                // 3. 删除旧表并重命名新表
+                database.execSQL("DROP TABLE items")
+                database.execSQL("ALTER TABLE items_new RENAME TO items")
+                
+                // 4. 重新创建所有索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_locationId` ON `items` (`locationId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_category` ON `items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_status` ON `items` (`status`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_expirationDate` ON `items` (`expirationDate`)")
+            }
+        }
+        
+        // 清理旧心愿单系统 - 删除 isWishlistItem 字段
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 删除 isWishlistItem 字段，完全迁移到新心愿单系统
+                // 重新创建 items 表，移除 isWishlistItem 字段
+                
+                // 1. 创建新的 items 表（不包含 isWishlistItem）
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `items_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `quantity` REAL NOT NULL,
+                        `unit` TEXT NOT NULL,
+                        `locationId` INTEGER,
+                        `category` TEXT NOT NULL,
+                        `addDate` INTEGER NOT NULL,
+                        `productionDate` INTEGER,
+                        `expirationDate` INTEGER,
+                        `openStatus` TEXT,
+                        `openDate` INTEGER,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `status` TEXT NOT NULL,
+                        `stockWarningThreshold` INTEGER,
+                        `price` REAL,
+                        `priceUnit` TEXT,
+                        `purchaseChannel` TEXT,
+                        `storeName` TEXT,
+                        `subCategory` TEXT,
+                        `customNote` TEXT,
+                        `season` TEXT,
+                        `capacity` REAL,
+                        `capacityUnit` TEXT,
+                        `rating` REAL,
+                        `totalPrice` REAL,
+                        `totalPriceUnit` TEXT,
+                        `purchaseDate` INTEGER,
+                        `shelfLife` INTEGER,
+                        `warrantyPeriod` INTEGER,
+                        `warrantyEndDate` INTEGER,
+                        `serialNumber` TEXT,
+                        `isHighTurnover` INTEGER NOT NULL DEFAULT 0,
+                        `wasteDate` INTEGER,
+                        FOREIGN KEY(`locationId`) REFERENCES `locations`(`id`) ON DELETE SET NULL
+                    )
+                """)
+                
+                // 2. 复制数据（排除 isWishlistItem 字段）
+                database.execSQL("""
+                    INSERT INTO items_new SELECT 
+                        id, name, quantity, unit, locationId, category, addDate,
+                        productionDate, expirationDate, openStatus, openDate,
+                        brand, specification, status, stockWarningThreshold,
+                        price, priceUnit, purchaseChannel, storeName, subCategory,
+                        customNote, season, capacity, capacityUnit, rating,
+                        totalPrice, totalPriceUnit, purchaseDate, shelfLife,
+                        warrantyPeriod, warrantyEndDate, serialNumber,
+                        COALESCE(isHighTurnover, 0), wasteDate
+                    FROM items
+                """)
+                
+                // 3. 删除旧表并重命名新表
+                database.execSQL("DROP TABLE items")
+                database.execSQL("ALTER TABLE items_new RENAME TO items")
+                
+                // 4. 重新创建所有索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_locationId` ON `items` (`locationId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_category` ON `items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_status` ON `items` (`status`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_expirationDate` ON `items` (`expirationDate`)")
+            }
+        }
+        
+        // 修复表结构与Entity定义不匹配的问题
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 重新创建 items 表，确保与 ItemEntity 定义完全匹配
+                // 解决 Room 验证失败的问题
+                
+                // 1. 创建新的 items 表（与 ItemEntity 定义匹配）
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `items_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `quantity` REAL NOT NULL,
+                        `unit` TEXT NOT NULL,
+                        `locationId` INTEGER,
+                        `category` TEXT NOT NULL,
+                        `addDate` INTEGER NOT NULL,
+                        `productionDate` INTEGER,
+                        `expirationDate` INTEGER,
+                        `openStatus` TEXT,
+                        `openDate` INTEGER,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `status` TEXT NOT NULL,
+                        `stockWarningThreshold` INTEGER,
+                        `price` REAL,
+                        `priceUnit` TEXT,
+                        `purchaseChannel` TEXT,
+                        `storeName` TEXT,
+                        `subCategory` TEXT,
+                        `customNote` TEXT,
+                        `season` TEXT,
+                        `capacity` REAL,
+                        `capacityUnit` TEXT,
+                        `rating` REAL,
+                        `totalPrice` REAL,
+                        `totalPriceUnit` TEXT,
+                        `purchaseDate` INTEGER,
+                        `shelfLife` INTEGER,
+                        `warrantyPeriod` INTEGER,
+                        `warrantyEndDate` INTEGER,
+                        `serialNumber` TEXT,
+                        `isHighTurnover` INTEGER NOT NULL,
+                        `wasteDate` INTEGER,
+                        FOREIGN KEY(`locationId`) REFERENCES `locations`(`id`) ON DELETE SET NULL
+                    )
+                """)
+
+                // 2. 复制数据（不设置默认值，让Room处理）
+                database.execSQL("""
+                    INSERT INTO items_new SELECT
+                        id, name, quantity, unit, locationId, category, addDate,
+                        productionDate, expirationDate, openStatus, openDate,
+                        brand, specification, status, stockWarningThreshold,
+                        price, priceUnit, purchaseChannel, storeName, subCategory,
+                        customNote, season, capacity, capacityUnit, rating,
+                        totalPrice, totalPriceUnit, purchaseDate, shelfLife,
+                        warrantyPeriod, warrantyEndDate, serialNumber,
+                        COALESCE(isHighTurnover, 0), wasteDate
+                    FROM items
+                """)
+
+                // 3. 删除旧表并重命名新表
+                database.execSQL("DROP TABLE items")
+                database.execSQL("ALTER TABLE items_new RENAME TO items")
+
+                // 4. 创建与 ItemEntity 定义匹配的索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_locationId` ON `items` (`locationId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_category` ON `items` (`category`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_status` ON `items` (`status`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_items_expirationDate` ON `items` (`expirationDate`)")
+            }
+        }
+
+        // 从版本25到26：wasteDate字段已在MIGRATION_24_25中添加，此迁移仅用于版本同步
+        val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // wasteDate字段已在MIGRATION_24_25中添加，无需额外操作
+                // 此迁移仅用于同步版本号与Entity定义
+            }
+        }
+
+        // 从版本26到27：修复MIGRATION_24_25中缺失的isWishlistItem字段
+        val MIGRATION_26_27 = object : Migration(26, 27) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // isWishlistItem字段已在修复的MIGRATION_24_25中添加，无需额外操作
+                // 此迁移仅用于同步版本号与修复后的Entity定义
+            }
+        }
+
+        // 从版本27到28：移除isWishlistItem字段，完全使用独立心愿单系统
+        val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // isWishlistItem字段已从MIGRATION_24_25中移除，无需额外操作
+                // 此迁移仅用于同步版本号与移除isWishlistItem后的Entity定义
+            }
+        }
+
+        // 从版本28到29：同步ItemEntity索引定义与MIGRATION_24_25创建的索引
+        val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 索引已在MIGRATION_24_25中创建，无需额外操作
+                // 此迁移仅用于同步版本号与ItemEntity的索引定义
+            }
+        }
+
+        // 从版本29到30：统一wishlist_items表字段名
+        val MIGRATION_29_30 = object : Migration(29, 30) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 重新创建 wishlist_items 表，统一字段名
+                // 1. 创建新的 wishlist_items 表（使用统一的字段名）
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `wishlist_items_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `subCategory` TEXT,
+                        `brand` TEXT,
+                        `specification` TEXT,
+                        `notes` TEXT,
+                        `price` REAL,
+                        `targetPrice` REAL,
+                        `priceUnit` TEXT NOT NULL,
+                        `currentPrice` REAL,
+                        `lowestPrice` REAL,
+                        `highestPrice` REAL,
+                        `priority` TEXT NOT NULL,
+                        `urgency` TEXT NOT NULL,
+                        `quantity` REAL NOT NULL,
+                        `quantityUnit` TEXT NOT NULL,
+                        `budgetLimit` REAL,
+                        `preferredStore` TEXT,
+                        `preferredBrand` TEXT,
+                        `isPriceTrackingEnabled` INTEGER NOT NULL,
+                        `priceDropThreshold` REAL,
+                        `lastPriceCheck` INTEGER,
+                        `priceCheckInterval` INTEGER NOT NULL,
+                        `isActive` INTEGER NOT NULL,
+                        `isPaused` INTEGER NOT NULL,
+                        `createdDate` INTEGER NOT NULL,
+                        `lastModified` INTEGER NOT NULL,
+                        `achievedDate` INTEGER,
+                        `sourceUrl` TEXT,
+                        `imageUrl` TEXT,
+                        `relatedItemId` INTEGER,
+                        `addedReason` TEXT,
+                        `viewCount` INTEGER NOT NULL,
+                        `lastViewDate` INTEGER,
+                        `priceChangeCount` INTEGER NOT NULL
+                    )
+                """)
+
+                // 2. 复制数据（重命名字段）
+                database.execSQL("""
+                    INSERT INTO wishlist_items_new SELECT
+                        id, name, category, subCategory, brand, specification, notes,
+                        estimatedPrice, targetPrice, priceUnit, currentPrice, lowestPrice, highestPrice,
+                        priority, urgency, desiredQuantity, quantityUnit, budgetLimit, preferredStore, preferredBrand,
+                        isPriceTrackingEnabled, priceDropThreshold, lastPriceCheck, priceCheckInterval,
+                        isActive, isPaused, createdDate, lastModified, achievedDate, sourceUrl, imageUrl,
+                        relatedItemId, addedReason, viewCount, lastViewDate, priceChangeCount
+                    FROM wishlist_items
+                """)
+
+                // 3. 删除旧表并重命名新表
+                database.execSQL("DROP TABLE wishlist_items")
+                database.execSQL("ALTER TABLE wishlist_items_new RENAME TO wishlist_items")
+            }
+        }
+
+        val MIGRATION_30_31 = object : Migration(30, 31) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 统一Entity字段命名：以ItemEntity为标准，其他Entity向它看齐
+                
+                // 1. 重命名 shopping_items 表的字段（向ItemEntity看齐）
+                database.execSQL("ALTER TABLE shopping_items RENAME COLUMN estimatedPrice TO price")
+                database.execSQL("ALTER TABLE shopping_items RENAME COLUMN createdDate TO addDate")
+                
+                // 2. 重命名 wishlist_items 表的字段（向ItemEntity看齐）
+                database.execSQL("ALTER TABLE wishlist_items RENAME COLUMN preferredStore TO purchaseChannel")
+                database.execSQL("ALTER TABLE wishlist_items RENAME COLUMN createdDate TO addDate")
+                database.execSQL("ALTER TABLE wishlist_items RENAME COLUMN notes TO customNote")
             }
         }
     }

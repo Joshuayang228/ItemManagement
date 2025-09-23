@@ -52,12 +52,8 @@ class FunctionFragment : Fragment() {
     }
 
     private fun observeData() {
-        viewModel.functionSections.observe(viewLifecycleOwner) { sections ->
-            functionAdapter.submitSections(sections)
-        }
-        
-        viewModel.inventoryStats.observe(viewLifecycleOwner) { stats ->
-            functionAdapter.updateInventoryStats(stats)
+        viewModel.functionGroupItems.observe(viewLifecycleOwner) { functionGroupItems ->
+            functionAdapter.submitFunctionGroupItems(functionGroupItems)
         }
 
         viewModel.navigationEvent.observe(viewLifecycleOwner) { actionId ->

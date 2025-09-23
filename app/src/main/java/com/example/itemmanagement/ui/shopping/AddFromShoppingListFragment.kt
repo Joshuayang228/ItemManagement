@@ -81,8 +81,8 @@ class AddFromShoppingListFragment : BaseItemFragment<AddItemViewModel>() {
         }
         shoppingItem.subCategory?.let { if (it.isNotBlank()) viewModel.saveFieldValue("子分类", it) }
         
-        // 商业信息 - 使用estimatedPrice作为单价
-        shoppingItem.estimatedPrice?.let { if (it > 0) viewModel.saveFieldValue("单价", it.toString()) }
+        // 商业信息 - 使用price作为单价
+        shoppingItem.price?.let { if (it > 0) viewModel.saveFieldValue("单价", it.toString()) }
         shoppingItem.priceUnit?.let { if (it.isNotBlank()) viewModel.saveFieldValue("单价_unit", it) }
         shoppingItem.totalPrice?.let { if (it > 0) viewModel.saveFieldValue("总价", it.toString()) }
         
@@ -105,7 +105,7 @@ class AddFromShoppingListFragment : BaseItemFragment<AddItemViewModel>() {
         if (!shoppingItem.subCategory.isNullOrBlank()) {
             fieldsToShow.add(Field("分类", "子分类", true))
         }
-        if (shoppingItem.estimatedPrice != null && shoppingItem.estimatedPrice!! > 0) {
+        if (shoppingItem.price != null && shoppingItem.price!! > 0) {
             fieldsToShow.add(Field("数字类", "单价", true))
         }
         if (shoppingItem.totalPrice != null && shoppingItem.totalPrice!! > 0) {

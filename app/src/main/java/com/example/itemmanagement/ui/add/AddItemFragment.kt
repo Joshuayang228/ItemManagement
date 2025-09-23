@@ -9,6 +9,10 @@ import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import android.os.Bundle
+import android.view.View
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 
@@ -31,6 +35,18 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
         val repository = app.repository
         val warrantyRepository = app.warrantyRepository
         AddItemViewModelFactory(repository, cacheViewModel, warrantyRepository)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        
+        // 🎨 设置关闭图标替代默认的返回箭头，并确保没有标题显示
+        (requireActivity() as? AppCompatActivity)?.supportActionBar?.let { actionBar ->
+            actionBar.setDisplayHomeAsUpEnabled(true)
+            actionBar.setHomeAsUpIndicator(R.drawable.ic_close)
+            // 立即设置空标题，避免闪现"添加物品"文字
+            actionBar.title = ""
+        }
     }
 
     override fun onViewModelReady() {
@@ -65,8 +81,8 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
     }
 
     override fun setupTitleAndButtons() {
-        // 这个布局没有 titleText，所以我们可以设置 Activity 标题
-        activity?.title = "添加物品"
+        // 设置空标题，避免显示"添加物品"文字
+        activity?.title = ""
         
         // 设置按钮文本
         binding.saveButton.text = "保存物品"
@@ -270,6 +286,12 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            android.R.id.home -> {
+                // 处理X按钮点击，确保清空标题后再返回
+                (requireActivity() as? AppCompatActivity)?.supportActionBar?.title = ""
+                findNavController().navigateUp()
+                true
+            }
             R.id.action_test_fill -> {
                 // 处理测试填充
                 handleTestFill()

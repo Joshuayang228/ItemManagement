@@ -117,45 +117,6 @@
 
         </LinearLayout>
 
-        <!-- 操作按钮容器 -->
-        <LinearLayout
-            android:id="@+id/actionContainer"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginEnd="8dp"
-            android:orientation="horizontal"
-            android:gravity="end"
-            app:layout_constraintTop_toBottomOf="@id/infoContainer"
-            app:layout_constraintStart_toEndOf="@id/eventTypeIcon"
-            app:layout_constraintEnd_toStartOf="@id/priorityIndicator">
-
-            <!-- 完成按钮 -->
-            <Button
-                android:id="@+id/completeButton"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:text="完成"
-                android:textSize="12sp"
-                android:minWidth="0dp"
-                android:paddingHorizontal="12dp" />
-
-            <!-- 删除按钮 -->
-            <Button
-                android:id="@+id/deleteButton"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginStart="8dp"
-                android:text="删除"
-                android:textSize="12sp"
-                android:textColor="@color/error"
-                android:minWidth="0dp"
-                android:paddingHorizontal="12dp" />
-
-        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

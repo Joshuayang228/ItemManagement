@@ -42,7 +42,6 @@ fun ItemEntity.toItem(): Item {
         warrantyPeriod = warrantyPeriod,
         warrantyEndDate = warrantyEndDate,
         serialNumber = serialNumber,
-        isWishlistItem = isWishlistItem,
         isHighTurnover = isHighTurnover,
         photos = emptyList(), // 注意：这里不能直接访问photos，因为它是通过关系查询获得的
         tags = emptyList() // 注意：这里不能直接访问tags，因为它是通过关系查询获得的
@@ -87,7 +86,6 @@ fun Item.toItemEntity(locationId: Long? = null): ItemEntity {
         warrantyPeriod = warrantyPeriod,
         warrantyEndDate = warrantyEndDate,
         serialNumber = serialNumber,
-        isWishlistItem = isWishlistItem,
         isHighTurnover = isHighTurnover
     )
 }
@@ -129,7 +127,6 @@ fun ItemWithDetails.toItem(): Item {
         warrantyPeriod = item.warrantyPeriod,
         warrantyEndDate = item.warrantyEndDate,
         serialNumber = item.serialNumber,
-        isWishlistItem = item.isWishlistItem,
         isHighTurnover = item.isHighTurnover,
         photos = photos.map { it.toPhoto() },
         tags = tags.map { it.toTag() }

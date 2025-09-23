@@ -16,21 +16,16 @@ import java.util.Locale
 class CalendarListAdapter : ListAdapter<CalendarEvent, CalendarListAdapter.EventListViewHolder>(DiffCallback()) {
 
     private var onEventClickListener: ((CalendarEvent) -> Unit)? = null
-    private var onEventActionListener: ((String, Long) -> Unit)? = null
 
     fun setOnEventClickListener(listener: (CalendarEvent) -> Unit) {
         onEventClickListener = listener
-    }
-
-    fun setOnEventActionListener(listener: (String, Long) -> Unit) {
-        onEventActionListener = listener
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EventListViewHolder {
         val binding = ItemCalendarEventListBinding.inflate(
             LayoutInflater.from(parent.context), parent, false
         )
-        return EventListViewHolder(binding, onEventClickListener, onEventActionListener)
+        return EventListViewHolder(binding, onEventClickListener)
     }
 
     override fun onBindViewHolder(holder: EventListViewHolder, position: Int) {
@@ -39,8 +34,7 @@ class CalendarListAdapter : ListAdapter<CalendarEvent, CalendarListAdapter.Event
 
     class EventListViewHolder(
         private val binding: ItemCalendarEventListBinding,
-        private val onEventClickListener: ((CalendarEvent) -> Unit)?,
-        private val onEventActionListener: ((String, Long) -> Unit)?
+        private val onEventClickListener: ((CalendarEvent) -> Unit)?
     ) : RecyclerView.ViewHolder(binding.root) {
 
         private val dateFormat = SimpleDateFormat("MM月dd日 E", Locale.getDefault())
@@ -79,30 +73,9 @@ class CalendarListAdapter : ListAdapter<CalendarEvent, CalendarListAdapter.Event
                 }
                 daysUntilText.setTextColor(textColor)
 
-                // 设置完成状态
-                if (event.isCompleted) {
-                    root.alpha = 0.6f
-                    completeButton.text = "已完成"
-                    completeButton.isEnabled = false
-                } else {
-                    root.alpha = 1.0f
-                    completeButton.text = "完成"
-                    completeButton.isEnabled = true
-                }
-
                 // 设置点击事件
                 root.setOnClickListener {
                     onEventClickListener?.invoke(event)
-                }
-
-                completeButton.setOnClickListener {
-                    if (!event.isCompleted) {
-                        onEventActionListener?.invoke("complete", event.id)
-                    }
-                }
-
-                deleteButton.setOnClickListener {
-                    onEventActionListener?.invoke("delete", event.id)
                 }
             }
         }

@@ -1,60 +1,116 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
+    android:layout_height="match_parent"
+    android:background="@drawable/bottom_sheet_background">
 
-    <!-- 标题栏 -->
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@android:color/white"
-        android:elevation="2dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:text="筛选"
-            android:textColor="@android:color/black"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_alignParentBottom="true"
-            android:background="#E0E0E0" />
-    </RelativeLayout>
-
-    <!-- 主要内容区域 - 左右双栏布局 -->
+    <!-- 主要内容容器 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="450dp"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        
+        <!-- 拖拽响应区域容器 - 包含手柄和标题栏 -->
+        <LinearLayout
+            android:id="@+id/dragHandleContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <!-- 拖拽手柄 -->
+        <View
+            android:id="@+id/dragHandle"
+            android:layout_width="32dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bottom_sheet_drag_handle" />
+
+        <!-- 标题栏 -->
+        <RelativeLayout
+            android:id="@+id/titleBar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@android:color/transparent"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="筛选"
+                android:textColor="@android:color/black"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/resetButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                app:icon="@drawable/ic_cleanup"
+                app:iconSize="20dp"
+                app:iconGravity="textStart"
+                android:minWidth="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:insetLeft="0dp"
+                android:insetRight="0dp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_alignParentBottom="true"
+                android:layout_marginStart="-16dp"
+                android:layout_marginEnd="-16dp"
+                android:background="#E3E8ED" />
+        </RelativeLayout>
+
+    </LinearLayout>
+
+    <!-- 主要内容区域 - 左右双栏布局（只响应内容滚动，不响应拖拽） -->
+    <LinearLayout
+        android:id="@+id/contentContainer"
+        android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
 
         <!-- 左侧导航栏 -->
         <LinearLayout
             android:layout_width="120dp"
             android:layout_height="match_parent"
-            android:background="#F5F5F5"
-            android:orientation="vertical">
+            android:background="#F8F9FA"
+            android:orientation="vertical"
+            android:paddingTop="8dp">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/navigationRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" />
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:scrollbarStyle="insideOverlay" />
         </LinearLayout>
 
         <!-- 分隔线 -->
         <View
             android:layout_width="1dp"
             android:layout_height="match_parent"
-            android:background="#E0E0E0" />
+            android:background="#E3E8ED" />
 
         <!-- 右侧内容区域 - 统一显示所有字段 -->
-        <ScrollView
+        <androidx.core.widget.NestedScrollView
             android:id="@+id/contentScrollView"
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -74,89 +130,12 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingTop="8dp"
-                android:paddingBottom="16dp"
-                android:clipToPadding="false"
-                android:minHeight="500dp">
+                android:clipToPadding="false">
 
                 <!-- 核心分类字段区域 -->
-                <LinearLayout
+                                <include 
                     android:id="@+id/coreSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="核心分类"
-                        android:textColor="@android:color/black"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:paddingBottom="8dp" />
-
-                    <!-- 分类 -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/categoryDropdown"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:hint="选择分类"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="14dp"
-                            android:paddingBottom="14dp"
-                            android:focusable="false"
-                            android:focusableInTouchMode="false" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- 子分类 -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/subCategoryDropdown"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:hint="选择子分类"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="14dp"
-                            android:paddingBottom="14dp"
-                            android:focusable="false"
-                            android:focusableInTouchMode="false" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- 品牌 -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/brandDropdown"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:hint="选择品牌"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="14dp"
-                            android:paddingBottom="14dp"
-                            android:focusable="false"
-                            android:focusableInTouchMode="false" />
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
+                                    layout="@layout/filter_core_section" />
 
                 <!-- 分隔线 -->
                 <View
@@ -166,84 +145,9 @@
                     android:background="#E0E0E0" />
 
                 <!-- 位置筛选字段区域 -->
-                <LinearLayout
+                                <include 
                     android:id="@+id/locationSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="位置筛选"
-                        android:textColor="@android:color/black"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:paddingBottom="8dp" />
-
-                    <!-- 位置区域 -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/locationAreaDropdown"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:hint="选择区域"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="14dp"
-                            android:paddingBottom="14dp"
-                            android:focusable="false"
-                            android:focusableInTouchMode="false" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- 容器 -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/containerDropdown"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:hint="选择容器"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="14dp"
-                            android:paddingBottom="14dp"
-                            android:focusable="false"
-                            android:focusableInTouchMode="false" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <!-- 子位置 -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        style="@style/Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content">
-
-                        <AutoCompleteTextView
-                            android:id="@+id/sublocationDropdown"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:hint="选择子位置"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp"
-                            android:paddingTop="14dp"
-                            android:paddingBottom="14dp"
-                            android:focusable="false"
-                            android:focusableInTouchMode="false" />
-                    </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
+                                    layout="@layout/filter_location_section" />
 
                 <!-- 分隔线 -->
                 <View
@@ -253,157 +157,9 @@
                     android:background="#E0E0E0" />
 
                 <!-- 状态与评级字段区域 -->
-                <LinearLayout
+                                <include 
                     android:id="@+id/statusRatingSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="状态与评级"
-                        android:textColor="@android:color/black"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:paddingBottom="8dp" />
-
-                    <!-- 开封状态 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="4dp"
-                        android:text="开封状态"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/openStatusChipGroup"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        app:chipSpacingHorizontal="8dp"
-                        app:selectionRequired="false"
-                        app:singleSelection="false">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipUnopened"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="未开封" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipOpened"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="已开封" />
-                    </com.google.android.material.chip.ChipGroup>
-
-                    <!-- 评分 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:text="评分"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/ratingChipGroup"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        app:chipSpacingHorizontal="8dp"
-                        app:selectionRequired="false"
-                        app:singleSelection="false">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipRating1"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1颗星" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipRating2"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="2颗星" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipRating3"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="3颗星" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipRating4"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="4颗星" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipRating5"
-                            style="@style/Widget.Material3.Chip.Filter"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="5颗星" />
-                    </com.google.android.material.chip.ChipGroup>
-
-                    <!-- 季节 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:text="季节"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/seasonChipGroup"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        app:chipSpacingHorizontal="8dp"
-                        app:chipSpacingVertical="4dp"
-                        app:selectionRequired="false"
-                        app:singleSelection="false"
-                        app:checkedChip="@null">
-                        
-                        <!-- 动态添加季节chips -->
-                    </com.google.android.material.chip.ChipGroup>
-
-                    <!-- 标签 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:text="标签"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/tagsChipGroup"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        app:chipSpacingHorizontal="8dp"
-                        app:chipSpacingVertical="4dp"
-                        app:selectionRequired="false"
-                        app:singleSelection="false"
-                        app:checkedChip="@null">
-                        
-                        <!-- 动态添加标签chips -->
-                    </com.google.android.material.chip.ChipGroup>
-
-                </LinearLayout>
+                                    layout="@layout/filter_status_rating_section" />
 
                 <!-- 分隔线 -->
                 <View
@@ -413,144 +169,9 @@
                     android:background="#E0E0E0" />
 
                 <!-- 数值范围字段区域 -->
-                <LinearLayout
+                                <include 
                     android:id="@+id/valueRangeSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="数值范围"
-                        android:textColor="@android:color/black"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:paddingBottom="8dp" />
-
-                    <!-- 数量范围 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="4dp"
-                        android:text="数量范围"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/minQuantityInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="number"
-                                android:hint="最小数量"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginHorizontal="12dp"
-                            android:text="-"
-                            android:textSize="16sp"
-                            android:textColor="#757575" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/maxQuantityInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="number"
-                                android:hint="最大数量"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
-
-                    <!-- 价格范围 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:text="价格范围"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/minPriceInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="numberDecimal"
-                                android:hint="最低价格"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginHorizontal="12dp"
-                            android:text="-"
-                            android:textSize="16sp"
-                            android:textColor="#757575" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/maxPriceInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="numberDecimal"
-                                android:hint="最高价格"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
-                </LinearLayout>
+                                    layout="@layout/filter_value_range_section" />
 
                 <!-- 分隔线 -->
                 <View
@@ -559,311 +180,38 @@
                     android:layout_marginHorizontal="16dp"
                     android:background="#E0E0E0" />
 
-                <!-- 日期筛选字段区域 - 拆分为独立的日期范围 -->
-                <LinearLayout
+                                <!-- 日期筛选字段区域 -->
+                                <include 
                     android:id="@+id/dateSection"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="日期筛选"
-                        android:textColor="@android:color/black"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:paddingBottom="8dp" />
-
-                    <!-- 过期日期范围 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="4dp"
-                        android:text="过期日期范围"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
+                                    layout="@layout/filter_date_section" />
+                                    
+                                <!-- 底部空白区域与人生哲理 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/expirationStartDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="起始日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
+                                    android:orientation="vertical"
+                                    android:paddingTop="40dp"
+                                    android:paddingBottom="280dp"
+                                    android:gravity="center">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginHorizontal="12dp"
-                            android:text="-"
-                            android:textSize="16sp"
-                            android:textColor="#757575" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/expirationEndDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="结束日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
-
-                    <!-- 添加日期范围 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:text="添加日期范围"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/creationStartDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="起始日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginHorizontal="12dp"
-                            android:text="-"
-                            android:textSize="16sp"
-                            android:textColor="#757575" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/creationEndDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="结束日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
-
-                    <!-- 购买日期范围 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:text="购买日期范围"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/purchaseStartDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="起始日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginHorizontal="12dp"
-                            android:text="-"
-                            android:textSize="16sp"
-                            android:textColor="#757575" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/purchaseEndDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="结束日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
-
-                    <!-- 生产日期范围 -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="4dp"
-                        android:text="生产日期范围"
-                        android:textColor="@android:color/black"
-                        android:textSize="14sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/productionStartDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="起始日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginHorizontal="12dp"
-                            android:text="-"
-                            android:textSize="16sp"
-                            android:textColor="#757575" />
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.App.TextInputLayout.FlatRounded"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/productionEndDateInput"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:inputType="none"
-                                android:focusable="false"
-                                android:clickable="true"
-                                android:hint="结束日期"
-                                android:paddingStart="16dp"
-                                android:paddingEnd="16dp"
-                                android:paddingTop="14dp"
-                                android:paddingBottom="14dp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
+                                        android:text="「 精准筛选，如人生选择，重要的不是拥有所有选项，而是找到真正适合的那一个 」"
+                                        android:textColor="#B0BEC5"
+                                        android:textSize="12sp"
+                                        android:textStyle="italic"
+                                        android:gravity="center"
+                                        android:lineSpacingExtra="4dp"
+                                        android:paddingHorizontal="32dp"
+                                        android:alpha="0.8" />
                 </LinearLayout>
             </LinearLayout>
-        </ScrollView>
+        </androidx.core.widget.NestedScrollView>
+        
+        </LinearLayout>
+        
     </LinearLayout>
 
-    <!-- 底部按钮区域 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:color/white"
-        android:elevation="4dp"
-        android:orientation="horizontal"
-        android:padding="16dp">
+</FrameLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/resetButton"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:text="重置" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/applyButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="应用筛选" />
-    </LinearLayout>
-</LinearLayout> 

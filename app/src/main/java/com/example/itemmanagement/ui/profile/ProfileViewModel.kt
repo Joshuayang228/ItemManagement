@@ -5,7 +5,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import com.example.itemmanagement.R
 import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.model.ProfileItem
 import com.example.itemmanagement.data.repository.UserProfileRepository
 import kotlinx.coroutines.launch
 
@@ -20,17 +22,6 @@ class ProfileViewModel(
     
     // ==================== 数据 ====================
     
-    /**
-     * 用户统计摘要
-     */
-    private val _userStatsSummary = MutableLiveData<UserStatsSummary>()
-    val userStatsSummary: LiveData<UserStatsSummary> = _userStatsSummary
-    
-    /**
-     * 库存概览数据
-     */
-    private val _inventoryOverview = MutableLiveData<InventoryOverview>()
-    val inventoryOverview: LiveData<InventoryOverview> = _inventoryOverview
     
     /**
      * 加载状态
@@ -49,10 +40,17 @@ class ProfileViewModel(
      */
     val userProfile = userProfileRepository.getUserProfileFlow().asLiveData()
     
+    /**
+     * Profile列表项数据
+     */
+    private val _profileItems = MutableLiveData<List<ProfileItem>>()
+    val profileItems: LiveData<List<ProfileItem>> = _profileItems
+    
     // ==================== 初始化 ====================
     
     init {
         loadUserData()
+        loadProfileItems()
     }
     
     // ==================== 数据加载 ====================
@@ -67,13 +65,6 @@ class ProfileViewModel(
                 // 记录用户活跃
                 userProfileRepository.recordDailyActivity()
                 
-                // 加载用户统计摘要
-                val summary = userProfileRepository.getUserStatsSummary()
-                _userStatsSummary.value = summary
-                
-                // 加载库存概览
-                loadInventoryOverview()
-                
             } catch (e: Exception) {
                 _operationResult.value = "数据加载失败：${e.localizedMessage}"
             } finally {
@@ -82,60 +73,6 @@ class ProfileViewModel(
         }
     }
     
-    /**
-     * 加载库存概览数据
-     */
-    private suspend fun loadInventoryOverview() {
-        try {
-            // 获取所有物品数据
-            val allItemsFlow = itemRepository.getAllItemsWithDetails()
-            allItemsFlow.collect { allItems ->
-                val totalItems = allItems.size
-                val totalValue = allItems.sumOf { itemWithDetails -> 
-                    (itemWithDetails.item.price ?: 0.0) * (itemWithDetails.item.quantity ?: 1.0) 
-                }
-                
-                // 计算即将过期的物品（30天内）
-                val now = System.currentTimeMillis()
-                val thirtyDaysLater = now + (30 * 24 * 60 * 60 * 1000)
-                val expiringSoon = allItems.count { itemWithDetails ->
-                    itemWithDetails.item.expirationDate?.time?.let { expirationTime -> 
-                        expirationTime <= thirtyDaysLater 
-                    } == true
-                }
-                
-                // 计算低库存物品（数量小于等于预警阈值）
-                val lowStock = allItems.count { itemWithDetails ->
-                    val threshold = itemWithDetails.item.stockWarningThreshold ?: 1
-                    (itemWithDetails.item.quantity ?: 0.0) <= threshold
-                }
-                
-                // 分类统计
-                val categoryStats = allItems.groupBy { itemWithDetails -> 
-                        itemWithDetails.item.category 
-                    }
-                    .map { (category, items) ->
-                        CategoryStat(category, items.size)
-                    }
-                    .sortedByDescending { categoryStat -> categoryStat.count }
-                    .take(5) // 只显示前5个分类
-                
-                _inventoryOverview.value = InventoryOverview(
-                    totalItems = totalItems,
-                    totalValue = totalValue,
-                    expiringSoon = expiringSoon,
-                    lowStock = lowStock,
-                    categoryStats = categoryStats
-                )
-                
-                // 更新用户资料中的当前物品数量
-                userProfileRepository.updateCurrentItemCount(totalItems)
-            }
-            
-        } catch (e: Exception) {
-            _operationResult.value = "库存数据加载失败"
-        }
-    }
     
     // ==================== 个人信息操作 ====================
     
@@ -243,5 +180,29 @@ class ProfileViewModel(
      */
     fun refreshData() {
         loadUserData()
+    }
+    
+    /**
+     * 加载Profile列表项
+     */
+    private fun loadProfileItems() {
+        val items = mutableListOf<ProfileItem>().apply {
+            // 用户信息卡片
+            add(ProfileItem.UserInfo)
+            
+            // 第一个间隔
+            add(ProfileItem.MenuSpacer)
+            
+            // 回收站（独立卡片）
+            add(ProfileItem.MenuItem("recycle_bin", "回收站", R.drawable.ic_delete_colorful, showDivider = false))
+            
+            // 第二个间隔
+            add(ProfileItem.MenuSpacer)
+            
+            // 应用设置和打赏支持（合并卡片）
+            add(ProfileItem.MenuItem("app_settings", "应用设置", R.drawable.ic_tune_colorful))
+            add(ProfileItem.MenuItem("donation", "打赏支持", R.drawable.ic_favorite_colorful, showDivider = false))
+        }
+        _profileItems.value = items
     }
 }

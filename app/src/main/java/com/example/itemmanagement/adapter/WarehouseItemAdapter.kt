@@ -226,14 +226,15 @@ class WarehouseItemAdapter(
         }
         
         /**
-         * 设置价格和开封状态行
+         * 设置价格、开封状态和添加时间行
          */
         private fun setupPriceAndOpenStatus(item: WarehouseItem) {
             val hasPrice = item.price != null && item.price > 0
             val hasOpenStatus = item.openStatus != null
+            val hasAddTime = item.addDate != null
             
-            // 如果价格和开封状态都没有，隐藏整行
-            if (!hasPrice && !hasOpenStatus) {
+            // 如果价格、开封状态和添加时间都没有，隐藏整行
+            if (!hasPrice && !hasOpenStatus && !hasAddTime) {
                 binding.priceAndStatusGroup.visibility = View.GONE
                 return
             }
@@ -299,6 +300,16 @@ class WarehouseItemAdapter(
                 binding.itemOpenStatus.visibility = View.VISIBLE
             } else {
                 binding.itemOpenStatus.visibility = View.GONE
+            }
+            
+            // 设置添加时间
+            if (hasAddTime) {
+                val addDate = Date(item.addDate!!)
+                val dateFormat = java.text.SimpleDateFormat("yy-MM-dd", Locale.getDefault())
+                binding.itemAddTime.text = dateFormat.format(addDate)
+                binding.itemAddTime.visibility = View.VISIBLE
+            } else {
+                binding.itemAddTime.visibility = View.GONE
             }
         }
         

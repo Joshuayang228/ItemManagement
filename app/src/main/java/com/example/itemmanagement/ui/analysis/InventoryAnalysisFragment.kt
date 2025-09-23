@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.databinding.FragmentInventoryAnalysisBinding
 import com.example.itemmanagement.data.model.InventoryAnalysisData
+import com.example.itemmanagement.data.model.InventoryStats
 import com.example.itemmanagement.data.model.CategoryValue
 import com.example.itemmanagement.data.model.LocationValue
 import com.example.itemmanagement.data.model.MonthlyTrend
@@ -80,17 +81,52 @@ class InventoryAnalysisFragment : Fragment() {
     }
 
     private fun bindData(data: InventoryAnalysisData) {
-        // 绑定核心指标
-        binding.apply {
-            totalItemsValue.text = data.coreMetrics.totalItems.toString()
-            totalValueText.text = "¥${String.format("%.2f", data.coreMetrics.totalValue)}"
-        }
+        // 绑定库存概览统计
+        bindInventoryStats(data.inventoryStats)
         
         // 显示默认图表
         displayCategoryChart(data.categoryAnalysis, AAChartType.Pie, isCountMode = true)
         displayLocationChart(data.locationAnalysis, AAChartType.Column, isCountMode = true)
         displayTagChart(data.tagAnalysis, AAChartType.Column, isCountMode = true) // 新增标签分析
         displayTrendChart(data.monthlyTrends, AAChartType.Line)
+    }
+
+    private fun bindInventoryStats(stats: InventoryStats) {
+        binding.apply {
+            // 基础统计
+            totalItemsValue.text = stats.totalItems.toString()
+            totalValueText.text = "¥${String.format("%.2f", stats.totalValue)}"
+            expiringItemsValue.text = stats.expiringItems.toString()
+            expiredItemsValue.text = stats.expiredItems.toString()
+            lowStockItemsValue.text = stats.lowStockItems.toString()
+            
+            // 扩展统计
+            categoriesCountValue.text = stats.categoriesCount.toString()
+            locationsCountValue.text = stats.locationsCount.toString()
+            recentlyAddedValue.text = stats.recentlyAddedItems.toString()
+
+            // 设置警告状态颜色
+            expiringItemsCard.setCardBackgroundColor(
+                if (stats.expiringItems > 0) 
+                    requireContext().getColor(com.example.itemmanagement.R.color.status_warning_bg)
+                else 
+                    requireContext().getColor(com.example.itemmanagement.R.color.card_background)
+            )
+
+            expiredItemsCard.setCardBackgroundColor(
+                if (stats.expiredItems > 0) 
+                    requireContext().getColor(com.example.itemmanagement.R.color.status_error_bg)
+                else 
+                    requireContext().getColor(com.example.itemmanagement.R.color.card_background)
+            )
+
+            lowStockCard.setCardBackgroundColor(
+                if (stats.lowStockItems > 0) 
+                    requireContext().getColor(com.example.itemmanagement.R.color.status_warning_bg)
+                else 
+                    requireContext().getColor(com.example.itemmanagement.R.color.card_background)
+            )
+        }
     }
 
     private fun displayCategoryChart(

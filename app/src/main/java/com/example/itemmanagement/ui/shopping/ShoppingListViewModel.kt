@@ -5,25 +5,27 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.map
 import com.example.itemmanagement.data.ItemRepository
 import com.example.itemmanagement.data.entity.ShoppingItemEntity
 import kotlinx.coroutines.launch
 
-class ShoppingListViewModel(private val repository: ItemRepository) : ViewModel() {
+class ShoppingListViewModel(
+    private val repository: ItemRepository,
+    private val listId: Long = 1L
+) : ViewModel() {
 
-    // 所有购物清单项目
+    // 当前购物清单的所有物品
     val shoppingItems: LiveData<List<ShoppingItemEntity>> = 
-        repository.getAllShoppingItems().asLiveData()
+        repository.getShoppingItemsByListId(listId).asLiveData()
 
-    // 购物清单 (用于兼容性)
-    val shoppingLists: LiveData<List<ShoppingItemEntity>> = shoppingItems
-
-    // 当前默认使用第一个购物清单（后续可改为动态选择）
-    private var currentListId: Long = 1L
-    
     // 待购买项目数量
     val pendingItemsCount: LiveData<Int> = 
-        repository.getPendingShoppingItemsCountByListId(currentListId).asLiveData()
+        repository.getPendingShoppingItemsCountByListId(listId).asLiveData()
+    
+    // 已购买项目数量  
+    val purchasedItemsCount: LiveData<Int> = 
+        repository.getPurchasedShoppingItemsByListId(listId).asLiveData().map { it.size }
 
     // 推荐商品 (暂时为空列表，后续可扩展)
     private val _recommendations = MutableLiveData<List<String>>(emptyList())
@@ -51,7 +53,7 @@ class ShoppingListViewModel(private val repository: ItemRepository) : ViewModel(
         viewModelScope.launch {
             try {
                 val item = ShoppingItemEntity(
-                    listId = currentListId,
+                    listId = listId,
                     name = name.trim(),
                     quantity = quantity,
                     category = category.trim(),
@@ -103,7 +105,7 @@ class ShoppingListViewModel(private val repository: ItemRepository) : ViewModel(
     fun clearPurchasedItems() {
         viewModelScope.launch {
             try {
-                repository.clearPurchasedShoppingItemsByListId(currentListId)
+                repository.clearPurchasedShoppingItemsByListId(listId)
                 _message.value = "已清除所有已购买项目"
             } catch (e: Exception) {
                 _error.value = "清除失败: ${e.message}"
@@ -117,7 +119,7 @@ class ShoppingListViewModel(private val repository: ItemRepository) : ViewModel(
     fun addItemFromInventory(itemId: Long) {
         viewModelScope.launch {
             try {
-                val shoppingItemId = repository.createShoppingItemFromInventory(itemId, currentListId)
+                val shoppingItemId = repository.createShoppingItemFromInventory(itemId, listId)
                 if (shoppingItemId != null) {
                     _message.value = "已添加到购物清单"
                 } else {

@@ -8,25 +8,23 @@ import androidx.navigation.NavController
 import com.example.itemmanagement.data.ItemRepository
 import com.example.itemmanagement.data.model.FunctionCard
 import com.example.itemmanagement.data.model.FunctionSection
-import com.example.itemmanagement.data.model.InventoryStats
-import kotlinx.coroutines.launch
-import java.util.*
-import java.util.Calendar
+import com.example.itemmanagement.data.model.FunctionGroupItem
+import com.example.itemmanagement.data.model.FunctionGroupRow
+import com.example.itemmanagement.data.model.CustomSpacerItem
 
 class FunctionViewModel(private val repository: ItemRepository) : ViewModel() {
 
     private val _functionSections = MutableLiveData<List<FunctionSection>>()
     val functionSections: LiveData<List<FunctionSection>> = _functionSections
 
-    private val _inventoryStats = MutableLiveData<InventoryStats>()
-    val inventoryStats: LiveData<InventoryStats> = _inventoryStats
+    private val _functionGroupItems = MutableLiveData<List<FunctionGroupItem>>()
+    val functionGroupItems: LiveData<List<FunctionGroupItem>> = _functionGroupItems
 
     private val _navigationEvent = MutableLiveData<Int?>()
     val navigationEvent: LiveData<Int?> = _navigationEvent
 
     init {
         loadFunctionSections()
-        loadInventoryStats()
     }
 
     private fun loadFunctionSections() {
@@ -123,68 +121,40 @@ class FunctionViewModel(private val repository: ItemRepository) : ViewModel() {
         )
 
         _functionSections.value = sections
+        _functionGroupItems.value = convertToGroupItems(sections)
     }
 
-    private fun loadInventoryStats() {
-        viewModelScope.launch {
-            try {
-                repository.getAllItems().collect { allItems ->
-                    val totalItems = allItems.size
-                    val totalValue = allItems.sumOf { it.price ?: 0.0 }
-                    
-                    val expiringItems = allItems.filter { item ->
-                        item.expirationDate?.let { expDate ->
-                            val diffDays = (expDate.time - Date().time) / (1000 * 60 * 60 * 24)
-                            diffDays in 1..7 // 7天内过期
-                        } ?: false
-                    }.size
-                    
-                    val expiredItems = allItems.filter { item ->
-                        item.expirationDate?.let { expDate ->
-                            expDate.before(Date())
-                        } ?: false
-                    }.size
-                    
-                    val lowStockItems = allItems.filter { item ->
-                        val threshold = item.stockWarningThreshold ?: 0
-                        (item.quantity ?: 0.0) <= threshold && threshold > 0
-                    }.size
-                    
-                    // 计算分类数量
-                    val categoriesCount = allItems.mapNotNull { it.category }.distinct().size
-                    
-                    // 计算位置数量
-                    val locationsCount = allItems.mapNotNull { it.location?.area }.distinct().size
-                    
-                    // 计算愿望单物品数量 (可以根据你的业务逻辑定义)
-                    val wishlistItems = allItems.filter { it.isWishlistItem || it.quantity == 0.0 }.size
-                    
-                    // 计算最近添加的物品数量 (7天内)
-                    val sevenDaysAgo = Calendar.getInstance().apply {
-                        add(Calendar.DAY_OF_YEAR, -7)
-                    }.time
-                    val recentlyAddedItems = allItems.filter { item ->
-                        item.addDate.after(sevenDaysAgo)
-                    }.size
-
-                    val stats = InventoryStats(
-                        totalItems = totalItems,
-                        totalValue = totalValue,
-                        expiringItems = expiringItems,
-                        expiredItems = expiredItems,
-                        lowStockItems = lowStockItems,
-                        categoriesCount = categoriesCount,
-                        locationsCount = locationsCount,
-                        wishlistItems = wishlistItems,
-                        recentlyAddedItems = recentlyAddedItems
+    /**
+     * 将分组的功能数据转换为原生系统式列表项
+     * 简化逻辑，使用统一样式，通过间距区分分组
+     */
+    private fun convertToGroupItems(sections: List<FunctionSection>): List<FunctionGroupItem> {
+        val items = mutableListOf<FunctionGroupItem>()
+        
+        sections.forEachIndexed { sectionIndex, section ->
+            val functions = section.functions
+            
+            // 添加该分组下的所有功能项
+            functions.forEachIndexed { functionIndex, functionCard ->
+                val showDivider = functionIndex < functions.size - 1
+                
+                items.add(
+                    FunctionGroupRow(
+                        functionCard = functionCard,
+                        showDivider = showDivider
                     )
-                    _inventoryStats.value = stats
-                }
-            } catch (e: Exception) {
-                // 处理错误
+                )
+            }
+            
+            // 在分组之间添加12dp间距（最后一个分组后不添加）
+            if (sectionIndex < sections.size - 1) {
+                items.add(CustomSpacerItem(height = 12))
             }
         }
+        
+        return items
     }
+
 
     fun handleFunctionClick(functionType: String) {
         // 这里可以处理不同功能卡片的点击事件

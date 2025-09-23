@@ -1,6 +1,5 @@
 package com.example.itemmanagement.ui.add
 
-import android.app.AlertDialog
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -8,6 +7,7 @@ import android.widget.*
 import androidx.core.content.ContextCompat
 import com.example.itemmanagement.R
 import com.example.itemmanagement.ui.base.FieldInteractionViewModel
+import com.example.itemmanagement.ui.utils.Material3DialogFactory
 
 /**
  * 自定义位置选择器视图
@@ -157,29 +157,22 @@ class LocationSelectorView @JvmOverloads constructor(
         // 获取最新的区域列表
         val areas = locationManager.getAllAreas()
 
-        // 创建新的适配器
-        val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, areas)
-
-        // 创建对话框
-        val builder = AlertDialog.Builder(context)
-            .setTitle("选择区域")
-            .setAdapter(adapter) { _, which ->
-                val selectedArea = areas[which]
-                setSelectedLocation(selectedArea, null, null)
+        // 创建Material 3对话框
+        val builder = Material3DialogFactory.createSelectionDialog(
+            context = context,
+            title = "选择区域",
+            items = areas,
+            onItemSelected = { selectedAreaName, _ ->
+                setSelectedLocation(selectedAreaName, null, null)
                 notifyLocationChanged()
-            }
-            .setNeutralButton("添加自定义") { _, _ ->
-                showAddCustomAreaDialog()
-            }
-            .setNegativeButton("取消", null)
-
-        // 如果已有选择，提供清除选项
-        if (!selectedArea.isNullOrEmpty()) {
-            builder.setPositiveButton("清除") { _, _ ->
-                clearSelection()
-                notifyLocationChanged()
-            }
-        }
+            },
+            onNeutralClick = { showAddCustomAreaDialog() },
+            onPositiveClick = if (!selectedArea.isNullOrEmpty()) {
+                { clearSelection(); notifyLocationChanged() }
+            } else null,
+            neutralText = "添加自定义",
+            positiveText = if (!selectedArea.isNullOrEmpty()) "清除" else null
+        )
 
         // 创建ListView并设置长按监听器
         val dialog = builder.create()
@@ -196,16 +189,18 @@ class LocationSelectorView @JvmOverloads constructor(
 
                 // 显示编辑/删除选项
                 val options = arrayOf("编辑", "删除")
-                AlertDialog.Builder(context)
-                    .setTitle("区域操作")
-                    .setItems(options) { _, which ->
+                Material3DialogFactory.createActionDialog(
+                    context = context,
+                    title = "区域操作",
+                    actions = options,
+                    onActionSelected = { which ->
                         when (which) {
                             0 -> showEditAreaDialogFromList(areaName)
                             1 -> showDeleteAreaConfirmDialogFromList(areaName)
                         }
                         dialog.dismiss() // 关闭选择对话框
                     }
-                    .show()
+                ).show()
 
                 true
             }
@@ -229,28 +224,23 @@ class LocationSelectorView @JvmOverloads constructor(
         }
 
         val containers = locationManager.getContainersByArea(selectedArea!!)
-        val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, containers)
 
-        // 创建对话框
-        val builder = AlertDialog.Builder(context)
-            .setTitle("选择容器")
-            .setAdapter(adapter) { _, which ->
-                val selectedContainer = containers[which]
-                setSelectedLocation(selectedArea, selectedContainer, null)
+        // 创建Material 3对话框
+        val builder = Material3DialogFactory.createSelectionDialog(
+            context = context,
+            title = "选择容器",
+            items = containers,
+            onItemSelected = { selectedContainerName, _ ->
+                setSelectedLocation(selectedArea, selectedContainerName, null)
                 notifyLocationChanged()
-            }
-            .setNeutralButton("添加自定义") { _, _ ->
-                showAddCustomContainerDialog()
-            }
-            .setNegativeButton("取消", null)
-
-        // 如果已有选择，提供清除选项
-        if (!selectedContainer.isNullOrEmpty()) {
-            builder.setPositiveButton("清除") { _, _ ->
-                setSelectedLocation(selectedArea, null, null)
-                notifyLocationChanged()
-            }
-        }
+            },
+            onNeutralClick = { showAddCustomContainerDialog() },
+            onPositiveClick = if (!selectedContainer.isNullOrEmpty()) {
+                { setSelectedLocation(selectedArea, null, null); notifyLocationChanged() }
+            } else null,
+            neutralText = "添加自定义",
+            positiveText = if (!selectedContainer.isNullOrEmpty()) "清除" else null
+        )
 
         // 创建ListView并设置长按监听器
         val dialog = builder.create()
@@ -267,16 +257,18 @@ class LocationSelectorView @JvmOverloads constructor(
 
                 // 显示编辑/删除选项
                 val options = arrayOf("编辑", "删除")
-                AlertDialog.Builder(context)
-                    .setTitle("容器操作")
-                    .setItems(options) { _, which ->
+                Material3DialogFactory.createActionDialog(
+                    context = context,
+                    title = "容器操作",
+                    actions = options,
+                    onActionSelected = { which ->
                         when (which) {
                             0 -> showEditContainerDialogFromList(containerName)
                             1 -> showDeleteContainerConfirmDialogFromList(containerName)
                         }
                         dialog.dismiss() // 关闭选择对话框
                     }
-                    .show()
+                ).show()
 
                 true
             }
@@ -302,26 +294,22 @@ class LocationSelectorView @JvmOverloads constructor(
         val sublocations = locationManager.getSublocationsByContainer(selectedContainer!!)
         val adapter = ArrayAdapter(context, android.R.layout.simple_list_item_1, sublocations)
 
-        // 创建对话框
-        val builder = AlertDialog.Builder(context)
-            .setTitle("选择子位置")
-            .setAdapter(adapter) { _, which ->
-                val selectedSublocation = sublocations[which]
-                setSelectedLocation(selectedArea, selectedContainer, selectedSublocation)
+        // 创建Material 3对话框
+        val builder = Material3DialogFactory.createSelectionDialog(
+            context = context,
+            title = "选择子位置",
+            items = sublocations,
+            onItemSelected = { selectedSublocationName, _ ->
+                setSelectedLocation(selectedArea, selectedContainer, selectedSublocationName)
                 notifyLocationChanged()
-            }
-            .setNeutralButton("添加自定义") { _, _ ->
-                showAddCustomSublocationDialog()
-            }
-            .setNegativeButton("取消", null)
-
-        // 如果已有选择，提供清除选项
-        if (!selectedSublocation.isNullOrEmpty()) {
-            builder.setPositiveButton("清除") { _, _ ->
-                setSelectedLocation(selectedArea, selectedContainer, null)
-                notifyLocationChanged()
-            }
-        }
+            },
+            onNeutralClick = { showAddCustomSublocationDialog() },
+            onPositiveClick = if (!selectedSublocation.isNullOrEmpty()) {
+                { setSelectedLocation(selectedArea, selectedContainer, null); notifyLocationChanged() }
+            } else null,
+            neutralText = "添加自定义",
+            positiveText = if (!selectedSublocation.isNullOrEmpty()) "清除" else null
+        )
 
         // 创建ListView并设置长按监听器
         val dialog = builder.create()
@@ -338,16 +326,18 @@ class LocationSelectorView @JvmOverloads constructor(
 
                 // 显示编辑/删除选项
                 val options = arrayOf("编辑", "删除")
-                AlertDialog.Builder(context)
-                    .setTitle("子位置操作")
-                    .setItems(options) { _, which ->
+                Material3DialogFactory.createActionDialog(
+                    context = context,
+                    title = "子位置操作",
+                    actions = options,
+                    onActionSelected = { which ->
                         when (which) {
                             0 -> showEditSublocationDialogFromList(sublocationName)
                             1 -> showDeleteSublocationConfirmDialogFromList(sublocationName)
                         }
                         dialog.dismiss() // 关闭选择对话框
                     }
-                    .show()
+                ).show()
 
                 true
             }
@@ -360,15 +350,11 @@ class LocationSelectorView @JvmOverloads constructor(
      * 显示添加自定义区域对话框
      */
     private fun showAddCustomAreaDialog() {
-        val editText = EditText(context).apply {
-            hint = "请输入自定义区域名称"
-        }
-
-        AlertDialog.Builder(context)
-            .setTitle("添加自定义区域")
-            .setView(editText)
-            .setPositiveButton("添加") { _, _ ->
-                val newArea = editText.text.toString().trim()
+        Material3DialogFactory.createInputDialog(
+            context = context,
+            title = "添加自定义区域",
+            hint = "请输入自定义区域名称",
+            onConfirm = { newArea ->
                 if (newArea.isNotEmpty()) {
                     locationManager.addCustomArea(newArea)
                     setSelectedLocation(newArea, null, null)
@@ -378,8 +364,7 @@ class LocationSelectorView @JvmOverloads constructor(
                     Toast.makeText(context, "区域名称不能为空", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
@@ -391,15 +376,11 @@ class LocationSelectorView @JvmOverloads constructor(
             return
         }
 
-        val editText = EditText(context).apply {
-            hint = "请输入自定义容器名称"
-        }
-
-        AlertDialog.Builder(context)
-            .setTitle("添加自定义容器")
-            .setView(editText)
-            .setPositiveButton("添加") { _, _ ->
-                val newContainer = editText.text.toString().trim()
+        Material3DialogFactory.createInputDialog(
+            context = context,
+            title = "添加自定义容器",
+            hint = "请输入自定义容器名称",
+            onConfirm = { newContainer ->
                 if (newContainer.isNotEmpty()) {
                     locationManager.addCustomContainerToArea(selectedArea!!, newContainer)
                     setSelectedLocation(selectedArea, newContainer, null)
@@ -409,8 +390,7 @@ class LocationSelectorView @JvmOverloads constructor(
                     Toast.makeText(context, "容器名称不能为空", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
@@ -422,15 +402,11 @@ class LocationSelectorView @JvmOverloads constructor(
             return
         }
 
-        val editText = EditText(context).apply {
-            hint = "请输入自定义子位置名称"
-        }
-
-        AlertDialog.Builder(context)
-            .setTitle("添加自定义子位置")
-            .setView(editText)
-            .setPositiveButton("添加") { _, _ ->
-                val newSublocation = editText.text.toString().trim()
+        Material3DialogFactory.createInputDialog(
+            context = context,
+            title = "添加自定义子位置",
+            hint = "请输入自定义子位置名称",
+            onConfirm = { newSublocation ->
                 if (newSublocation.isNotEmpty()) {
                     locationManager.addCustomSublocationToContainer(selectedContainer!!, newSublocation)
                     setSelectedLocation(selectedArea, selectedContainer, newSublocation)
@@ -440,8 +416,7 @@ class LocationSelectorView @JvmOverloads constructor(
                     Toast.makeText(context, "子位置名称不能为空", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
@@ -450,29 +425,32 @@ class LocationSelectorView @JvmOverloads constructor(
     private fun updateViewState() {
         // 更新区域显示
         if (selectedArea.isNullOrEmpty()) {
-            areaTextView.text = "选择位置"
-            areaTextView.setTextColor(ContextCompat.getColor(context, android.R.color.darker_gray))
+            areaTextView.text = ""
+            areaTextView.hint = "选择位置"
+            areaTextView.setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
         } else {
             areaTextView.text = selectedArea
-            areaTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            areaTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
         }
 
         // 更新容器显示
         if (selectedContainer.isNullOrEmpty()) {
-            containerTextView.text = "-"
-            containerTextView.setTextColor(ContextCompat.getColor(context, android.R.color.darker_gray))
+            containerTextView.text = ""
+            containerTextView.hint = "-"
+            containerTextView.setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
         } else {
             containerTextView.text = selectedContainer
-            containerTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            containerTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
         }
 
         // 更新子位置显示
         if (selectedSublocation.isNullOrEmpty()) {
-            sublocationTextView.text = "-"
-            sublocationTextView.setTextColor(ContextCompat.getColor(context, android.R.color.darker_gray))
+            sublocationTextView.text = ""
+            sublocationTextView.hint = "-"
+            sublocationTextView.setHintTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
         } else {
             sublocationTextView.text = selectedSublocation
-            sublocationTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            sublocationTextView.setTextColor(ContextCompat.getColor(context, R.color.field_value_color))
         }
 
         // 根据选择状态设置子级控件的可点击状态
@@ -491,31 +469,15 @@ class LocationSelectorView @JvmOverloads constructor(
      * 从列表中编辑区域
      */
     private fun showEditAreaDialogFromList(areaName: String) {
-        // 创建一个包含EditText的LinearLayout
-        val layout = LinearLayout(context)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(50, 30, 50, 30)
-
-        val editText = EditText(context).apply {
-            setText(areaName)
-            setSelection(areaName.length)
-            hint = "请输入区域名称"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        layout.addView(editText)
-
-        AlertDialog.Builder(context)
-            .setTitle("编辑区域")
-            .setView(layout)
-            .setPositiveButton("确定") { _, _ ->
-                val newAreaName = editText.text.toString().trim()
+        Material3DialogFactory.createInputDialog(
+            context = context,
+            title = "编辑区域",
+            hint = "请输入区域名称",
+            initialText = areaName,
+            onConfirm = { newAreaName ->
                 if (newAreaName.isEmpty()) {
                     Toast.makeText(context, "区域名称不能为空", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@createInputDialog
                 }
 
                 if (newAreaName != areaName) {
@@ -532,8 +494,7 @@ class LocationSelectorView @JvmOverloads constructor(
                     showAreaSelectionDialog()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
@@ -542,10 +503,12 @@ class LocationSelectorView @JvmOverloads constructor(
     private fun showDeleteAreaConfirmDialogFromList(areaName: String) {
         val message = "确定删除区域\"${areaName}\"吗？"
 
-        AlertDialog.Builder(context)
-            .setTitle("删除区域")
-            .setMessage(message)
-            .setPositiveButton("删除") { _, _ ->
+        Material3DialogFactory.createConfirmDialog(
+            context = context,
+            title = "删除区域",
+            message = message,
+            positiveText = "删除",
+            onConfirm = {
                 // 删除区域
                 locationManager.removeCustomArea(areaName)
 
@@ -559,39 +522,22 @@ class LocationSelectorView @JvmOverloads constructor(
                 // 重新打开区域选择对话框以显示更新后的内容
                 showAreaSelectionDialog()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
      * 从列表中编辑容器
      */
     private fun showEditContainerDialogFromList(containerName: String) {
-        // 创建一个包含EditText的LinearLayout
-        val layout = LinearLayout(context)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(50, 30, 50, 30)
-
-        val editText = EditText(context).apply {
-            setText(containerName)
-            setSelection(containerName.length)
-            hint = "请输入容器名称"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        layout.addView(editText)
-
-        AlertDialog.Builder(context)
-            .setTitle("编辑容器")
-            .setView(layout)
-            .setPositiveButton("确定") { _, _ ->
-                val newContainerName = editText.text.toString().trim()
+        Material3DialogFactory.createInputDialog(
+            context = context,
+            title = "编辑容器",
+            hint = "请输入容器名称",
+            initialText = containerName,
+            onConfirm = { newContainerName ->
                 if (newContainerName.isEmpty()) {
                     Toast.makeText(context, "容器名称不能为空", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@createInputDialog
                 }
 
                 if (newContainerName != containerName) {
@@ -609,8 +555,7 @@ class LocationSelectorView @JvmOverloads constructor(
                     showContainerSelectionDialog()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
@@ -619,10 +564,12 @@ class LocationSelectorView @JvmOverloads constructor(
     private fun showDeleteContainerConfirmDialogFromList(containerName: String) {
         val message = "确定删除容器\"${containerName}\"吗？"
 
-        AlertDialog.Builder(context)
-            .setTitle("删除容器")
-            .setMessage(message)
-            .setPositiveButton("删除") { _, _ ->
+        Material3DialogFactory.createConfirmDialog(
+            context = context,
+            title = "删除容器",
+            message = message,
+            positiveText = "删除",
+            onConfirm = {
                 // 删除容器
                 locationManager.removeCustomContainer(selectedArea!!, containerName)
 
@@ -636,39 +583,22 @@ class LocationSelectorView @JvmOverloads constructor(
                 // 重新打开容器选择对话框以显示更新后的内容
                 showContainerSelectionDialog()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
      * 从列表中编辑子位置
      */
     private fun showEditSublocationDialogFromList(sublocationName: String) {
-        // 创建一个包含EditText的LinearLayout
-        val layout = LinearLayout(context)
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(50, 30, 50, 30)
-
-        val editText = EditText(context).apply {
-            setText(sublocationName)
-            setSelection(sublocationName.length)
-            hint = "请输入子位置名称"
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        layout.addView(editText)
-
-        AlertDialog.Builder(context)
-            .setTitle("编辑子位置")
-            .setView(layout)
-            .setPositiveButton("确定") { _, _ ->
-                val newSublocationName = editText.text.toString().trim()
+        Material3DialogFactory.createInputDialog(
+            context = context,
+            title = "编辑子位置",
+            hint = "请输入子位置名称",
+            initialText = sublocationName,
+            onConfirm = { newSublocationName ->
                 if (newSublocationName.isEmpty()) {
                     Toast.makeText(context, "子位置名称不能为空", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
+                    return@createInputDialog
                 }
 
                 if (newSublocationName != sublocationName) {
@@ -686,8 +616,7 @@ class LocationSelectorView @JvmOverloads constructor(
                     showSublocationSelectionDialog()
                 }
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 
     /**
@@ -696,10 +625,12 @@ class LocationSelectorView @JvmOverloads constructor(
     private fun showDeleteSublocationConfirmDialogFromList(sublocationName: String) {
         if (selectedContainer.isNullOrEmpty()) return
 
-        AlertDialog.Builder(context)
-            .setTitle("删除子位置")
-            .setMessage("确定删除子位置\"${sublocationName}\"吗？")
-            .setPositiveButton("删除") { _, _ ->
+        Material3DialogFactory.createConfirmDialog(
+            context = context,
+            title = "删除子位置",
+            message = "确定删除子位置\"${sublocationName}\"吗？",
+            positiveText = "删除",
+            onConfirm = {
                 // 删除子位置
                 locationManager.removeCustomSublocation(selectedContainer!!, sublocationName)
 
@@ -713,7 +644,6 @@ class LocationSelectorView @JvmOverloads constructor(
                 // 重新打开子位置选择对话框以显示更新后的内容
                 showSublocationSelectionDialog()
             }
-            .setNegativeButton("取消", null)
-            .show()
+        ).show()
     }
 }

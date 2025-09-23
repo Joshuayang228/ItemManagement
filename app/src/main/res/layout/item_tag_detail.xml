@@ -13,7 +13,7 @@
     android:paddingTop="0dp"
     android:paddingEnd="@dimen/detail_tag_padding_horizontal"
     android:paddingBottom="0dp"
-    android:textColor="@color/white"
+    android:textColor="?attr/colorOnSecondaryContainer"
     android:textSize="@dimen/detail_tag_text_size"
     android:layout_marginEnd="@dimen/detail_tag_horizontal_spacing"
     android:layout_marginBottom="@dimen/detail_tag_vertical_spacing"
