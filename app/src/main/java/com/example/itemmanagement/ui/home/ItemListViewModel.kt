@@ -6,13 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.model.WarehouseItem
 import com.example.itemmanagement.ui.warehouse.FilterState
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-class ItemListViewModel(private val repository: ItemRepository) : ViewModel() {
+class ItemListViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
     
     private val _items = MutableLiveData<List<WarehouseItem>>()
     val items: LiveData<List<WarehouseItem>> = _items
@@ -22,7 +22,7 @@ class ItemListViewModel(private val repository: ItemRepository) : ViewModel() {
      */
     fun loadAllItems() {
         viewModelScope.launch {
-            repository.getWarehouseItems(FilterState()).asLiveData().observeForever { itemList ->
+            repository.getWarehouseItems().collect { itemList ->
                 _items.value = itemList
             }
         }
@@ -148,7 +148,7 @@ class ItemListViewModel(private val repository: ItemRepository) : ViewModel() {
     
 }
 
-class ItemListViewModelFactory(private val repository: ItemRepository) : ViewModelProvider.Factory {
+class ItemListViewModelFactory(private val repository: UnifiedItemRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ItemListViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")

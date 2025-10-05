@@ -5,31 +5,36 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.map
-import com.example.itemmanagement.data.ItemRepository
-import com.example.itemmanagement.data.entity.ShoppingItemEntity
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.entity.unified.ItemStateType
+import com.example.itemmanagement.data.entity.unified.InventoryDetailEntity
+import com.example.itemmanagement.data.model.ItemStatus
+import com.example.itemmanagement.data.model.OpenStatus
+import com.example.itemmanagement.data.model.Item
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
+import java.util.Date
 
+/**
+ * 购物清单ViewModel
+ * 管理单个购物清单的物品列表和操作
+ */
 class ShoppingListViewModel(
-    private val repository: ItemRepository,
-    private val listId: Long = 1L
+    private val repository: UnifiedItemRepository,
+    private val listId: Long
 ) : ViewModel() {
 
     // 当前购物清单的所有物品
-    val shoppingItems: LiveData<List<ShoppingItemEntity>> = 
-        repository.getShoppingItemsByListId(listId).asLiveData()
+    val shoppingItems: LiveData<List<Item>> = 
+        repository.getItemsByShoppingList(listId).asLiveData()
 
     // 待购买项目数量
-    val pendingItemsCount: LiveData<Int> = 
-        repository.getPendingShoppingItemsCountByListId(listId).asLiveData()
+    private val _pendingItemsCount = MutableLiveData<Int>()
+    val pendingItemsCount: LiveData<Int> = _pendingItemsCount
     
-    // 已购买项目数量  
-    val purchasedItemsCount: LiveData<Int> = 
-        repository.getPurchasedShoppingItemsByListId(listId).asLiveData().map { it.size }
-
-    // 推荐商品 (暂时为空列表，后续可扩展)
-    private val _recommendations = MutableLiveData<List<String>>(emptyList())
-    val recommendations: LiveData<List<String>> = _recommendations
+    // 已购买项目数量
+    private val _purchasedItemsCount = MutableLiveData<Int>()
+    val purchasedItemsCount: LiveData<Int> = _purchasedItemsCount
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -40,59 +45,63 @@ class ShoppingListViewModel(
     private val _message = MutableLiveData<String?>()
     val message: LiveData<String?> = _message
 
+    init {
+        loadStatistics()
+    }
+
     /**
-     * 添加新的购物项目到当前清单
+     * 加载统计信息
      */
-    fun addShoppingItem(
-        name: String,
-        quantity: Double,
-        category: String,
-        notes: String? = null,
-        brand: String? = null
-    ) {
+    private fun loadStatistics() {
         viewModelScope.launch {
             try {
-                val item = ShoppingItemEntity(
-                    listId = listId,
-                    name = name.trim(),
-                    quantity = quantity,
-                    category = category.trim(),
-                    customNote = notes?.trim()?.takeIf { it.isNotEmpty() },
-                    brand = brand?.trim()?.takeIf { it.isNotEmpty() }
-                )
-                repository.insertShoppingItemSimple(item)
-                _message.value = "已添加「$name」到购物清单"
+                val items = repository.getItemsByShoppingList(listId).first()
+                _pendingItemsCount.value = items.count { it.shoppingDetail?.isPurchased == false }
+                _purchasedItemsCount.value = items.count { it.shoppingDetail?.isPurchased == true }
             } catch (e: Exception) {
-                _error.value = "添加失败: ${e.message}"
+                _error.value = "加载统计信息失败: ${e.message}"
             }
         }
     }
 
     /**
-     * 切换购物项目的购买状态
+     * 切换物品的购买状态
      */
-    fun toggleItemPurchaseStatus(item: ShoppingItemEntity, isPurchased: Boolean) {
+    fun toggleItemPurchaseStatus(item: Item, isPurchased: Boolean) {
         viewModelScope.launch {
             try {
-                val updatedItem = item.copy(isPurchased = isPurchased)
-                repository.updateShoppingItem(updatedItem)
+                val shoppingDetail = item.shoppingDetail ?: return@launch
+                val updatedDetail = shoppingDetail.copy(
+                    isPurchased = isPurchased,
+                    purchaseDate = if (isPurchased) java.util.Date() else null
+                )
+                repository.updateShoppingDetail(updatedDetail)
                 
                 val statusText = if (isPurchased) "已购买" else "待购买"
-                _message.value = "「${item.name}」已标记为$statusText"
+                _message.value = "已将「${item.name}」标记为$statusText"
+                
+                // 刷新统计
+                loadStatistics()
             } catch (e: Exception) {
-                _error.value = "更新状态失败: ${e.message}"
+                _error.value = "更新购买状态失败: ${e.message}"
             }
         }
     }
 
     /**
-     * 删除购物项目
+     * 删除购物物品（软删除，进入回收站）
      */
-    fun deleteShoppingItem(item: ShoppingItemEntity) {
+    fun deleteShoppingItem(item: Item) {
         viewModelScope.launch {
             try {
-                repository.deleteShoppingItem(item)
-                _message.value = "已删除「${item.name}」"
+                // ✅ 使用软删除，物品进入回收站
+                // - ShoppingDetailEntity 保留在数据库中作为历史记录
+                // - ItemStateEntity 从 SHOPPING 变为 DELETED
+                // - 可以在回收站中恢复
+                repository.softDeleteItem(item.id, "从购物清单删除")
+                
+                _message.value = "已将「${item.name}」移至回收站"
+                loadStatistics()
             } catch (e: Exception) {
                 _error.value = "删除失败: ${e.message}"
             }
@@ -100,48 +109,191 @@ class ShoppingListViewModel(
     }
 
     /**
-     * 清除当前清单的已购买项目
+     * 清除已购买的物品（软删除，进入回收站）
      */
     fun clearPurchasedItems() {
         viewModelScope.launch {
             try {
-                repository.clearPurchasedShoppingItemsByListId(listId)
-                _message.value = "已清除所有已购买项目"
+                _isLoading.value = true
+                val items = repository.getItemsByShoppingList(listId).first()
+                val purchasedItems = items.filter { it.shoppingDetail?.isPurchased == true }
+                
+                // ✅ 使用软删除，物品进入回收站
+                // - 保留ShoppingDetailEntity作为购物历史记录
+                // - 可以分析预算准确性（预估价格 vs 实际价格）
+                // - 可以在回收站中恢复
+                purchasedItems.forEach { item ->
+                    repository.softDeleteItem(
+                        item.id, 
+                        "清除已购买物品 - 购买日期: ${item.shoppingDetail?.purchaseDate?.toString() ?: "未知"}"
+                    )
+                }
+                
+                _message.value = "已将${purchasedItems.size}个已购买物品移至回收站"
+                loadStatistics()
             } catch (e: Exception) {
                 _error.value = "清除失败: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
     /**
-     * 从库存物品创建购物项目
+     * 转入库存
+     * 将购物物品转移到库存管理系统
      */
-    fun addItemFromInventory(itemId: Long) {
+    fun transferItemToInventory(item: Item) {
         viewModelScope.launch {
             try {
-                val shoppingItemId = repository.createShoppingItemFromInventory(itemId, listId)
-                if (shoppingItemId != null) {
-                    _message.value = "已添加到购物清单"
-                } else {
-                    _error.value = "添加失败：找不到该物品"
+                _isLoading.value = true
+                val shoppingDetail = item.shoppingDetail ?: run {
+                    _error.value = "购物详情数据缺失"
+                    return@launch
                 }
+                
+                // 创建库存详情（从购物详情转换）
+                val inventoryDetail = InventoryDetailEntity(
+                    itemId = item.id,
+                    quantity = shoppingDetail.quantity,
+                    unit = shoppingDetail.quantityUnit,
+                    price = shoppingDetail.actualPrice ?: shoppingDetail.estimatedPrice,
+                    priceUnit = shoppingDetail.actualPriceUnit ?: shoppingDetail.estimatedPriceUnit,
+                    purchaseDate = shoppingDetail.purchaseDate ?: Date(),
+                    status = ItemStatus.IN_STOCK,
+                    openStatus = OpenStatus.UNOPENED,
+                    storeName = shoppingDetail.storeName
+                )
+                
+                // 使用Repository的转移方法
+                repository.transferShoppingToInventory(
+                    itemId = item.id,
+                    shoppingDetail = shoppingDetail,
+                    inventoryDetail = inventoryDetail
+                )
+                
+                _message.value = "「${item.name}」已成功转入库存"
+                loadStatistics()
             } catch (e: Exception) {
-                _error.value = "添加失败: ${e.message}"
+                android.util.Log.e("ShoppingListVM", "转入库存失败", e)
+                _error.value = "转入库存失败: ${e.message}"
+            } finally {
+                _isLoading.value = false
             }
         }
     }
 
     /**
-     * 清除错误信息
+     * 转入库存（带用户输入数据）
+     * 使用用户在对话框中填写的数据转入库存
      */
-    fun clearError() {
-        _error.value = null
+    suspend fun transferToInventoryWithData(
+        item: Item,
+        transferData: TransferData
+    ): TransferResult {
+        return try {
+            _isLoading.postValue(true)
+            
+            val shoppingDetail = item.shoppingDetail ?: return TransferResult(
+                success = false,
+                error = "购物详情数据缺失"
+            )
+            
+            // 创建库存详情记录
+            val inventoryDetail = InventoryDetailEntity(
+                itemId = item.id,
+                quantity = transferData.quantity,
+                unit = transferData.unit,
+                locationId = transferData.locationId,
+                price = transferData.price,
+                priceUnit = transferData.priceUnit,
+                status = transferData.status ?: ItemStatus.IN_STOCK,
+                productionDate = transferData.productionDate,
+                expirationDate = transferData.expirationDate,
+                purchaseDate = Date(),
+                openStatus = transferData.openStatus,
+                storeName = shoppingDetail.storeName,
+                purchaseChannel = shoppingDetail.purchaseChannel,
+                createdDate = Date(),
+                updatedDate = Date()
+            )
+            
+            // 使用Repository的转移方法
+            repository.transferShoppingToInventory(
+                itemId = item.id,
+                shoppingDetail = shoppingDetail,
+                inventoryDetail = inventoryDetail
+            )
+            
+            // 可选：记录价格追踪
+            if (transferData.recordPrice && transferData.price != null) {
+                val priceRecord = com.example.itemmanagement.data.entity.PriceRecord(
+                    itemId = item.id,
+                    recordDate = Date(),
+                    price = transferData.price,
+                    purchaseChannel = shoppingDetail.storeName ?: "其他",
+                    notes = "从购物清单转入时记录"
+                )
+                repository.addPriceRecord(priceRecord)
+            }
+            
+            _message.postValue("「${item.name}」已成功转入库存")
+            loadStatistics()
+            
+            TransferResult(
+                success = true,
+                itemId = item.id
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("ShoppingListVM", "转入库存失败", e)
+            _error.postValue("转入库存失败: ${e.message}")
+            TransferResult(
+                success = false,
+                error = e.message
+            )
+        } finally {
+            _isLoading.postValue(false)
+        }
     }
 
     /**
-     * 清除消息
+     * 消息已显示
      */
-    fun clearMessage() {
+    fun onMessageShown() {
         _message.value = null
     }
-} 
+
+    /**
+     * 错误已处理
+     */
+    fun onErrorHandled() {
+        _error.value = null
+    }
+}
+
+/**
+ * 转入数据传输对象
+ */
+data class TransferData(
+    val quantity: Double,
+    val unit: String,
+    val locationId: Long?,
+    val price: Double?,
+    val priceUnit: String?,
+    val status: ItemStatus?,
+    val productionDate: Date?,
+    val expirationDate: Date?,
+    val openStatus: OpenStatus?,
+    val notes: String?,
+    val recordPrice: Boolean
+)
+
+/**
+ * 转入结果
+ */
+data class TransferResult(
+    val success: Boolean,
+    val itemId: Long? = null,
+    val error: String? = null
+)
+

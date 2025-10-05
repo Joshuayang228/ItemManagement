@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.itemmanagement.data.repository.UserProfileRepository
 
+/**
+ * 编辑个人资料ViewModel工厂类
+ */
 class EditProfileViewModelFactory(
     private val userProfileRepository: UserProfileRepository
 ) : ViewModelProvider.Factory {
@@ -15,3 +18,4 @@ class EditProfileViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

@@ -143,6 +143,8 @@ class InventoryAnalysisFragment : Fragment() {
             .chartType(chartType)
             .title("标题") // 使用实际文字
             .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .subtitle("副标题")
+            .subtitleStyle(AAStyle().color("transparent")) // 设置副标题为透明
             .dataLabelsEnabled(chartType == AAChartType.Pie) // 饼图启用数据标签显示百分比
             .legendEnabled(false) // 禁用所有图表的图例
             .yAxisTitle("")
@@ -208,6 +210,8 @@ class InventoryAnalysisFragment : Fragment() {
             .chartType(chartType)
             .title("标题") // 使用实际文字
             .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .subtitle("副标题")
+            .subtitleStyle(AAStyle().color("transparent")) // 设置副标题为透明
             .dataLabelsEnabled(false)
             .legendEnabled(false)
             .yAxisTitle("")
@@ -243,6 +247,8 @@ class InventoryAnalysisFragment : Fragment() {
             .chartType(chartType)
             .title("标题") // 使用实际文字
             .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .subtitle("副标题")
+            .subtitleStyle(AAStyle().color("transparent")) // 设置副标题为透明
             .dataLabelsEnabled(chartType == AAChartType.Pie) // 饼图启用数据标签显示百分比
             .legendEnabled(false)
             .yAxisTitle("")
@@ -301,6 +307,8 @@ class InventoryAnalysisFragment : Fragment() {
             .chartType(chartType)
             .title("标题") // 使用实际文字
             .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .subtitle("副标题")
+            .subtitleStyle(AAStyle().color("transparent")) // 设置副标题为透明
             .dataLabelsEnabled(false)
             .backgroundColor("#F5F3FF")
             .animationType(AAChartAnimationType.EaseInOutQuart)
@@ -346,7 +354,7 @@ class InventoryAnalysisFragment : Fragment() {
 
     private fun setupChartToggleListeners() {
         // 分类分析图表类型切换
-        binding.categoryChartTypeToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.categoryChartTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && currentData != null) {
                 val data = currentData!!.categoryAnalysis
                 when (checkedId) {
@@ -357,26 +365,20 @@ class InventoryAnalysisFragment : Fragment() {
                         displayCategoryChart(data, AAChartType.Column, categoryIsCountMode)
                     }
                 }
-            } else if (!isChecked && group.checkedButtonId == View.NO_ID) {
-                // 如果没有按钮被选中，重新选中当前按钮
-                group.check(checkedId)
             }
         }
         
         // 分类分析数据类型切换
-        binding.categoryDataTypeToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.categoryDataTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && currentData != null) {
                 categoryIsCountMode = checkedId == binding.categoryCountButton.id
                 val selectedChartType = getCurrentCategoryChartType()
                 displayCategoryChart(currentData!!.categoryAnalysis, selectedChartType, categoryIsCountMode)
-            } else if (!isChecked && group.checkedButtonId == View.NO_ID) {
-                // 如果没有按钮被选中，重新选中当前按钮
-                group.check(checkedId)
             }
         }
         
         // 位置分析图表类型切换
-        binding.locationChartTypeToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.locationChartTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && currentData != null) {
                 val data = currentData!!.locationAnalysis
                 when (checkedId) {
@@ -387,26 +389,20 @@ class InventoryAnalysisFragment : Fragment() {
                         displayLocationChart(data, AAChartType.Bar, locationIsCountMode)
                     }
                 }
-            } else if (!isChecked && group.checkedButtonId == View.NO_ID) {
-                // 如果没有按钮被选中，重新选中当前按钮
-                group.check(checkedId)
             }
         }
         
         // 位置分析数据类型切换
-        binding.locationDataTypeToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.locationDataTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && currentData != null) {
                 locationIsCountMode = checkedId == binding.locationCountButton.id
                 val selectedChartType = getCurrentLocationChartType()
                 displayLocationChart(currentData!!.locationAnalysis, selectedChartType, locationIsCountMode)
-            } else if (!isChecked && group.checkedButtonId == View.NO_ID) {
-                // 如果没有按钮被选中，重新选中当前按钮
-                group.check(checkedId)
             }
         }
         
         // 标签分析图表类型切换
-        binding.tagChartTypeToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.tagChartTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && currentData != null) {
                 val data = currentData!!.tagAnalysis
                 when (checkedId) {
@@ -417,26 +413,20 @@ class InventoryAnalysisFragment : Fragment() {
                         displayTagChart(data, AAChartType.Pie, tagIsCountMode)
                     }
                 }
-            } else if (!isChecked && group.checkedButtonId == View.NO_ID) {
-                // 如果没有按钮被选中，重新选中当前按钮
-                group.check(checkedId)
             }
         }
         
         // 标签分析数据类型切换
-        binding.tagDataTypeToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.tagDataTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && currentData != null) {
                 tagIsCountMode = checkedId == binding.tagCountButton.id
                 val selectedChartType = getCurrentTagChartType()
                 displayTagChart(currentData!!.tagAnalysis, selectedChartType, tagIsCountMode)
-            } else if (!isChecked && group.checkedButtonId == View.NO_ID) {
-                // 如果没有按钮被选中，重新选中当前按钮
-                group.check(checkedId)
             }
         }
         
         // 趋势分析图表切换
-        binding.trendChartTypeToggle.addOnButtonCheckedListener { group, checkedId, isChecked ->
+        binding.trendChartTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked && currentData != null) {
                 val data = currentData!!.monthlyTrends
                 when (checkedId) {
@@ -450,9 +440,6 @@ class InventoryAnalysisFragment : Fragment() {
                         displayTrendChart(data, AAChartType.Column)
                     }
                 }
-            } else if (!isChecked && group.checkedButtonId == View.NO_ID) {
-                // 如果没有按钮被选中，重新选中当前按钮
-                group.check(checkedId)
             }
         }
     }

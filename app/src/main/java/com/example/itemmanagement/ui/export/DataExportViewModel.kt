@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.BorrowRepository
 import com.example.itemmanagement.data.repository.WarrantyRepository
 import com.example.itemmanagement.export.CSVExporter
@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
  */
 class DataExportViewModel(
     application: Application,
-    private val itemRepository: ItemRepository,
+    private val itemRepository: UnifiedItemRepository,
     private val warrantyRepository: WarrantyRepository? = null,
     private val borrowRepository: BorrowRepository? = null
 ) : AndroidViewModel(application) {

@@ -7,9 +7,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
-import com.example.itemmanagement.data.entity.ItemEntity
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
+import com.example.itemmanagement.data.mapper.toItem
 import com.example.itemmanagement.data.model.Item
+import com.example.itemmanagement.data.relation.ItemWithDetails
 import com.example.itemmanagement.ui.feed.SmartFeedAlgorithm
 import com.example.itemmanagement.ui.feed.SmoothScrollManager
 import kotlinx.coroutines.flow.first
@@ -17,7 +19,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
 
-class HomeViewModel(private val repository: ItemRepository) : ViewModel() {
+class HomeViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
     
     /**
      * 展示物品数据类（包含推荐理由信息）
@@ -261,17 +263,17 @@ class HomeViewModel(private val repository: ItemRepository) : ViewModel() {
                 try {
                     val item = repository.getItemWithDetailsById(itemId)
                     item?.let { itemWithDetails ->
-                        val updatedItemEntity = itemWithDetails.item.copy(
+                        val updatedInventoryDetail = itemWithDetails.inventoryDetail?.copy(
                             openStatus = com.example.itemmanagement.data.model.OpenStatus.OPENED,
                             openDate = java.util.Date()
                         )
-                        repository.updateItemWithDetails(
-                            itemId = itemWithDetails.item.id,
-                            item = updatedItemEntity,
-                            location = itemWithDetails.location,
+                        val updatedItemWithDetails = ItemWithDetails(
+                            unifiedItem = itemWithDetails.unifiedItem,
+                            inventoryDetail = updatedInventoryDetail,
                             photos = itemWithDetails.photos,
                             tags = itemWithDetails.tags
                         )
+                        repository.updateItemWithDetails(updatedItemWithDetails)
                         
                         // 重新生成信息流
                         refreshData()
@@ -312,13 +314,13 @@ class HomeViewModel(private val repository: ItemRepository) : ViewModel() {
             val item = repository.getItemWithDetailsById(itemId)
             // 如果物品存在，则删除
             item?.let { 
-                repository.deleteItem(it.item)
+                repository.deleteItem(it.toItem())
             }
         }
     }
 }
 
-class HomeViewModelFactory(private val repository: ItemRepository) : ViewModelProvider.Factory {
+class HomeViewModelFactory(private val repository: UnifiedItemRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")

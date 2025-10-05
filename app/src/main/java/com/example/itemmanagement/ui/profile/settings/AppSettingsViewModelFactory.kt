@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.itemmanagement.data.repository.UserProfileRepository
 
+/**
+ * 应用设置ViewModel工厂类
+ */
 class AppSettingsViewModelFactory(
     private val userProfileRepository: UserProfileRepository
 ) : ViewModelProvider.Factory {

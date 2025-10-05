@@ -85,7 +85,7 @@
         android:id="@+id/sortBarCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingVertical="4dp"
+        android:paddingTop="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/searchContainer">
@@ -180,7 +180,6 @@
         android:orientation="horizontal"
         android:visibility="gone"
         android:paddingStart="8dp"
-        android:paddingTop="4dp"
         android:paddingEnd="8dp"
         android:paddingBottom="2dp"
         app:layout_constraintEnd_toEndOf="parent"

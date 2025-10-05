@@ -5,9 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.WishlistRepository
 import com.example.itemmanagement.ui.base.ItemStateCacheViewModel
+import com.example.itemmanagement.ui.wishlist.WishlistViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
  */
 class WishlistViewModelFactory(
     private val wishlistRepository: WishlistRepository,
-    private val itemRepository: ItemRepository? = null,  // 用于基于BaseItemViewModel的子类
+    private val itemRepository: UnifiedItemRepository? = null,  // 用于基于BaseItemViewModel的子类
     private val cacheViewModel: ItemStateCacheViewModel? = null,  // 用于基于BaseItemViewModel的子类
     private val itemId: Long? = null  // 用于编辑和详情模式
 ) : ViewModelProvider.Factory {
@@ -25,6 +26,17 @@ class WishlistViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
+            modelClass.isAssignableFrom(WishlistMainViewModel::class.java) -> {
+                require(itemRepository != null) {
+                    "WishlistMainViewModel requires itemRepository"
+                }
+                WishlistMainViewModel(itemRepository) as T
+            }
+            
+            modelClass.isAssignableFrom(WishlistSelectionViewModel::class.java) -> {
+                WishlistSelectionViewModel() as T
+            }
+            
             modelClass.isAssignableFrom(WishlistAddViewModel::class.java) -> {
                 require(itemRepository != null && cacheViewModel != null) {
                     "WishlistAddViewModel requires itemRepository and cacheViewModel"
@@ -39,12 +51,8 @@ class WishlistViewModelFactory(
                 WishlistEditViewModel(itemRepository, cacheViewModel, wishlistRepository, itemId) as T
             }
             
-            modelClass.isAssignableFrom(WishlistMainViewModel::class.java) -> {
-                WishlistMainViewModel(wishlistRepository) as T
-            }
-            
-            modelClass.isAssignableFrom(WishlistSelectionViewModel::class.java) -> {
-                WishlistSelectionViewModel(wishlistRepository) as T
+            modelClass.isAssignableFrom(WishlistViewModel::class.java) -> {
+                WishlistViewModel(wishlistRepository) as T
             }
             
             modelClass.isAssignableFrom(WishlistItemDetailViewModel::class.java) -> {
@@ -70,7 +78,7 @@ class WishlistViewModelFactory(
          */
         fun forAdd(
             wishlistRepository: WishlistRepository,
-            itemRepository: ItemRepository,
+            itemRepository: UnifiedItemRepository,
             cacheViewModel: ItemStateCacheViewModel
         ): WishlistViewModelFactory {
             return WishlistViewModelFactory(
@@ -85,7 +93,7 @@ class WishlistViewModelFactory(
          */
         fun forEdit(
             wishlistRepository: WishlistRepository,
-            itemRepository: ItemRepository,
+            itemRepository: UnifiedItemRepository,
             cacheViewModel: ItemStateCacheViewModel,
             itemId: Long
         ): WishlistViewModelFactory {
@@ -132,8 +140,8 @@ class WishlistItemDetailViewModel(
     private val itemId: Long
 ) : ViewModel() {
     
-    private val _wishlistItem = MutableLiveData<com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity>()
-    val wishlistItem: LiveData<com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity> = _wishlistItem
+    private val _wishlistItem = MutableLiveData<com.example.itemmanagement.data.view.WishlistItemView>()
+    val wishlistItem: LiveData<com.example.itemmanagement.data.view.WishlistItemView> = _wishlistItem
 
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
@@ -158,7 +166,7 @@ class WishlistItemDetailViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val item = wishlistRepository.getItemById(itemId)
+                val item = wishlistRepository.getWishlistItemById(itemId)
                 if (item != null) {
                     _wishlistItem.value = item
                 } else {
@@ -178,7 +186,7 @@ class WishlistItemDetailViewModel(
     fun updatePrice(newPrice: Double, source: String = "manual") {
         viewModelScope.launch {
             try {
-                wishlistRepository.updatePrice(itemId, newPrice, source)
+                wishlistRepository.updatePrice(itemId, newPrice)
                 _operationSuccess.value = "价格已更新"
                 // 重新加载物品数据以获取最新价格
                 loadWishlistItem()

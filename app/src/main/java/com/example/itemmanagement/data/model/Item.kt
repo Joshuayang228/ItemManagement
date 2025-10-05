@@ -2,6 +2,8 @@ package com.example.itemmanagement.data.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
+import com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity
 import java.util.Date
 
 @Parcelize
@@ -40,7 +42,8 @@ data class Item(
     val serialNumber: String?,          // 序列号
     val isHighTurnover: Boolean = false, // 是否高周转
     val photos: List<Photo> = emptyList(),
-    val tags: List<Tag> = emptyList()
+    val tags: List<Tag> = emptyList(),
+    val shoppingDetail: @RawValue ShoppingDetailEntity? = null // 购物详情（仅购物清单物品有）
 ) : Parcelable
 
 @Parcelize
@@ -77,16 +80,3 @@ data class Tag(
     val name: String,
     val color: String? = null
 ) : Parcelable
-
-enum class OpenStatus {
-    UNOPENED,   // 未开封
-    OPENED      // 已开封
-}
-
-enum class ItemStatus {
-    IN_STOCK,   // 在库
-    USED_UP,    // 已用完
-    EXPIRED,    // 已过期
-    GIVEN_AWAY, // 已转赠
-    DISCARDED   // 已丢弃
-} 

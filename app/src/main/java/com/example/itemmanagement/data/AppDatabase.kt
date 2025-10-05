@@ -7,61 +7,93 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.example.itemmanagement.data.dao.ItemDao
+// import com.example.itemmanagement.data.dao.ItemDao // 已归档
+import com.example.itemmanagement.data.dao.LocationDao
+import com.example.itemmanagement.data.dao.TagDao
+import com.example.itemmanagement.data.dao.PhotoDao
 import com.example.itemmanagement.data.dao.CalendarEventDao
-import com.example.itemmanagement.data.dao.ShoppingDao
+// import com.example.itemmanagement.data.dao.ShoppingDao // 已归档
 import com.example.itemmanagement.data.dao.ShoppingListDao
 import com.example.itemmanagement.data.dao.ReminderSettingsDao
 import com.example.itemmanagement.data.dao.CategoryThresholdDao
 import com.example.itemmanagement.data.dao.CustomRuleDao
 import com.example.itemmanagement.data.dao.WarrantyDao
 import com.example.itemmanagement.data.dao.BorrowDao
-import com.example.itemmanagement.data.dao.RecycleBinDao
+// import com.example.itemmanagement.data.dao.RecycleBinDao // 已归档
 import com.example.itemmanagement.data.dao.UserProfileDao
-import com.example.itemmanagement.data.dao.wishlist.WishlistDao
+// import com.example.itemmanagement.data.dao.wishlist.WishlistDao // 已归档
 import com.example.itemmanagement.data.dao.wishlist.WishlistPriceHistoryDao
+import com.example.itemmanagement.data.dao.PriceRecordDao
 import com.example.itemmanagement.data.entity.*
-import com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity
+// import com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity // 已归档
 import com.example.itemmanagement.data.entity.wishlist.WishlistPriceHistoryEntity
+import com.example.itemmanagement.data.entity.unified.*
+import com.example.itemmanagement.data.dao.unified.*
+import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
 
 @Database(
     entities = [
-        ItemEntity::class,
+        // === 新的统一架构 ===
+        UnifiedItemEntity::class,
+        ItemStateEntity::class,
+        WishlistDetailEntity::class,
+        ShoppingDetailEntity::class,
+        InventoryDetailEntity::class,
+        
+        // === 保留的组件表 ===
         LocationEntity::class,
         PhotoEntity::class,
         TagEntity::class,
         ItemTagCrossRef::class,
         CalendarEventEntity::class,
-        ShoppingItemEntity::class,
         ShoppingListEntity::class,
         ReminderSettingsEntity::class,
         CategoryThresholdEntity::class,
         CustomRuleEntity::class,
         WarrantyEntity::class,
         BorrowEntity::class,
-        DeletedItemEntity::class,
         UserProfileEntity::class,
-        WishlistItemEntity::class,
-        WishlistPriceHistoryEntity::class
+        WishlistPriceHistoryEntity::class,
+        PriceRecord::class,
+        
+        // === 旧表（已归档到archived文件夹） ===
+        // ItemEntity::class,
+        // ShoppingItemEntity::class,
+        // DeletedItemEntity::class,
+        // WishlistItemEntity::class
     ],
-    version = 31,
+    version = 38,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun itemDao(): ItemDao
+    // === 新的统一架构Dao ===
+    abstract fun unifiedItemDao(): UnifiedItemDao
+    abstract fun itemStateDao(): ItemStateDao
+    abstract fun wishlistDetailDao(): WishlistDetailDao
+    abstract fun shoppingDetailDao(): ShoppingDetailDao
+    abstract fun inventoryDetailDao(): InventoryDetailDao
+    
+    // === 保留的组件Dao ===
+    abstract fun locationDao(): LocationDao
+    abstract fun tagDao(): TagDao
+    abstract fun photoDao(): PhotoDao
     abstract fun calendarEventDao(): CalendarEventDao
-    abstract fun shoppingDao(): ShoppingDao
     abstract fun shoppingListDao(): ShoppingListDao
     abstract fun reminderSettingsDao(): ReminderSettingsDao
     abstract fun categoryThresholdDao(): CategoryThresholdDao
     abstract fun customRuleDao(): CustomRuleDao
     abstract fun warrantyDao(): WarrantyDao
     abstract fun borrowDao(): BorrowDao
-    abstract fun recycleBinDao(): RecycleBinDao
     abstract fun userProfileDao(): UserProfileDao
-    abstract fun wishlistDao(): WishlistDao
     abstract fun wishlistPriceHistoryDao(): WishlistPriceHistoryDao
+    abstract fun priceRecordDao(): PriceRecordDao
+    
+    // === 旧Dao（已归档到archived文件夹） ===
+    // abstract fun itemDao(): ItemDao
+    // abstract fun shoppingDao(): ShoppingDao
+    // abstract fun recycleBinDao(): RecycleBinDao
+    // abstract fun wishlistDao(): WishlistDao
 
     companion object {
         @Volatile
@@ -74,7 +106,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
@@ -1518,6 +1550,637 @@ abstract class AppDatabase : RoomDatabase() {
                 database.execSQL("ALTER TABLE wishlist_items RENAME COLUMN preferredStore TO purchaseChannel")
                 database.execSQL("ALTER TABLE wishlist_items RENAME COLUMN createdDate TO addDate")
                 database.execSQL("ALTER TABLE wishlist_items RENAME COLUMN notes TO customNote")
+            }
+        }
+        
+        /**
+         * 迁移 32 → 33：DetailEntity主键优化
+         * 将 itemId 主键改为自增 id 主键，支持同一物品的多次历史记录
+         */
+        private val MIGRATION_32_33 = object : Migration(32, 33) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 32 → 33: DetailEntity主键优化")
+                
+                // 1. 重建 shopping_details 表（添加自增主键）
+                database.execSQL("""
+                    CREATE TABLE shopping_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        shoppingListId INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        quantityUnit TEXT NOT NULL DEFAULT '个',
+                        estimatedPrice REAL,
+                        actualPrice REAL,
+                        priceUnit TEXT NOT NULL DEFAULT '元',
+                        budgetLimit REAL,
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        preferredStore TEXT,
+                        purchaseDate INTEGER,
+                        isPurchased INTEGER NOT NULL DEFAULT 0,
+                        priority TEXT NOT NULL DEFAULT 'NORMAL',
+                        urgencyLevel TEXT NOT NULL DEFAULT 'NORMAL',
+                        deadline INTEGER,
+                        capacity REAL,
+                        capacityUnit TEXT,
+                        rating REAL,
+                        season TEXT,
+                        serialNumber TEXT,
+                        sourceItemId INTEGER,
+                        recommendationReason TEXT,
+                        addedReason TEXT NOT NULL DEFAULT 'USER_MANUAL',
+                        addDate INTEGER NOT NULL,
+                        completedDate INTEGER,
+                        remindDate INTEGER,
+                        isRecurring INTEGER NOT NULL DEFAULT 0,
+                        recurringInterval INTEGER,
+                        tags TEXT,
+                        FOREIGN KEY(itemId) REFERENCES unified_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY(shoppingListId) REFERENCES shopping_lists(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 复制数据（只复制活跃的购物物品，保留历史数据）
+                database.execSQL("""
+                    INSERT INTO shopping_details_new 
+                    (itemId, shoppingListId, quantity, quantityUnit, estimatedPrice, actualPrice, 
+                     priceUnit, budgetLimit, totalPrice, totalPriceUnit, purchaseChannel, storeName, 
+                     preferredStore, purchaseDate, isPurchased, priority, urgencyLevel, deadline,
+                     capacity, capacityUnit, rating, season, serialNumber, sourceItemId, 
+                     recommendationReason, addedReason, addDate, completedDate, remindDate, 
+                     isRecurring, recurringInterval, tags)
+                    SELECT itemId, shoppingListId, quantity, quantityUnit, estimatedPrice, actualPrice,
+                           priceUnit, budgetLimit, totalPrice, totalPriceUnit, purchaseChannel, storeName,
+                           preferredStore, purchaseDate, isPurchased, priority, urgencyLevel, deadline,
+                           capacity, capacityUnit, rating, season, serialNumber, sourceItemId,
+                           recommendationReason, addedReason, addDate, completedDate, remindDate,
+                           isRecurring, recurringInterval, tags
+                    FROM shopping_details
+                """)
+                
+                database.execSQL("DROP TABLE shopping_details")
+                database.execSQL("ALTER TABLE shopping_details_new RENAME TO shopping_details")
+                
+                // 重建索引
+                database.execSQL("CREATE INDEX index_shopping_details_itemId ON shopping_details(itemId)")
+                database.execSQL("CREATE INDEX index_shopping_details_shoppingListId ON shopping_details(shoppingListId)")
+                database.execSQL("CREATE INDEX index_shopping_details_priority ON shopping_details(priority)")
+                database.execSQL("CREATE INDEX index_shopping_details_urgencyLevel ON shopping_details(urgencyLevel)")
+                database.execSQL("CREATE INDEX index_shopping_details_isPurchased ON shopping_details(isPurchased)")
+                database.execSQL("CREATE INDEX index_shopping_details_deadline ON shopping_details(deadline)")
+                database.execSQL("CREATE INDEX index_shopping_details_shoppingListId_isPurchased ON shopping_details(shoppingListId, isPurchased)")
+                
+                android.util.Log.d("Migration", "✓ shopping_details 表重建完成")
+                
+                // 2. 重建 inventory_details 表（添加自增主键）
+                database.execSQL("""
+                    CREATE TABLE inventory_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        unit TEXT NOT NULL,
+                        locationId INTEGER,
+                        productionDate INTEGER,
+                        expirationDate INTEGER,
+                        openDate INTEGER,
+                        purchaseDate INTEGER,
+                        wasteDate INTEGER,
+                        openStatus TEXT,
+                        status TEXT NOT NULL DEFAULT 'IN_STOCK',
+                        stockWarningThreshold INTEGER,
+                        isHighTurnover INTEGER NOT NULL DEFAULT 0,
+                        price REAL,
+                        priceUnit TEXT,
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        capacity REAL,
+                        capacityUnit TEXT,
+                        rating REAL,
+                        season TEXT,
+                        serialNumber TEXT,
+                        shelfLife INTEGER,
+                        warrantyPeriod INTEGER,
+                        warrantyEndDate INTEGER,
+                        createdDate INTEGER NOT NULL,
+                        updatedDate INTEGER NOT NULL,
+                        FOREIGN KEY(itemId) REFERENCES unified_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY(locationId) REFERENCES locations(id) ON DELETE SET NULL
+                    )
+                """)
+                
+                // 复制数据（只复制活跃的库存物品）
+                database.execSQL("""
+                    INSERT INTO inventory_details_new 
+                    (itemId, quantity, unit, locationId, productionDate, expirationDate, openDate,
+                     purchaseDate, wasteDate, openStatus, status, stockWarningThreshold, isHighTurnover,
+                     price, priceUnit, totalPrice, totalPriceUnit, purchaseChannel, storeName,
+                     capacity, capacityUnit, rating, season, serialNumber, shelfLife, warrantyPeriod,
+                     warrantyEndDate, createdDate, updatedDate)
+                    SELECT itemId, quantity, unit, locationId, productionDate, expirationDate, openDate,
+                           purchaseDate, wasteDate, openStatus, status, stockWarningThreshold, isHighTurnover,
+                           price, priceUnit, totalPrice, totalPriceUnit, purchaseChannel, storeName,
+                           capacity, capacityUnit, rating, season, serialNumber, shelfLife, warrantyPeriod,
+                           warrantyEndDate, createdDate, updatedDate
+                    FROM inventory_details
+                """)
+                
+                database.execSQL("DROP TABLE inventory_details")
+                database.execSQL("ALTER TABLE inventory_details_new RENAME TO inventory_details")
+                
+                // 重建索引
+                database.execSQL("CREATE INDEX index_inventory_details_itemId ON inventory_details(itemId)")
+                database.execSQL("CREATE INDEX index_inventory_details_locationId ON inventory_details(locationId)")
+                database.execSQL("CREATE INDEX index_inventory_details_status ON inventory_details(status)")
+                database.execSQL("CREATE INDEX index_inventory_details_expirationDate ON inventory_details(expirationDate)")
+                database.execSQL("CREATE INDEX index_inventory_details_stockWarningThreshold ON inventory_details(stockWarningThreshold)")
+                database.execSQL("CREATE INDEX index_inventory_details_status_expirationDate ON inventory_details(status, expirationDate)")
+                
+                android.util.Log.d("Migration", "✓ inventory_details 表重建完成")
+                
+                // 3. 重建 wishlist_details 表（添加自增主键）
+                // 注意：必须与 WishlistDetailEntity 的字段定义完全匹配
+                database.execSQL("""
+                    CREATE TABLE wishlist_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        price REAL,
+                        targetPrice REAL,
+                        priceUnit TEXT NOT NULL DEFAULT '元',
+                        currentPrice REAL,
+                        lowestPrice REAL,
+                        highestPrice REAL,
+                        priority TEXT NOT NULL DEFAULT 'NORMAL',
+                        urgency TEXT NOT NULL DEFAULT 'NORMAL',
+                        quantity REAL NOT NULL DEFAULT 1.0,
+                        quantityUnit TEXT NOT NULL DEFAULT '个',
+                        budgetLimit REAL,
+                        purchaseChannel TEXT,
+                        preferredBrand TEXT,
+                        isPriceTrackingEnabled INTEGER NOT NULL DEFAULT 1,
+                        priceDropThreshold REAL,
+                        lastPriceCheck INTEGER,
+                        priceCheckInterval INTEGER NOT NULL DEFAULT 7,
+                        isPaused INTEGER NOT NULL DEFAULT 0,
+                        achievedDate INTEGER,
+                        sourceUrl TEXT,
+                        imageUrl TEXT,
+                        relatedInventoryItemId INTEGER,
+                        addedReason TEXT,
+                        viewCount INTEGER NOT NULL DEFAULT 0,
+                        lastViewDate INTEGER,
+                        priceChangeCount INTEGER NOT NULL DEFAULT 0,
+                        createdDate INTEGER NOT NULL,
+                        lastModified INTEGER NOT NULL,
+                        FOREIGN KEY(itemId) REFERENCES unified_items(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 复制数据（旧表的 itemId 作为主键，新表使用自增 id）
+                // 版本32的字段都存在，直接全部复制
+                database.execSQL("""
+                    INSERT INTO wishlist_details_new 
+                    (itemId, price, targetPrice, priceUnit, currentPrice, lowestPrice, highestPrice,
+                     priority, urgency, quantity, quantityUnit, budgetLimit, purchaseChannel, 
+                     preferredBrand, isPriceTrackingEnabled, priceDropThreshold, lastPriceCheck,
+                     priceCheckInterval, isPaused, achievedDate, sourceUrl, imageUrl,
+                     relatedInventoryItemId, addedReason, viewCount, lastViewDate, 
+                     priceChangeCount, createdDate, lastModified)
+                    SELECT itemId, price, targetPrice, priceUnit, currentPrice, lowestPrice, highestPrice,
+                           priority, urgency, quantity, quantityUnit, budgetLimit, purchaseChannel,
+                           preferredBrand, isPriceTrackingEnabled, priceDropThreshold, lastPriceCheck,
+                           priceCheckInterval, isPaused, achievedDate, sourceUrl, imageUrl,
+                           relatedInventoryItemId, addedReason, viewCount, lastViewDate,
+                           priceChangeCount, createdDate, lastModified
+                    FROM wishlist_details
+                """)
+                
+                database.execSQL("DROP TABLE wishlist_details")
+                database.execSQL("ALTER TABLE wishlist_details_new RENAME TO wishlist_details")
+                
+                // 重建索引（必须与 Entity 的 @Index 注解匹配）
+                database.execSQL("CREATE UNIQUE INDEX index_wishlist_details_itemId ON wishlist_details(itemId)")
+                database.execSQL("CREATE INDEX index_wishlist_details_priority ON wishlist_details(priority)")
+                database.execSQL("CREATE INDEX index_wishlist_details_urgency ON wishlist_details(urgency)")
+                database.execSQL("CREATE INDEX index_wishlist_details_targetPrice ON wishlist_details(targetPrice)")
+                database.execSQL("CREATE INDEX index_wishlist_details_isPriceTrackingEnabled ON wishlist_details(isPriceTrackingEnabled)")
+                
+                android.util.Log.d("Migration", "✓ wishlist_details 表重建完成")
+                android.util.Log.d("Migration", "✅ 迁移 32 → 33 完成")
+            }
+        }
+        
+        /**
+         * 迁移 33 → 34：价格单位字段独立化
+         * 将 shopping_details 表的 priceUnit 拆分为三个独立字段：
+         * - estimatedPriceUnit（预估价格单位）
+         * - actualPriceUnit（实际价格单位）
+         * - budgetLimitUnit（预算上限单位）
+         */
+        private val MIGRATION_33_34 = object : Migration(33, 34) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 33 → 34: 价格单位字段独立化")
+                
+                // 1. 为 shopping_details 表添加三个新的价格单位字段
+                database.execSQL("ALTER TABLE shopping_details ADD COLUMN estimatedPriceUnit TEXT NOT NULL DEFAULT '元'")
+                database.execSQL("ALTER TABLE shopping_details ADD COLUMN actualPriceUnit TEXT NOT NULL DEFAULT '元'")
+                database.execSQL("ALTER TABLE shopping_details ADD COLUMN budgetLimitUnit TEXT NOT NULL DEFAULT '元'")
+                
+                // 2. 将现有的 priceUnit 值复制到新字段（保持数据一致性）
+                database.execSQL("""
+                    UPDATE shopping_details 
+                    SET estimatedPriceUnit = COALESCE(priceUnit, '元'),
+                        actualPriceUnit = COALESCE(priceUnit, '元'),
+                        budgetLimitUnit = COALESCE(priceUnit, '元')
+                """)
+                
+                // 3. 删除旧的 priceUnit 字段（需要重建表）
+                database.execSQL("""
+                    CREATE TABLE shopping_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        shoppingListId INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        quantityUnit TEXT NOT NULL DEFAULT '个',
+                        estimatedPrice REAL,
+                        estimatedPriceUnit TEXT NOT NULL DEFAULT '元',
+                        actualPrice REAL,
+                        actualPriceUnit TEXT NOT NULL DEFAULT '元',
+                        budgetLimit REAL,
+                        budgetLimitUnit TEXT NOT NULL DEFAULT '元',
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        preferredStore TEXT,
+                        purchaseDate INTEGER,
+                        isPurchased INTEGER NOT NULL DEFAULT 0,
+                        priority TEXT NOT NULL DEFAULT 'NORMAL',
+                        urgencyLevel TEXT NOT NULL DEFAULT 'NORMAL',
+                        deadline INTEGER,
+                        capacity REAL,
+                        capacityUnit TEXT,
+                        rating REAL,
+                        season TEXT,
+                        serialNumber TEXT,
+                        sourceItemId INTEGER,
+                        recommendationReason TEXT,
+                        addedReason TEXT NOT NULL DEFAULT 'USER_MANUAL',
+                        addDate INTEGER NOT NULL,
+                        completedDate INTEGER,
+                        remindDate INTEGER,
+                        isRecurring INTEGER NOT NULL DEFAULT 0,
+                        recurringInterval INTEGER,
+                        tags TEXT,
+                        FOREIGN KEY(itemId) REFERENCES unified_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY(shoppingListId) REFERENCES shopping_lists(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 4. 复制数据到新表
+                database.execSQL("""
+                    INSERT INTO shopping_details_new 
+                    (id, itemId, shoppingListId, quantity, quantityUnit, 
+                     estimatedPrice, estimatedPriceUnit, actualPrice, actualPriceUnit,
+                     budgetLimit, budgetLimitUnit, totalPrice, totalPriceUnit,
+                     purchaseChannel, storeName, preferredStore, purchaseDate, isPurchased,
+                     priority, urgencyLevel, deadline, capacity, capacityUnit, rating,
+                     season, serialNumber, sourceItemId, recommendationReason, addedReason,
+                     addDate, completedDate, remindDate, isRecurring, recurringInterval, tags)
+                    SELECT id, itemId, shoppingListId, quantity, quantityUnit,
+                           estimatedPrice, estimatedPriceUnit, actualPrice, actualPriceUnit,
+                           budgetLimit, budgetLimitUnit, totalPrice, totalPriceUnit,
+                           purchaseChannel, storeName, preferredStore, purchaseDate, isPurchased,
+                           priority, urgencyLevel, deadline, capacity, capacityUnit, rating,
+                           season, serialNumber, sourceItemId, recommendationReason, addedReason,
+                           addDate, completedDate, remindDate, isRecurring, recurringInterval, tags
+                    FROM shopping_details
+                """)
+                
+                // 5. 删除旧表并重命名新表
+                database.execSQL("DROP TABLE shopping_details")
+                database.execSQL("ALTER TABLE shopping_details_new RENAME TO shopping_details")
+                
+                // 6. 重建索引
+                database.execSQL("CREATE INDEX index_shopping_details_itemId ON shopping_details(itemId)")
+                database.execSQL("CREATE INDEX index_shopping_details_shoppingListId ON shopping_details(shoppingListId)")
+                database.execSQL("CREATE INDEX index_shopping_details_priority ON shopping_details(priority)")
+                database.execSQL("CREATE INDEX index_shopping_details_urgencyLevel ON shopping_details(urgencyLevel)")
+                database.execSQL("CREATE INDEX index_shopping_details_isPurchased ON shopping_details(isPurchased)")
+                database.execSQL("CREATE INDEX index_shopping_details_deadline ON shopping_details(deadline)")
+                database.execSQL("CREATE INDEX index_shopping_details_shoppingListId_isPurchased ON shopping_details(shoppingListId, isPurchased)")
+                
+                android.util.Log.d("Migration", "✅ 迁移 33 → 34 完成")
+            }
+        }
+        
+        /**
+         * 迁移 34 → 35：合并商店字段
+         * 删除 preferredStore 字段，统一使用 storeName 作为购买商店字段
+         */
+        private val MIGRATION_34_35 = object : Migration(34, 35) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 34 → 35: 合并商店字段")
+                
+                // 1. 合并 preferredStore 和 storeName 的数据（优先使用 preferredStore 的值）
+                database.execSQL("""
+                    UPDATE shopping_details 
+                    SET storeName = CASE 
+                        WHEN preferredStore IS NOT NULL AND preferredStore != '' THEN preferredStore
+                        WHEN storeName IS NOT NULL AND storeName != '' THEN storeName
+                        ELSE NULL
+                    END
+                """)
+                
+                android.util.Log.d("Migration", "✓ 数据合并完成")
+                
+                // 2. 重建表，删除 preferredStore 字段
+                database.execSQL("""
+                    CREATE TABLE shopping_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        shoppingListId INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        quantityUnit TEXT NOT NULL DEFAULT '个',
+                        estimatedPrice REAL,
+                        estimatedPriceUnit TEXT NOT NULL DEFAULT '元',
+                        actualPrice REAL,
+                        actualPriceUnit TEXT NOT NULL DEFAULT '元',
+                        budgetLimit REAL,
+                        budgetLimitUnit TEXT NOT NULL DEFAULT '元',
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        purchaseDate INTEGER,
+                        isPurchased INTEGER NOT NULL DEFAULT 0,
+                        priority TEXT NOT NULL DEFAULT 'NORMAL',
+                        urgencyLevel TEXT NOT NULL DEFAULT 'NORMAL',
+                        deadline INTEGER,
+                        capacity REAL,
+                        capacityUnit TEXT,
+                        rating REAL,
+                        season TEXT,
+                        serialNumber TEXT,
+                        sourceItemId INTEGER,
+                        recommendationReason TEXT,
+                        addedReason TEXT NOT NULL DEFAULT 'USER_MANUAL',
+                        addDate INTEGER NOT NULL,
+                        completedDate INTEGER,
+                        remindDate INTEGER,
+                        isRecurring INTEGER NOT NULL DEFAULT 0,
+                        recurringInterval INTEGER,
+                        tags TEXT,
+                        FOREIGN KEY(itemId) REFERENCES unified_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY(shoppingListId) REFERENCES shopping_lists(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                android.util.Log.d("Migration", "✓ 新表创建完成")
+                
+                // 3. 复制数据到新表（不包含 preferredStore 字段）
+                database.execSQL("""
+                    INSERT INTO shopping_details_new 
+                    (id, itemId, shoppingListId, quantity, quantityUnit, 
+                     estimatedPrice, estimatedPriceUnit, actualPrice, actualPriceUnit,
+                     budgetLimit, budgetLimitUnit, totalPrice, totalPriceUnit,
+                     purchaseChannel, storeName, purchaseDate, isPurchased,
+                     priority, urgencyLevel, deadline, capacity, capacityUnit, rating,
+                     season, serialNumber, sourceItemId, recommendationReason, addedReason,
+                     addDate, completedDate, remindDate, isRecurring, recurringInterval, tags)
+                    SELECT id, itemId, shoppingListId, quantity, quantityUnit,
+                           estimatedPrice, estimatedPriceUnit, actualPrice, actualPriceUnit,
+                           budgetLimit, budgetLimitUnit, totalPrice, totalPriceUnit,
+                           purchaseChannel, storeName, purchaseDate, isPurchased,
+                           priority, urgencyLevel, deadline, capacity, capacityUnit, rating,
+                           season, serialNumber, sourceItemId, recommendationReason, addedReason,
+                           addDate, completedDate, remindDate, isRecurring, recurringInterval, tags
+                    FROM shopping_details
+                """)
+                
+                android.util.Log.d("Migration", "✓ 数据迁移完成")
+                
+                // 4. 删除旧表并重命名新表
+                database.execSQL("DROP TABLE shopping_details")
+                database.execSQL("ALTER TABLE shopping_details_new RENAME TO shopping_details")
+                
+                // 5. 重建索引
+                database.execSQL("CREATE INDEX index_shopping_details_itemId ON shopping_details(itemId)")
+                database.execSQL("CREATE INDEX index_shopping_details_shoppingListId ON shopping_details(shoppingListId)")
+                database.execSQL("CREATE INDEX index_shopping_details_priority ON shopping_details(priority)")
+                database.execSQL("CREATE INDEX index_shopping_details_urgencyLevel ON shopping_details(urgencyLevel)")
+                database.execSQL("CREATE INDEX index_shopping_details_isPurchased ON shopping_details(isPurchased)")
+                database.execSQL("CREATE INDEX index_shopping_details_deadline ON shopping_details(deadline)")
+                database.execSQL("CREATE INDEX index_shopping_details_shoppingListId_isPurchased ON shopping_details(shoppingListId, isPurchased)")
+                
+                android.util.Log.d("Migration", "✓ 索引重建完成")
+                android.util.Log.d("Migration", "✅ 迁移 34 → 35 完成：preferredStore 字段已删除，storeName 作为统一的购买商店字段")
+            }
+        }
+        
+        /**
+         * 迁移 35 → 36: 修复枚举值（URGENT → CRITICAL）
+         * 
+         * 背景：
+         * - ShoppingItemPriority 枚举从 LOW/NORMAL/HIGH/URGENT 改为 LOW/NORMAL/HIGH/CRITICAL
+         * - 需要更新数据库中的旧枚举值
+         */
+        private val MIGRATION_35_36 = object : Migration(35, 36) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 35 → 36: 修复枚举值")
+                
+                // 1. 更新 shopping_details 表中的 priority 枚举值
+                database.execSQL("""
+                    UPDATE shopping_details 
+                    SET priority = 'CRITICAL' 
+                    WHERE priority = 'URGENT'
+                """)
+                
+                android.util.Log.d("Migration", "✓ priority 枚举值已更新: URGENT → CRITICAL")
+                
+                // 2. 验证更新结果
+                val cursor = database.query("SELECT COUNT(*) FROM shopping_details WHERE priority = 'URGENT'")
+                if (cursor.moveToFirst()) {
+                    val count = cursor.getInt(0)
+                    if (count > 0) {
+                        android.util.Log.w("Migration", "警告: 仍有 $count 条记录的 priority 为 URGENT")
+                    } else {
+                        android.util.Log.d("Migration", "✓ 验证通过: 所有 URGENT 值已更新")
+                    }
+                }
+                cursor.close()
+                
+                android.util.Log.d("Migration", "✅ 迁移 35 → 36 完成：枚举值已修复")
+            }
+        }
+        
+        private val MIGRATION_36_37 = object : Migration(36, 37) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 36 → 37: 添加价格记录表")
+                
+                // 创建 price_records 表
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS price_records (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        recordDate INTEGER NOT NULL,
+                        price REAL NOT NULL,
+                        purchaseChannel TEXT NOT NULL,
+                        notes TEXT
+                    )
+                """)
+                
+                android.util.Log.d("Migration", "✓ price_records 表已创建")
+                
+                // 创建索引以提高查询性能
+                database.execSQL("""
+                    CREATE INDEX IF NOT EXISTS index_price_records_itemId 
+                    ON price_records(itemId)
+                """)
+                
+                database.execSQL("""
+                    CREATE INDEX IF NOT EXISTS index_price_records_recordDate 
+                    ON price_records(recordDate)
+                """)
+                
+                android.util.Log.d("Migration", "✓ 索引已创建")
+                android.util.Log.d("Migration", "✅ 迁移 36 → 37 完成：价格记录功能已添加")
+            }
+        }
+        
+        private val MIGRATION_37_38 = object : Migration(37, 38) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 37 → 38: 优化物品属性字段")
+                
+                // === 第1步：为 unified_items 表添加物品固有属性字段 ===
+                database.execSQL("ALTER TABLE unified_items ADD COLUMN capacity REAL")
+                database.execSQL("ALTER TABLE unified_items ADD COLUMN capacityUnit TEXT")
+                database.execSQL("ALTER TABLE unified_items ADD COLUMN rating REAL")
+                database.execSQL("ALTER TABLE unified_items ADD COLUMN season TEXT")
+                database.execSQL("ALTER TABLE unified_items ADD COLUMN serialNumber TEXT")
+                android.util.Log.d("Migration", "✓ unified_items 新字段已添加")
+                
+                // === 第2步：从 inventory_details 表移除冗余字段 ===
+                // 由于SQLite不支持直接DROP COLUMN，需要重建表
+                database.execSQL("""
+                    CREATE TABLE inventory_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        unit TEXT NOT NULL,
+                        locationId INTEGER,
+                        productionDate INTEGER,
+                        expirationDate INTEGER,
+                        openDate INTEGER,
+                        purchaseDate INTEGER,
+                        wasteDate INTEGER,
+                        openStatus TEXT,
+                        status TEXT NOT NULL,
+                        stockWarningThreshold INTEGER,
+                        isHighTurnover INTEGER NOT NULL,
+                        price REAL,
+                        priceUnit TEXT,
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        shelfLife INTEGER,
+                        warrantyPeriod INTEGER,
+                        warrantyEndDate INTEGER,
+                        createdDate INTEGER NOT NULL,
+                        updatedDate INTEGER NOT NULL,
+                        FOREIGN KEY(itemId) REFERENCES unified_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY(locationId) REFERENCES locations(id) ON DELETE SET NULL
+                    )
+                """)
+                
+                // 复制数据（不包括capacity, capacityUnit, rating, season, serialNumber）
+                database.execSQL("""
+                    INSERT INTO inventory_details_new 
+                    SELECT id, itemId, quantity, unit, locationId, productionDate, expirationDate, 
+                           openDate, purchaseDate, wasteDate, openStatus, status, stockWarningThreshold,
+                           isHighTurnover, price, priceUnit, totalPrice, totalPriceUnit, purchaseChannel,
+                           storeName, shelfLife, warrantyPeriod, warrantyEndDate, createdDate, updatedDate
+                    FROM inventory_details
+                """)
+                
+                database.execSQL("DROP TABLE inventory_details")
+                database.execSQL("ALTER TABLE inventory_details_new RENAME TO inventory_details")
+                
+                // 重建索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_itemId ON inventory_details(itemId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_locationId ON inventory_details(locationId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_status ON inventory_details(status)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_expirationDate ON inventory_details(expirationDate)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_stockWarningThreshold ON inventory_details(stockWarningThreshold)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_status_expirationDate ON inventory_details(status, expirationDate)")
+                android.util.Log.d("Migration", "✓ inventory_details 表已重建")
+                
+                // === 第3步：从 shopping_details 表移除冗余字段 ===
+                database.execSQL("""
+                    CREATE TABLE shopping_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        shoppingListId INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        quantityUnit TEXT NOT NULL,
+                        estimatedPrice REAL,
+                        estimatedPriceUnit TEXT NOT NULL,
+                        actualPrice REAL,
+                        actualPriceUnit TEXT NOT NULL,
+                        budgetLimit REAL,
+                        budgetLimitUnit TEXT NOT NULL,
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        purchaseDate INTEGER,
+                        isPurchased INTEGER NOT NULL,
+                        priority TEXT NOT NULL,
+                        urgencyLevel TEXT NOT NULL,
+                        deadline INTEGER,
+                        sourceItemId INTEGER,
+                        recommendationReason TEXT,
+                        addedReason TEXT NOT NULL,
+                        addDate INTEGER NOT NULL,
+                        completedDate INTEGER,
+                        remindDate INTEGER,
+                        isRecurring INTEGER NOT NULL,
+                        recurringInterval INTEGER,
+                        tags TEXT,
+                        FOREIGN KEY(itemId) REFERENCES unified_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY(shoppingListId) REFERENCES shopping_lists(id) ON DELETE CASCADE
+                    )
+                """)
+                
+                // 复制数据（不包括capacity, capacityUnit, rating, season, serialNumber）
+                database.execSQL("""
+                    INSERT INTO shopping_details_new 
+                    SELECT id, itemId, shoppingListId, quantity, quantityUnit, estimatedPrice,
+                           estimatedPriceUnit, actualPrice, actualPriceUnit, budgetLimit, budgetLimitUnit,
+                           totalPrice, totalPriceUnit, purchaseChannel, storeName, purchaseDate, isPurchased,
+                           priority, urgencyLevel, deadline, sourceItemId, recommendationReason, addedReason,
+                           addDate, completedDate, remindDate, isRecurring, recurringInterval, tags
+                    FROM shopping_details
+                """)
+                
+                database.execSQL("DROP TABLE shopping_details")
+                database.execSQL("ALTER TABLE shopping_details_new RENAME TO shopping_details")
+                
+                // 重建索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_details_itemId ON shopping_details(itemId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_details_shoppingListId ON shopping_details(shoppingListId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_details_priority ON shopping_details(priority)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_details_urgencyLevel ON shopping_details(urgencyLevel)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_details_isPurchased ON shopping_details(isPurchased)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_details_deadline ON shopping_details(deadline)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_shopping_details_shoppingListId_isPurchased ON shopping_details(shoppingListId, isPurchased)")
+                android.util.Log.d("Migration", "✓ shopping_details 表已重建")
+                
+                android.util.Log.d("Migration", "✅ 迁移 37 → 38 完成：物品属性字段已整合到基础表，冗余字段已移除")
             }
         }
     }

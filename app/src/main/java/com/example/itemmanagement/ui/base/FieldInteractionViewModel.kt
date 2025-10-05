@@ -2,7 +2,7 @@ package com.example.itemmanagement.ui.base
 
 import android.net.Uri
 import androidx.lifecycle.LiveData
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.ui.common.FieldProperties
 import com.example.itemmanagement.ui.add.Field
 
@@ -116,9 +116,9 @@ interface FieldInteractionViewModel {
     /**
      * 获取数据仓库实例
      * 用于位置选择器等组件异步获取数据
-     * @return ItemRepository实例
+     * @return UnifiedItemRepository实例
      */
-    fun getItemRepository(): ItemRepository
+    fun getItemRepository(): UnifiedItemRepository
 
     /**
      * 保存自定义位置数据

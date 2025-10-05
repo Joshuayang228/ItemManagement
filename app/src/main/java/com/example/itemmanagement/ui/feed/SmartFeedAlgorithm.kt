@@ -1,6 +1,6 @@
 package com.example.itemmanagement.ui.feed
 
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.model.*
 import kotlinx.coroutines.flow.first
 import kotlin.random.Random
@@ -8,7 +8,7 @@ import kotlin.random.Random
 /**
  * 智能信息流算法 - 整合所有算法组件的主协调器
  */
-class SmartFeedAlgorithm(private val repository: ItemRepository) {
+class SmartFeedAlgorithm(private val repository: UnifiedItemRepository) {
     
     /**
      * 评分后的物品

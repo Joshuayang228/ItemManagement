@@ -1,8 +1,8 @@
 package com.example.itemmanagement.ui.warehouse
 
 import androidx.lifecycle.*
-import com.example.itemmanagement.data.ItemRepository
-import com.example.itemmanagement.data.entity.ItemEntity
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.data.model.WarehouseItem
 import com.example.itemmanagement.data.mapper.toItemEntity
@@ -16,27 +16,322 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
+class WarehouseViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
     
     // 筛选状态
     private val _filterState = MutableStateFlow(FilterState())
     val filterState: StateFlow<FilterState> = _filterState.asStateFlow()
     
-    // 仓库物品列表 - 使用新的查询方法
-    val warehouseItems: StateFlow<List<WarehouseItem>> = _filterState
-        .debounce(300) // 添加防抖，避免频繁查询
-        .flatMapLatest { state ->
+    // 仓库物品列表 - 使用完整查询方法（包含位置、标签、照片）
+    private val _warehouseItems = MutableStateFlow<List<WarehouseItem>>(emptyList())
+    val warehouseItems: StateFlow<List<WarehouseItem>> = _warehouseItems.asStateFlow()
+    
+    init {
+        // 监听筛选状态变化
+        viewModelScope.launch {
+            _filterState
+                .debounce(300) // 添加防抖，避免频繁查询
+                .collect { state ->
+                    loadWarehouseItems()
+                }
+        }
+        loadFilterOptions()
+    }
+    
+    /**
+     * 加载仓库物品数据（包含完整的位置、标签、照片信息）
+     */
+    private fun loadWarehouseItems() {
+        viewModelScope.launch {
             try {
-                repository.getWarehouseItems(state)
+                android.util.Log.d("WarehouseViewModel", "🔄 WarehouseViewModel开始加载仓库物品")
+                
+                // 1. 获取原始数据
+                val allItems = repository.getAllWarehouseItemsWithDetails()
+                android.util.Log.d("WarehouseViewModel", "📊 获取到原始仓库物品：${allItems.size}个")
+                
+                // 2. 获取当前筛选状态
+                val currentFilter = _filterState.value
+                android.util.Log.d("WarehouseViewModel", "🎯 当前筛选状态: searchTerm='${currentFilter.searchTerm}', sortOption=${currentFilter.sortOption}, sortDirection=${currentFilter.sortDirection}")
+                
+                // 3. 应用搜索过滤
+                val searchFiltered = applySearchFilter(allItems, currentFilter.searchTerm)
+                android.util.Log.d("WarehouseViewModel", "🔍 搜索过滤后：${searchFiltered.size}个物品")
+                
+                // 4. 应用其他筛选条件
+                val filtered = applyFilters(searchFiltered, currentFilter)
+                android.util.Log.d("WarehouseViewModel", "🎛️ 筛选过滤后：${filtered.size}个物品")
+                
+                // 5. 应用排序
+                val sorted = applySorting(filtered, currentFilter.sortOption, currentFilter.sortDirection)
+                android.util.Log.d("WarehouseViewModel", "📊 排序后：${sorted.size}个物品")
+                
+                _warehouseItems.value = sorted
+                android.util.Log.d("WarehouseViewModel", "✅ WarehouseViewModel已更新StateFlow，最终物品数量：${sorted.size}")
+                
             } catch (e: Exception) {
-                throw e
+                android.util.Log.e("WarehouseViewModel", "❌ WarehouseViewModel加载仓库物品失败", e)
+                _errorMessage.value = "加载仓库物品失败：${e.message}"
             }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Lazily,
-            initialValue = emptyList()
-        )
+    }
+    
+    /**
+     * 刷新仓库数据（公共方法）
+     */
+    fun refreshWarehouseItems() {
+        loadWarehouseItems()
+    }
+    
+    /**
+     * 应用搜索过滤
+     */
+    private fun applySearchFilter(items: List<WarehouseItem>, searchTerm: String): List<WarehouseItem> {
+        if (searchTerm.isBlank()) {
+            return items
+        }
+        
+        val term = searchTerm.trim().lowercase()
+        return items.filter { item ->
+            item.name.lowercase().contains(term) ||
+            item.category?.lowercase()?.contains(term) == true ||
+            item.subCategory?.lowercase()?.contains(term) == true ||
+            item.brand?.lowercase()?.contains(term) == true ||
+            item.locationArea?.lowercase()?.contains(term) == true ||
+            item.locationContainer?.lowercase()?.contains(term) == true ||
+            item.locationSublocation?.lowercase()?.contains(term) == true ||
+            item.tagsList?.lowercase()?.contains(term) == true ||
+            item.customNote?.lowercase()?.contains(term) == true
+        }
+    }
+    
+    /**
+     * 应用筛选条件
+     */
+    private fun applyFilters(items: List<WarehouseItem>, filter: FilterState): List<WarehouseItem> {
+        var filtered = items
+        
+        // 分类筛选（支持多选）
+        if (filter.categories.isNotEmpty()) {
+            filtered = filtered.filter { item ->
+                filter.categories.contains(item.category)
+            }
+        } else if (filter.category.isNotBlank()) {
+            // 向后兼容单选分类
+            filtered = filtered.filter { item ->
+                item.category == filter.category
+            }
+        }
+        
+        // 子分类筛选
+        if (filter.subCategory.isNotBlank()) {
+            filtered = filtered.filter { item ->
+                item.subCategory == filter.subCategory
+            }
+        }
+        
+        // 品牌筛选
+        if (filter.brand.isNotBlank()) {
+            filtered = filtered.filter { item ->
+                item.brand == filter.brand
+            }
+        }
+        
+        // 位置区域筛选（支持多选）
+        if (filter.locationAreas.isNotEmpty()) {
+            filtered = filtered.filter { item ->
+                filter.locationAreas.contains(item.locationArea)
+            }
+        } else if (filter.locationArea.isNotBlank()) {
+            // 向后兼容单选位置
+            filtered = filtered.filter { item ->
+                item.locationArea == filter.locationArea
+            }
+        }
+        
+        // 容器筛选
+        if (filter.container.isNotBlank()) {
+            filtered = filtered.filter { item ->
+                item.locationContainer == filter.container
+            }
+        }
+        
+        // 子位置筛选
+        if (filter.sublocation.isNotBlank()) {
+            filtered = filtered.filter { item ->
+                item.locationSublocation == filter.sublocation
+            }
+        }
+        
+        // 开封状态筛选（支持多选）
+        if (filter.openStatuses.isNotEmpty()) {
+            filtered = filtered.filter { item ->
+                filter.openStatuses.contains(item.openStatus)
+            }
+        } else if (filter.openStatus != null) {
+            // 向后兼容单选开封状态
+            filtered = filtered.filter { item ->
+                item.openStatus == filter.openStatus
+            }
+        }
+        
+        // 评分筛选（支持多选和范围）
+        if (filter.ratings.isNotEmpty()) {
+            filtered = filtered.filter { item ->
+                item.rating?.let { rating ->
+                    filter.ratings.contains(rating)
+                } ?: false
+            }
+        } else {
+            // 评分范围筛选
+            if (filter.minRating != null) {
+                filtered = filtered.filter { item ->
+                    item.rating?.let { it >= filter.minRating } ?: false
+                }
+            }
+            if (filter.maxRating != null) {
+                filtered = filtered.filter { item ->
+                    item.rating?.let { it <= filter.maxRating } ?: false
+                }
+            }
+        }
+        
+        // 季节筛选
+        if (filter.seasons.isNotEmpty()) {
+            filtered = filtered.filter { item ->
+                item.season?.let { itemSeason ->
+                    filter.seasons.any { filterSeason ->
+                        itemSeason.contains(filterSeason, ignoreCase = true)
+                    }
+                } ?: false
+            }
+        }
+        
+        // 标签筛选
+        if (filter.tags.isNotEmpty()) {
+            filtered = filtered.filter { item ->
+                item.tagsList?.let { itemTags ->
+                    filter.tags.any { filterTag ->
+                        itemTags.contains(filterTag, ignoreCase = true)
+                    }
+                } ?: false
+            }
+        }
+        
+        // 数量范围筛选
+        if (filter.minQuantity != null) {
+            filtered = filtered.filter { item ->
+                item.quantity >= filter.minQuantity
+            }
+        }
+        if (filter.maxQuantity != null) {
+            filtered = filtered.filter { item ->
+                item.quantity <= filter.maxQuantity
+            }
+        }
+        
+        // 价格范围筛选
+        if (filter.minPrice != null) {
+            filtered = filtered.filter { item ->
+                item.price?.let { it >= filter.minPrice } ?: false
+            }
+        }
+        if (filter.maxPrice != null) {
+            filtered = filtered.filter { item ->
+                item.price?.let { it <= filter.maxPrice } ?: false
+            }
+        }
+        
+        // 日期范围筛选
+        // 过期日期范围
+        if (filter.expirationStartDate != null || filter.expirationEndDate != null) {
+            filtered = filtered.filter { item ->
+                item.expirationDate?.let { expirationDate ->
+                    val inRange = (filter.expirationStartDate?.let { expirationDate >= it } ?: true) &&
+                                 (filter.expirationEndDate?.let { expirationDate <= it } ?: true)
+                    inRange
+                } ?: false
+            }
+        }
+        
+        // 购买日期范围 - WarehouseItem没有purchaseDate字段，暂时跳过
+        // TODO: 如果需要购买日期筛选，需要在WarehouseItem中添加purchaseDate字段
+        /*
+        if (filter.purchaseStartDate != null || filter.purchaseEndDate != null) {
+            filtered = filtered.filter { item ->
+                item.purchaseDate?.let { purchaseDate ->
+                    val inRange = (filter.purchaseStartDate?.let { purchaseDate >= it } ?: true) &&
+                                 (filter.purchaseEndDate?.let { purchaseDate <= it } ?: true)
+                    inRange
+                } ?: false
+            }
+        }
+        */
+        
+        // 生产日期范围 - WarehouseItem没有productionDate字段，暂时跳过
+        // TODO: 如果需要生产日期筛选，需要在WarehouseItem中添加productionDate字段
+        /*
+        if (filter.productionStartDate != null || filter.productionEndDate != null) {
+            filtered = filtered.filter { item ->
+                item.productionDate?.let { productionDate ->
+                    val inRange = (filter.productionStartDate?.let { productionDate >= it } ?: true) &&
+                                 (filter.productionEndDate?.let { productionDate <= it } ?: true)
+                    inRange
+                } ?: false
+            }
+        }
+        */
+        
+        return filtered
+    }
+    
+    /**
+     * 应用排序逻辑
+     */
+    private fun applySorting(items: List<WarehouseItem>, sortOption: SortOption, sortDirection: SortDirection): List<WarehouseItem> {
+        val sorted = when (sortOption) {
+            SortOption.COMPREHENSIVE -> {
+                // 综合排序：优先级 评分 > 剩余保质期 > 添加时间
+                items.sortedWith(compareByDescending<WarehouseItem> { it.rating ?: 0f }
+                    .thenBy { item ->
+                        // 剩余保质期计算（天数，越小越紧急）
+                        item.expirationDate?.let { expDate ->
+                            val currentTime = System.currentTimeMillis()
+                            val remainingDays = (expDate - currentTime) / (24 * 60 * 60 * 1000)
+                            remainingDays
+                        } ?: Long.MAX_VALUE
+                    }
+                    .thenByDescending { it.addDate ?: 0L })
+            }
+            SortOption.QUANTITY -> {
+                items.sortedBy { it.quantity }
+            }
+            SortOption.PRICE -> {
+                items.sortedBy { it.price ?: 0.0 }
+            }
+            SortOption.RATING -> {
+                items.sortedBy { it.rating ?: 0f }
+            }
+            SortOption.REMAINING_SHELF_LIFE -> {
+                // 剩余保质期排序
+                items.sortedBy { item ->
+                    item.expirationDate?.let { expDate ->
+                        val currentTime = System.currentTimeMillis()
+                        (expDate - currentTime) / (24 * 60 * 60 * 1000) // 转换为天数
+                    } ?: Long.MAX_VALUE // 没有过期日期的排在最后
+                }
+            }
+            SortOption.UPDATE_TIME -> {
+                items.sortedBy { it.addDate ?: 0L }
+            }
+        }
+        
+        return if (sortDirection == SortDirection.ASC) {
+            sorted
+        } else {
+            sorted.reversed()
+        }
+    }
 
     // 删除结果
     private val _deleteResult = MutableLiveData<Boolean>()
@@ -76,11 +371,6 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
     
     private val _availableSeasons = MutableLiveData<List<String>>()
     val availableSeasons: LiveData<List<String>> = _availableSeasons
-    
-    // 初始化
-    init {
-        loadFilterOptions()
-    }
 
     /**
      * 删除物品
@@ -91,8 +381,10 @@ class WarehouseViewModel(private val repository: ItemRepository) : ViewModel() {
             try {
                 val item = repository.getItemById(itemId)
                 item?.let {
-                    repository.deleteItem(it.toItemEntity())
+                    repository.deleteItem(it)
                     _deleteResult.value = true
+                    // 删除成功后重新加载数据
+                    loadWarehouseItems()
                 } ?: run {
                     _errorMessage.value = "找不到要删除的物品"
                     _deleteResult.value = false

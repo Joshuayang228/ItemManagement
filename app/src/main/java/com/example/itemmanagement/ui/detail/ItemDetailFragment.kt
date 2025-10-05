@@ -2,6 +2,8 @@ package com.example.itemmanagement.ui.detail
 
 import android.os.Bundle
 import android.view.*
+import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -11,22 +13,29 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentItemDetailBinding
 import com.example.itemmanagement.ui.detail.adapter.PhotoAdapter
 import com.example.itemmanagement.ui.detail.adapter.TagAdapter
+import com.example.itemmanagement.adapter.PriceRecordAdapter
 import com.example.itemmanagement.data.model.OpenStatus
 import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
+import com.github.aachartmodel.aainfographics.aachartcreator.AAChartModel
+import com.github.aachartmodel.aainfographics.aachartcreator.AAChartType
+import com.github.aachartmodel.aainfographics.aachartcreator.AASeriesElement
+import com.github.aachartmodel.aainfographics.aachartcreator.AAChartAnimationType
+import com.github.aachartmodel.aainfographics.aaoptionsmodel.AAStyle
+import com.github.aachartmodel.aainfographics.aachartcreator.AAChartView
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-import android.widget.LinearLayout
 
+/**
+ * Material Design 3 精美物品详情Fragment - 基于备份样式重新设计
+ */
 class ItemDetailFragment : Fragment() {
     private var _binding: FragmentItemDetailBinding? = null
     private val binding get() = _binding!!
@@ -40,18 +49,28 @@ class ItemDetailFragment : Fragment() {
     private val args: ItemDetailFragmentArgs by navArgs()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     private lateinit var photoAdapter: PhotoAdapter
-    private lateinit var tagAdapter: TagAdapter
+    // tagAdapter 已移除，现在使用动态创建的 Chip
+    
+    // 价格记录适配器（用于来源信息的价格跟踪）
+    private lateinit var sourcePriceRecordAdapter: PriceRecordAdapter
+    private var isShowingAllSourceRecords = false
+
+    // 备注展开状态
+    private var isNoteExpanded = false
+    
+    // 来源信息展开状态
+    private var isSourceExpanded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true) // 启用选项菜单
+        setHasOptionsMenu(true)
     }
-    
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.menu_item_detail, menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
-    
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_edit -> {
@@ -65,17 +84,27 @@ class ItemDetailFragment : Fragment() {
             else -> super.onOptionsItemSelected(item)
         }
     }
-    
+
     private fun showDeleteConfirmationDialog() {
         AlertDialog.Builder(requireContext())
             .setTitle("删除物品")
             .setMessage("确定要删除此物品吗？")
             .setPositiveButton("删除") { _, _ ->
-                // 调用ViewModel中的删除方法
                 viewModel.deleteItem(args.itemId)
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    private fun navigateToEditItem() {
+        try {
+            val action = ItemDetailFragmentDirections.actionNavigationItemDetailToEditItemFragment(
+                itemId = args.itemId
+            )
+            findNavController().navigate(action)
+        } catch (e: Exception) {
+            Toast.makeText(context, "编辑功能暂时不可用", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onCreateView(
@@ -89,15 +118,74 @@ class ItemDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupViewPager()
-        setupTagsRecyclerView()
-        setupButtons()
+        setupAdapters()
+        setupNoteExpandButton()
+        setupSourceExpandButton()
         viewModel.loadItem(args.itemId)
         observeItem()
         observeError()
         observeNavigation()
+        observeSourceInfo()
+    }
+
+    private fun setupAdapters() {
+        // 设置照片适配器
+        photoAdapter = PhotoAdapter()
+        binding.photoViewPager.adapter = photoAdapter
+
+        // 标签现在使用HorizontalScrollView中的LinearLayout，不需要RecyclerView设置
+    }
+
+    private fun setupNoteExpandButton() {
+        binding.expandButton.setOnClickListener {
+            toggleNoteExpansion()
+        }
+    }
+
+    private fun toggleNoteExpansion() {
+        isNoteExpanded = !isNoteExpanded
+        if (isNoteExpanded) {
+            binding.customNoteTextView.maxLines = Int.MAX_VALUE
+            binding.expandButton.text = "收起"
+        } else {
+            binding.customNoteTextView.maxLines = 5
+            binding.expandButton.text = "展开"
+        }
     }
     
+    private fun setupSourceExpandButton() {
+        // 找到来源信息卡片（整个卡片可点击）
+        val sourceInfoCard = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(
+            R.id.sourceInfoCard
+        )
+        sourceInfoCard?.setOnClickListener {
+            toggleSourceExpansion()
+        }
+    }
+    
+    private fun toggleSourceExpansion() {
+        isSourceExpanded = !isSourceExpanded
+        
+        val expandIcon = binding.root.findViewById<android.widget.ImageView>(
+            R.id.expandIcon
+        )
+        val shoppingDetailsContainer = binding.root.findViewById<LinearLayout>(
+            R.id.shoppingDetailsContainer
+        )
+        
+        if (isSourceExpanded) {
+            // 展开状态
+            shoppingDetailsContainer?.visibility = View.VISIBLE
+            // 旋转图标向上（180度）
+            expandIcon?.animate()?.rotation(180f)?.setDuration(200)?.start()
+        } else {
+            // 收起状态
+            shoppingDetailsContainer?.visibility = View.GONE
+            // 旋转图标向下（0度）
+            expandIcon?.animate()?.rotation(0f)?.setDuration(200)?.start()
+        }
+    }
+
     private fun observeNavigation() {
         viewModel.navigateBack.observe(viewLifecycleOwner) { shouldNavigate ->
             if (shouldNavigate) {
@@ -106,41 +194,18 @@ class ItemDetailFragment : Fragment() {
             }
         }
     }
-
-    private fun setupViewPager() {
-        // 设置照片ViewPager
-        photoAdapter = PhotoAdapter()
-        binding.photoViewPager.adapter = photoAdapter
-    }
     
-    private fun setupTagsRecyclerView() {
-        // 设置标签RecyclerView
-        tagAdapter = TagAdapter()
-        binding.tagsRecyclerView.apply {
-            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            adapter = tagAdapter
+    private fun observeSourceInfo() {
+        viewModel.shoppingSource.observe(viewLifecycleOwner) { shoppingDetail ->
+            android.util.Log.d("ItemDetailFragment", "🔍 来源信息变化: $shoppingDetail")
+            updateSourceInfoCard(shoppingDetail)
         }
-    }
-    
-    private fun setupButtons() {
-        // 备注展开/收起按钮
-        binding.expandButton.setOnClickListener {
-            if (binding.customNoteTextView.maxLines == 5) {
-                binding.customNoteTextView.maxLines = Integer.MAX_VALUE
-                binding.expandButton.text = "收起"
-            } else {
-                binding.customNoteTextView.maxLines = 5
-                binding.expandButton.text = "展开"
-            }
+        
+        // 观察价格记录
+        viewModel.sourcePriceRecords.observe(viewLifecycleOwner) { records ->
+            android.util.Log.d("ItemDetailFragment", "🔍 价格记录变化: ${records.size} 条")
+            updateSourcePriceTracking(records)
         }
-    }
-    
-    private fun navigateToEditItem() {
-        // 导航到编辑物品页面（使用新架构）
-        val action = ItemDetailFragmentDirections.actionNavigationItemDetailToEditItemFragment(
-            itemId = args.itemId
-        )
-        findNavController().navigate(action)
     }
 
     private fun observeItem() {
@@ -149,440 +214,260 @@ class ItemDetailFragment : Fragment() {
                 // 基本信息
                 nameTextView.text = item.name
                 quantityTextView.text = "${formatNumber(item.quantity)} ${item.unit ?: "个"}"
-                
-                // 评分
-                val ratingContainer = binding.root.findViewById<View>(R.id.ratingContainer)
-                item.rating?.let {
-                    binding.ratingBar.rating = it.toFloat()
-                    ratingContainer?.visibility = View.VISIBLE
-                } ?: run {
-                    ratingContainer?.visibility = View.GONE
-                }
-                
-                // 分类和子分类
-                // 找到分类容器
-                val categoryContainer = binding.root.findViewById<LinearLayout>(R.id.categoryContainer)
-                
-                if (item.category.isNullOrBlank() || item.category == "未指定") {
-                    // 如果分类为空或未指定，隐藏整个分类容器
-                    categoryContainer?.visibility = View.GONE
-                } else {
-                    setCategoryTag(categoryTextView, item.category, getCategoryColor(item.category))
-                    categoryTextView.visibility = View.VISIBLE
-                    
-                    // 子分类处理
-                    item.subCategory?.let {
-                        if (it.isNotBlank()) {
-                            setCategoryTag(subCategoryTextView, it, getCategoryColor(item.category, true))
-                            subCategoryTextView.visibility = View.VISIBLE
-                        } else {
-                            subCategoryTextView.visibility = View.GONE
-                        }
-                    } ?: run {
-                        subCategoryTextView.visibility = View.GONE
-                    }
-                    
-                    // 显示分类容器
-                    categoryContainer?.visibility = View.VISIBLE
-                }
-                
-                // 位置信息
-                item.location?.let {
-                    if (it.area.isBlank() || it.area == "未指定") {
-                        binding.locationContainer.visibility = View.GONE
-                    } else {
-                        locationTextView.text = it.getFullLocationString()
-                        binding.locationContainer.visibility = View.VISIBLE
-                    }
-                } ?: run {
-                    binding.locationContainer.visibility = View.GONE
-                }
+                locationTextView.text = item.location?.getFullLocationString() ?: "未设置"
+                ratingBar.rating = item.rating?.toFloat() ?: 0f
 
-                // 单价
-                item.price?.let {
-                    val priceUnitText = item.priceUnit ?: "元"
-                    priceTextView.text = "${formatNumber(it)} ${priceUnitText}"
-                    priceContainer.visibility = View.VISIBLE
-                } ?: run {
-                    priceContainer.visibility = View.GONE
-                }
+                // 分类 - 使用Material Design 3 Chips
+                setupCategoryChips(item.category, item.subCategory)
                 
-                // 总价
-                item.totalPrice?.let {
-                    val totalPriceUnitText = item.totalPriceUnit ?: "元"
-                    totalPriceTextView.text = "${formatNumber(it)} ${totalPriceUnitText}"
-                    totalPriceContainer.visibility = View.VISIBLE
-                } ?: run {
-                    totalPriceContainer.visibility = View.GONE
-                }
-                
-                // 添加日期
-                addDateTextView.text = dateFormat.format(item.addDate)
-                
-                // 保修期
-                item.warrantyPeriod?.let { period ->
-                    val unitText = when {
-                        period % 365 == 0 -> "${period / 365}年"
-                        period % 30 == 0 -> "${period / 30}个月"
-                        else -> "${period}天"
-                    }
-                    warrantyTextView.text = unitText
-                    warrantyContainer.visibility = View.VISIBLE
-                } ?: run {
-                    warrantyContainer.visibility = View.GONE
-                }
-                
-                // 过期日期
-                item.expirationDate?.let {
-                    expirationDateTextView.text = dateFormat.format(it)
-                    expirationDateContainer.visibility = View.VISIBLE
-                    
-                    // 设置状态标签
-                    setupExpirationStatus(it)
-                } ?: run {
-                    expirationDateContainer.visibility = View.GONE
-                    statusTagView.visibility = View.GONE
-                }
-
-                // 保质期
-                item.shelfLife?.let { period ->
-                    val unitText = when {
-                        period % 365 == 0 -> "${period / 365}年"
-                        period % 30 == 0 -> "${period / 30}个月"
-                        else -> "${period}天"
-                    }
-                    shelfLifeTextView.text = unitText
-                    shelfLifeContainer.visibility = View.VISIBLE
-                } ?: run {
-                    shelfLifeContainer.visibility = View.GONE
-                }
-
-                // 生产日期
-                item.productionDate?.let {
-                    productionDateTextView.text = dateFormat.format(it)
-                    productionDateContainer.visibility = View.VISIBLE
-                } ?: run {
-                    productionDateContainer.visibility = View.GONE
-                }
-
-                // 购买日期
-                item.purchaseDate?.let {
-                    purchaseDateTextView.text = dateFormat.format(it)
-                    purchaseDateContainer.visibility = View.VISIBLE
-                } ?: run {
-                    purchaseDateContainer.visibility = View.GONE
-                }
-
                 // 开封状态
-                item.openStatus?.let {
-                    openStatusTextView.text = if (it == OpenStatus.OPENED) "已开封" else "未开封"
-                    openStatusContainer.visibility = View.VISIBLE
-                } ?: run {
-                    openStatusContainer.visibility = View.GONE
-                }
-                
-                // 开封日期
-                item.openDate?.let {
-                    openDateTextView.text = dateFormat.format(it)
-                    openDateContainer.visibility = View.VISIBLE
-                } ?: run {
-                    openDateContainer.visibility = View.GONE
-                }
-                
-                // 标签
-                if (item.tags.isNotEmpty()) {
-                    tagAdapter.submitList(item.tags.map { com.example.itemmanagement.data.entity.TagEntity(name = it.name) })
-                    tagsRecyclerView.visibility = View.VISIBLE
-                    binding.tagsContainer.visibility = View.VISIBLE
-                } else {
-                    // 如果没有标签，隐藏标签列表和标签容器
-                    tagsRecyclerView.visibility = View.GONE
-                    binding.tagsContainer.visibility = View.GONE
-                }
-                
-                // 季节
-                item.season?.let {
-                    seasonTextView.text = it
-                    seasonContainer.visibility = View.VISIBLE
-                } ?: run {
-                    seasonContainer.visibility = View.GONE
-                }
-                
-                // 容量
-                item.capacity?.let {
-                    val unitText = item.capacityUnit ?: "ml"
-                    capacityTextView.text = "${formatNumber(it)} $unitText"
-                    capacityContainer.visibility = View.VISIBLE
-                } ?: run {
-                    capacityContainer.visibility = View.GONE
-                }
-                
-                // 序列号
-                item.serialNumber?.let {
-                    serialNumberTextView.text = it
-                    serialNumberContainer.visibility = View.VISIBLE
-                } ?: run {
-                    serialNumberContainer.visibility = View.GONE
-                }
-                
-                // 品牌
-                item.brand?.let {
-                    brandTextView.text = it
-                    brandContainer.visibility = View.VISIBLE
-                } ?: run {
-                    brandContainer.visibility = View.GONE
-                }
-                
-                item.purchaseChannel?.let {
-                    purchaseChannelTextView.text = it
-                    purchaseChannelContainer.visibility = View.VISIBLE
-                } ?: run {
-                    purchaseChannelContainer.visibility = View.GONE
-                }
-                
-                item.storeName?.let {
-                    storeNameTextView.text = it
-                    storeNameContainer.visibility = View.VISIBLE
-                } ?: run {
-                    storeNameContainer.visibility = View.GONE
-                }
-                
-                // 保修信息
-                item.warrantyEndDate?.let { endDate ->
-                    warrantyEndDateTextView.text = dateFormat.format(endDate)
-                    warrantyEndContainer.visibility = View.VISIBLE
-                    
-                    // 计算保修进度条
-                    setupWarrantyProgress(item.purchaseDate ?: item.addDate, endDate)
-                } ?: run {
-                    warrantyEndContainer.visibility = View.GONE
-                    warrantyProgressBar.visibility = View.GONE
-                }
+                openStatusTextView.text = getOpenStatusText(item.openStatus)
 
-                // 规格与备注
-                // 规格
-                item.specification?.let {
-                    specificationTextView.text = it
-                    specificationContainer.visibility = View.VISIBLE
-                } ?: run {
-                    specificationContainer.visibility = View.GONE
-                }
-                
-                // 备注
-                item.customNote?.let {
-                    customNoteTextView.text = it
-                    // 如果备注较长，显示展开按钮
-                    if (it.length > 200) {
-                        customNoteTextView.maxLines = 5
-                        expandButton.visibility = View.VISIBLE
-                    } else {
-                        customNoteTextView.maxLines = Integer.MAX_VALUE
-                        expandButton.visibility = View.GONE
-                    }
-                    customNoteTextView.visibility = View.VISIBLE
-                } ?: run {
-                    customNoteTextView.visibility = View.GONE
-                    expandButton.visibility = View.GONE
-                }
+                // 价格信息
+                priceTextView.text = "${formatNumber(item.price ?: 0.0)} ${item.priceUnit ?: "元"}"
+                totalPriceTextView.text = "${formatNumber(item.totalPrice ?: 0.0)} ${item.totalPriceUnit ?: "元"}"
 
-                // 照片
-                if (item.photos.isNotEmpty()) {
-                    photoAdapter.submitList(item.photos.map { com.example.itemmanagement.data.entity.PhotoEntity(uri = it.uri, itemId = item.id) })
-                    photoContainer.visibility = View.VISIBLE
-                    
-                    // 设置照片指示器
-                    setupPhotoIndicators(item.photos.size)
-                } else {
-                    photoContainer.visibility = View.GONE
+                // 标签 - 转换domain模型为Entity模型
+                // 更新标签显示 - 使用动态创建的 Chip
+                setupTagChips(item.tags)
+
+                // 日期信息
+                addDateTextView.text = item.addDate?.let { dateFormat.format(it) } ?: "未设置"
+                purchaseDateTextView.text = item.purchaseDate?.let { dateFormat.format(it) } ?: "未设置"
+                productionDateTextView.text = item.productionDate?.let { dateFormat.format(it) } ?: "未设置"
+                openDateTextView.text = item.openDate?.let { dateFormat.format(it) } ?: "未设置"
+                expirationDateTextView.text = item.expirationDate?.let { dateFormat.format(it) } ?: "未设置"
+                warrantyEndDateTextView.text = item.warrantyEndDate?.let { dateFormat.format(it) } ?: "未设置"
+
+                // 详细信息
+                brandTextView.text = item.brand ?: "未设置"
+                capacityTextView.text = buildCapacityString(item.capacity, item.capacityUnit)
+                seasonTextView.text = item.season ?: "未设置"
+                purchaseChannelTextView.text = item.purchaseChannel ?: "未设置"
+                storeNameTextView.text = item.storeName ?: "未设置"
+                serialNumberTextView.text = item.serialNumber ?: "未设置"
+                shelfLifeTextView.text = buildShelfLifeString(item.shelfLife)
+                warrantyTextView.text = buildWarrantyString(item.warrantyPeriod)
+                specificationTextView.text = item.specification ?: "未设置"
+                customNoteTextView.text = item.customNote ?: "无备注"
+
+                // 照片 - 转换domain模型为Entity模型
+                val photoEntities = item.photos.map { photo ->
+                    com.example.itemmanagement.data.entity.PhotoEntity(
+                        id = photo.id,
+                        itemId = item.id,
+                        uri = photo.uri,
+                        isMain = photo.isMain,
+                        displayOrder = 0
+                    )
                 }
-                
-                // 根据内容决定卡片的可见性
-                updateCardVisibility()
+                photoAdapter.submitList(photoEntities)
+                updatePhotoIndicator(photoEntities.size)
+
+                // 状态标签
+                updateStatusTag(item)
+
+                // 保修进度条
+                updateWarrantyProgress(item)
+
+                // 备注展开按钮显示控制
+                updateNoteExpandButton(item.customNote)
+
+                // 卡片可见性控制
+                updateCardVisibility(item)
             }
         }
     }
-    
-    private fun updateCardVisibility() {
-        // 关键信息卡片：如果有数量、位置、评分、分类、标签或开封状态，则显示
-        val hasKeyInfo = binding.quantityTextView.visibility == View.VISIBLE ||
-                binding.locationContainer.visibility == View.VISIBLE ||
-                binding.ratingContainer.visibility == View.VISIBLE ||
-                binding.categoryTextView.visibility == View.VISIBLE ||
-                binding.openStatusContainer.visibility == View.VISIBLE ||
-                binding.shelfLifeContainer.visibility == View.VISIBLE ||
-                binding.tagsRecyclerView.adapter?.itemCount ?: 0 > 0
-        
-        binding.keyInfoCard.visibility = if (hasKeyInfo) View.VISIBLE else View.GONE
-        
-        // 物品状态卡片：如果有保质期、保修期、季节、开封状态、评分或标签，则显示
-        val hasStatusInfo = binding.shelfLifeContainer.visibility == View.VISIBLE ||
-                binding.warrantyContainer.visibility == View.VISIBLE ||
-                binding.seasonContainer.visibility == View.VISIBLE ||
-                binding.openStatusContainer.visibility == View.VISIBLE ||
-                binding.ratingContainer.visibility == View.VISIBLE ||
-                binding.tagsContainer.visibility == View.VISIBLE
-        
-        binding.keyInfoCard2.visibility = if (hasStatusInfo) View.VISIBLE else View.GONE
-        
-        // 状态与日期卡片：如果有任何日期信息，则显示
-        val hasDateInfo = binding.expirationDateContainer.visibility == View.VISIBLE ||
-                binding.productionDateContainer.visibility == View.VISIBLE ||
-                binding.purchaseDateContainer.visibility == View.VISIBLE ||
-                binding.openDateContainer.visibility == View.VISIBLE ||
-                binding.warrantyEndContainer.visibility == View.VISIBLE
-        
-        binding.dateCard.visibility = if (hasDateInfo) View.VISIBLE else View.GONE
-        
-        // 商业信息卡片：如果有品牌、价格、购买渠道等信息，则显示
-        val hasCommercialInfo = binding.brandContainer.visibility == View.VISIBLE ||
-                binding.priceContainer.visibility == View.VISIBLE ||
-                binding.totalPriceContainer.visibility == View.VISIBLE ||
-                binding.purchaseChannelContainer.visibility == View.VISIBLE ||
-                binding.storeNameContainer.visibility == View.VISIBLE ||
-                binding.serialNumberContainer.visibility == View.VISIBLE ||
-                binding.warrantyContainer.visibility == View.VISIBLE
-        
-        binding.commercialInfoCard.visibility = if (hasCommercialInfo) View.VISIBLE else View.GONE
-        
-        // 规格与备注卡片：如果有规格、容量、季节或备注信息，则显示
-        val hasSpecsOrNotes = binding.specificationContainer.visibility == View.VISIBLE ||
-                binding.capacityContainer.visibility == View.VISIBLE ||
-                binding.seasonContainer.visibility == View.VISIBLE ||
-                binding.customNoteTextView.visibility == View.VISIBLE
-        
-        binding.specsAndNotesCard.visibility = if (hasSpecsOrNotes) View.VISIBLE else View.GONE
-    }
-    
-    private fun setupExpirationStatus(expirationDate: Date) {
-        val today = Calendar.getInstance().time
-        val diffInDays = TimeUnit.DAYS.convert(
-            expirationDate.time - today.time,
-            TimeUnit.MILLISECONDS
-        )
-        
-        // 设置状态标签
-        binding.statusTagView.apply {
-            when {
-                diffInDays < 0 -> {
-                    text = "已过期"
-                    background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_status_error)
-                    visibility = View.VISIBLE
-                }
-                diffInDays < 7 -> {
-                    text = "即将过期"
-                    background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_status_error)
-                    visibility = View.VISIBLE
-                }
-                diffInDays < 30 -> {
-                    text = "临期"
-                    background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_status_warning)
-                    visibility = View.VISIBLE
-                }
-                else -> {
-                    visibility = View.GONE
-                }
-            }
-        }
-    }
-    
-    private fun setupWarrantyProgress(startDate: Date, endDate: Date) {
-        val today = Calendar.getInstance().time
-        val totalDays = TimeUnit.DAYS.convert(
-            endDate.time - startDate.time,
-            TimeUnit.MILLISECONDS
-        )
-        val passedDays = TimeUnit.DAYS.convert(
-            today.time - startDate.time,
-            TimeUnit.MILLISECONDS
-        )
-        
-        binding.warrantyProgressBar.apply {
-            if (totalDays > 0) {
-                progress = ((passedDays.toFloat() / totalDays) * 100).toInt().coerceIn(0, 100)
-                visibility = View.VISIBLE
+
+    private fun setupCategoryChips(category: String?, subCategory: String?) {
+        binding.apply {
+            // 主分类Chip
+            if (!category.isNullOrBlank()) {
+                categoryChip.text = category
+                categoryChip.visibility = View.VISIBLE
             } else {
-                visibility = View.GONE
+                categoryChip.visibility = View.GONE
+            }
+
+            // 子分类Chip
+            if (!subCategory.isNullOrBlank()) {
+                subCategoryChip.text = subCategory
+                subCategoryChip.visibility = View.VISIBLE
+            } else {
+                subCategoryChip.visibility = View.GONE
             }
         }
     }
-    
-    private fun setupPhotoIndicators(count: Int) {
+
+    private fun getOpenStatusText(openStatus: OpenStatus?): String {
+        return when (openStatus) {
+            OpenStatus.UNOPENED -> "未开封"
+            OpenStatus.OPENED -> "已开封"
+            null -> "未设置"
+        }
+    }
+
+    private fun buildCapacityString(capacity: Double?, unit: String?): String {
+        return if (capacity != null) {
+            "${formatNumber(capacity)} ${unit ?: ""}"
+        } else {
+            "未设置"
+        }
+    }
+
+    private fun buildShelfLifeString(shelfLife: Int?): String {
+        return if (shelfLife != null && shelfLife > 0) {
+            "${shelfLife}个月"
+        } else {
+            "未设置"
+        }
+    }
+
+    private fun buildWarrantyString(warrantyPeriod: Int?): String {
+        return if (warrantyPeriod != null && warrantyPeriod > 0) {
+            "${warrantyPeriod}个月"
+        } else {
+            "未设置"
+        }
+    }
+
+    private fun updatePhotoIndicator(photoCount: Int) {
         binding.photoIndicator.removeAllViews()
         
-        if (count <= 1) {
-            binding.photoIndicator.visibility = View.GONE
-            return
-        }
-        
-        binding.photoIndicator.visibility = View.VISIBLE
-        
-        for (i in 0 until count) {
-            val dot = TextView(requireContext())
-            dot.layoutParams = ViewGroup.LayoutParams(
-                resources.getDimensionPixelSize(R.dimen.detail_indicator_diameter),
-                resources.getDimensionPixelSize(R.dimen.detail_indicator_diameter)
-            )
-            dot.background = ContextCompat.getDrawable(requireContext(), R.drawable.dot_indicator)
-            dot.isSelected = i == 0
-            
-            val layoutParams = ViewGroup.MarginLayoutParams(
-                resources.getDimensionPixelSize(R.dimen.detail_indicator_diameter),
-                resources.getDimensionPixelSize(R.dimen.detail_indicator_diameter)
-            )
-            layoutParams.setMargins(
-                resources.getDimensionPixelSize(R.dimen.detail_indicator_spacing),
-                0,
-                resources.getDimensionPixelSize(R.dimen.detail_indicator_spacing),
-                0
-            )
-            dot.layoutParams = layoutParams
-            
+        for (i in 0 until photoCount) {
+            val dot = View(context).apply {
+                layoutParams = LinearLayout.LayoutParams(16, 16).apply {
+                    setMargins(4, 0, 4, 0)
+                }
+                setBackgroundColor(
+                    if (i == 0) ContextCompat.getColor(requireContext(), android.R.color.white)
+                    else ContextCompat.getColor(requireContext(), android.R.color.darker_gray)
+                )
+            }
             binding.photoIndicator.addView(dot)
         }
-        
-        // 设置ViewPager的页面变化监听器
-        binding.photoViewPager.registerOnPageChangeCallback(object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                // 更新指示器状态
-                for (i in 0 until binding.photoIndicator.childCount) {
-                    binding.photoIndicator.getChildAt(i).isSelected = i == position
+    }
+
+    private fun updateStatusTag(item: com.example.itemmanagement.data.model.Item) {
+        val statusText = calculateItemStatus(item)
+        if (statusText != null) {
+            binding.statusTagView.apply {
+                text = statusText
+                visibility = View.VISIBLE
+                // 根据状态设置Material Design 3颜色
+                when (statusText) {
+                    "过期" -> {
+                        chipBackgroundColor = ContextCompat.getColorStateList(requireContext(), android.R.color.holo_red_light)
+                        setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+                    }
+                    "临期" -> {
+                        chipBackgroundColor = ContextCompat.getColorStateList(requireContext(), android.R.color.holo_orange_light)
+                        setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+                    }
+                    else -> {
+                        chipBackgroundColor = ContextCompat.getColorStateList(requireContext(), android.R.color.holo_blue_light)
+                        setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+                    }
                 }
             }
-        })
-    }
-    
-    private fun setCategoryTag(textView: TextView, text: String, color: Int) {
-        textView.text = text
-        textView.background.setTint(color)
-    }
-    
-    private fun getCategoryColor(category: String, isSubCategory: Boolean = false): Int {
-        val baseColorId = when (category.lowercase()) {
-            "食品" -> R.color.category_food
-            "药品" -> R.color.category_medicine
-            "电子产品" -> R.color.category_electronics
-            "衣物" -> R.color.category_clothing
-            else -> R.color.category_other
-        }
-        
-        return if (isSubCategory) {
-            // 子分类颜色略深一点
-            ContextCompat.getColor(requireContext(), baseColorId)
         } else {
-            ContextCompat.getColor(requireContext(), baseColorId)
+            binding.statusTagView.visibility = View.GONE
         }
     }
-    
-    private fun getStatusText(status: String): String {
-        return when (status) {
-            "IN_STOCK" -> "在库"
-            "OUT_OF_STOCK" -> "缺货"
-            "EXPIRED" -> "过期"
-            "CONSUMED" -> "已消耗"
-            "LENT" -> "已借出"
-            "LOST" -> "丢失"
-            "DAMAGED" -> "损坏"
-            else -> status
+
+    private fun calculateItemStatus(item: com.example.itemmanagement.data.model.Item): String? {
+        val expirationDate = item.expirationDate ?: return null
+        val now = Date()
+        val diffInMillis = expirationDate.time - now.time
+        val diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis)
+
+        return when {
+            diffInDays < 0 -> "过期"
+            diffInDays <= 7 -> "临期"
+            diffInDays <= 30 -> "即将过期"
+            else -> null
+        }
+    }
+
+    private fun updateWarrantyProgress(item: com.example.itemmanagement.data.model.Item) {
+        val warrantyEndDate = item.warrantyEndDate
+        val addDate = item.addDate
+
+        if (warrantyEndDate != null && addDate != null) {
+            val now = Date()
+            val totalWarranty = warrantyEndDate.time - addDate.time
+            val usedWarranty = now.time - addDate.time
+            val progress = ((usedWarranty.toFloat() / totalWarranty.toFloat()) * 100).toInt()
+
+            // 保修进度条已在M3样式更新中移除
+            // binding.warrantyProgressBar.progress = progress.coerceIn(0, 100)
+            // binding.warrantyProgressContainer.visibility = View.VISIBLE
+        } else {
+            // binding.warrantyProgressContainer.visibility = View.GONE
+        }
+    }
+
+    private fun updateNoteExpandButton(customNote: String?) {
+        if (customNote != null && customNote.length > 100) {
+            binding.expandButton.visibility = View.VISIBLE
+            binding.customNoteTextView.maxLines = 5
+        } else {
+            binding.expandButton.visibility = View.GONE
+            binding.customNoteTextView.maxLines = Int.MAX_VALUE
+        }
+    }
+
+    private fun updateCardVisibility(item: com.example.itemmanagement.data.model.Item) {
+        binding.apply {
+            // 基本信息卡片 - 总是显示
+            basicInfoCard.visibility = View.VISIBLE
+            
+            // 状态卡片
+            statusCard.visibility = if (item.rating != null || item.tags.isNotEmpty() || 
+                                       item.shelfLife != null || item.warrantyPeriod != null ||
+                                       item.season != null || item.openStatus != null) View.VISIBLE else View.GONE
+            
+            // 日期信息卡片
+            dateCard.visibility = if (item.addDate != null || item.purchaseDate != null || 
+                                     item.productionDate != null || item.expirationDate != null || 
+                                     item.warrantyEndDate != null) View.VISIBLE else View.GONE
+            
+            // 商业信息卡片
+            commercialCard.visibility = if (item.brand != null || item.purchaseChannel != null || 
+                                           item.storeName != null || item.serialNumber != null ||
+                                           item.specification != null) View.VISIBLE else View.GONE
+
+            // 备注卡片
+            noteCard.visibility = if (item.customNote != null) View.VISIBLE else View.GONE
+
+            // 具体字段的可见性 - 基本信息卡片
+            capacityContainer.visibility = if (item.capacity != null) View.VISIBLE else View.GONE
+            priceContainer.visibility = if (item.price != null) View.VISIBLE else View.GONE
+            totalPriceContainer.visibility = if (item.totalPrice != null) View.VISIBLE else View.GONE
+            categoryContainer.visibility = if (item.category != null || item.subCategory != null) View.VISIBLE else View.GONE
+            locationContainer.visibility = if (item.location != null) View.VISIBLE else View.GONE
+            
+            // 状态卡片字段
+            shelfLifeContainer.visibility = if (item.shelfLife != null && item.shelfLife > 0) View.VISIBLE else View.GONE
+            warrantyContainer.visibility = if (item.warrantyPeriod != null && item.warrantyPeriod > 0) View.VISIBLE else View.GONE
+            seasonContainer.visibility = if (item.season != null) View.VISIBLE else View.GONE
+            openStatusContainer.visibility = if (item.openStatus != null) View.VISIBLE else View.GONE
+            ratingContainer.visibility = if (item.rating != null) View.VISIBLE else View.GONE
+            tagsContainer.visibility = if (item.tags.isNotEmpty()) View.VISIBLE else View.GONE
+            
+            // 日期信息卡片字段
+            purchaseDateContainer.visibility = if (item.purchaseDate != null) View.VISIBLE else View.GONE
+            productionDateContainer.visibility = if (item.productionDate != null) View.VISIBLE else View.GONE
+            openDateContainer.visibility = if (item.openDate != null) View.VISIBLE else View.GONE
+            expirationDateContainer.visibility = if (item.expirationDate != null) View.VISIBLE else View.GONE
+            warrantyEndContainer.visibility = if (item.warrantyEndDate != null) View.VISIBLE else View.GONE
+            
+            // 商业信息卡片字段
+            brandContainer.visibility = if (item.brand != null) View.VISIBLE else View.GONE
+            purchaseChannelContainer.visibility = if (item.purchaseChannel != null) View.VISIBLE else View.GONE
+            storeNameContainer.visibility = if (item.storeName != null) View.VISIBLE else View.GONE
+            serialNumberContainer.visibility = if (item.serialNumber != null) View.VISIBLE else View.GONE
+            specificationContainer.visibility = if (item.specification != null) View.VISIBLE else View.GONE
         }
     }
 
@@ -600,13 +485,307 @@ class ItemDetailFragment : Fragment() {
     }
 
     /**
-     * 格式化数字，如果是整数则不显示小数点，如果有小数则保留小数
+     * 设置标签Chips - 与分类Chip保持完全一致的样式
      */
+    private fun setupTagChips(tags: List<com.example.itemmanagement.data.model.Tag>) {
+        val tagsLayout = binding.root.findViewById<LinearLayout>(R.id.tagsLinearLayout)
+        tagsLayout.removeAllViews()
+        
+        tags.forEachIndexed { index, tag ->
+            val chip = com.google.android.material.chip.Chip(requireContext())
+            chip.text = tag.name
+            
+            // 🎯 统一交互设置 - 与分类chip一致（启用点击）
+            chip.isClickable = true
+            chip.isFocusable = true
+            chip.isCheckable = false
+            
+            // 🎨 动态M3样式 - 基于标签内容生成不同背景色，文字色保持统一
+            val backgroundColor = getTagBackgroundColor(tag.name)
+            chip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(backgroundColor)
+            
+            // 文字色与分类chip保持一致
+            val typedValue = android.util.TypedValue()
+            val theme = requireContext().theme
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOnSecondaryContainer, typedValue, true)
+            chip.setTextColor(typedValue.data)
+            
+            chip.chipStrokeWidth = 0f
+            chip.isCloseIconVisible = false
+            chip.textSize = 12f // 统一文字大小为12sp
+            
+            // 📐 统一边距设置 - 与分类chip一致的负边距处理
+            val layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            
+            // 右边距：最后一个chip不需要右边距，其他chip设置8dp右边距
+            val rightMargin = if (index == tags.size - 1) 0 else 8.dpToPx()
+            layoutParams.setMargins(0, -4.dpToPx(), rightMargin, -4.dpToPx())
+            chip.layoutParams = layoutParams
+            
+            // 🖱️ 添加点击事件 - 提供触觉反馈
+            chip.setOnClickListener {
+                // 触觉反馈
+                chip.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+                // 可以在这里添加其他点击逻辑，比如显示标签详情等
+            }
+            
+            tagsLayout.addView(chip)
+        }
+    }
+    
+    /**
+     * 根据标签名称生成背景色
+     * 🎨 使用Material Design 3兼容的浅色调色板，文字色统一使用主题色
+     */
+    private fun getTagBackgroundColor(tagName: String): Int {
+        // M3 兼容背景色调色板 - 精心挑选的柔和浅色，确保与统一文字色有良好对比度
+        val backgroundColors = listOf(
+            android.graphics.Color.parseColor("#E3F2FD"), // 🔵 浅蓝 - 专业、可信
+            android.graphics.Color.parseColor("#E8F5E8"), // 🟢 浅绿 - 自然、健康
+            android.graphics.Color.parseColor("#FFF3E0"), // 🟠 浅橙 - 活力、温暖
+            android.graphics.Color.parseColor("#F3E5F5"), // 🟣 浅紫 - 优雅、创意
+            android.graphics.Color.parseColor("#FFEBEE"), // 🔴 浅红 - 重要、紧急
+            android.graphics.Color.parseColor("#FFFDE7"), // 🟡 浅黄 - 明亮、注意
+            android.graphics.Color.parseColor("#E0F2F1"), // 🩵 浅青 - 清新、冷静
+            android.graphics.Color.parseColor("#FCE4EC"), // 🩷 浅粉 - 温柔、可爱
+            android.graphics.Color.parseColor("#EFEBE9"), // 🤎 浅棕 - 稳重、自然
+            android.graphics.Color.parseColor("#F5F5F5")  // 🩶 浅灰 - 中性、平衡
+        )
+        
+        // 🎯 使用标签名称的哈希值来选择颜色，确保同样的标签总是同样的颜色
+        val hashCode = tagName.hashCode()
+        val colorIndex = kotlin.math.abs(hashCode) % backgroundColors.size
+        
+        return backgroundColors[colorIndex]
+    }
+
+    /**
+     * dp转px的扩展函数
+     */
+    private fun Int.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
+
     private fun formatNumber(number: Double): String {
         return if (number == number.toInt().toDouble()) {
             number.toInt().toString()
         } else {
-            number.toString()
+            String.format(Locale.getDefault(), "%.2f", number)
         }
     }
-} 
+    
+    /**
+     * 更新来源信息卡片
+     */
+    private fun updateSourceInfoCard(shoppingDetail: com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity?) {
+        val sourceInfoCard = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(
+            R.id.sourceInfoCard
+        )
+        val sourceIcon = binding.root.findViewById<android.widget.ImageView>(
+            R.id.sourceIcon
+        )
+        val sourceTypeTextView = binding.root.findViewById<TextView>(R.id.sourceTypeTextView)
+        val expandIcon = binding.root.findViewById<android.widget.ImageView>(
+            R.id.expandIcon
+        )
+        val shoppingDetailsContainer = binding.root.findViewById<LinearLayout>(R.id.shoppingDetailsContainer)
+        
+        if (shoppingDetail != null) {
+            // 来自购物清单转入
+            android.util.Log.d("ItemDetailFragment", "✅ 物品来自购物清单转入")
+            sourceTypeTextView?.text = "来自购物清单转入"
+            sourceIcon?.setImageResource(R.drawable.ic_shopping)
+            expandIcon?.visibility = View.VISIBLE
+            sourceInfoCard?.isClickable = true
+            sourceInfoCard?.isFocusable = true
+            sourceInfoCard?.visibility = View.VISIBLE
+            
+            // 填充购物详情数据
+            updateShoppingDetailsCard(shoppingDetail)
+        } else {
+            // ⭐ 手动添加的物品，隐藏整个来源信息卡片
+            android.util.Log.d("ItemDetailFragment", "📝 物品为手动添加，隐藏来源信息卡片")
+            sourceInfoCard?.visibility = View.GONE
+        }
+    }
+    
+    /**
+     * 更新购物详情卡片的数据
+     */
+    private fun updateShoppingDetailsCard(shoppingDetail: com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity) {
+        // 预估价格
+        val estimatedPriceTextView = binding.root.findViewById<TextView>(R.id.estimatedPriceTextView)
+        estimatedPriceTextView?.text = "¥${formatNumber(shoppingDetail.estimatedPrice ?: 0.0)}"
+        
+        // 商店
+        val storeTextView = binding.root.findViewById<TextView>(R.id.storeTextView)
+        storeTextView?.text = shoppingDetail.storeName ?: "未设置"
+        
+        // 优先级
+        val priorityTextView = binding.root.findViewById<TextView>(R.id.priorityTextView)
+        priorityTextView?.text = when(shoppingDetail.priority) {
+            com.example.itemmanagement.data.entity.ShoppingItemPriority.CRITICAL -> "关键"
+            com.example.itemmanagement.data.entity.ShoppingItemPriority.HIGH -> "重要"
+            com.example.itemmanagement.data.entity.ShoppingItemPriority.NORMAL -> "一般"
+            com.example.itemmanagement.data.entity.ShoppingItemPriority.LOW -> "次要"
+            else -> "未设置"
+        }
+        
+        // 紧急程度
+        val urgencyTextView = binding.root.findViewById<TextView>(R.id.urgencyTextView)
+        urgencyTextView?.text = when(shoppingDetail.urgencyLevel) {
+            com.example.itemmanagement.data.entity.UrgencyLevel.URGENT -> "紧急"
+            com.example.itemmanagement.data.entity.UrgencyLevel.NORMAL -> "普通"
+            com.example.itemmanagement.data.entity.UrgencyLevel.NOT_URGENT -> "不紧急"
+            else -> "未设置"
+        }
+        
+        // 购买状态
+        val purchaseStatusTextView = binding.root.findViewById<TextView>(R.id.purchaseStatusTextView)
+        purchaseStatusTextView?.text = if (shoppingDetail.isPurchased) "已购买" else "未购买"
+        
+        // 购物备注（如果有）
+        val shoppingNoteCard = binding.root.findViewById<com.google.android.material.card.MaterialCardView>(
+            R.id.shoppingNoteCard
+        )
+        val shoppingNoteTextView = binding.root.findViewById<TextView>(R.id.shoppingNoteTextView)
+        
+        // 注意：购物备注应该从 UnifiedItemEntity 的 customNote 获取
+        // 但这里我们在购物详情展开区域，可以显示购物时记录的备注
+        // 实际上购物清单没有单独的备注字段，都使用 customNote
+        shoppingNoteCard?.visibility = View.GONE // 隐藏备注卡片，因为已在主备注卡片显示
+    }
+    
+    /**
+     * 更新来源信息的价格跟踪卡片
+     */
+    private fun updateSourcePriceTracking(records: List<com.example.itemmanagement.data.entity.PriceRecord>) {
+        val priceTrackingCard = binding.root.findViewById<View>(R.id.sourcePriceTrackingCardInclude) ?: return
+        
+        val emptyChartText = priceTrackingCard.findViewById<TextView>(R.id.emptyChartText)
+        val chartContainer = priceTrackingCard.findViewById<FrameLayout>(R.id.chartContainer)
+        val statsLayout = priceTrackingCard.findViewById<LinearLayout>(R.id.statsLayout)
+        val recentRecordsLayout = priceTrackingCard.findViewById<LinearLayout>(R.id.recentRecordsLayout)
+        val recordCountText = priceTrackingCard.findViewById<TextView>(R.id.recordCountText)
+        val maxPriceText = priceTrackingCard.findViewById<TextView>(R.id.maxPriceText)
+        val avgPriceText = priceTrackingCard.findViewById<TextView>(R.id.avgPriceText)
+        val minPriceText = priceTrackingCard.findViewById<TextView>(R.id.minPriceText)
+        val recentRecordsRecyclerView = priceTrackingCard.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recentRecordsRecyclerView)
+        val btnShowAllRecords = priceTrackingCard.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnShowAllRecords)
+        
+        // 初始化适配器（如果还没初始化）
+        if (!::sourcePriceRecordAdapter.isInitialized) {
+            sourcePriceRecordAdapter = PriceRecordAdapter(
+                onDeleteClick = { /* 来源信息中的价格记录不允许删除 */ }
+            )
+            recentRecordsRecyclerView?.apply {
+                layoutManager = LinearLayoutManager(context)
+                adapter = sourcePriceRecordAdapter
+            }
+        }
+        
+        recordCountText?.text = "(${records.size}条)"
+        
+        if (records.isEmpty()) {
+            // 空状态
+            emptyChartText?.visibility = View.VISIBLE
+            chartContainer?.visibility = View.GONE
+            statsLayout?.visibility = View.GONE
+            recentRecordsLayout?.visibility = View.GONE
+        } else {
+            // 有数据状态
+            emptyChartText?.visibility = View.GONE
+            chartContainer?.visibility = View.VISIBLE
+            statsLayout?.visibility = View.VISIBLE
+            recentRecordsLayout?.visibility = View.VISIBLE
+            
+            // 更新统计
+            val maxPrice = records.maxOfOrNull { it.price } ?: 0.0
+            val minPrice = records.minOfOrNull { it.price } ?: 0.0
+            val avgPrice = records.map { it.price }.average()
+            
+            maxPriceText?.text = "¥${maxPrice.toInt()}"
+            avgPriceText?.text = "¥${avgPrice.toInt()}"
+            minPriceText?.text = "¥${minPrice.toInt()}"
+            
+            // 显示记录
+            val displayRecords = if (isShowingAllSourceRecords) records else records.take(3)
+            sourcePriceRecordAdapter.submitList(displayRecords, records.size)
+            
+            // 控制展示全部按钮
+            if (records.size > 3) {
+                btnShowAllRecords?.visibility = View.VISIBLE
+                btnShowAllRecords?.text = if (isShowingAllSourceRecords) "收起" else "展示全部 (${records.size})"
+            } else {
+                btnShowAllRecords?.visibility = View.GONE
+            }
+            
+            // 更新折线图
+            updateSourcePriceChart(priceTrackingCard, records)
+        }
+        
+        // 展示全部/收起按钮
+        btnShowAllRecords?.setOnClickListener {
+            isShowingAllSourceRecords = !isShowingAllSourceRecords
+            val displayRecords = if (isShowingAllSourceRecords) records else records.take(3)
+            sourcePriceRecordAdapter.submitList(displayRecords, records.size)
+            btnShowAllRecords.text = if (isShowingAllSourceRecords) "收起" else "展示全部 (${records.size})"
+        }
+    }
+    
+    /**
+     * 更新价格折线图
+     */
+    private fun updateSourcePriceChart(priceTrackingCard: View, records: List<com.example.itemmanagement.data.entity.PriceRecord>) {
+        val chartContainer = priceTrackingCard.findViewById<FrameLayout>(R.id.chartContainer) ?: return
+        
+        // 按日期排序
+        val sortedRecords = records.sortedBy { it.recordDate }
+        
+        // 准备图表数据
+        val priceData = sortedRecords.map { it.price as Any }.toTypedArray()
+        val dateFormat = SimpleDateFormat("MM-dd", Locale.getDefault())
+        val dateCategories = sortedRecords.map { dateFormat.format(it.recordDate) }.toTypedArray()
+        
+        // 配置图表模型
+        val chartModel = AAChartModel()
+            .chartType(AAChartType.Line)
+            .animationType(AAChartAnimationType.EaseInCubic)
+            .animationDuration(800)
+            .backgroundColor("#FFFFFF")
+            .dataLabelsEnabled(false)
+            .legendEnabled(false)
+            .categories(dateCategories)
+            .yAxisTitle("")
+            .series(
+                arrayOf(
+                    AASeriesElement()
+                        .name("价格")
+                        .data(priceData)
+                        .color("#1976D2")
+                        .lineWidth(3f)
+                )
+            )
+        
+        // 查找或创建图表视图
+        var chartView = chartContainer.findViewWithTag<AAChartView>("chartView")
+        if (chartView == null) {
+            chartView = AAChartView(requireContext())
+            chartView.tag = "chartView"
+            chartContainer.removeAllViews()
+            chartContainer.addView(
+                chartView,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        
+        // 绘制图表
+        chartView.aa_drawChartWithChartModel(chartModel)
+    }
+}

@@ -1,16 +1,22 @@
 package com.example.itemmanagement.ui.add
 
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.WarrantyRepository
 import com.example.itemmanagement.data.entity.LocationEntity
 import com.example.itemmanagement.data.entity.PhotoEntity
 import com.example.itemmanagement.data.entity.TagEntity
 import com.example.itemmanagement.data.entity.WarrantyEntity
 import com.example.itemmanagement.data.entity.WarrantyStatus
+import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
+import com.example.itemmanagement.data.entity.unified.InventoryDetailEntity
+import com.example.itemmanagement.data.entity.unified.ItemStateType
+import kotlinx.coroutines.flow.first
 import com.example.itemmanagement.data.mapper.toItemEntity
 import com.example.itemmanagement.data.mapper.toLocationEntity
 import com.example.itemmanagement.data.mapper.toItem
+import com.example.itemmanagement.data.model.ItemStatus
+import com.example.itemmanagement.data.model.OpenStatus
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.ui.common.FieldProperties
 import com.example.itemmanagement.ui.common.ValidationType  
@@ -29,10 +35,15 @@ import android.util.Log
  * 使用独立的缓存空间，确保与编辑模式的数据完全隔离。
  */
 class AddItemViewModel(
-    repository: ItemRepository,
+    repository: UnifiedItemRepository,
     cacheViewModel: ItemStateCacheViewModel,
     private val warrantyRepository: WarrantyRepository? = null  // 保修仓库（可选，保持向后兼容）
 ) : BaseItemViewModel(repository, cacheViewModel) {
+
+    // 来源信息（用于转入流程）
+    private var sourceType: String? = null
+    private var sourceItemId: Long? = null
+    private var sourceShoppingDetail: com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity? = null
 
     init {
         Log.d("AddItemViewModel", "=== 初始化添加ViewModel ===")
@@ -51,6 +62,170 @@ class AddItemViewModel(
         }
         
         Log.d("AddItemViewModel", "添加ViewModel初始化完成，当前fieldValues: $fieldValues")
+    }
+
+    /**
+     * 从购物清单加载物品数据（用于转入库存流程）
+     */
+    fun loadFromShoppingList(shoppingItemId: Long) {
+        viewModelScope.launch {
+            try {
+                Log.d("AddItemViewModel", "开始从购物清单加载物品: itemId=$shoppingItemId")
+                
+                // 记录来源信息
+                sourceType = "SHOPPING_LIST"
+                sourceItemId = shoppingItemId
+                
+                // ⭐ 使用 Repository 的公共方法查询完整购物物品
+                Log.d("AddItemViewModel", "通过 Repository 查询完整购物物品...")
+                
+                val item = repository.getCompleteShoppingItem(shoppingItemId)
+                
+                if (item == null) {
+                    Log.e("AddItemViewModel", "❌ 未找到购物物品: itemId=$shoppingItemId")
+                    _errorMessage.value = "未找到购物物品"
+                    return@launch
+                }
+                
+                Log.d("AddItemViewModel", "✓ 成功获取购物物品:")
+                Log.d("AddItemViewModel", "  - 名称: ${item.name}")
+                Log.d("AddItemViewModel", "  - 数量: ${item.quantity} ${item.unit}")
+                Log.d("AddItemViewModel", "  - 照片: ${item.photos.size} 张")
+                Log.d("AddItemViewModel", "  - 标签: ${item.tags.size} 个")
+                Log.d("AddItemViewModel", "  - 购物详情: ${if (item.shoppingDetail != null) "存在" else "不存在"}")
+                
+                // 加载物品数据
+                loadItemData(item)
+                
+                
+            } catch (e: Exception) {
+                Log.e("AddItemViewModel", "加载购物物品失败", e)
+                _errorMessage.value = "加载失败: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * 加载物品数据到字段（提取为独立方法以便复用）
+     */
+    private fun loadItemData(item: Item) {
+        val shoppingDetail = item.shoppingDetail
+        if (shoppingDetail == null) {
+            Log.e("AddItemViewModel", "购物详情为空: itemId=${item.id}")
+            _errorMessage.value = "购物详情为空"
+            return
+        }
+        
+        // 保存购物详情，用于后续转换
+        sourceShoppingDetail = shoppingDetail
+        
+        Log.d("AddItemViewModel", "开始预填充字段...")
+        
+        // 预填充基础信息
+        fieldValues["名称"] = item.name
+        Log.d("AddItemViewModel", "  ✓ 名称 = ${item.name}")
+        
+        fieldValues["分类"] = item.category
+        Log.d("AddItemViewModel", "  ✓ 分类 = ${item.category}")
+        
+        item.subCategory?.let { 
+            fieldValues["子分类"] = it 
+            Log.d("AddItemViewModel", "  ✓ 子分类 = $it")
+        }
+        item.brand?.let { 
+            fieldValues["品牌"] = it 
+            Log.d("AddItemViewModel", "  ✓ 品牌 = $it")
+        }
+        item.specification?.let { 
+            fieldValues["规格"] = it 
+            Log.d("AddItemViewModel", "  ✓ 规格 = $it")
+        }
+        item.customNote?.let { 
+            fieldValues["备注"] = it 
+            Log.d("AddItemViewModel", "  ✓ 备注 = $it")
+        }
+        
+        // 预填充数量和单位
+        fieldValues["数量"] = shoppingDetail.quantity.toString()
+        fieldValues["数量_unit"] = shoppingDetail.quantityUnit
+        Log.d("AddItemViewModel", "  ✓ 数量 = ${shoppingDetail.quantity} ${shoppingDetail.quantityUnit}")
+        
+        // 预填充价格信息（优先使用实际价格，否则使用预估价格）
+        val price = shoppingDetail.actualPrice ?: shoppingDetail.estimatedPrice
+        val priceUnit = if (shoppingDetail.actualPrice != null) {
+            shoppingDetail.actualPriceUnit
+        } else {
+            shoppingDetail.estimatedPriceUnit
+        }
+        price?.let {
+            fieldValues["单价"] = it.toString()
+            fieldValues["单价_unit"] = priceUnit
+            Log.d("AddItemViewModel", "  ✓ 单价 = $it $priceUnit")
+        }
+        
+        // 预填充其他字段
+        shoppingDetail.storeName?.let { 
+            fieldValues["商家名称"] = it 
+            Log.d("AddItemViewModel", "  ✓ 商家名称 = $it")
+        }
+        item.capacity?.let { 
+            fieldValues["容量"] = it.toString() 
+            Log.d("AddItemViewModel", "  ✓ 容量 = $it")
+        }
+        item.capacityUnit?.let { 
+            fieldValues["容量_unit"] = it 
+            Log.d("AddItemViewModel", "  ✓ 容量单位 = $it")
+        }
+        item.rating?.let { 
+            fieldValues["评分"] = it.toFloat() 
+            Log.d("AddItemViewModel", "  ✓ 评分 = $it")
+        }
+        item.season?.let { 
+            fieldValues["季节"] = it.split(",").toSet() 
+            Log.d("AddItemViewModel", "  ✓ 季节 = $it")
+        }
+        item.serialNumber?.let { 
+            fieldValues["序列号"] = it 
+            Log.d("AddItemViewModel", "  ✓ 序列号 = $it")
+        }
+        
+        // 加载照片
+        if (item.photos.isNotEmpty()) {
+            Log.d("AddItemViewModel", "开始加载 ${item.photos.size} 张照片...")
+            val photoUriList = item.photos.mapNotNull { photo ->
+                try {
+                    android.net.Uri.parse(photo.uri).also {
+                        Log.d("AddItemViewModel", "  ✓ 照片URI: ${photo.uri}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("AddItemViewModel", "  ✗ 解析照片URI失败: ${photo.uri}", e)
+                    null
+                }
+            }
+            _photoUris.value = photoUriList
+            Log.d("AddItemViewModel", "✅ 照片加载完成: ${photoUriList.size} 张")
+        } else {
+            Log.d("AddItemViewModel", "没有照片需要加载")
+        }
+        
+        // 加载标签
+        if (item.tags.isNotEmpty()) {
+            Log.d("AddItemViewModel", "开始加载 ${item.tags.size} 个标签...")
+            val tagsByCategory = item.tags.groupBy { "默认" }.mapValues { entry ->
+                entry.value.map { it.name }.toSet()
+            }
+            _selectedTags.value = tagsByCategory
+            Log.d("AddItemViewModel", "✅ 标签加载完成")
+        } else {
+            Log.d("AddItemViewModel", "没有标签需要加载")
+        }
+        
+        Log.d("AddItemViewModel", "✅ 预填充完成，字段数: ${fieldValues.size}")
+        
+        // 触发UI更新
+        Log.d("AddItemViewModel", "触发UI更新...")
+        _selectedFields.value = _selectedFields.value
+        Log.d("AddItemViewModel", "UI更新已触发")
     }
 
     // --- 实现抽象方法 ---
@@ -113,48 +288,63 @@ class AddItemViewModel(
         }
 
         try {
-            // 构建实体对象
-            val itemEntity = item.toItemEntity()
-            
-            // 准备位置实体
-            val locationEntity = item.location?.let { 
-                if (it.area != "未指定") it.toLocationEntity() else null
-            }
-            
-            // 准备照片实体
-            val photoEntities = mutableListOf<PhotoEntity>()
-            _photoUris.value?.forEachIndexed { index, uri ->
-                photoEntities.add(
-                    PhotoEntity(
-                        itemId = 0, // 新增模式，itemId会在DAO中被更新
-                        uri = uri.toString(),
-                        isMain = index == 0,
-                        displayOrder = index
-                    )
-                )
-            }
-            
-            // 准备标签实体
-            val tagEntities = mutableListOf<TagEntity>()
-            item.tags.forEach { tag ->
-                tagEntities.add(TagEntity(name = tag.name, color = tag.color))
-            }
-            
-            // 保存到数据库
-            val itemId = repository.insertItemWithDetails(itemEntity, locationEntity, photoEntities, tagEntities)
-            
-            if (itemId > 0) {
-                // 物品保存成功，检查是否需要同步保修信息
-                syncWarrantyInfoIfNeeded(itemId, item)
+            // 检查是否是从购物清单转入
+            if (sourceType == "SHOPPING_LIST" && sourceItemId != null && sourceItemId!! > 0 && sourceShoppingDetail != null) {
+                // 从购物清单转入库存
+                Log.d("AddItemViewModel", "从购物清单转入库存: itemId=$sourceItemId")
                 
-                _saveResult.value = true
-                _errorMessage.value = "物品添加成功"
+                // 构建更新后的 UnifiedItem（用户可能修改了部分字段）
+                val updatedUnifiedItem = buildUnifiedItemFromFields().copy(id = sourceItemId!!)
+                
+                // 更新 UnifiedItem
+                repository.updateUnifiedItem(updatedUnifiedItem)
+                
+                // 构建库存详情
+                val inventoryDetail = buildInventoryDetailFromFields().copy(itemId = sourceItemId!!)
+                
+                // 标记购物详情为已购买
+                val updatedShoppingDetail = sourceShoppingDetail!!.copy(
+                    isPurchased = true,
+                    purchaseDate = Date()
+                )
+                repository.updateShoppingDetail(updatedShoppingDetail)
+                
+                // 执行状态转换
+                repository.transferShoppingToInventory(
+                    itemId = sourceItemId!!,
+                    shoppingDetail = updatedShoppingDetail,
+                    inventoryDetail = inventoryDetail
+                )
+                
+                Log.d("AddItemViewModel", "购物清单转入成功")
             } else {
-                _errorMessage.value = "添加失败：数据库插入返回无效ID"
-                _saveResult.value = false
+                // 正常添加新物品
+                val unifiedItem = buildUnifiedItemFromFields()
+                val inventoryDetail = buildInventoryDetailFromFields()
+                
+                android.util.Log.d("AddItemViewModel", "🔧 构建完成的InventoryDetail: locationId=${inventoryDetail.locationId}")
+                
+                // 构建标签列表
+                val tags = buildTagsFromFields()
+                android.util.Log.d("AddItemViewModel", "🏷️ 构建的标签列表: ${tags.map { it.name }}")
+                
+                // 构建照片列表
+                val photos = buildPhotosFromUris()
+                android.util.Log.d("AddItemViewModel", "📸 构建的照片列表: ${photos.size}张")
+                
+                // 保存到数据库（使用新的统一架构）
+                repository.addInventoryItem(unifiedItem, inventoryDetail, tags, photos)
             }
+            
+            // 物品保存成功，检查是否需要同步保修信息
+            // TODO: 重构保修同步逻辑以适配新架构
+            // syncWarrantyInfoIfNeeded(itemId, item)
+            
+            _saveResult.value = true
+            _errorMessage.value = "物品添加成功"
             
         } catch (e: Exception) {
+            Log.e("AddItemViewModel", "保存失败", e)
             _errorMessage.value = e.message ?: "添加失败：未知错误"
             _saveResult.value = false
         }
@@ -163,7 +353,215 @@ class AddItemViewModel(
     // --- 私有辅助方法 ---
 
     /**
-     * 从字段值构建Item对象
+     * 从字段值构建UnifiedItemEntity对象
+     */
+    private fun buildUnifiedItemFromFields(): UnifiedItemEntity {
+        val name = (fieldValues["名称"] as? String)?.trim() ?: ""
+        val category = fieldValues["分类"] as? String ?: "未指定"
+        val subCategory = fieldValues["子分类"] as? String
+        val brand = fieldValues["品牌"] as? String
+        val specification = fieldValues["规格"] as? String
+        val customNote = fieldValues["备注"] as? String
+        
+        // 提取capacity、rating、season、serialNumber（现在属于UnifiedItemEntity）
+        val capacity = (fieldValues["容量"] as? String)?.toDoubleOrNull()
+        val capacityUnit = fieldValues["容量_unit"] as? String
+        val rating = when (val ratingValue = fieldValues["评分"]) {
+            is Float -> ratingValue.toDouble()
+            is Double -> ratingValue
+            is String -> ratingValue.toDoubleOrNull()
+            else -> null
+        }
+        val seasonSet = when (val seasonValue = fieldValues["季节"]) {
+            is Set<*> -> seasonValue.filterIsInstance<String>().toSet()
+            is String -> seasonValue.split(",").map { it.trim() }.toSet()
+            else -> emptySet()
+        }
+        val season = if (seasonSet.isNotEmpty()) seasonSet.joinToString(",") else null
+        val serialNumber = fieldValues["序列号"] as? String
+        
+        return UnifiedItemEntity(
+            id = 0, // 新物品，ID为0
+            name = name,
+            category = category,
+            subCategory = subCategory,
+            brand = brand,
+            specification = specification,
+            customNote = customNote,
+            capacity = capacity,
+            capacityUnit = capacityUnit,
+            rating = rating,
+            season = season,
+            serialNumber = serialNumber,
+            createdDate = Date(),
+            updatedDate = Date()
+        )
+    }
+
+    /**
+     * 从字段值构建InventoryDetailEntity对象
+     */
+    private suspend fun buildInventoryDetailFromFields(): InventoryDetailEntity {
+        android.util.Log.d("AddItemViewModel", "🔧 开始构建InventoryDetailEntity")
+        
+        // 基础字段
+        val quantityStr = (fieldValues["数量"] as? String)?.trim() ?: "1"
+        val quantity = quantityStr.toDoubleOrNull() ?: 1.0
+        val quantityUnit = fieldValues["数量_unit"] as? String ?: "个"
+        
+        // 位置信息
+        android.util.Log.d("AddItemViewModel", "📍 开始提取位置信息...")
+        val locationId = extractLocationId()
+        android.util.Log.d("AddItemViewModel", "📍 位置ID结果: $locationId")
+        
+        // 日期字段
+        val productionDate = parseDate(fieldValues["生产日期"] as? String)
+        val expirationDate = parseDate(fieldValues["保质过期时间"] as? String)
+        val openDate = parseDate(fieldValues["开封时间"] as? String)
+        val purchaseDate = parseDate(fieldValues["购买日期"] as? String)
+        val warrantyEndDate = parseDate(fieldValues["保修到期时间"] as? String)
+        
+        // 开封状态
+        val openStatus = when (fieldValues["开封状态"] as? String) {
+            "已开封" -> OpenStatus.OPENED
+            "未开封" -> OpenStatus.UNOPENED
+            else -> null
+        }
+        
+        // 价格信息
+        val price = (fieldValues["单价"] as? String)?.toDoubleOrNull()
+        val priceUnit = fieldValues["单价_unit"] as? String ?: "元"
+        val totalPrice = (fieldValues["总价"] as? String)?.toDoubleOrNull()
+        val totalPriceUnit = fieldValues["总价_unit"] as? String ?: "元"
+        
+        // 其他字段
+        val stockWarningThreshold = (fieldValues["库存预警值"] as? String)?.toIntOrNull()
+        val purchaseChannel = fieldValues["购买渠道"] as? String
+        val storeName = fieldValues["商家名称"] as? String
+        val isHighTurnover = fieldValues["高周转"] as? Boolean ?: false
+        // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
+        
+        // 期限字段
+        val shelfLife = when (val shelfLifeValue = fieldValues["保质期"]) {
+            is Pair<*, *> -> (shelfLifeValue.first as? String)?.toIntOrNull()
+            is String -> shelfLifeValue.toIntOrNull()
+            else -> null
+        }
+        
+        val warrantyPeriod = when (val warrantyValue = fieldValues["保修期"]) {
+            is Pair<*, *> -> (warrantyValue.first as? String)?.toIntOrNull()
+            is String -> warrantyValue.toIntOrNull()
+            else -> null
+        }
+        
+        return InventoryDetailEntity(
+            itemId = 0, // 将由Repository设置
+            quantity = quantity,
+            unit = quantityUnit,
+            locationId = locationId,
+            productionDate = productionDate,
+            expirationDate = expirationDate,
+            openStatus = openStatus,
+            openDate = openDate,
+            status = ItemStatus.IN_STOCK, // 默认在库状态
+            stockWarningThreshold = stockWarningThreshold,
+            price = price,
+            priceUnit = priceUnit,
+            purchaseChannel = purchaseChannel,
+            storeName = storeName,
+            totalPrice = totalPrice,
+            totalPriceUnit = totalPriceUnit,
+            purchaseDate = purchaseDate,
+            shelfLife = shelfLife,
+            warrantyPeriod = warrantyPeriod,
+            warrantyEndDate = warrantyEndDate,
+            isHighTurnover = isHighTurnover,
+            wasteDate = null
+            // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
+        )
+    }
+
+    /**
+     * 提取位置ID - 实现位置查询和创建逻辑
+     */
+    private suspend fun extractLocationId(): Long? {
+        val area = fieldValues["位置_area"] as? String
+        val container = fieldValues["位置_container"] as? String  
+        val sublocation = fieldValues["位置_sublocation"] as? String
+        
+        android.util.Log.d("AddItemViewModel", "📍 位置字段值: area='$area', container='$container', sublocation='$sublocation'")
+        
+        // 如果没有区域信息，返回null
+        if (area.isNullOrBlank()) {
+            android.util.Log.d("AddItemViewModel", "📍 没有位置区域信息，跳过位置保存")
+            return null
+        }
+        
+        try {
+            // 查找或创建位置实体
+            val locationEntity = LocationEntity(
+                id = 0, // 新位置，ID为0
+                area = area,
+                container = container,
+                sublocation = sublocation
+            )
+            
+            // 使用Repository保存位置并返回ID
+            android.util.Log.d("AddItemViewModel", "📍 准备保存位置实体: $locationEntity")
+            val locationId = repository.findOrCreateLocation(locationEntity)
+            android.util.Log.d("AddItemViewModel", "📍 位置保存成功，ID: $locationId")
+            
+            return locationId
+            
+        } catch (e: Exception) {
+            android.util.Log.e("AddItemViewModel", "📍 位置处理失败", e)
+            return null
+        }
+    }
+
+    /**
+     * 从URI列表构建照片实体列表
+     */
+    private fun buildPhotosFromUris(): List<PhotoEntity> {
+        val photoUris = _photoUris.value ?: emptyList()
+        android.util.Log.d("AddItemViewModel", "📸 开始构建照片实体: ${photoUris.size}个URI")
+        
+        return photoUris.mapIndexed { index, uri ->
+            android.util.Log.d("AddItemViewModel", "📸 构建照片[$index]: uri='$uri'")
+            PhotoEntity(
+                id = 0, // 新照片，ID为0
+                itemId = 0, // 将在repository中设置
+                uri = uri.toString(),
+                displayOrder = index,
+                isMain = index == 0 // 第一张照片设为主照片
+            )
+        }
+    }
+
+    /**
+     * 从字段值构建标签列表
+     */
+    private fun buildTagsFromFields(): List<TagEntity> {
+        val tagsSet = when (val tagsValue = fieldValues["标签"]) {
+            is Set<*> -> tagsValue.filterIsInstance<String>()
+            is List<*> -> tagsValue.filterIsInstance<String>()
+            is String -> listOf(tagsValue)
+            else -> emptyList()
+        }
+        
+        android.util.Log.d("AddItemViewModel", "🏷️ 解析标签字段: 原始值=${fieldValues["标签"]}, 解析结果=$tagsSet")
+        
+        return tagsSet.map { tagName ->
+            TagEntity(
+                id = 0, // 新标签，ID为0
+                name = tagName.trim(),
+                color = "#6200EE" // 默认颜色
+            )
+        }
+    }
+
+    /**
+     * 从字段值构建Item对象（保留兼容性）
      */
     private fun buildItemFromFields(): Item {
         // 基础字段
@@ -332,7 +730,7 @@ class AddItemViewModel(
     private fun buildTagsFromSelectedTags(): List<com.example.itemmanagement.data.model.Tag> {
         val tags = mutableListOf<com.example.itemmanagement.data.model.Tag>()
         
-        _selectedTags.value?.forEach { (category, tagNames) ->
+        _selectedTags.value?.forEach { (fieldName, tagNames) ->
             tagNames.forEach { tagName ->
                 tags.add(
                     com.example.itemmanagement.data.model.Tag(
@@ -509,25 +907,9 @@ class AddItemViewModel(
     /**
      * 从购物清单项目预填充表单数据
      */
-    fun prepareFormFromShoppingItem(shoppingItemEntity: com.example.itemmanagement.data.entity.ShoppingItemEntity) {
-        viewModelScope.launch {
-            try {
-                // 基础信息填充
-                saveFieldValue("名称", shoppingItemEntity.name)
-                saveFieldValue("数量", shoppingItemEntity.quantity)
-                saveFieldValue("分类", shoppingItemEntity.category)
-                
-                // 其他字段的填充逻辑...
-                shoppingItemEntity.brand?.let { saveFieldValue("品牌", it) }
-                shoppingItemEntity.specification?.let { saveFieldValue("规格", it) }
-                
-                // 设置当前日期为添加日期
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                saveFieldValue("添加日期", dateFormat.format(Date()))
-                
-            } catch (e: Exception) {
-                _errorMessage.value = "预填充数据失败: ${e.message}"
-            }
-        }
+    @Deprecated("使用统一架构，此方法已废弃")
+    fun prepareFormFromShoppingItem(shoppingItemEntity: Any?) {
+        // TODO: 使用统一架构重新实现此功能
+        return
     }
 } 

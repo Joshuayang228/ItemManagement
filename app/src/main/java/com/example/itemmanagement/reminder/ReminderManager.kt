@@ -1,6 +1,6 @@
 package com.example.itemmanagement.reminder
 
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.ReminderSettingsRepository
 import com.example.itemmanagement.data.repository.WarrantyRepository
 import com.example.itemmanagement.data.repository.BorrowRepository
@@ -12,7 +12,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 class ReminderManager(
-    private val itemRepository: ItemRepository,
+    private val itemRepository: UnifiedItemRepository,
     private val settingsRepository: ReminderSettingsRepository,
     private val warrantyRepository: WarrantyRepository? = null,  // 可选参数，保持向后兼容
     private val borrowRepository: BorrowRepository? = null       // 可选参数，保持向后兼容
@@ -45,8 +45,8 @@ class ReminderManager(
     private fun getExpiredItems(items: List<ItemWithDetails>): List<ItemWithDetails> {
         val now = Date()
         return items.filter { item ->
-            val expiredByDate = item.item.expirationDate?.let { it.before(now) } ?: false
-            val expiredByWarranty = item.item.warrantyEndDate?.let { it.before(now) } ?: false
+            val expiredByDate = item.inventoryDetail?.expirationDate?.let { it.before(now) } ?: false
+            val expiredByWarranty = item.inventoryDetail?.warrantyEndDate?.let { it.before(now) } ?: false
             expiredByDate || expiredByWarranty
         }
     }
@@ -66,12 +66,12 @@ class ReminderManager(
         }.time
         
         return items.filter { item ->
-            val expiringByDate = item.item.expirationDate?.let { 
+            val expiringByDate = item.inventoryDetail?.expirationDate?.let { 
                 it.after(now) && it.before(futureDate) 
             } ?: false
             
             val expiringByWarranty = if (includeWarranty) {
-                item.item.warrantyEndDate?.let { 
+                item.inventoryDetail?.warrantyEndDate?.let { 
                     it.after(now) && it.before(futureDate) 
                 } ?: false
             } else false
@@ -87,12 +87,13 @@ class ReminderManager(
         val thresholds = settingsRepository.getEnabledThresholdsMap()
         
         return items.mapNotNull { item ->
-            val threshold = thresholds[item.item.category]
-            if (threshold != null && item.item.quantity < threshold.minQuantity) {
+            val threshold = thresholds[item.unifiedItem.category]
+            val quantity = item.inventoryDetail?.quantity ?: 0.0
+            if (threshold != null && quantity < threshold.minQuantity) {
                 LowStockItem(
                     item = item,
-                    currentQuantity = item.item.quantity,
-                    requiredQuantity = threshold.minQuantity
+                    currentQuantity = quantity,
+                    requiredQuantity = threshold.minQuantity.toDouble()
                 )
             } else null
         }
@@ -159,7 +160,7 @@ class ReminderManager(
                         add(Calendar.DAY_OF_YEAR, days)
                     }.time
                     
-                    item.item.expirationDate?.let { 
+                    item.inventoryDetail?.expirationDate?.let { 
                         it.after(now) && it.before(futureDate) 
                     } ?: false
                 } ?: false
@@ -172,7 +173,7 @@ class ReminderManager(
                         add(Calendar.DAY_OF_YEAR, days)
                     }.time
                     
-                    item.item.warrantyEndDate?.let { 
+                    item.inventoryDetail?.warrantyEndDate?.let { 
                         it.after(now) && it.before(futureDate) 
                     } ?: false
                 } ?: false
@@ -180,7 +181,8 @@ class ReminderManager(
             
             "STOCK" -> {
                 rule.minQuantity?.let { minQty ->
-                    item.item.quantity < minQty
+                    val quantity = item.inventoryDetail?.quantity ?: 0.0
+                    quantity < minQty
                 } ?: false
             }
             
@@ -195,7 +197,7 @@ class ReminderManager(
         return when (rule.ruleType) {
             "EXPIRATION" -> "将在${rule.advanceDays}天内到期"
             "WARRANTY" -> "保修期将在${rule.advanceDays}天内到期"
-            "STOCK" -> "库存${item.item.quantity}低于阈值${rule.minQuantity}"
+            "STOCK" -> "库存${item.inventoryDetail?.quantity ?: 0.0}低于阈值${rule.minQuantity}"
             else -> "满足自定义条件"
         }
     }
@@ -205,15 +207,15 @@ class ReminderManager(
      */
     private fun calculateRuleValue(item: ItemWithDetails, rule: CustomRuleEntity): Double? {
         return when (rule.ruleType) {
-            "STOCK" -> item.item.quantity
+            "STOCK" -> item.inventoryDetail?.quantity
             "EXPIRATION" -> {
-                item.item.expirationDate?.let { expDate ->
+                item.inventoryDetail?.expirationDate?.let { expDate ->
                     val diffInMillis = expDate.time - System.currentTimeMillis()
                     (diffInMillis / TimeUnit.DAYS.toMillis(1)).toDouble()
                 }
             }
             "WARRANTY" -> {
-                item.item.warrantyEndDate?.let { warrantyDate ->
+                item.inventoryDetail?.warrantyEndDate?.let { warrantyDate ->
                     val diffInMillis = warrantyDate.time - System.currentTimeMillis()
                     (diffInMillis / TimeUnit.DAYS.toMillis(1)).toDouble()
                 }
@@ -297,8 +299,8 @@ class ReminderManager(
      */
     private fun calculateDaysUntilExpiration(item: ItemWithDetails): Int? {
         val now = Date()
-        val expirationDate = item.item.expirationDate
-        val warrantyDate = item.item.warrantyEndDate
+        val expirationDate = item.inventoryDetail?.expirationDate
+        val warrantyDate = item.inventoryDetail?.warrantyEndDate
         
         // 选择最早的到期日期
         val earliestDate = when {
@@ -407,7 +409,7 @@ class ReminderManager(
         private var INSTANCE: ReminderManager? = null
         
         fun getInstance(
-            itemRepository: ItemRepository,
+            itemRepository: UnifiedItemRepository,
             settingsRepository: ReminderSettingsRepository,
             warrantyRepository: WarrantyRepository? = null,  // 新增参数，可选
             borrowRepository: BorrowRepository? = null        // 新增参数，可选

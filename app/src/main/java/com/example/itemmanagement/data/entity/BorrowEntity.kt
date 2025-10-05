@@ -13,7 +13,7 @@ import androidx.room.Index
     tableName = "borrows",
     foreignKeys = [
         ForeignKey(
-            entity = ItemEntity::class,
+            entity = com.example.itemmanagement.data.entity.unified.UnifiedItemEntity::class,
             parentColumns = ["id"],
             childColumns = ["itemId"],
             onDelete = ForeignKey.CASCADE

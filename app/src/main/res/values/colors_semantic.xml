@@ -130,4 +130,9 @@
 
     <!-- 心愿单专用颜色 -->
     <color name="primary_container">@color/md_theme_light_primary_container</color>
+    
+    <!-- 购物清单专用高对比度颜色 -->
+    <color name="shopping_text_primary">@color/md_theme_light_on_surface</color>
+    <color name="shopping_text_secondary">@color/md_theme_light_on_surface_variant</color>
+    <color name="shopping_text_tertiary">@color/md_theme_light_outline</color>
 </resources>

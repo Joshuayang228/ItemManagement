@@ -27,4 +27,22 @@ Material 3主颜色文件 - 清洁版本
     <color name="success_container">#E8F5E8</color>
     <color name="warning_container">#FFF3E0</color>
 
+    <!-- 购物清单优先级颜色（综合优先级指示器） -->
+    <color name="shopping_priority_critical">#F44336</color>     <!-- 红色：9-10分（关键+紧急） -->
+    <color name="shopping_priority_high">#FF9800</color>         <!-- 橙色：7-8分（重要） -->
+    <color name="shopping_priority_normal">#FFC107</color>       <!-- 黄色：5-6分（一般） -->
+    <color name="shopping_priority_low">#4CAF50</color>          <!-- 绿色：1-4分（次要） -->
+    
+    <!-- 预算进度条颜色 -->
+    <color name="budget_safe">#4CAF50</color>                    <!-- 绿色：<80% -->
+    <color name="budget_warning">#FF9800</color>                 <!-- 橙色：80-100% -->
+    <color name="budget_over">#F44336</color>                    <!-- 红色：>100% -->
+    
+    <!-- 排序按钮颜色 -->
+    <color name="sort_text_selected">#FF6B00</color>             <!-- 选中状态：橙色 -->
+    <color name="sort_text_normal">#666666</color>               <!-- 未选中状态：灰色 -->
+    
+    <!-- 分割线颜色 -->
+    <color name="divider_gray">#CCCCCC</color>                   <!-- 灰色分割线 -->
+
 </resources> 

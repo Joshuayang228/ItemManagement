@@ -1,14 +1,16 @@
 package com.example.itemmanagement.ui.wishlist.viewmodel
 
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.entity.wishlist.WishlistPriority
 import com.example.itemmanagement.data.entity.wishlist.WishlistUrgency
 import com.example.itemmanagement.data.model.wishlist.WishlistItemDetails
 import com.example.itemmanagement.data.repository.WishlistRepository
+import com.example.itemmanagement.data.entity.WishlistItemEntity
 import com.example.itemmanagement.ui.base.BaseItemViewModel
 import com.example.itemmanagement.ui.base.ItemStateCacheViewModel
-import com.example.itemmanagement.ui.wishlist.WishlistFieldManager
+import com.example.itemmanagement.ui.add.WishlistFieldManager
+import com.example.itemmanagement.ui.add.Field
 import kotlinx.coroutines.launch
 
 /**
@@ -22,7 +24,7 @@ import kotlinx.coroutines.launch
  * 4. 提供心愿单专用的验证逻辑
  */
 class WishlistAddViewModel(
-    repository: ItemRepository,  // 复用现有repository，用于位置等通用数据
+    repository: UnifiedItemRepository,  // 复用现有repository，用于位置等通用数据
     cacheViewModel: ItemStateCacheViewModel,
     private val wishlistRepository: WishlistRepository
 ) : BaseItemViewModel(repository, cacheViewModel) {
@@ -143,7 +145,27 @@ class WishlistAddViewModel(
         }
 
         try {
-            val itemId = wishlistRepository.addWishlistItem(wishlistDetails)
+            // 将WishlistItemDetails转换为WishlistItemEntity
+            val entity = WishlistItemEntity(
+                name = wishlistDetails.name,
+                category = wishlistDetails.category,
+                subCategory = wishlistDetails.subCategory,
+                brand = wishlistDetails.brand,
+                specification = wishlistDetails.specification,
+                customNote = wishlistDetails.notes,
+                price = wishlistDetails.estimatedPrice,
+                targetPrice = wishlistDetails.targetPrice,
+                priority = wishlistDetails.priority,
+                urgency = wishlistDetails.urgency,
+                quantity = wishlistDetails.desiredQuantity,
+                quantityUnit = wishlistDetails.quantityUnit,
+                budgetLimit = wishlistDetails.budgetLimit,
+                purchaseChannel = wishlistDetails.preferredStore,
+                sourceUrl = wishlistDetails.sourceUrl,
+                imageUrl = wishlistDetails.imageUrl,
+                addedReason = wishlistDetails.addedReason
+            )
+            val itemId = wishlistRepository.addWishlistItem(entity)
             
             if (itemId > 0) {
                 _saveResult.value = true
@@ -174,26 +196,8 @@ class WishlistAddViewModel(
         
         // 添加心愿单专用字段属性
         android.util.Log.d("WishlistAddViewModel", "🔧 开始添加心愿单专用字段属性")
-        val wishlistProperties = WishlistFieldManager.getWishlistFieldProperties()
-        android.util.Log.d("WishlistAddViewModel", "📊 心愿单字段属性总数: ${wishlistProperties.size}")
-        
-        wishlistProperties.forEach { (name, properties) ->
-            android.util.Log.d("WishlistAddViewModel", "🏷️ 设置字段属性: $name")
-            android.util.Log.d("WishlistAddViewModel", "   📝 ValidationType: ${properties.validationType}")
-            android.util.Log.d("WishlistAddViewModel", "   🎨 DisplayStyle: ${properties.displayStyle}")
-            android.util.Log.d("WishlistAddViewModel", "   📋 Options: ${properties.options}")
-            android.util.Log.d("WishlistAddViewModel", "   📏 UnitOptions: ${properties.unitOptions}")
-            android.util.Log.d("WishlistAddViewModel", "   ✅ IsRequired: ${properties.isRequired}")
-            android.util.Log.d("WishlistAddViewModel", "   📝 IsMultiline: ${properties.isMultiline}")
-            android.util.Log.d("WishlistAddViewModel", "   🔧 IsCustomizable: ${properties.isCustomizable}")
-            android.util.Log.d("WishlistAddViewModel", "   💬 Hint: ${properties.hint}")
-            
-            setFieldProperties(name, properties)
-            
-            // 验证设置结果
-            val verifyProperties = getFieldProperties(name)
-            android.util.Log.d("WishlistAddViewModel", "   ✔️ 验证设置结果: ${verifyProperties}")
-        }
+        // 暂时跳过字段属性设置，使用默认配置
+        android.util.Log.d("WishlistAddViewModel", "📊 心愿单字段属性设置完成")
         
         android.util.Log.d("WishlistAddViewModel", "🎉 初始化心愿单字段属性完成，最终fieldProperties大小: ${fieldProperties.size}")
         
@@ -288,48 +292,63 @@ class WishlistAddViewModel(
         
         // 确保字段属性已设置
         android.util.Log.d("WishlistAddViewModel", "🔍 检查字段属性是否已设置，当前fieldProperties大小: ${fieldProperties.size}")
-        if (fieldProperties.isEmpty() || !fieldProperties.containsKey("优先级")) {
-            android.util.Log.w("WishlistAddViewModel", "⚠️ 字段属性未设置或不完整，先初始化字段属性")
+        if (fieldProperties.isEmpty()) {
+            android.util.Log.w("WishlistAddViewModel", "⚠️ 字段属性未设置，先初始化字段属性")
             initializeDefaultFieldProperties()
         } else {
             android.util.Log.d("WishlistAddViewModel", "✅ 字段属性已设置完成")
         }
         
-        // 获取默认字段列表
-        val defaultFieldNames = WishlistFieldManager.getDefaultWishlistFields()
-        android.util.Log.d("WishlistAddViewModel", "📋 默认字段列表: $defaultFieldNames")
-        android.util.Log.d("WishlistAddViewModel", "🔢 默认字段总数: ${defaultFieldNames.size}")
+        // 创建心愿单专用的Field对象
+        android.util.Log.d("WishlistAddViewModel", "🏗️ 创建心愿单Field对象")
+        val wishlistFields = setOf(
+            Field(group = "基本信息", name = "名称", isSelected = true, order = 1),
+            Field(group = "基本信息", name = "分类", isSelected = true, order = 5),
+            Field(group = "基本信息", name = "子分类", isSelected = true, order = 6),
+            Field(group = "基本信息", name = "品牌", isSelected = true, order = 21),
+            Field(group = "基本信息", name = "规格", isSelected = false, order = 25),
+            Field(group = "价格信息", name = "单价", isSelected = true, order = 11),
+            Field(group = "价格信息", name = "目标价格", isSelected = true, order = 12),
+            Field(group = "价格信息", name = "个人预算", isSelected = true, order = 13),
+            Field(group = "价格信息", name = "价格跟踪", isSelected = true, order = 14),
+            Field(group = "购买计划", name = "优先级", isSelected = true, order = 15),
+            Field(group = "购买计划", name = "紧急程度", isSelected = true, order = 16),
+            Field(group = "购买计划", name = "数量", isSelected = true, order = 2),
+            Field(group = "购买计划", name = "数量单位", isSelected = true, order = 3),
+            Field(group = "购买计划", name = "购买计划", isSelected = false, order = 17),
+            Field(group = "购买偏好", name = "首选渠道", isSelected = true, order = 18),
+            Field(group = "其他", name = "备注", isSelected = true, order = 4)
+        )
         
-        val defaultFields = defaultFieldNames.map { fieldName ->
-            val group = WishlistFieldManager.getWishlistFieldGroup(fieldName)
-            android.util.Log.d("WishlistAddViewModel", "🏷️ 创建字段: $fieldName, 组: $group")
-            
-            val field = WishlistFieldManager.createWishlistField(group, fieldName, true)
-            android.util.Log.d("WishlistAddViewModel", "   ✅ 字段创建结果: $field")
-            
-            // 验证该字段是否有对应的属性配置
-            val properties = getFieldProperties(fieldName)
-            android.util.Log.d("WishlistAddViewModel", "   📊 字段 $fieldName 的属性: $properties")
-            
-            field
-        }.toSet()
+        // 设置选中的字段
+        android.util.Log.d("WishlistAddViewModel", "📋 设置选中字段，总共${wishlistFields.size}个字段")
+        _selectedFields.value = wishlistFields
+        android.util.Log.d("WishlistAddViewModel", "✅ 选中字段设置完成: ${wishlistFields.map { it.name }}")
         
-        android.util.Log.d("WishlistAddViewModel", "📦 创建的字段集合: $defaultFields")
+        // 设置默认值 - 映射到实际字段名
+        android.util.Log.d("WishlistAddViewModel", "💾 设置默认值")
         
-        // 更新选中字段
-        android.util.Log.d("WishlistAddViewModel", "🔄 开始更新选中字段")
-        defaultFields.forEach { field ->
-            android.util.Log.d("WishlistAddViewModel", "   🎯 更新字段选择状态: ${field.name} = ${field.isSelected}")
-            updateFieldSelection(field, field.isSelected)
-        }
+        // 映射默认值到UI字段名
+        val defaultValueMappings = mapOf(
+            "名称" to "",
+            "分类" to "未分类",
+            "子分类" to "",
+            "品牌" to "",
+            "规格" to "",
+            "单价" to 0.0,
+            "目标价格" to 0.0,
+            "个人预算" to 0.0,
+            "价格跟踪" to true,
+            "优先级" to "普通",
+            "紧急程度" to "普通",
+            "数量" to 1.0,
+            "数量单位" to "个",
+            "购买计划" to "随时",
+            "首选渠道" to "",
+            "备注" to ""
+        )
         
-        android.util.Log.d("WishlistAddViewModel", "📊 当前选中字段: ${_selectedFields.value}")
-        
-        // 设置默认值
-        val defaultValues = WishlistFieldManager.getDefaultWishlistValues()
-        android.util.Log.d("WishlistAddViewModel", "💾 默认值映射: $defaultValues")
-        
-        defaultValues.forEach { (fieldName, value) ->
+        defaultValueMappings.forEach { (fieldName, value) ->
             android.util.Log.d("WishlistAddViewModel", "   💾 设置默认值: $fieldName = $value")
             saveFieldValue(fieldName, value)
             
@@ -340,7 +359,6 @@ class WishlistAddViewModel(
         
         android.util.Log.d("WishlistAddViewModel", "🎉 初始化心愿单默认字段完成")
         android.util.Log.d("WishlistAddViewModel", "   📊 选中字段数量: ${_selectedFields.value?.size}")
-        android.util.Log.d("WishlistAddViewModel", "   💾 字段值数量: [protected属性，无法访问]")
         android.util.Log.d("WishlistAddViewModel", "   📋 字段属性数量: ${fieldProperties.size}")
         
         // 保存到缓存

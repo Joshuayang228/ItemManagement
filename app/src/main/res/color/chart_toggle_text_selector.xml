@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/chart_toggle_selected_text" android:state_checked="true" />
-    <item android:color="@color/chart_toggle_unselected_text" />
-</selector> 
+    <!-- 选中状态：白色文字 -->
+    <item android:state_checked="true" android:color="#FFFFFF" />
+    <!-- 未选中状态：深色文字 -->
+    <item android:color="#666666" />
+</selector>

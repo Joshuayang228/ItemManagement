@@ -3,7 +3,7 @@ package com.example.itemmanagement.test
 import android.content.Context
 import android.util.Log
 import com.example.itemmanagement.data.AppDatabase
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,7 +29,19 @@ object TestDataInserter {
                 
                 // 获取数据库和Repository
                 val database = AppDatabase.getDatabase(context)
-                val repository = ItemRepository(database.itemDao(), database)
+                val repository = UnifiedItemRepository(
+                    database,
+                    database.unifiedItemDao(),
+                    database.itemStateDao(),
+                    database.wishlistDetailDao(),
+                    database.shoppingDetailDao(),
+                    database.shoppingListDao(),
+                    database.inventoryDetailDao(),
+                    database.locationDao(),
+                    database.tagDao(),
+                    database.photoDao(),
+                    database.priceRecordDao()
+                )
                 
                 // 生成测试数据
                 val testItems = TestDataGenerator.generateFullFieldTestItems()
@@ -41,20 +53,18 @@ object TestDataInserter {
                 // 逐个插入测试数据
                 testItems.forEachIndexed { index, testData ->
                     try {
-                        Log.d(TAG, "正在插入第 ${index + 1} 个物品: ${testData.item.name}")
+                        Log.d(TAG, "正在插入第 ${index + 1} 个物品: ${testData.unifiedItem.name}")
                         
-                        val itemId = repository.insertItemWithDetails(
-                            item = testData.item,
-                            location = testData.location,
-                            photos = testData.photos,
-                            tags = testData.tags
+                        repository.addInventoryItem(
+                            unifiedItem = testData.unifiedItem,
+                            inventoryDetail = testData.inventoryDetail
                         )
                         
-                        Log.d(TAG, "成功插入物品: ${testData.item.name}, ID: $itemId")
+                        Log.d(TAG, "成功插入物品: ${testData.unifiedItem.name}")
                         successCount++
                         
                     } catch (e: Exception) {
-                        Log.e(TAG, "插入物品失败: ${testData.item.name}", e)
+                        Log.e(TAG, "插入物品失败: ${testData.unifiedItem.name}", e)
                         errorCount++
                     }
                 }

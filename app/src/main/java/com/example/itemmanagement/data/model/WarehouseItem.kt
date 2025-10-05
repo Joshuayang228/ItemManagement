@@ -30,5 +30,6 @@ data class WarehouseItem(
     val tagsList: String? = null, // 从数据库查询的标签列表字符串
     
     // 其他可能需要的字段
-    val customNote: String? = null // 自定义备注
+    val customNote: String? = null, // 自定义备注
+    val season: String? = null // 季节信息，用于筛选
 ) 

@@ -147,11 +147,63 @@
             app:argType="string"
             android:defaultValue="购物清单" />
         <action
-            android:id="@+id/action_shopping_list_to_add_from_shopping"
-            app:destination="@id/navigation_add_from_shopping" />
+            android:id="@+id/action_shopping_list_to_transfer_fullscreen"
+            app:destination="@id/navigation_transfer_to_inventory_fullscreen" />
         <action
             android:id="@+id/action_shopping_list_to_add_shopping_item"
             app:destination="@id/navigation_add_shopping_item" />
+        <action
+            android:id="@+id/action_shopping_list_to_shopping_item_detail"
+            app:destination="@id/navigation_shopping_item_detail" />
+        <action
+            android:id="@+id/action_shopping_list_to_add_item"
+            app:destination="@id/addItemFragment"
+            app:enterAnim="@anim/fragment_slide_in_right"
+            app:exitAnim="@anim/fragment_slide_out_left"
+            app:popEnterAnim="@anim/fragment_slide_in_left"
+            app:popExitAnim="@anim/fragment_slide_out_right" />
+    </fragment>
+
+    <!-- 购物物品详情页 -->
+    <fragment
+        android:id="@+id/navigation_shopping_item_detail"
+        android:name="com.example.itemmanagement.ui.shopping.ShoppingItemDetailFragment"
+        android:label="物品详情">
+        <argument
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="0L" />
+        <argument
+            android:name="listId"
+            app:argType="long"
+            android:defaultValue="0L" />
+        <argument
+            android:name="listName"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <action
+            android:id="@+id/action_shopping_item_detail_to_edit_shopping_item"
+            app:destination="@id/navigation_edit_shopping_item" />
+    </fragment>
+    
+    <!-- 编辑购物物品Fragment -->
+    <fragment
+        android:id="@+id/navigation_edit_shopping_item"
+        android:name="com.example.itemmanagement.ui.shopping.EditShoppingItemFragment"
+        android:label="编辑购物物品">
+        <argument
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="0L" />
+        <argument
+            android:name="listId"
+            app:argType="long"
+            android:defaultValue="0L" />
+        <argument
+            android:name="listName"
+            app:argType="string"
+            android:defaultValue="购物清单" />
     </fragment>
 
     <!-- 购物清单管理页面 -->
@@ -279,6 +331,15 @@
             android:name="itemId"
             app:argType="long"
             android:defaultValue="-1L" />
+        <argument
+            android:name="sourceType"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
+        <argument
+            android:name="sourceItemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
     </fragment>
     
     <!-- 编辑Fragment -->
@@ -310,29 +371,23 @@
         </action>
     </fragment>
 
-    <!-- 新架构的购物清单入库Fragment -->
+    <!-- 购物清单转入库存全屏Fragment -->
     <fragment
-        android:id="@+id/navigation_add_from_shopping"
-        android:name="com.example.itemmanagement.ui.shopping.AddFromShoppingListFragment"
+        android:id="@+id/navigation_transfer_to_inventory_fullscreen"
+        android:name="com.example.itemmanagement.ui.shopping.TransferToInventoryFullScreenFragment"
         android:label="物品入库">
         <argument
-            android:name="shoppingItem"
-            app:argType="com.example.itemmanagement.data.entity.ShoppingItemEntity"
-            app:nullable="true" />
-    </fragment>
-    
-    <!-- 旧架构的购物清单入库Fragment (已废弃) -->
-    <fragment
-        android:id="@+id/old_navigation_add_from_shopping"
-        android:name="com.example.itemmanagement.ui.shopping.AddFromShoppingListFragment"
-        android:label="物品入库(旧)">
+            android:name="itemId"
+            app:argType="long"
+            android:defaultValue="0L" />
         <argument
-            android:name="shoppingItem"
-            app:argType="com.example.itemmanagement.data.entity.ShoppingItemEntity"
-            app:nullable="true" />
+            android:name="itemName"
+            app:argType="string"
+            app:nullable="true"
+            android:defaultValue="@null" />
     </fragment>
 
-    <!-- 新架构的购物物品添加Fragment -->
+    <!-- 添加购物物品Fragment -->
     <fragment
         android:id="@+id/navigation_add_shopping_item"
         android:name="com.example.itemmanagement.ui.shopping.AddShoppingItemFragment"
@@ -342,24 +397,9 @@
             app:argType="long"
             android:defaultValue="1L" />
         <argument
-            android:name="sourceItemId"
-            app:argType="long"
-            android:defaultValue="-1L" />
-    </fragment>
-    
-    <!-- 旧架构的购物物品添加Fragment (已废弃) -->
-    <fragment
-        android:id="@+id/old_navigation_add_shopping_item"
-        android:name="com.example.itemmanagement.ui.shopping.AddShoppingItemFragment"
-        android:label="添加购物物品(旧)">
-        <argument
-            android:name="listId"
-            app:argType="long"
-            android:defaultValue="1L" />
-        <argument
-            android:name="sourceItemId"
-            app:argType="long"
-            android:defaultValue="-1L" />
+            android:name="listName"
+            app:argType="string"
+            android:defaultValue="购物清单" />
     </fragment>
 
     <!-- 数据导出页面 -->

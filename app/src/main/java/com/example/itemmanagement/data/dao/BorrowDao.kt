@@ -138,7 +138,7 @@ interface BorrowDao {
             i.name as itemName, i.brand, i.category,
             (SELECT p.uri FROM photos p WHERE p.itemId = i.id LIMIT 1) as photoUri
         FROM borrows b
-        INNER JOIN items i ON b.itemId = i.id
+        INNER JOIN unified_items i ON b.itemId = i.id
         ORDER BY b.borrowDate DESC
     """)
     fun getAllWithItemInfoFlow(): Flow<List<BorrowWithItemInfo>>
@@ -154,7 +154,7 @@ interface BorrowDao {
             i.name as itemName, i.brand, i.category,
             (SELECT p.uri FROM photos p WHERE p.itemId = i.id LIMIT 1) as photoUri
         FROM borrows b
-        INNER JOIN items i ON b.itemId = i.id
+        INNER JOIN unified_items i ON b.itemId = i.id
         WHERE b.status = :status
         ORDER BY b.borrowDate DESC
     """)
@@ -172,7 +172,7 @@ interface BorrowDao {
             i.name as itemName, i.brand, i.category,
             (SELECT p.uri FROM photos p WHERE p.itemId = i.id LIMIT 1) as photoUri
         FROM borrows b
-        INNER JOIN items i ON b.itemId = i.id
+        INNER JOIN unified_items i ON b.itemId = i.id
         WHERE b.status = 'BORROWED' 
         AND b.expectedReturnDate > :currentTime 
         AND b.expectedReturnDate <= :thresholdTime

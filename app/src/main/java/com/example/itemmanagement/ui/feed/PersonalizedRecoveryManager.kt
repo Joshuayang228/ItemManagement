@@ -53,6 +53,7 @@ class PersonalizedRecoveryManager {
             ItemStatus.IN_STOCK -> 1.0f       // 在库正常恢复
             ItemStatus.GIVEN_AWAY -> 0.8f     // 已转赠，较少关注
             ItemStatus.DISCARDED -> 0.6f      // 已丢弃，最少关注
+            ItemStatus.BORROWED -> 0.9f       // 已借出，稍少关注
         }
         
         // 5. 分类重要性影响

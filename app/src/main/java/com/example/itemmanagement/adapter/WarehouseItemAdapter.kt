@@ -63,6 +63,12 @@ class WarehouseItemAdapter(
         )
         
         fun bind(item: WarehouseItem) {
+            android.util.Log.d("WarehouseItemAdapter", "🎯 Adapter开始绑定物品: name='${item.name}'")
+            android.util.Log.d("WarehouseItemAdapter", "  📍 位置数据: area='${item.locationArea}', container='${item.locationContainer}', sublocation='${item.locationSublocation}'")
+            android.util.Log.d("WarehouseItemAdapter", "  🏷️ 标签数据: tagsList='${item.tagsList}'")
+            android.util.Log.d("WarehouseItemAdapter", "  ⭐ 评分数据: rating=${item.rating}")
+            android.util.Log.d("WarehouseItemAdapter", "  📸 照片数据: primaryPhotoUri='${item.primaryPhotoUri}'")
+            
             // 设置物品名称
             binding.itemName.text = item.name
             

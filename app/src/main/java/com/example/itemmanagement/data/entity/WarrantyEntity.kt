@@ -14,7 +14,7 @@ import java.util.Date
     tableName = "warranties",
     foreignKeys = [
         ForeignKey(
-            entity = ItemEntity::class,
+            entity = com.example.itemmanagement.data.entity.unified.UnifiedItemEntity::class,
             parentColumns = ["id"],
             childColumns = ["itemId"],
             onDelete = ForeignKey.CASCADE

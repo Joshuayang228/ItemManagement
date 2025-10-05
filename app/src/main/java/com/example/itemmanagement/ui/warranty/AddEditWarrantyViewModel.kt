@@ -2,7 +2,7 @@ package com.example.itemmanagement.ui.warranty
 
 import android.net.Uri
 import androidx.lifecycle.*
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.WarrantyRepository
 import com.example.itemmanagement.data.entity.WarrantyEntity
 import com.example.itemmanagement.data.entity.WarrantyStatus
@@ -16,7 +16,7 @@ import java.util.*
  */
 class AddEditWarrantyViewModel(
     private val warrantyRepository: WarrantyRepository,
-    private val itemRepository: ItemRepository
+    private val itemRepository: UnifiedItemRepository
 ) : ViewModel() {
 
     // ==================== 编辑模式管理 ====================

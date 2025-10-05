@@ -11,50 +11,50 @@ import com.bumptech.glide.Glide
 import com.example.itemmanagement.R
 import com.example.itemmanagement.data.entity.PhotoEntity
 
-class PhotoAdapter : ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(PhotoDiffCallback()) {
-
-    private var onPhotoClickListener: ((PhotoEntity, Int) -> Unit)? = null
-
-    fun setOnPhotoClickListener(listener: (PhotoEntity, Int) -> Unit) {
-        onPhotoClickListener = listener
-    }
+/**
+ * 简化版照片适配器
+ */
+class PhotoAdapter : ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(PhotoDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_detail_photo, parent, false)
-        return PhotoViewHolder(view)
+            .inflate(android.R.layout.simple_list_item_1, parent, false)
+        
+        // 创建简单的ImageView
+        val imageView = ImageView(parent.context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+        
+        return PhotoViewHolder(imageView)
     }
 
     override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
-        val photo = getItem(position)
-        holder.bind(photo, position)
+        holder.bind(getItem(position))
     }
 
-    inner class PhotoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val photoImageView: ImageView = itemView.findViewById(R.id.photoImageView)
-
-        fun bind(photo: PhotoEntity, position: Int) {
-            // 使用Glide加载图片
-            Glide.with(itemView.context)
+    class PhotoViewHolder(private val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
+        fun bind(photo: PhotoEntity) {
+            Glide.with(imageView.context)
                 .load(photo.uri)
-                .centerCrop()
-                .error(R.drawable.ic_error_placeholder)
-                .into(photoImageView)
+                .placeholder(R.drawable.ic_launcher_background)
+                .error(R.drawable.ic_launcher_background)
+                .into(imageView)
+        }
+    }
 
-            // 设置点击事件
-            itemView.setOnClickListener {
-                onPhotoClickListener?.invoke(photo, position)
+    companion object {
+        private val PhotoDiffCallback = object : DiffUtil.ItemCallback<PhotoEntity>() {
+            override fun areItemsTheSame(oldItem: PhotoEntity, newItem: PhotoEntity): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areContentsTheSame(oldItem: PhotoEntity, newItem: PhotoEntity): Boolean {
+                return oldItem.uri == newItem.uri
             }
         }
     }
-
-    class PhotoDiffCallback : DiffUtil.ItemCallback<PhotoEntity>() {
-        override fun areItemsTheSame(oldItem: PhotoEntity, newItem: PhotoEntity): Boolean {
-            return oldItem.id == newItem.id
-        }
-
-        override fun areContentsTheSame(oldItem: PhotoEntity, newItem: PhotoEntity): Boolean {
-            return oldItem.uri == newItem.uri
-        }
-    }
-} 
+}

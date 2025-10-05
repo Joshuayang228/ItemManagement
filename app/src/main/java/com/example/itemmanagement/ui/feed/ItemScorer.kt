@@ -1,6 +1,6 @@
 package com.example.itemmanagement.ui.feed
 
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.model.*
 import kotlinx.coroutines.flow.first
 import java.util.*
@@ -11,7 +11,7 @@ import kotlin.math.min
 /**
  * 物品评分器 - 为每个物品计算多维度基础分数
  */
-class ItemScorer(private val repository: ItemRepository) {
+class ItemScorer(private val repository: UnifiedItemRepository) {
     
     /**
      * 为物品计算综合基础分数 (0-1.0)
@@ -180,6 +180,7 @@ class ItemScorer(private val repository: ItemRepository) {
             ItemStatus.IN_STOCK -> 0.1f    // 在库正常状态
             ItemStatus.GIVEN_AWAY -> 0.05f // 已转赠，较低关注
             ItemStatus.DISCARDED -> 0.02f  // 已丢弃，最低关注
+            ItemStatus.BORROWED -> 0.08f   // 已借出，中低关注
         }
         
         // 2. 开封状态需求 (0-0.3)

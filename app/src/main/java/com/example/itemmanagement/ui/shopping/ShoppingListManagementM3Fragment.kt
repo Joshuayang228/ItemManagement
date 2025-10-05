@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
@@ -13,19 +12,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.ShoppingListManagementAdapter
+import com.example.itemmanagement.adapter.ShoppingListProgress
 import com.example.itemmanagement.data.entity.ShoppingListEntity
 import com.example.itemmanagement.data.entity.ShoppingListStatus
+import com.example.itemmanagement.data.entity.ShoppingListType
 import com.example.itemmanagement.databinding.FragmentShoppingListManagementM3Binding
-// import com.example.itemmanagement.ui.utils.Material3Animations
-import com.example.itemmanagement.ui.utils.Material3Feedback
-// import com.example.itemmanagement.ui.utils.showWithAnimation
-// import com.example.itemmanagement.ui.utils.fadeIn
-// import com.example.itemmanagement.ui.utils.animatePress
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.example.itemmanagement.adapter.ShoppingListProgress
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.runBlocking
-import android.widget.TextView
+import java.util.Date
 
 /**
  * Material 3购物清单管理界面
@@ -40,10 +36,14 @@ class ShoppingListManagementM3Fragment : Fragment() {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                return ShoppingListManagementViewModel(requireActivity().application) as T
+                return ShoppingListManagementViewModel(
+                    requireActivity().application,
+                    (requireActivity().application as ItemManagementApplication).repository
+                ) as T
             }
         }
     }
+    
     private lateinit var adapter: ShoppingListManagementAdapter
 
     override fun onCreateView(
@@ -60,19 +60,21 @@ class ShoppingListManagementM3Fragment : Fragment() {
         
         setupRecyclerView()
         setupUI()
-        setupAnimations()
         setupClickListeners()
         observeViewModel()
         
         // 加载概览统计数据
         viewModel.loadOverviewStats()
+        
+        // 隐藏底部导航栏
+        hideBottomNavigation()
     }
 
     private fun setupRecyclerView() {
         adapter = ShoppingListManagementAdapter(
             onItemClick = { shoppingList ->
                 // 导航到清单详情页面
-                navigateToListDetail(shoppingList.id)
+                navigateToListDetail(shoppingList.id, shoppingList.name)
             },
             onEditClick = { shoppingList ->
                 // 显示编辑对话框
@@ -80,23 +82,19 @@ class ShoppingListManagementM3Fragment : Fragment() {
             },
             onDeleteClick = { shoppingList ->
                 // 显示删除确认对话框
-                showDeleteConfirmDialog(shoppingList)
+                showDeleteConfirmDialog(shoppingList.id)
             },
             onCompleteClick = { shoppingList ->
-                // 切换清单状态
-                when (shoppingList.status) {
-                    ShoppingListStatus.ACTIVE -> {
-                        viewModel.completeShoppingList(shoppingList)
-                    }
-                    else -> {
-                        viewModel.reactivateShoppingList(shoppingList)
-                    }
-                }
+                // 标记清单为已完成
+                viewModel.completeShoppingList(shoppingList.id)
             },
             getProgressData = { listId ->
-                // 获取真实进度数据
+                // 从ViewModel获取进度数据
                 runBlocking {
-                    viewModel.getShoppingListProgress(listId)
+                    val totalItems = viewModel.getShoppingItemsCount(listId)
+                    val completedItems = viewModel.getPurchasedItemsCount(listId)
+                    val progress = if (totalItems > 0) (completedItems * 100 / totalItems) else 0
+                    ShoppingListProgress(totalItems, completedItems, progress)
                 }
             }
         )
@@ -108,260 +106,182 @@ class ShoppingListManagementM3Fragment : Fragment() {
     }
 
     private fun setupUI() {
-        // 隐藏进度条
-        binding.progressBar.visibility = View.GONE
-    }
-
-    private fun setupAnimations() {
-        // FAB显示动画
-        // binding.fabAddList.showWithAnimation(300)
-        
-        // 内容淡入动画
-        // binding.root.fadeIn(100)
+        // 设置标题（由于没有 toolbar，标题在 Activity 中设置）
+        activity?.title = "购物清单管理"
     }
 
     private fun setupClickListeners() {
-        // 创建购物清单
+        // FAB创建新清单
         binding.fabAddList.setOnClickListener {
-            // it.animatePress()
             showCreateListDialog()
         }
         
         // 刷新按钮
-        try {
-            val btnRefresh = binding.root.findViewById<com.google.android.material.button.MaterialButton>(R.id.btnRefresh)
-            btnRefresh?.setOnClickListener { button ->
-                // button.animatePress()
-                viewModel.loadOverviewStats()
-                Material3Feedback.showInfo(binding.root, "数据已刷新")
-            }
-        } catch (e: Exception) {
-            // 如果找不到刷新按钮，不影响其他功能
+        binding.headerShoppingDashboard.root.findViewById<android.widget.ImageButton>(R.id.btnRefresh)?.setOnClickListener {
+            // 刷新概览统计数据
+            viewModel.loadOverviewStats()
+            // 显示提示
+            com.google.android.material.snackbar.Snackbar.make(
+                binding.root,
+                "已刷新",
+                com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+            ).show()
         }
     }
 
     private fun observeViewModel() {
         // 观察购物清单列表
-        viewModel.allShoppingLists.observe(viewLifecycleOwner) { lists ->
+        viewModel.activeShoppingLists.observe(viewLifecycleOwner) { lists ->
             adapter.submitList(lists)
-            updateEmptyView(lists.isEmpty())
-        }
-
-        // 观察加载状态
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-
-        // 观察消息
-        viewModel.message.observe(viewLifecycleOwner) { message ->
-            if (message.isNotEmpty()) {
-                Material3Feedback.showSuccess(binding.root, message)
-                viewModel.clearMessage()
-            }
-        }
-
-        // 观察错误
-        viewModel.error.observe(viewLifecycleOwner) { error ->
-            if (error.isNotEmpty()) {
-                Material3Feedback.showError(binding.root, error)
-                viewModel.clearError()
-            }
-        }
-
-        // 观察导航事件
-        viewModel.navigateToListDetail.observe(viewLifecycleOwner) { listId ->
-            listId?.let {
-                navigateToListDetail(it)
-                viewModel.navigateToListDetailComplete()
+            
+            // 更新空状态
+            if (lists.isEmpty()) {
+                binding.recyclerView.visibility = View.GONE
+                binding.emptyView.visibility = View.VISIBLE
+            } else {
+                binding.recyclerView.visibility = View.VISIBLE
+                binding.emptyView.visibility = View.GONE
             }
         }
         
-        // 观察概览统计数据
+        // 观察概览统计（访问include布局中的view需要使用findViewById）
         viewModel.overviewStats.observe(viewLifecycleOwner) { stats ->
-            updateOverviewStats(stats)
+            if (stats != null) {
+                binding.headerShoppingDashboard.root.findViewById<android.widget.TextView>(R.id.tvActiveListsCount)?.text = stats.activeListsCount.toString()
+                // ⭐ 修复：使用正确的 ID tvPendingItemsCount（不是 tvTotalPendingItems）
+                binding.headerShoppingDashboard.root.findViewById<android.widget.TextView>(R.id.tvPendingItemsCount)?.text = stats.totalPendingItems.toString()
+                binding.headerShoppingDashboard.root.findViewById<android.widget.TextView>(R.id.tvWeeklyBudget)?.text = "¥${String.format("%.2f", stats.totalBudget)}"
+            }
+        }
+        
+        // 观察消息
+        viewModel.message.observe(viewLifecycleOwner) { message ->
+            if (message.isNotEmpty()) {
+                Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+            }
+        }
+        
+        // 观察错误
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            if (error.isNotEmpty()) {
+                Snackbar.make(binding.root, error, Snackbar.LENGTH_LONG).show()
+            }
+        }
+        
+        // 观察导航事件
+        viewModel.navigateToListDetail.observe(viewLifecycleOwner) { listId ->
+            if (listId != null) {
+                viewModel.getShoppingListById(listId)?.let { list ->
+                    navigateToListDetail(listId, list.name)
+                }
+                // viewModel.onNavigationComplete() // TODO: 添加此方法
+            }
         }
     }
 
-    private fun updateEmptyView(isEmpty: Boolean) {
-        if (isEmpty) {
-            binding.emptyView?.visibility = View.VISIBLE
-            binding.recyclerView.visibility = View.GONE
-        } else {
-            binding.emptyView?.visibility = View.GONE
-            binding.recyclerView.visibility = View.VISIBLE
-        }
-    }
-    
-    private fun updateOverviewStats(stats: com.example.itemmanagement.ui.shopping.ShoppingOverviewStats) {
-        // 更新概览仪表板的真实数据
+    private fun navigateToListDetail(listId: Long, listName: String) {
+        // 导航到购物清单详情页面
         try {
-            // 活跃清单数
-            val tvActiveListsCount = binding.root.findViewById<TextView>(R.id.tvActiveListsCount)
-            tvActiveListsCount?.text = stats.activeListsCount.toString()
-            
-            // 待购物品数
-            val tvPendingItemsCount = binding.root.findViewById<TextView>(R.id.tvPendingItemsCount)
-            tvPendingItemsCount?.text = stats.totalPendingItems.toString()
-            
-            // 本周预算
-            val tvWeeklyBudget = binding.root.findViewById<TextView>(R.id.tvWeeklyBudget)
-            val budgetText = if (stats.totalBudget > 0) {
-                "¥${String.format("%.0f", stats.totalBudget)}"
-            } else {
-                "¥0"
-            }
-            tvWeeklyBudget?.text = budgetText
-            
+            val action = ShoppingListManagementM3FragmentDirections
+                .actionNavigationShoppingListManagementToNavigationShoppingList(listId, listName)
+            findNavController().navigate(action)
         } catch (e: Exception) {
-            // 如果更新失败，不影响其他功能
+            android.util.Log.e("ShoppingManagement", "导航失败: listId=$listId, name=$listName", e)
+            android.widget.Toast.makeText(requireContext(), "打开购物清单失败", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun showCreateListDialog() {
-        val dialogView = LayoutInflater.from(context).inflate(
-            R.layout.dialog_create_shopping_list, null
-        )
+        val dialogView = layoutInflater.inflate(R.layout.dialog_create_shopping_list, null)
+        val etName = dialogView.findViewById<TextInputEditText>(R.id.etListName)
+        val etDescription = dialogView.findViewById<TextInputEditText>(R.id.etListDescription)
         
-        val nameEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etListName
-        )
-        val descriptionEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etListDescription
-        )
-        val budgetEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etListBudget
-        )
-        val chipGroupType = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(
-            R.id.chipGroupListType
-        )
-        val tilCustomType = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(
-            R.id.tilCustomType
-        )
-        val etCustomType = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etCustomType
-        )
-        val chipCustom = dialogView.findViewById<com.google.android.material.chip.Chip>(
-            R.id.chipCustom
-        )
-
-        // 设置自定义标签的显示逻辑
-        chipGroupType.setOnCheckedStateChangeListener { _, checkedIds ->
-            val isCustomSelected = checkedIds.contains(R.id.chipCustom)
-            tilCustomType.visibility = if (isCustomSelected) View.VISIBLE else View.GONE
-        }
-
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("创建购物清单")
             .setView(dialogView)
             .setPositiveButton("创建") { _, _ ->
-                val name = nameEditText.text.toString()
-                val description = descriptionEditText.text.toString()
-                val budgetText = budgetEditText.text.toString()
-                val budget = if (budgetText.isNotEmpty()) budgetText.toDoubleOrNull() else null
+                val name = etName.text.toString().trim()
+                val description = etDescription.text.toString().trim()
                 
-                // 获取选中的类型
-                val selectedType = getSelectedShoppingListType(chipGroupType, etCustomType)
-
                 if (name.isNotEmpty()) {
-                    viewModel.createShoppingList(name, description, selectedType, estimatedBudget = budget)
+                    viewModel.createShoppingList(
+                        name = name,
+                        description = description.takeIf { it.isNotEmpty() },
+                        type = ShoppingListType.DAILY
+                    )
                 } else {
-                    Material3Feedback.showError(binding.root, "请输入清单名称")
+                    Snackbar.make(binding.root, "请输入清单名称", Snackbar.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("取消", null)
             .show()
     }
-    
-    private fun getSelectedShoppingListType(
-        chipGroup: com.google.android.material.chip.ChipGroup,
-        customTypeEditText: com.google.android.material.textfield.TextInputEditText
-    ): com.example.itemmanagement.data.entity.ShoppingListType {
-        return when (chipGroup.checkedChipId) {
-            R.id.chipDaily -> com.example.itemmanagement.data.entity.ShoppingListType.DAILY
-            R.id.chipWeekly -> com.example.itemmanagement.data.entity.ShoppingListType.WEEKLY
-            R.id.chipParty -> com.example.itemmanagement.data.entity.ShoppingListType.PARTY
-            R.id.chipTravel -> com.example.itemmanagement.data.entity.ShoppingListType.TRAVEL
-            R.id.chipSpecial -> com.example.itemmanagement.data.entity.ShoppingListType.SPECIAL
-            R.id.chipCustom -> {
-                // 对于自定义类型，可以扩展枚举或使用CUSTOM类型
-                com.example.itemmanagement.data.entity.ShoppingListType.CUSTOM
-            }
-            else -> com.example.itemmanagement.data.entity.ShoppingListType.DAILY
-        }
-    }
 
     private fun showEditListDialog(shoppingList: ShoppingListEntity) {
-        val dialogView = LayoutInflater.from(context).inflate(
-            R.layout.dialog_create_shopping_list, null
-        )
+        val dialogView = layoutInflater.inflate(R.layout.dialog_create_shopping_list, null)
+        val etName = dialogView.findViewById<TextInputEditText>(R.id.etListName)
+        val etDescription = dialogView.findViewById<TextInputEditText>(R.id.etListDescription)
         
-        val nameEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etListName
-        )
-        val descriptionEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etListDescription
-        )
-        val budgetEditText = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(
-            R.id.etListBudget
-        )
-
         // 预填充数据
-        nameEditText.setText(shoppingList.name)
-        descriptionEditText.setText(shoppingList.description)
-        shoppingList.estimatedBudget?.let { budget ->
-            budgetEditText.setText(budget.toString())
-        }
-
+        etName.setText(shoppingList.name)
+        etDescription.setText(shoppingList.description ?: "")
+        
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("编辑购物清单")
             .setView(dialogView)
             .setPositiveButton("保存") { _, _ ->
-                val name = nameEditText.text.toString()
-                val description = descriptionEditText.text.toString()
-                val budgetText = budgetEditText.text.toString()
-                val budget = if (budgetText.isNotEmpty()) budgetText.toDoubleOrNull() else null
-
+                val name = etName.text.toString().trim()
+                val description = etDescription.text.toString().trim()
+                
                 if (name.isNotEmpty()) {
-                    viewModel.updateShoppingList(
-                        shoppingList.copy(
-                            name = name,
-                            description = description,
-                            estimatedBudget = budget
-                        )
+                    val updatedList = shoppingList.copy(
+                        name = name,
+                        description = description.takeIf { it.isNotEmpty() }
                     )
+                    viewModel.updateShoppingList(updatedList)
                 } else {
-                    Material3Feedback.showError(binding.root, "请输入清单名称")
+                    Snackbar.make(binding.root, "请输入清单名称", Snackbar.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton("取消", null)
             .show()
     }
 
-    private fun showDeleteConfirmDialog(shoppingList: ShoppingListEntity) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("删除购物清单")
-            .setMessage("确定要删除购物清单 \"${shoppingList.name}\" 吗？此操作不可撤销。")
-            .setPositiveButton("删除") { _, _ ->
-                viewModel.deleteShoppingList(shoppingList)
-            }
-            .setNegativeButton("取消", null)
-            .show()
+    private fun showDeleteConfirmDialog(listId: Long) {
+        viewModel.getShoppingListById(listId)?.let { shoppingList ->
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("删除购物清单")
+                .setMessage("确定要删除「${shoppingList.name}」吗？清单内的所有物品也会被删除。")
+                .setPositiveButton("删除") { _, _ ->
+                    viewModel.deleteShoppingList(shoppingList)
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        }
     }
-
-    private fun navigateToListDetail(listId: Long) {
-        // 正确传递购物清单ID和名称参数
-        val bundle = bundleOf(
-            "listId" to listId,
-            "listName" to "购物清单 #$listId"
-        )
-        findNavController().navigate(
-            R.id.action_navigation_shopping_list_management_to_navigation_shopping_list,
-            bundle
-        )
+    
+    override fun onResume() {
+        super.onResume()
+        // 确保底部导航栏隐藏
+        hideBottomNavigation()
+        
+        // ⭐ 刷新概览统计数据（从详情页返回时更新）
+        viewModel.loadOverviewStats()
+    }
+    
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+    
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // 恢复底部导航栏
+        showBottomNavigation()
         _binding = null
     }
 }
+

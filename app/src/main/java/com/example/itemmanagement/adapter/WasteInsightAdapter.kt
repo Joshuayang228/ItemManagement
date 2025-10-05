@@ -8,9 +8,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.ItemWasteInsightBinding
-import com.example.itemmanagement.ui.waste.InsightSeverity
-import com.example.itemmanagement.ui.waste.InsightType
-import com.example.itemmanagement.ui.waste.WasteInsight
+import com.example.itemmanagement.data.model.InsightSeverity
+import com.example.itemmanagement.data.model.InsightType
+import com.example.itemmanagement.data.model.WasteInsight
 
 class WasteInsightAdapter : ListAdapter<WasteInsight, WasteInsightAdapter.InsightViewHolder>(InsightDiffCallback()) {
 
@@ -24,41 +24,49 @@ class WasteInsightAdapter : ListAdapter<WasteInsight, WasteInsightAdapter.Insigh
     }
 
     override fun onBindViewHolder(holder: InsightViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), position)
     }
 
     inner class InsightViewHolder(
         private val binding: ItemWasteInsightBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(insight: WasteInsight) {
+        fun bind(insight: WasteInsight, position: Int) {
             with(binding) {
                 // 设置标题和内容
                 textViewTitle.text = insight.title
-                textViewMessage.text = insight.message
+                textViewMessage.text = insight.description
 
-                // 根据洞察类型设置图标和颜色
-                when (insight.type) {
-                    InsightType.POSITIVE -> {
-                        imageViewIcon.setImageResource(R.drawable.ic_star)
-                        setupColors(R.color.success, R.color.surface_variant, R.color.on_surface)
+                // 只有第一个卡片（position == 0）才使用彩色背景，其他都用白色
+                if (position == 0) {
+                    // 根据洞察类型设置图标和颜色
+                    when (insight.type) {
+                        InsightType.TIP -> {
+                            imageViewIcon.setImageResource(R.drawable.ic_star)
+                            setupColors(R.color.success, R.color.surface_variant, R.color.on_surface)
+                        }
+                        InsightType.WARNING -> {
+                            imageViewIcon.setImageResource(R.drawable.ic_stock_warning)
+                            setupColors(R.color.orange, R.color.orange_container, R.color.on_orange_container)
+                        }
+                        InsightType.ALERT -> {
+                            imageViewIcon.setImageResource(R.drawable.ic_error_placeholder)
+                            setupColors(R.color.error, R.color.error_container, R.color.on_error_container)
+                        }
+                        InsightType.INFO -> {
+                            imageViewIcon.setImageResource(R.drawable.ic_statistics)
+                            setupColors(R.color.primary, R.color.surface_variant, R.color.on_surface)
+                        }
                     }
-                    InsightType.WARNING -> {
-                        imageViewIcon.setImageResource(R.drawable.ic_stock_warning)
-                        setupColors(R.color.orange, R.color.orange_container, R.color.on_orange_container)
+                } else {
+                    // 其他卡片使用统一的图标和白色背景
+                    when (insight.type) {
+                        InsightType.TIP -> imageViewIcon.setImageResource(R.drawable.ic_star)
+                        InsightType.WARNING -> imageViewIcon.setImageResource(R.drawable.ic_stock_warning)
+                        InsightType.ALERT -> imageViewIcon.setImageResource(R.drawable.ic_error_placeholder)
+                        InsightType.INFO -> imageViewIcon.setImageResource(R.drawable.ic_statistics)
                     }
-                    InsightType.CRITICAL -> {
-                        imageViewIcon.setImageResource(R.drawable.ic_error_placeholder)
-                        setupColors(R.color.error, R.color.error_container, R.color.on_error_container)
-                    }
-                    InsightType.INFO -> {
-                        imageViewIcon.setImageResource(R.drawable.ic_statistics)
-                        setupColors(R.color.primary, R.color.surface_variant, R.color.on_surface)
-                    }
-                    InsightType.SUGGESTION -> {
-                        imageViewIcon.setImageResource(R.drawable.ic_cleanup)
-                        setupColors(R.color.accent_color, R.color.surface_variant, R.color.on_surface)
-                    }
+                    setupColors(R.color.primary, android.R.color.white, R.color.on_surface)
                 }
 
                 // 根据严重程度调整透明度

@@ -68,8 +68,8 @@ class WastedItemAdapter(
                             binding.root.context.getColor(R.color.on_orange_container)
                         )
                     }
-                    WasteReason.DISCARDED -> {
-                        textViewWasteReason.text = "已丢弃"
+                    WasteReason.DAMAGED -> {
+                        textViewWasteReason.text = "已损坏"
                         textViewWasteReason.setBackgroundResource(R.drawable.bg_detail_tag)
                         textViewWasteReason.setBackgroundTintList(
                             binding.root.context.getColorStateList(R.color.error_container)
@@ -78,14 +78,54 @@ class WastedItemAdapter(
                             binding.root.context.getColor(R.color.on_error_container)
                         )
                     }
+                    WasteReason.UNUSED -> {
+                        textViewWasteReason.text = "未使用"
+                        textViewWasteReason.setBackgroundResource(R.drawable.bg_detail_tag)
+                        textViewWasteReason.setBackgroundTintList(
+                            binding.root.context.getColorStateList(R.color.surface_variant)
+                        )
+                        textViewWasteReason.setTextColor(
+                            binding.root.context.getColor(R.color.on_surface_variant)
+                        )
+                    }
+                    WasteReason.SPOILED -> {
+                        textViewWasteReason.text = "已变质"
+                        textViewWasteReason.setBackgroundResource(R.drawable.bg_detail_tag)
+                        textViewWasteReason.setBackgroundTintList(
+                            binding.root.context.getColorStateList(R.color.error_container)
+                        )
+                        textViewWasteReason.setTextColor(
+                            binding.root.context.getColor(R.color.on_error_container)
+                        )
+                    }
+                    WasteReason.BROKEN -> {
+                        textViewWasteReason.text = "已破损"
+                        textViewWasteReason.setBackgroundResource(R.drawable.bg_detail_tag)
+                        textViewWasteReason.setBackgroundTintList(
+                            binding.root.context.getColorStateList(R.color.error_container)
+                        )
+                        textViewWasteReason.setTextColor(
+                            binding.root.context.getColor(R.color.on_error_container)
+                        )
+                    }
+                    WasteReason.OTHER -> {
+                        textViewWasteReason.text = "其他原因"
+                        textViewWasteReason.setBackgroundResource(R.drawable.bg_detail_tag)
+                        textViewWasteReason.setBackgroundTintList(
+                            binding.root.context.getColorStateList(R.color.surface_variant)
+                        )
+                        textViewWasteReason.setTextColor(
+                            binding.root.context.getColor(R.color.on_surface_variant)
+                        )
+                    }
                 }
 
                 // 设置浪费日期
                 textViewWasteDate.text = dateFormat.format(item.wasteDate)
 
                 // 设置价值
-                if (item.value != null && item.value > 0) {
-                    textViewValue.text = currencyFormat.format(item.value)
+                if (item.originalValue > 0) {
+                    textViewValue.text = currencyFormat.format(item.originalValue)
                 } else {
                     textViewValue.text = "未知"
                 }
@@ -118,7 +158,7 @@ class WastedItemAdapter(
 
     private class WastedItemDiffCallback : DiffUtil.ItemCallback<WastedItemData>() {
         override fun areItemsTheSame(oldItem: WastedItemData, newItem: WastedItemData): Boolean {
-            return oldItem.itemId == newItem.itemId
+            return oldItem.id == newItem.id
         }
 
         override fun areContentsTheSame(oldItem: WastedItemData, newItem: WastedItemData): Boolean {

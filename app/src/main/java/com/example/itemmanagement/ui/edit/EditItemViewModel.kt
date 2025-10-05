@@ -1,10 +1,12 @@
 package com.example.itemmanagement.ui.edit
 
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.relation.ItemWithDetails
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.data.mapper.toItemEntity
 import com.example.itemmanagement.data.mapper.toLocationEntity
+import com.example.itemmanagement.data.mapper.toItem
 
 import com.example.itemmanagement.ui.add.Field
 import com.example.itemmanagement.ui.base.BaseItemViewModel
@@ -22,7 +24,7 @@ import android.net.Uri
  * 使用独立的缓存空间，确保与添加模式的数据完全隔离。
  */
 class EditItemViewModel(
-    repository: ItemRepository,
+    repository: UnifiedItemRepository,
     cacheViewModel: ItemStateCacheViewModel,
     private val itemId: Long
 ) : BaseItemViewModel(repository, cacheViewModel) {
@@ -120,14 +122,22 @@ class EditItemViewModel(
                 )
             }
             
+            // 构建InventoryDetail
+            val inventoryDetail = buildInventoryDetailFromFields(itemId)
+            
             // 更新物品及其关联数据
-            repository.updateItemWithDetails(
-                itemId,
-                itemEntity.copy(id = itemId),
-                locationEntity,
-                photoEntities,
-                tagEntities
-            )
+            val itemWithDetails = ItemWithDetails(
+                unifiedItem = itemEntity.copy(id = itemId),
+                inventoryDetail = inventoryDetail,
+                photos = photoEntities,
+                tags = tagEntities
+            ).apply {
+                // 设置位置信息
+                this.locationEntity = locationEntity
+            }
+            
+            Log.d("EditItemViewModel", "准备更新物品: itemId=$itemId, inventoryDetail=${inventoryDetail != null}, photos=${photoEntities.size}, tags=${tagEntities.size}, location=${locationEntity != null}")
+            repository.updateItemWithDetails(itemWithDetails)
             
             // 清除缓存
             clearStateAndCache()
@@ -146,12 +156,21 @@ class EditItemViewModel(
     private fun loadItemForEdit() {
         viewModelScope.launch {
             try {
-                // 从数据库加载真实的物品数据
-                Log.d("EditItemViewModel", "正在加载物品 ID: $itemId")
-                val item = repository.getItemById(itemId)
-                if (item != null) {
-                    Log.d("EditItemViewModel", "找到物品: ${item.name}, 数量: ${item.quantity}")
+                // 从数据库加载真实的物品数据（包含位置、标签、照片等完整信息）
+                Log.d("EditItemViewModel", "正在加载物品详细信息 ID: $itemId")
+                val itemWithDetails = repository.getItemWithDetailsById(itemId)
+                if (itemWithDetails != null) {
+                    // 将ItemWithDetails转换为Item对象
+                    val item = itemWithDetails.toItem()
+                    Log.d("EditItemViewModel", "找到物品: ${item.name}, 数量: ${item.quantity}, 标签数: ${item.tags.size}, 照片数: ${item.photos.size}")
                     loadItemData(item)
+                    
+                    // 加载照片到UI
+                    if (item.photos.isNotEmpty()) {
+                        val photoUris = item.photos.map { photo: com.example.itemmanagement.data.model.Photo -> android.net.Uri.parse(photo.uri) }
+                        _photoUris.value = photoUris
+                        Log.d("EditItemViewModel", "已加载 ${photoUris.size} 张照片")
+                    }
                 } else {
                     Log.e("EditItemViewModel", "找不到物品 ID: $itemId")
                     _errorMessage.value = "找不到要编辑的物品"
@@ -160,6 +179,7 @@ class EditItemViewModel(
                 }
                 
             } catch (e: Exception) {
+                Log.e("EditItemViewModel", "加载物品数据失败", e)
                 _errorMessage.value = "加载物品数据失败: ${e.message}"
                 // 发生错误时，也初始化基础字段
                 initializeEditModeFields()
@@ -429,6 +449,117 @@ class EditItemViewModel(
     }
     
     /**
+     * 从字段值构建InventoryDetailEntity对象（编辑模式）
+     */
+    private suspend fun buildInventoryDetailFromFields(itemId: Long): com.example.itemmanagement.data.entity.unified.InventoryDetailEntity {
+        Log.d("EditItemViewModel", "🔧 开始构建InventoryDetailEntity for itemId: $itemId")
+        
+        // 基础字段
+        val quantityStr = getFieldValue("数量")?.toString()?.trim() ?: "1"
+        val quantity = quantityStr.toDoubleOrNull() ?: 1.0
+        val quantityUnit = getFieldValue("数量_unit")?.toString() ?: "个"
+        
+        // 位置信息 - 暂时设为null，通过locationEntity传递
+        val locationId: Long? = null
+        
+        // 日期字段
+        val productionDate = parseDate(getFieldValue("生产日期")?.toString())
+        val expirationDate = parseDate(getFieldValue("保质过期时间")?.toString())
+        val openDate = parseDate(getFieldValue("开封时间")?.toString())
+        val purchaseDate = parseDate(getFieldValue("购买日期")?.toString())
+        val warrantyEndDate = parseDate(getFieldValue("保修到期时间")?.toString())
+        
+        // 开封状态
+        val openStatus = when (getFieldValue("开封状态")?.toString()) {
+            "已开封" -> com.example.itemmanagement.data.model.OpenStatus.OPENED
+            "未开封" -> com.example.itemmanagement.data.model.OpenStatus.UNOPENED
+            else -> null
+        }
+        
+        // 价格信息
+        val price = getFieldValue("单价")?.toString()?.toDoubleOrNull()
+        val priceUnit = getFieldValue("单价_unit")?.toString() ?: "元"
+        val totalPrice = getFieldValue("总价")?.toString()?.toDoubleOrNull()
+        val totalPriceUnit = getFieldValue("总价_unit")?.toString() ?: "元"
+        
+        // 其他字段
+        val purchaseChannel = getFieldValue("购买渠道")?.toString()
+        val storeName = getFieldValue("商家名称")?.toString()
+        val serialNumber = getFieldValue("序列号")?.toString()
+        val capacity = getFieldValue("容量")?.toString()?.toDoubleOrNull()
+        val capacityUnit = getFieldValue("容量_unit")?.toString() ?: "ml"
+        val rating = getFieldValue("评分")?.toString()?.toDoubleOrNull()
+        
+        // 季节处理
+        val season = when (val seasonValue = getFieldValue("季节")) {
+            is Set<*> -> seasonValue.filterIsInstance<String>().joinToString(",")
+            is String -> seasonValue
+            else -> null
+        }
+        
+        // 保质期和保修期处理
+        val shelfLife = getFieldValue("保质期")?.let { value ->
+            when (value) {
+                is Pair<*, *> -> {
+                    val (num, unit) = value
+                    convertTodays(num.toString().toIntOrNull() ?: 0, unit.toString())
+                }
+                else -> null
+            }
+        }
+        
+        val warrantyPeriod = getFieldValue("保修期")?.let { value ->
+            when (value) {
+                is Pair<*, *> -> {
+                    val (num, unit) = value
+                    convertTodays(num.toString().toIntOrNull() ?: 0, unit.toString())
+                }
+                else -> null
+            }
+        }
+        
+        return com.example.itemmanagement.data.entity.unified.InventoryDetailEntity(
+            itemId = itemId,
+            quantity = quantity,
+            unit = quantityUnit,
+            locationId = locationId,
+            productionDate = productionDate,
+            expirationDate = expirationDate,
+            openStatus = openStatus,
+            openDate = openDate,
+            status = com.example.itemmanagement.data.model.ItemStatus.IN_STOCK,
+            stockWarningThreshold = null,
+            price = price,
+            priceUnit = priceUnit,
+            purchaseChannel = purchaseChannel,
+            storeName = storeName,
+            // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
+            totalPrice = totalPrice,
+            totalPriceUnit = totalPriceUnit,
+            purchaseDate = purchaseDate,
+            shelfLife = shelfLife,
+            warrantyPeriod = warrantyPeriod,
+            warrantyEndDate = warrantyEndDate,
+            isHighTurnover = false,
+            createdDate = Date(),
+            updatedDate = Date()
+        )
+    }
+
+    /**
+     * 将数值和单位转换为天数
+     */
+    private fun convertTodays(value: Int, unit: String): Int {
+        return when (unit) {
+            "天" -> value
+            "周" -> value * 7
+            "月" -> value * 30
+            "年" -> value * 365
+            else -> value
+        }
+    }
+
+    /**
      * 从字段构建Item对象（编辑模式版本）
      */
     private fun buildItemFromFields(): Item {
@@ -552,7 +683,7 @@ class EditItemViewModel(
     private fun buildTagsFromSelectedTags(): List<com.example.itemmanagement.data.model.Tag> {
         val tags = mutableListOf<com.example.itemmanagement.data.model.Tag>()
         
-        _selectedTags.value?.forEach { (category, tagNames) ->
+        _selectedTags.value?.forEach { (fieldName, tagNames) ->
             tagNames.forEach { tagName ->
                 tags.add(com.example.itemmanagement.data.model.Tag(
                     name = tagName

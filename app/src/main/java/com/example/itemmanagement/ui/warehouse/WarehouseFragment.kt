@@ -64,7 +64,9 @@ class WarehouseFragment : Fragment() {
         adapter = WarehouseItemAdapter(
             onItemClick = { itemId ->
                 // 导航到详情页面
+                android.util.Log.d("WarehouseFragment", "🎯 点击物品，itemId: $itemId")
                 val bundle = androidx.core.os.bundleOf("itemId" to itemId)
+                android.util.Log.d("WarehouseFragment", "🎯 准备导航到详情页，bundle: $bundle")
                 findNavController().navigate(R.id.navigation_item_detail, bundle)
             },
             onEdit = { itemId ->
@@ -279,17 +281,26 @@ class WarehouseFragment : Fragment() {
     }
 
     private fun observeItems() {
+        android.util.Log.d("WarehouseFragment", "📱 WarehouseFragment开始观察仓库物品StateFlow")
+        
         // 使用viewLifecycleOwner.lifecycleScope观察StateFlow，确保在View销毁时自动取消
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.warehouseItems.collectLatest { items ->
+                android.util.Log.d("WarehouseFragment", "📱 WarehouseFragment收到StateFlow数据更新：${items.size}个物品")
+                items.forEachIndexed { index, item ->
+                    android.util.Log.d("WarehouseFragment", "  [$index] Fragment收到: name='${item.name}', locationArea='${item.locationArea}', tagsList='${item.tagsList}', rating=${item.rating}")
+                }
                 
                 if (items.isEmpty()) {
+                    android.util.Log.d("WarehouseFragment", "📱 显示空视图")
                     binding.emptyView.visibility = View.VISIBLE
                     binding.recyclerView.visibility = View.GONE
                 } else {
+                    android.util.Log.d("WarehouseFragment", "📱 显示RecyclerView，准备提交数据到Adapter")
                     binding.emptyView.visibility = View.GONE
                     binding.recyclerView.visibility = View.VISIBLE
                     adapter.submitList(items) {
+                        android.util.Log.d("WarehouseFragment", "✅ Adapter数据提交完成，滚动到顶部")
                         // 在列表更新完成后滚动到顶部
                         binding.recyclerView.scrollToPosition(0)
                     }

@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="?attr/colorSurface">
 
     <!-- 主要内容区域 -->
     <androidx.core.widget.NestedScrollView
@@ -40,9 +40,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="我的购物清单"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/black" />
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface" />
 
             </LinearLayout>
 
@@ -92,16 +91,15 @@
                         android:alpha="0.3"
                         android:contentDescription="空状态"
                         android:src="@drawable/ic_list"
-                        app:tint="@color/shopping_primary" />
+                        app:tint="?attr/colorPrimary" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
                         android:text="还没有购物清单"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:textColor="#666666" />
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -109,8 +107,8 @@
                         android:layout_marginTop="8dp"
                         android:gravity="center"
                         android:text="点击上方「创建清单」按钮\n开始您的第一个购物清单"
-                        android:textSize="14sp"
-                        android:textColor="#888888" />
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
                 </LinearLayout>
 
@@ -129,8 +127,6 @@
         android:layout_margin="16dp"
         android:contentDescription="快速创建购物清单"
         android:src="@drawable/ic_add"
-        app:backgroundTint="@color/shopping_primary"
-        app:tint="@color/white"
         app:fabSize="normal"
         app:elevation="6dp" />
 

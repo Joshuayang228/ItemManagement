@@ -23,6 +23,9 @@
         <item name="boxCornerRadiusBottomStart">8dp</item>
         <item name="boxCornerRadiusTopEnd">8dp</item>
         <item name="boxCornerRadiusTopStart">8dp</item>
+        <!-- 🇨🇳 国内APP流行样式：禁用浮动标签，hint直接消失 -->
+        <item name="hintEnabled">false</item>
+        <item name="hintAnimationEnabled">false</item>
     </style>
 
     <style name="Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
@@ -30,6 +33,9 @@
         <item name="boxCornerRadiusBottomStart">8dp</item>
         <item name="boxCornerRadiusTopEnd">8dp</item>
         <item name="boxCornerRadiusTopStart">8dp</item>
+        <!-- 🇨🇳 国内APP流行样式：品牌输入框也使用hint直接消失 -->
+        <item name="hintEnabled">false</item>
+        <item name="hintAnimationEnabled">false</item>
     </style>
 
     <!-- Chart Toggle Styles -->
@@ -38,6 +44,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:background">@color/chart_toggle_group_bg</item>
         <item name="android:padding">4dp</item>
+        <item name="singleSelection">true</item>
+        <item name="selectionRequired">true</item>
     </style>
 
     <style name="ChartToggleButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
@@ -45,24 +53,51 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
         <item name="android:textSize">12sp</item>
-        <item name="android:textColor">@color/chart_toggle_unselected_text</item>
-        <item name="android:background">@color/chart_toggle_unselected_bg</item>
+        <!-- 🎯 使用 ColorStateList 实现选中/未选中状态的动态切换 -->
+        <item name="android:textColor">@color/chart_toggle_text_selector</item>
+        <!-- 🎯 关键：MaterialButtonToggleGroup 需要使用 app:backgroundTint -->
+        <item name="backgroundTint">@color/chart_toggle_background_selector</item>
+        <item name="strokeColor">@android:color/transparent</item>
+        <item name="strokeWidth">0dp</item>
+        <!-- 🎯 减少上下空白 -->
+        <item name="android:minHeight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
     </style>
 
     <style name="ChartInnerToggleGroupStyle" parent="Widget.Material3.MaterialButtonToggleGroup">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:background">@color/chart_inner_bg</item>
-        <item name="android:padding">4dp</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:padding">0dp</item>
+        <item name="singleSelection">true</item>
+        <item name="selectionRequired">true</item>
     </style>
 
     <style name="ChartInnerToggleButtonStyle" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:textSize">11sp</item>
-        <item name="android:textColor">@color/chart_inner_text</item>
-        <item name="android:background">@color/chart_inner_bg</item>
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:textSize">9sp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+        <item name="android:paddingLeft">4dp</item>
+        <item name="android:paddingRight">4dp</item>
+        <!-- 🎯 使用 ColorStateList 实现选中/未选中状态的动态切换（嵌入图表的小按钮） -->
+        <item name="android:textColor">@color/chart_inner_toggle_text_selector</item>
+        <!-- 🎯 使用 backgroundTint + selector，避免覆盖 MaterialButton 的 ShapeAppearanceModel -->
+        <item name="backgroundTint">@color/chart_inner_toggle_background_selector</item>
+        <item name="strokeColor">@android:color/transparent</item>
+        <item name="strokeWidth">0dp</item>
+        <!-- 🎯 设置圆角为小长方形 -->
+        <item name="cornerRadius">4dp</item>
     </style>
 
     <!-- Detail Styles -->

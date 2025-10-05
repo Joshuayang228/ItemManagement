@@ -32,7 +32,8 @@ class AppSettingsFragment : Fragment() {
     ): View {
         _binding = FragmentAppSettingsBinding.inflate(inflater, container, false)
         val application = requireActivity().application as ItemManagementApplication
-        val factory = AppSettingsViewModelFactory(application.userProfileRepository)
+        val userProfileRepository = application.userProfileRepository
+        val factory = AppSettingsViewModelFactory(userProfileRepository)
         viewModel = ViewModelProvider(this, factory).get(AppSettingsViewModel::class.java)
         return binding.root
     }

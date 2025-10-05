@@ -2,12 +2,12 @@ package com.example.itemmanagement.ui.analysis
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 
-class InventoryAnalysisViewModelFactory(
-    private val repository: ItemRepository
-) : ViewModelProvider.Factory {
-    
+/**
+ * 库存分析ViewModel工厂类（基于统一架构）
+ */
+class InventoryAnalysisViewModelFactory(private val repository: UnifiedItemRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(InventoryAnalysisViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
@@ -15,4 +15,5 @@ class InventoryAnalysisViewModelFactory(
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
-} 
+}
+

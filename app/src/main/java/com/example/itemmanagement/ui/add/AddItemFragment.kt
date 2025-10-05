@@ -47,6 +47,15 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
             // 立即设置空标题，避免闪现"添加物品"文字
             actionBar.title = ""
         }
+        
+        // 隐藏底部导航栏
+        hideBottomNavigation()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // 确保底部导航栏隐藏
+        hideBottomNavigation()
     }
 
     override fun onViewModelReady() {
@@ -445,5 +454,16 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
                 }, 500)
             }
         }
+    }
+
+    /**
+     * 重写 onDestroyView，恢复导航栏显示
+     * 
+     * 注意：购物清单转入库存现在由专用的AddFromShoppingListFragment处理，
+     * 此Fragment只用于从主页添加物品，因此返回时恢复导航栏显示即可。
+     */
+    override fun onDestroyView() {
+        // 从主页添加物品，返回时恢复导航栏（使用父类的默认行为）
+        super.onDestroyView()
     }
 } 

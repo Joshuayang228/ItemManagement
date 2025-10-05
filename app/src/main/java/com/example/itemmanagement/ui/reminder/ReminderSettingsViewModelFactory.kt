@@ -4,15 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.itemmanagement.data.repository.ReminderSettingsRepository
 
+/**
+ * 提醒设置ViewModel工厂类
+ */
 class ReminderSettingsViewModelFactory(
-    private val repository: ReminderSettingsRepository
+    private val reminderSettingsRepository: ReminderSettingsRepository
 ) : ViewModelProvider.Factory {
-    
-    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ReminderSettingsViewModel::class.java)) {
-            return ReminderSettingsViewModel(repository) as T
+            @Suppress("UNCHECKED_CAST")
+            return ReminderSettingsViewModel(reminderSettingsRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

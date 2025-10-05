@@ -1,136 +1,152 @@
 package com.example.itemmanagement.data.mapper
 
 import com.example.itemmanagement.data.entity.*
+import com.example.itemmanagement.data.entity.unified.*
 import com.example.itemmanagement.data.model.*
 import com.example.itemmanagement.data.relation.ItemWithDetails
+import com.example.itemmanagement.data.relation.UnifiedItemWithDetails
+import java.util.Date
 
 /**
- * 将ItemEntity转换为Item领域模型
- * 保持所有字段的映射关系一致
+ * 将UnifiedItemEntity转换为Item领域模型（基础信息）
+ * @deprecated 使用UnifiedItemMapper.toItem()替代
  */
-fun ItemEntity.toItem(): Item {
+@Deprecated("使用UnifiedItemMapper.toItem()替代")
+fun UnifiedItemEntity.toItem(): Item {
     return Item(
         id = id,
         name = name,
-        quantity = quantity,
-        unit = unit,
-        location = null, // 注意：这里不能直接访问location，因为它是通过关系查询获得的
+        quantity = 0.0, // 基础Entity不包含数量，需要从详情获取
+        unit = "",      // 基础Entity不包含单位，需要从详情获取
+        location = null, // 需要从InventoryDetailEntity获取
         category = category,
-        addDate = addDate,
-        productionDate = productionDate,
-        expirationDate = expirationDate,
-        openStatus = openStatus,
-        openDate = openDate,
+        addDate = createdDate,
+        productionDate = null,
+        expirationDate = null,
+        openStatus = null,
+        openDate = null,
         brand = brand,
         specification = specification,
-        status = status,
-        stockWarningThreshold = stockWarningThreshold,
-        price = price,
-        priceUnit = priceUnit,
-        purchaseChannel = purchaseChannel,
-        storeName = storeName,
+        status = ItemStatus.IN_STOCK, // 默认状态
+        stockWarningThreshold = null,
+        price = null,
+        priceUnit = null,
+        purchaseChannel = null,
+        storeName = null,
         subCategory = subCategory,
         customNote = customNote,
-        season = season,
-        capacity = capacity,
-        capacityUnit = capacityUnit,
-        rating = rating,
-        totalPrice = totalPrice,
-        totalPriceUnit = totalPriceUnit,
-        purchaseDate = purchaseDate,
-        shelfLife = shelfLife,
-        warrantyPeriod = warrantyPeriod,
-        warrantyEndDate = warrantyEndDate,
-        serialNumber = serialNumber,
-        isHighTurnover = isHighTurnover,
-        photos = emptyList(), // 注意：这里不能直接访问photos，因为它是通过关系查询获得的
-        tags = emptyList() // 注意：这里不能直接访问tags，因为它是通过关系查询获得的
+        season = season, // 从UnifiedItemEntity读取
+        capacity = capacity, // 从UnifiedItemEntity读取
+        capacityUnit = capacityUnit, // 从UnifiedItemEntity读取
+        rating = rating, // 从UnifiedItemEntity读取
+        totalPrice = null,
+        totalPriceUnit = null,
+        purchaseDate = null,
+        shelfLife = null,
+        warrantyPeriod = null,
+        warrantyEndDate = null,
+        serialNumber = serialNumber, // 从UnifiedItemEntity读取
+        isHighTurnover = false,
+        photos = emptyList(),
+        tags = emptyList()
     )
 }
 
 /**
- * 将Item领域模型转换为ItemEntity数据库实体
- * 保持所有字段的映射关系一致
+ * 将Item领域模型转换为统一架构实体
+ * @deprecated 使用UnifiedItemMapper.toInventoryEntities()替代
  */
-fun Item.toItemEntity(locationId: Long? = null): ItemEntity {
-    return ItemEntity(
+@Deprecated("使用UnifiedItemMapper.toInventoryEntities()替代")
+fun Item.toItemEntity(locationId: Long? = null): UnifiedItemEntity {
+    return UnifiedItemEntity(
         id = id,
         name = name,
-        quantity = quantity,
-        unit = unit,
-        locationId = locationId, // 使用传入的locationId
         category = category,
-        addDate = addDate,
-        productionDate = productionDate,
-        expirationDate = expirationDate,
-        openStatus = openStatus,
-        openDate = openDate,
+        subCategory = subCategory,
         brand = brand,
         specification = specification,
-        status = status,
-        stockWarningThreshold = stockWarningThreshold,
-        price = price,
-        priceUnit = priceUnit,
-        purchaseChannel = purchaseChannel,
-        storeName = storeName,
-        subCategory = subCategory,
         customNote = customNote,
-        season = season,
-        capacity = capacity,
-        capacityUnit = capacityUnit,
-        rating = rating,
-        totalPrice = totalPrice,
-        totalPriceUnit = totalPriceUnit,
-        purchaseDate = purchaseDate,
-        shelfLife = shelfLife,
-        warrantyPeriod = warrantyPeriod,
-        warrantyEndDate = warrantyEndDate,
-        serialNumber = serialNumber,
-        isHighTurnover = isHighTurnover
+        createdDate = addDate,
+        updatedDate = Date()
     )
 }
 
 /**
- * 将ItemWithDetails转换为Item领域模型
+ * 将ItemWithDetails转换为Item领域模型（向后兼容）
+ * @deprecated 使用UnifiedItemMapper.toItem()替代
  */
+@Deprecated("使用UnifiedItemMapper.toItem()替代")
 fun ItemWithDetails.toItem(): Item {
+    android.util.Log.d("ItemMapper", "🔄 开始ItemWithDetails到Item的转换")
+    android.util.Log.d("ItemMapper", "📋 UnifiedItem: $unifiedItem")
+    android.util.Log.d("ItemMapper", "📦 InventoryDetail: $inventoryDetail")
+    android.util.Log.d("ItemMapper", "📸 Photos: ${photos?.size}张")
+    android.util.Log.d("ItemMapper", "🏷️ Tags: ${tags?.size}个")
+    
+    val inventoryDetail = this.inventoryDetail
+    
+    // 构建位置信息
+    val location = this.location?.let { locationEntity ->
+        android.util.Log.d("ItemMapper", "📍 找到LocationEntity: area='${locationEntity.area}', container='${locationEntity.container}', sublocation='${locationEntity.sublocation}'")
+        Location(
+            id = locationEntity.id,
+            area = locationEntity.area,
+            container = locationEntity.container,
+            sublocation = locationEntity.sublocation
+        )
+    }
+    android.util.Log.d("ItemMapper", "📍 转换后的Location: ${location?.let { "area='${it.area}', container='${it.container}', sublocation='${it.sublocation}'" } ?: "null"}")
+    
     return Item(
-        id = item.id,
-        name = item.name,
-        quantity = item.quantity,
-        unit = item.unit,
-        location = location?.toLocation(),
-        category = item.category,
-        addDate = item.addDate,
-        productionDate = item.productionDate,
-        expirationDate = item.expirationDate,
-        openStatus = item.openStatus,
-        openDate = item.openDate,
-        brand = item.brand,
-        specification = item.specification,
-        status = item.status,
-        stockWarningThreshold = item.stockWarningThreshold,
-        price = item.price,
-        priceUnit = item.priceUnit,
-        purchaseChannel = item.purchaseChannel,
-        storeName = item.storeName,
-        subCategory = item.subCategory,
-        customNote = item.customNote,
-        season = item.season,
-        capacity = item.capacity,
-        capacityUnit = item.capacityUnit,
-        rating = item.rating,
-        totalPrice = item.totalPrice,
-        totalPriceUnit = item.totalPriceUnit,
-        purchaseDate = item.purchaseDate,
-        shelfLife = item.shelfLife,
-        warrantyPeriod = item.warrantyPeriod,
-        warrantyEndDate = item.warrantyEndDate,
-        serialNumber = item.serialNumber,
-        isHighTurnover = item.isHighTurnover,
-        photos = photos.map { it.toPhoto() },
-        tags = tags.map { it.toTag() }
-    )
+        id = unifiedItem.id,
+        name = unifiedItem.name,
+        quantity = inventoryDetail?.quantity ?: 0.0,
+        unit = inventoryDetail?.unit ?: "",
+        location = location, // 修复：使用构建的位置信息
+        category = unifiedItem.category,
+        addDate = unifiedItem.createdDate,
+        productionDate = inventoryDetail?.productionDate,
+        expirationDate = inventoryDetail?.expirationDate,
+        openStatus = inventoryDetail?.openStatus,
+        openDate = inventoryDetail?.openDate,
+        brand = unifiedItem.brand,
+        specification = unifiedItem.specification,
+        status = inventoryDetail?.status ?: ItemStatus.IN_STOCK,
+        stockWarningThreshold = inventoryDetail?.stockWarningThreshold,
+        price = inventoryDetail?.price,
+        priceUnit = inventoryDetail?.priceUnit,
+        purchaseChannel = inventoryDetail?.purchaseChannel,
+        storeName = inventoryDetail?.storeName,
+        subCategory = unifiedItem.subCategory,
+        customNote = unifiedItem.customNote,
+        season = unifiedItem.season, // 从UnifiedItemEntity读取
+        capacity = unifiedItem.capacity, // 从UnifiedItemEntity读取
+        capacityUnit = unifiedItem.capacityUnit, // 从UnifiedItemEntity读取
+        rating = unifiedItem.rating, // 从UnifiedItemEntity读取
+        totalPrice = inventoryDetail?.totalPrice,
+        totalPriceUnit = inventoryDetail?.totalPriceUnit,
+        purchaseDate = inventoryDetail?.purchaseDate,
+        shelfLife = inventoryDetail?.shelfLife,
+        warrantyPeriod = inventoryDetail?.warrantyPeriod,
+        warrantyEndDate = inventoryDetail?.warrantyEndDate,
+        serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
+        isHighTurnover = inventoryDetail?.isHighTurnover ?: false,
+        photos = photos?.map { 
+            android.util.Log.d("ItemMapper", "📸 转换照片: ${it.uri}")
+            it.toPhoto() 
+        } ?: emptyList(),
+        tags = tags?.map { 
+            android.util.Log.d("ItemMapper", "🏷️ 转换标签: ${it.name}")
+            it.toTag() 
+        } ?: emptyList()
+    ).also { item ->
+        android.util.Log.d("ItemMapper", "✅ 转换完成的Item:")
+        android.util.Log.d("ItemMapper", "  📋 名称: '${item.name}'")
+        android.util.Log.d("ItemMapper", "  📍 位置: ${item.location}")
+        android.util.Log.d("ItemMapper", "  🏷️ 标签: ${item.tags.map { it.name }}")
+        android.util.Log.d("ItemMapper", "  📸 照片: ${item.photos.map { it.uri }}")
+        android.util.Log.d("ItemMapper", "  ⭐ 评分: ${item.rating}")
+    }
 }
 
 /**

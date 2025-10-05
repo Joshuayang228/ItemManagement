@@ -106,6 +106,22 @@ class ItemStateCacheViewModel : ViewModel() {
         var purchaseTiming: String? = null
     )
 
+    /**
+     * 购物清单转入库存模式的缓存
+     * 用于保存用户在"购物清单转入库存"流程中的所有输入
+     * 与添加物品缓存完全独立，避免数据污染
+     */
+    data class TransferToInventoryCache(
+        var fieldValues: MutableMap<String, Any?> = mutableMapOf(),
+        var selectedFields: Set<Field> = setOf(),
+        var photoUris: List<Uri> = emptyList(),
+        var selectedTags: Map<String, Set<String>> = mapOf(),
+        var customOptions: MutableMap<String, MutableList<String>> = mutableMapOf(),
+        var customUnits: MutableMap<String, MutableList<String>> = mutableMapOf(),
+        var customTags: MutableMap<String, MutableList<String>> = mutableMapOf(),
+        var sourceItemId: Long? = null  // 源购物物品ID
+    )
+
     // 添加物品模式的缓存
     private val _addItemCache = AddItemCache()
     
@@ -114,12 +130,18 @@ class ItemStateCacheViewModel : ViewModel() {
 
     // 购物清单物品模式的缓存 - 按购物清单ID分组
     private val _shoppingItemCaches = mutableMapOf<Long, ShoppingItemCache>()
+    
+    // 购物物品编辑模式的缓存 - 按物品ID分组
+    private val _editShoppingItemCaches = mutableMapOf<Long, EditItemCache>()
 
     // 心愿单添加模式的缓存
     private val _wishlistAddCache = WishlistItemCache()
     
     // 心愿单编辑模式的缓存 - 按心愿单物品ID分组
     private val _wishlistEditCaches = mutableMapOf<Long, WishlistEditCache>()
+
+    // 购物清单转入库存模式的缓存 - 按物品ID分组
+    private val _transferToInventoryCaches = mutableMapOf<Long, TransferToInventoryCache>()
 
     /**
      * 获取添加物品模式的缓存
@@ -204,6 +226,36 @@ class ItemStateCacheViewModel : ViewModel() {
     fun clearShoppingItemCache(shoppingListId: Long) {
         _shoppingItemCaches.remove(shoppingListId)
     }
+    
+    /**
+     * 获取特定购物物品的编辑缓存
+     * @param itemId 购物物品ID
+     * @return 该购物物品的编辑缓存，如果不存在则创建新的
+     */
+    fun getEditShoppingItemCache(itemId: Long): EditItemCache {
+        return _editShoppingItemCaches.getOrPut(itemId) {
+            EditItemCache(originalItemId = itemId)
+        }
+    }
+    
+    /**
+     * 检查是否存在特定购物物品的编辑缓存
+     * @param itemId 购物物品ID
+     * @return 如果存在编辑缓存且有数据则返回true
+     */
+    fun hasEditShoppingItemCache(itemId: Long): Boolean {
+        return _editShoppingItemCaches.containsKey(itemId) &&
+               _editShoppingItemCaches[itemId]?.fieldValues?.isNotEmpty() == true
+    }
+    
+    /**
+     * 清除特定购物物品的编辑缓存
+     * 通常在物品成功更新后调用
+     * @param itemId 购物物品ID
+     */
+    fun clearEditShoppingItemCache(itemId: Long) {
+        _editShoppingItemCaches.remove(itemId)
+    }
 
     /**
      * 清除心愿单添加模式的缓存
@@ -234,6 +286,43 @@ class ItemStateCacheViewModel : ViewModel() {
     }
 
     /**
+     * 获取特定购物物品的转入库存缓存
+     * @param itemId 购物物品ID
+     * @return 该购物物品的转入库存缓存，如果不存在则创建新的
+     */
+    fun getTransferToInventoryCache(itemId: Long): TransferToInventoryCache {
+        val cache = _transferToInventoryCaches.getOrPut(itemId) {
+            TransferToInventoryCache(sourceItemId = itemId)
+        }
+        android.util.Log.d("ItemStateCacheViewModel", "获取转入库存缓存(ID:$itemId)，当前fieldValues: ${cache.fieldValues}")
+        return cache
+    }
+
+    /**
+     * 检查是否存在特定购物物品的转入库存缓存
+     * @param itemId 购物物品ID
+     * @return 如果存在转入库存缓存且有数据则返回true
+     */
+    fun hasTransferToInventoryCache(itemId: Long): Boolean {
+        val cache = _transferToInventoryCaches[itemId]
+        return cache != null && (
+            cache.fieldValues.isNotEmpty() || 
+            cache.selectedFields.isNotEmpty() ||
+            cache.photoUris.isNotEmpty()
+        )
+    }
+
+    /**
+     * 清除特定购物物品的转入库存缓存
+     * 通常在物品成功入库后调用
+     * @param itemId 购物物品ID
+     */
+    fun clearTransferToInventoryCache(itemId: Long) {
+        _transferToInventoryCaches.remove(itemId)
+        android.util.Log.d("ItemStateCacheViewModel", "清除转入库存缓存(ID:$itemId)")
+    }
+
+    /**
      * 清除所有缓存
      * 通常在用户退出整个添加/编辑流程时调用
      */
@@ -241,8 +330,10 @@ class ItemStateCacheViewModel : ViewModel() {
         clearAddItemCache()
         _editItemCaches.clear()
         _shoppingItemCaches.clear()
+        _editShoppingItemCaches.clear()
         clearWishlistAddCache()
         _wishlistEditCaches.clear()
+        _transferToInventoryCaches.clear()
     }
 
     /**

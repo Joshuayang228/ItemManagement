@@ -1,8 +1,9 @@
 package com.example.itemmanagement.ui.shopping
 
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
-import com.example.itemmanagement.data.entity.ShoppingItemEntity
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity
+import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
 import com.example.itemmanagement.data.entity.ShoppingItemPriority
 import com.example.itemmanagement.data.entity.UrgencyLevel
 import com.example.itemmanagement.ui.add.Field
@@ -22,7 +23,7 @@ import java.util.*
  * 使用独立的缓存空间，确保与普通物品添加的数据完全隔离。
  */
 class AddShoppingItemViewModel(
-    repository: ItemRepository,
+    repository: UnifiedItemRepository,
     cacheViewModel: ItemStateCacheViewModel,
     private val listId: Long
 ) : BaseItemViewModel(repository, cacheViewModel) {
@@ -78,15 +79,15 @@ class AddShoppingItemViewModel(
         
         // 购物清单专用字段
         cache.shoppingListId = listId
-        // 可以添加购物清单特有的优先级等信息
-        cache.priority = fieldValues["优先级"] as? String
+        // 可以添加购物清单特有的重要程度等信息
+        cache.priority = (fieldValues["重要程度"] ?: fieldValues["优先级"]) as? String  // ✅ 兼容旧字段
         cache.urgencyLevel = fieldValues["紧急程度"] as? String
     }
 
     override suspend fun saveOrUpdateItem() {
         // 验证数据
-        val shoppingItem = buildShoppingItemFromFields()
-        val (isValid, errorMessage) = validateShoppingItem(shoppingItem)
+        val (unifiedItem, shoppingDetail) = buildShoppingItemFromFields()
+        val (isValid, errorMessage) = validateShoppingItem(unifiedItem, shoppingDetail)
         
         if (!isValid) {
             _errorMessage.value = errorMessage ?: "数据验证失败"
@@ -95,8 +96,13 @@ class AddShoppingItemViewModel(
         }
 
         try {
-            // 保存到数据库
-            val itemId = repository.insertShoppingItemSimple(shoppingItem)
+            // 保存到数据库（包含照片和标签）
+            val itemId = repository.insertShoppingItemSimple(
+                unifiedItem = unifiedItem,
+                shoppingDetail = shoppingDetail,
+                photoUris = _photoUris.value ?: emptyList(),
+                tags = _selectedTags.value ?: emptyMap()
+            )
             
             if (itemId > 0) {
                 _saveResult.value = true
@@ -117,7 +123,7 @@ class AddShoppingItemViewModel(
     /**
      * 从字段值构建ShoppingItemEntity对象
      */
-    private fun buildShoppingItemFromFields(): ShoppingItemEntity {
+    private fun buildShoppingItemFromFields(): Pair<UnifiedItemEntity, ShoppingDetailEntity> {
         val name = fieldValues["名称"] as? String ?: ""
         val quantityStr = fieldValues["数量"] as? String ?: "1"
         val quantity = quantityStr.toDoubleOrNull() ?: 1.0
@@ -132,22 +138,26 @@ class AddShoppingItemViewModel(
         val budgetLimitStr = fieldValues["预算上限"] as? String
         val budgetLimit = budgetLimitStr?.toDoubleOrNull()
         
-        // 优先级和紧急程度
-        val priorityStr = fieldValues["优先级"] as? String
-        val priority = when (priorityStr) {
-            "低" -> ShoppingItemPriority.LOW
-            "高" -> ShoppingItemPriority.HIGH
-            "紧急" -> ShoppingItemPriority.URGENT
-            else -> ShoppingItemPriority.NORMAL
-        }
+        // 重要程度和紧急程度
+        val priorityStr = (fieldValues["重要程度"] ?: fieldValues["优先级"]) as? String  // ✅ 兼容旧字段
+        val priority = ShoppingItemPriority.fromDisplayName(priorityStr ?: "") ?: 
+            when (priorityStr) {  // ✅ 兼容旧的中文值
+                "低", "次要", "次要物品" -> ShoppingItemPriority.LOW
+                "普通", "一般", "一般物品" -> ShoppingItemPriority.NORMAL
+                "高", "重要", "重要物品" -> ShoppingItemPriority.HIGH
+                "紧急", "关键", "关键物品" -> ShoppingItemPriority.CRITICAL
+                else -> ShoppingItemPriority.NORMAL
+            }
         
         val urgencyStr = fieldValues["紧急程度"] as? String
-        val urgencyLevel = when (urgencyStr) {
-            "不急" -> UrgencyLevel.NOT_URGENT
-            "急需" -> UrgencyLevel.URGENT
-            "非常急需" -> UrgencyLevel.CRITICAL
-            else -> UrgencyLevel.NORMAL
-        }
+        val urgencyLevel = UrgencyLevel.fromDisplayName(urgencyStr ?: "") ?: 
+            when (urgencyStr) {  // ✅ 兼容旧的中文值
+                "不急" -> UrgencyLevel.NOT_URGENT
+                "普通", "一般" -> UrgencyLevel.NORMAL
+                "急需", "紧急" -> UrgencyLevel.URGENT
+                "非常急需", "立即" -> UrgencyLevel.CRITICAL
+                else -> UrgencyLevel.NORMAL
+            }
         
         // 日期相关
         val deadlineStr = fieldValues["截止日期"] as? String
@@ -164,48 +174,53 @@ class AddShoppingItemViewModel(
         val tagsSet = fieldValues["标签"] as? Set<String>
         val tagsString = tagsSet?.joinToString(",")
         
-        return ShoppingItemEntity(
-            listId = listId,
+        // 创建统一物品实体
+        val unifiedItem = UnifiedItemEntity(
             name = name,
-            quantity = quantity,
             category = fieldValues["分类"] as? String ?: "未指定",
             subCategory = fieldValues["子分类"] as? String,
             brand = fieldValues["品牌"] as? String,
             specification = fieldValues["规格"] as? String,
-            customNote = fieldValues["备注"] as? String,
-            price = estimatedPrice,
+            customNote = fieldValues["备注"] as? String
+        )
+        
+        // 创建购物详情实体
+        val shoppingDetail = ShoppingDetailEntity(
+            itemId = 0, // 将在插入时设置
+            shoppingListId = listId,
+            quantity = quantity,
+            estimatedPrice = estimatedPrice,
+            estimatedPriceUnit = (fieldValues["预估价格_unit"] as? String) ?: "元",
             actualPrice = actualPrice,
-            priceUnit = fieldValues["价格单位"] as? String ?: "元",
+            actualPriceUnit = (fieldValues["实际价格_unit"] as? String) ?: "元",
             budgetLimit = budgetLimit,
-            totalPrice = if (quantity > 0 && estimatedPrice != null) quantity * estimatedPrice else null,
+            budgetLimitUnit = (fieldValues["预算上限_unit"] as? String) ?: "元",
             purchaseChannel = fieldValues["购买渠道"] as? String,
-            storeName = fieldValues["商店名称"] as? String,
-            preferredStore = fieldValues["首选商店"] as? String,
+            // ✅ "购买商店"统一字段，只写入 storeName
+            storeName = (fieldValues["购买商店"] ?: fieldValues["商店名称"]) as? String,
             priority = priority,
             urgencyLevel = urgencyLevel,
             deadline = deadline,
-            capacity = (fieldValues["容量"] as? String)?.toDoubleOrNull(),
-            capacityUnit = fieldValues["容量单位"] as? String,
-            rating = (fieldValues["评分"] as? String)?.toDoubleOrNull(),
-            season = (fieldValues["季节"] as? Set<String>)?.joinToString(","),
-            sourceItemId = fieldValues["来源物品ID"] as? Long,
+            // 注意：capacity, rating, season 已移至 UnifiedItemEntity
             recommendationReason = fieldValues["推荐原因"] as? String,
             remindDate = remindDate,
             isRecurring = fieldValues["周期性购买"] as? Boolean ?: false,
             recurringInterval = (fieldValues["周期间隔"] as? String)?.toIntOrNull(),
             tags = tagsString
         )
+        
+        return Pair(unifiedItem, shoppingDetail)
     }
 
     /**
-     * 验证ShoppingItemEntity对象
+     * 验证统一架构的购物物品对象
      */
-    private fun validateShoppingItem(item: ShoppingItemEntity): Pair<Boolean, String?> {
+    private fun validateShoppingItem(unifiedItem: UnifiedItemEntity, shoppingDetail: ShoppingDetailEntity): Pair<Boolean, String?> {
         return when {
-            item.name.isBlank() -> Pair(false, "物品名称不能为空")
-            item.quantity <= 0.0 -> Pair(false, "数量必须大于0")
-            item.budgetLimit != null && item.price != null && 
-                item.price > item.budgetLimit -> Pair(false, "预估价格不能超过预算上限")
+            unifiedItem.name.isBlank() -> Pair(false, "物品名称不能为空")
+            shoppingDetail.quantity <= 0.0 -> Pair(false, "数量必须大于0")
+            shoppingDetail.budgetLimit != null && shoppingDetail.estimatedPrice != null && 
+                shoppingDetail.estimatedPrice > shoppingDetail.budgetLimit -> Pair(false, "预估价格不能超过预算上限")
             else -> Pair(true, null)
         }
     }
@@ -221,9 +236,9 @@ class AddShoppingItemViewModel(
             Field("价格", "预估价格", false),
             Field("价格", "预算上限", false),
             Field("购买信息", "购买渠道", false),
-            Field("购买信息", "首选商店", false),
-            Field("优先级", "优先级", false),
-            Field("优先级", "紧急程度", false),
+            Field("购买信息", "购买商店", false),  // ✅ 统一为"购买商店"
+            Field("购买计划", "重要程度", false),  // ✅ 优化：优先级 -> 重要程度
+            Field("购买计划", "紧急程度", false),  // ✅ 优化：分组名称调整
             Field("时间", "截止日期", false),
             Field("基础信息", "备注", false)
         )
@@ -261,19 +276,22 @@ class AddShoppingItemViewModel(
             isCustomizable = true
         ))
         
-        setFieldProperties("优先级", FieldProperties(
-            options = listOf("低", "普通", "高", "紧急"),
+        setFieldProperties("重要程度", FieldProperties(
+            options = ShoppingItemPriority.getDisplayNames(),
+            hint = "这个物品对你来说有多重要？",
             isCustomizable = false
         ))
         
         setFieldProperties("紧急程度", FieldProperties(
-            options = listOf("不急", "普通", "急需", "非常急需"),
+            options = UrgencyLevel.getDisplayNames(),
+            hint = "什么时候必须买到？",
             isCustomizable = false
         ))
         
-        setFieldProperties("首选商店", FieldProperties(
+        // ✅ 统一的"购买商店"字段（替代"首选商店"和"商店名称"）
+        setFieldProperties("购买商店", FieldProperties(
             validationType = ValidationType.TEXT,
-            hint = "请输入首选商店",
+            hint = "请输入购买商店名称",
             isCustomizable = true
         ))
         
@@ -338,7 +356,8 @@ class AddShoppingItemViewModel(
                     
                     // 其他信息
                     it.purchaseChannel?.let { channel -> if (channel != "未指定") saveFieldValue("购买渠道", channel) }
-                    it.storeName?.let { store -> if (store != "未指定") saveFieldValue("首选商店", store) }
+                    // ✅ 优先使用统一的"购买商店"字段
+                    it.storeName?.let { store -> if (store != "未指定") saveFieldValue("购买商店", store) }
                     it.capacity?.let { capacity -> saveFieldValue("容量", capacity.toString()) }
                     it.capacityUnit?.let { unit -> saveFieldValue("容量单位", unit) }
                     
@@ -353,6 +372,139 @@ class AddShoppingItemViewModel(
             } catch (e: Exception) {
                 _errorMessage.value = "从库存物品预填充数据失败: ${e.message}"
             }
+        }
+    }
+    
+    /**
+     * 保存购物物品
+     */
+    fun saveShoppingItem(callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("AddShoppingItem", "========== 开始保存购物物品 ==========")
+                android.util.Log.d("AddShoppingItem", "购物清单ID: $listId")
+                
+                // 1. 验证必填字段
+                val name = (fieldValues["名称"] as? String)?.trim()
+                if (name.isNullOrBlank()) {
+                    callback(false, "请输入物品名称")
+                    return@launch
+                }
+                
+                val quantity = (fieldValues["数量"] as? String)?.toDoubleOrNull() ?: 1.0
+                val unit = (fieldValues["单位"] as? String) ?: "个"
+                val category = (fieldValues["分类"] as? String) ?: "未分类"
+                
+                android.util.Log.d("AddShoppingItem", "物品名称: $name")
+                android.util.Log.d("AddShoppingItem", "数量: $quantity $unit")
+                android.util.Log.d("AddShoppingItem", "分类: $category")
+                
+                // 2. 创建UnifiedItemEntity
+                val unifiedItem = UnifiedItemEntity(
+                    name = name,
+                    category = category,
+                    subCategory = fieldValues["子分类"] as? String,
+                    brand = fieldValues["品牌"] as? String,
+                    specification = fieldValues["规格"] as? String,
+                    customNote = fieldValues["备注"] as? String,
+                    createdDate = java.util.Date()
+                )
+                
+                // 3. 创建ShoppingDetailEntity
+                val shoppingDetail = ShoppingDetailEntity(
+                    itemId = 0L, // 由Repository填充
+                    shoppingListId = listId,
+                    quantity = quantity,
+                    quantityUnit = unit,
+                    estimatedPrice = (fieldValues["预估价格"] as? String)?.toDoubleOrNull(),
+                    estimatedPriceUnit = (fieldValues["预估价格_unit"] as? String) ?: "元",
+                    actualPrice = (fieldValues["实际价格"] as? String)?.toDoubleOrNull(),
+                    actualPriceUnit = (fieldValues["实际价格_unit"] as? String) ?: "元",
+                    budgetLimit = (fieldValues["预算上限"] as? String)?.toDoubleOrNull(),
+                    budgetLimitUnit = (fieldValues["预算上限_unit"] as? String) ?: "元",
+                    purchaseChannel = fieldValues["购买渠道"] as? String,
+                    // ✅ "购买商店"统一字段，只写入 storeName
+                    storeName = (fieldValues["购买商店"] ?: fieldValues["商店名称"]) as? String,
+                    priority = parsePriority((fieldValues["重要程度"] ?: fieldValues["优先级"]) as? String),  // ✅ 兼容
+                    urgencyLevel = parseUrgency(fieldValues["紧急程度"] as? String),
+                    deadline = parseDate(fieldValues["截止日期"] as? String),
+                    addedReason = "USER_MANUAL"
+                )
+                
+                android.util.Log.d("AddShoppingItem", "ShoppingDetail创建成功: shoppingListId=$listId, quantity=$quantity")
+                
+                // 4. 调用Repository保存（包含照片和标签）
+                android.util.Log.d("AddShoppingItem", "开始调用Repository保存")
+                android.util.Log.d("AddShoppingItem", "照片数量: ${_photoUris.value?.size ?: 0}")
+                android.util.Log.d("AddShoppingItem", "标签: ${_selectedTags.value}")
+                repository.addShoppingItem(
+                    unifiedItem = unifiedItem,
+                    shoppingDetail = shoppingDetail,
+                    photoUris = _photoUris.value ?: emptyList(),
+                    tags = _selectedTags.value ?: emptyMap()
+                )
+                android.util.Log.d("AddShoppingItem", "Repository保存成功")
+                
+                // 5. 清除缓存
+                cacheViewModel.clearShoppingItemCache(listId)
+                
+                callback(true, "已添加「$name」到购物清单")
+                
+            } catch (e: Exception) {
+                android.util.Log.e("AddShoppingItem", "保存失败", e)
+                callback(false, "保存失败: ${e.message}")
+            }
+        }
+    }
+    
+    private fun parsePriority(value: String?): ShoppingItemPriority {
+        return ShoppingItemPriority.fromDisplayName(value?.trim() ?: "") ?: when (value?.trim()) {
+            "低", "次要" -> ShoppingItemPriority.LOW
+            "普通", "一般" -> ShoppingItemPriority.NORMAL
+            "高", "重要" -> ShoppingItemPriority.HIGH
+            "紧急", "关键" -> ShoppingItemPriority.CRITICAL
+            else -> ShoppingItemPriority.NORMAL
+        }
+    }
+    
+    private fun parseUrgency(value: String?): UrgencyLevel {
+        return UrgencyLevel.fromDisplayName(value?.trim() ?: "") ?: when (value?.trim()) {
+            "不急" -> UrgencyLevel.NOT_URGENT
+            "普通", "一般" -> UrgencyLevel.NORMAL
+            "急需", "紧急" -> UrgencyLevel.URGENT
+            "非常急需", "立即" -> UrgencyLevel.CRITICAL
+            else -> UrgencyLevel.NORMAL
+        }
+    }
+    
+    /**
+     * 解析日期字符串
+     * 支持多种日期格式：yyyy-MM-dd, yyyy/MM/dd, yyyy年MM月dd日
+     */
+    private fun parseDate(value: String?): java.util.Date? {
+        if (value.isNullOrBlank()) return null
+        
+        return try {
+            // 尝试多种日期格式
+            val formats = listOf(
+                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()),
+                SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()),
+                SimpleDateFormat("yyyy年MM月dd日", Locale.CHINA)
+            )
+            
+            for (format in formats) {
+                try {
+                    return format.parse(value)
+                } catch (e: Exception) {
+                    // 尝试下一个格式
+                }
+            }
+            
+            android.util.Log.w("AddShoppingItem", "无法解析日期: $value")
+            null
+        } catch (e: Exception) {
+            android.util.Log.e("AddShoppingItem", "日期解析异常: ${e.message}")
+            null
         }
     }
 } 

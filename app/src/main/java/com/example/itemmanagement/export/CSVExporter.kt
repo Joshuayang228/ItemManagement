@@ -28,27 +28,28 @@ object CSVExporter {
         
         // 数据行
         items.forEach { itemDetail ->
-            val item = itemDetail.item
-            val location = itemDetail.location
+            val unifiedItem = itemDetail.unifiedItem
+            val inventoryDetail = itemDetail.inventoryDetail
+            val location = null // TODO: 需要从inventoryDetail.locationId查询LocationEntity
             val tags = itemDetail.tags.joinToString(";") { it.name }
             
             csv.appendLine(
-                "${escapeCsvField(item.name)}," +
-                "${escapeCsvField(item.category)}," +
-                "${escapeCsvField(item.brand ?: "")}," +
-                "${escapeCsvField(item.specification ?: "")}," +
-                "${item.quantity ?: ""}," +
-                "${escapeCsvField(item.unit ?: "")}," +
-                "${item.price ?: ""}," +
-                "${calculateTotalValue(item.quantity, item.price)}," +
-                "${formatDate(item.purchaseDate)}," +
-                "${formatDate(item.expirationDate)}," +
-                "${escapeCsvField(location?.area ?: "")}," +
-                "${escapeCsvField(location?.container ?: "")}," +
-                "${formatDate(item.warrantyEndDate)}," +
-                "${escapeCsvField(item.customNote ?: "")}," +
+                "${escapeCsvField(unifiedItem.name)}," +
+                "${escapeCsvField(unifiedItem.category)}," +
+                "${escapeCsvField(unifiedItem.brand ?: "")}," +
+                "${escapeCsvField(unifiedItem.specification ?: "")}," +
+                "${inventoryDetail?.quantity ?: ""}," +
+                "${escapeCsvField(inventoryDetail?.unit ?: "")}," +
+                "${inventoryDetail?.price ?: ""}," +
+                "${calculateTotalValue(inventoryDetail?.quantity, inventoryDetail?.price)}," +
+                "${formatDate(inventoryDetail?.purchaseDate)}," +
+                "${formatDate(inventoryDetail?.expirationDate)}," +
+                "${escapeCsvField("")}," + // TODO: 需要从inventoryDetail.locationId查询LocationEntity
+                "${escapeCsvField("")}," + // TODO: 需要从LocationEntity获取container
+                "${formatDate(inventoryDetail?.warrantyEndDate)}," +
+                "${escapeCsvField(unifiedItem.customNote ?: "")}," +
                 "${escapeCsvField(tags)}," +
-                "${formatDateTime(item.addDate)}"
+                "${formatDateTime(unifiedItem.createdDate)}"
             )
         }
         

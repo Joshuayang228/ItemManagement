@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.entity.CalendarEventEntity
 import com.example.itemmanagement.data.model.*
 import kotlinx.coroutines.flow.combine
@@ -14,7 +14,7 @@ import java.util.*
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-class ItemCalendarViewModel(private val repository: ItemRepository) : ViewModel() {
+class ItemCalendarViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
 
     private val _currentMonth = MutableLiveData<Calendar>()
     val currentMonth: LiveData<Calendar> = _currentMonth
@@ -49,11 +49,11 @@ class ItemCalendarViewModel(private val repository: ItemRepository) : ViewModel(
     private fun cleanupDuplicateEvents() {
         viewModelScope.launch {
             try {
-                val allEvents = repository.getAllCalendarEvents().first()
+                val allEvents: List<CalendarEventEntity> = repository.getAllCalendarEvents().first()
                 android.util.Log.d("CalendarViewModel", "开始清理重复事件，总共 ${allEvents.size} 个事件")
                 
                 // 更详细的去重逻辑：基于多个字段组合
-                val eventGroups = allEvents.groupBy { event ->
+                val eventGroups: Map<String, List<CalendarEventEntity>> = allEvents.groupBy { event ->
                     "${event.itemId}_${event.eventType}_${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.eventDate)}_${event.title}"
                 }
                 
@@ -153,8 +153,8 @@ class ItemCalendarViewModel(private val repository: ItemRepository) : ViewModel(
                         set(Calendar.MILLISECOND, 999)
                     }.time
 
-                    val events = repository.getCalendarEventsBetweenDates(startOfMonth, endOfMonth).first()
-                    val calendarEvents = events.map { entity ->
+                    val events: List<CalendarEventEntity> = repository.getCalendarEventsBetweenDates(startOfMonth, endOfMonth).first()
+                    val calendarEvents: List<CalendarEvent> = events.map { entity ->
                         CalendarEvent(
                             id = entity.id,
                             itemId = entity.itemId,
@@ -195,8 +195,8 @@ class ItemCalendarViewModel(private val repository: ItemRepository) : ViewModel(
                 android.util.Log.d("CalendarViewModel", "找到 ${items.size} 个物品")
                 
                 // 获取现有的事件，按类型分组
-                val existingEvents = repository.getAllCalendarEvents().first()
-                val existingEventKeys = existingEvents.map { event ->
+                val existingEvents: List<CalendarEventEntity> = repository.getAllCalendarEvents().first()
+                val existingEventKeys: Set<String> = existingEvents.map { event ->
                     "${event.itemId}_${event.eventType}_${SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(event.eventDate)}"
                 }.toSet()
                 
@@ -430,34 +430,16 @@ class ItemCalendarViewModel(private val repository: ItemRepository) : ViewModel(
         } ?: emptyList()
     }
 
-    private fun CalendarEventEntity.toCalendarEvent(): CalendarEvent {
-        // 获取物品信息以填充名称和分类
-        return CalendarEvent(
-            id = id,
-            itemId = itemId,
-            eventType = eventType,
-            title = title,
-            description = description,
-            eventDate = eventDate,
-            reminderDays = reminderDays,
-            priority = priority,
-            isCompleted = isCompleted,
-            recurrenceType = recurrenceType,
-            itemName = "", // TODO: 从关联的物品获取
-            category = "" // TODO: 从关联的物品获取
-        )
-    }
-
     // 添加一个强制清理所有自动生成事件的方法
     fun forceCleanupAutoEvents() {
         viewModelScope.launch {
             try {
-                val allEvents = repository.getAllCalendarEvents().first()
+                val allEvents: List<CalendarEventEntity> = repository.getAllCalendarEvents().first()
                 android.util.Log.d("CalendarViewModel", "开始强制清理自动生成的事件")
                 
                 // 删除所有自动生成的事件（基于事件类型）
                 val autoEventTypes = listOf(EventType.EXPIRATION, EventType.WARRANTY, EventType.ANNIVERSARY)
-                val autoEvents = allEvents.filter { it.eventType in autoEventTypes }
+                val autoEvents: List<CalendarEventEntity> = allEvents.filter { it.eventType in autoEventTypes }
                 
                 android.util.Log.d("CalendarViewModel", "找到 ${autoEvents.size} 个自动生成的事件")
                 

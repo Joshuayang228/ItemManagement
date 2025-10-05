@@ -14,8 +14,8 @@ import java.util.Date
     tableName = "wishlist_price_history",
     foreignKeys = [
         ForeignKey(
-            entity = WishlistItemEntity::class,
-            parentColumns = ["id"],
+            entity = com.example.itemmanagement.data.entity.unified.WishlistDetailEntity::class,
+            parentColumns = ["itemId"],
             childColumns = ["wishlistItemId"],
             onDelete = ForeignKey.CASCADE
         )

@@ -106,7 +106,7 @@ interface WarrantyDao {
             w.createdDate, w.updatedDate,
             i.name as itemName, i.brand, i.category
         FROM warranties w
-        INNER JOIN items i ON w.itemId = i.id
+        INNER JOIN unified_items i ON w.itemId = i.id
         WHERE w.status = 'ACTIVE'
         AND w.warrantyEndDate > :currentTime 
         AND w.warrantyEndDate <= :thresholdTime
@@ -167,7 +167,7 @@ interface WarrantyDao {
     @Query("""
         SELECT w.*, i.name as itemName, i.brand, i.category
         FROM warranties w
-        INNER JOIN items i ON w.itemId = i.id
+        INNER JOIN unified_items i ON w.itemId = i.id
         ORDER BY w.warrantyEndDate ASC
     """)
     fun getWarrantiesWithItemInfo(): Flow<List<WarrantyWithItemInfo>>
@@ -177,7 +177,7 @@ interface WarrantyDao {
      */
     @Query("""
         SELECT w.* FROM warranties w
-        INNER JOIN items i ON w.itemId = i.id
+        INNER JOIN unified_items i ON w.itemId = i.id
         WHERE i.name LIKE '%' || :itemName || '%'
         ORDER BY w.warrantyEndDate ASC
     """)

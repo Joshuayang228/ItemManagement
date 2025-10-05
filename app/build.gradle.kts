@@ -1,10 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("kotlin-kapt")
+    // id("kotlin-kapt")  // 暂时禁用KAPT
     alias(libs.plugins.navigation.safeargs)
     id("kotlin-parcelize")
-    id("com.google.devtools.ksp")
+    id("com.google.devtools.ksp")  // 重新启用KSP
 }
 
 android {
@@ -44,10 +44,10 @@ android {
         freeCompilerArgs = listOf("-Xjvm-default=all")
     }
     
-    kapt {
-        correctErrorTypes = true
-        useBuildCache = true
-    }
+    // kapt {
+    //     correctErrorTypes = true
+    //     useBuildCache = true
+    // }
     buildFeatures {
         viewBinding = true
         dataBinding = true
@@ -87,13 +87,11 @@ dependencies {
     // Room数据库
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    // kapt(libs.room.compiler)
-    ksp(libs.room.compiler)
+    ksp(libs.room.compiler)  // 重新启用KSP用于Room
 
     // Glide图片加载
     implementation(libs.glide)
-    // kapt(libs.glide.compiler)
-    ksp(libs.glide.compiler)
+    ksp(libs.glide.compiler)  // 使用KSP用于Glide
 
     // Gson for JSON serialization
     implementation("com.google.code.gson:gson:2.10.1")

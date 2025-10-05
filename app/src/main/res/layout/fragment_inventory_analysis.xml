@@ -405,7 +405,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="6dp">
 
                         <!-- 第一行：标题和图表类型切换 -->
                         <LinearLayout
@@ -413,7 +413,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="8dp">
+                            android:layout_marginBottom="0dp">
 
                             <TextView
                                 android:layout_width="0dp"
@@ -506,7 +506,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="6dp">
 
                         <!-- 第一行：标题和图表类型切换 -->
                         <LinearLayout
@@ -514,7 +514,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="8dp">
+                            android:layout_marginBottom="0dp">
 
                             <TextView
                                 android:layout_width="0dp"
@@ -607,7 +607,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="6dp">
 
                         <!-- 第一行：标题和图表类型切换 -->
                         <LinearLayout
@@ -615,7 +615,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
-                            android:layout_marginBottom="8dp">
+                            android:layout_marginBottom="0dp">
 
                             <TextView
                                 android:layout_width="0dp"
@@ -709,7 +709,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="6dp">
 
                         <TextView
                             android:layout_width="0dp"

@@ -5,14 +5,14 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.model.FunctionCard
 import com.example.itemmanagement.data.model.FunctionSection
 import com.example.itemmanagement.data.model.FunctionGroupItem
 import com.example.itemmanagement.data.model.FunctionGroupRow
 import com.example.itemmanagement.data.model.CustomSpacerItem
 
-class FunctionViewModel(private val repository: ItemRepository) : ViewModel() {
+class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
 
     private val _functionSections = MutableLiveData<List<FunctionSection>>()
     val functionSections: LiveData<List<FunctionSection>> = _functionSections

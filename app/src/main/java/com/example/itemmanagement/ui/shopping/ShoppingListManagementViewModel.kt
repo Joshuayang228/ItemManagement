@@ -6,7 +6,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.entity.ShoppingListEntity
 import com.example.itemmanagement.data.entity.ShoppingListStatus
 import com.example.itemmanagement.data.entity.ShoppingListType
@@ -27,9 +27,10 @@ data class ShoppingOverviewStats(
  * 购物清单管理ViewModel
  * 处理购物清单的创建、编辑、删除等操作
  */
-class ShoppingListManagementViewModel(application: Application) : AndroidViewModel(application) {
-    
-    private val repository: ItemRepository = ItemRepository.getInstance(application)
+class ShoppingListManagementViewModel(
+    application: Application,
+    private val repository: UnifiedItemRepository
+) : AndroidViewModel(application) {
     
     // 所有购物清单
     val allShoppingLists: LiveData<List<ShoppingListEntity>> = 
@@ -128,7 +129,7 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                repository.deleteShoppingList(shoppingList)
+                repository.deleteShoppingList(shoppingList.id)
                 _message.value = "清单「${shoppingList.name}」已删除"
                 
                 // 如果删除的是当前选中的清单，清空选中状态
@@ -145,17 +146,30 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
     }
     
     /**
-     * 根据ID获取购物清单
+     * 根据ID获取购物清单（同步方法）
      */
-    fun getShoppingListById(id: Long) {
-        viewModelScope.launch {
+    fun getShoppingListById(id: Long): ShoppingListEntity? {
+        return kotlinx.coroutines.runBlocking {
             try {
-                val shoppingList = repository.getShoppingListById(id)
-                _currentShoppingList.value = shoppingList
+                repository.getShoppingListById(id)
             } catch (e: Exception) {
-                _error.value = "获取清单失败: ${e.message}"
+                null
             }
         }
+    }
+    
+    /**
+     * 获取购物清单的物品数量
+     */
+    suspend fun getShoppingItemsCount(listId: Long): Int {
+        return repository.getShoppingItemsCountByListId(listId)
+    }
+    
+    /**
+     * 获取购物清单的已购买物品数量
+     */
+    suspend fun getPurchasedItemsCount(listId: Long): Int {
+        return repository.getPurchasedShoppingItemsCountByListId(listId)
     }
     
     /**
@@ -166,13 +180,23 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
     }
     
     /**
-     * 完成购物清单（标记为已完成）
+     * 完成购物清单（标记为已完成）- 通过ID
      */
-    fun completeShoppingList(shoppingList: ShoppingListEntity) {
-        val completedList = shoppingList.copy(
-            status = ShoppingListStatus.COMPLETED
-        )
-        updateShoppingList(completedList)
+    fun completeShoppingList(listId: Long) {
+        viewModelScope.launch {
+            try {
+                val shoppingList = repository.getShoppingListById(listId)
+                if (shoppingList != null) {
+                    val completedList = shoppingList.copy(
+                        status = ShoppingListStatus.COMPLETED
+                    )
+                    repository.updateShoppingList(completedList)
+                    _message.value = "清单已完成"
+                }
+            } catch (e: Exception) {
+                _error.value = "完成清单失败: ${e.message}"
+            }
+        }
     }
     
     /**
@@ -197,8 +221,8 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
      */
     suspend fun getShoppingListProgress(listId: Long): ShoppingListProgress {
         return try {
-            val totalItems = repository.getShoppingItemsCountByListId(listId).first()
-            val pendingItems = repository.getPendingShoppingItemsCountByListId(listId).first()
+            val totalItems = repository.getShoppingItemsCountByListId(listId)
+            val pendingItems = repository.getPendingShoppingItemsCountByListId(listId)
             val completedItems = totalItems - pendingItems
             
             val progress = if (totalItems > 0) {
@@ -240,7 +264,7 @@ class ShoppingListManagementViewModel(application: Application) : AndroidViewMod
                 // 计算所有活跃清单的待购买物品总数
                 var totalPendingItems = 0
                 for (list in activeLists) {
-                    totalPendingItems += repository.getPendingShoppingItemsCountByListId(list.id).first()
+                    totalPendingItems += repository.getPendingShoppingItemsCountByListId(list.id)
                 }
                 
                 // 计算所有活跃清单的总预算

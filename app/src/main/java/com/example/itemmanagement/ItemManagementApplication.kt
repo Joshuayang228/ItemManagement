@@ -2,7 +2,7 @@ package com.example.itemmanagement
 
 import android.app.Application
 import com.example.itemmanagement.data.AppDatabase
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.ReminderSettingsRepository
 import com.example.itemmanagement.data.repository.WarrantyRepository
 import com.example.itemmanagement.data.repository.BorrowRepository
@@ -19,7 +19,23 @@ import kotlinx.coroutines.launch
 class ItemManagementApplication : Application() {
     // 数据库和基础仓库
     val database by lazy { AppDatabase.getDatabase(this) }
-    val repository by lazy { ItemRepository(database.itemDao(), database) }
+    // 注意：ItemRepository 可能需要重构以使用统一架构
+    // 临时使用UnifiedItemRepository替代
+    val repository by lazy { 
+        com.example.itemmanagement.data.repository.UnifiedItemRepository(
+            database,
+            database.unifiedItemDao(),
+            database.itemStateDao(),
+            database.wishlistDetailDao(),
+            database.shoppingDetailDao(),
+            database.shoppingListDao(),
+            database.inventoryDetailDao(),
+            database.locationDao(),
+            database.tagDao(),
+            database.photoDao(),
+            database.priceRecordDao()
+        )
+    }
     
     // 保修管理仓库
     val warrantyRepository by lazy { WarrantyRepository(database.warrantyDao()) }
@@ -27,18 +43,24 @@ class ItemManagementApplication : Application() {
     // 借还管理仓库
     val borrowRepository by lazy { BorrowRepository(database.borrowDao()) }
     
-    // 回收站仓库
-    val recycleBinRepository by lazy { RecycleBinRepository(database.recycleBinDao()) }
+    // 回收站仓库（统一架构）
+    val recycleBinRepository by lazy { 
+        RecycleBinRepository(
+            database.unifiedItemDao(),
+            database.itemStateDao()
+        ) 
+    }
     
     // 用户资料仓库
     val userProfileRepository by lazy { UserProfileRepository(database.userProfileDao()) }
     
-    // 心愿单管理仓库
+    // 心愿单管理仓库（统一架构）
     val wishlistRepository by lazy { 
         WishlistRepository(
             database,
-            database.wishlistDao(), 
-            database.wishlistPriceHistoryDao()
+            database.unifiedItemDao(),
+            database.itemStateDao(),
+            database.wishlistDetailDao()
         ) 
     }
     

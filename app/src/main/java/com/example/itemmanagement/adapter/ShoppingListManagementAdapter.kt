@@ -62,8 +62,6 @@ class ShoppingListManagementAdapter(
         private val listBudget: TextView = itemView.findViewById(R.id.tvListBudget)
         private val progressBar: ProgressBar = itemView.findViewById(R.id.progressBar)
         private val tvProgress: TextView = itemView.findViewById(R.id.tvProgress)
-        private val btnViewDetails: MaterialButton = itemView.findViewById(R.id.btnViewDetails)
-        private val btnEdit: MaterialButton = itemView.findViewById(R.id.btnEdit)
         private val btnMore: ImageButton = itemView.findViewById(R.id.btnMore)
         private val constraintLayout: ConstraintLayout = itemView.findViewById(R.id.constraintLayout)
 
@@ -105,13 +103,8 @@ class ShoppingListManagementAdapter(
             // 设置进度信息 - M3新增功能
             setupProgress(shoppingList)
             
-            // 设置按钮状态
-            setupButtons(shoppingList)
-            
             // 设置点击事件
             itemView.setOnClickListener { onItemClick(shoppingList) }
-            btnViewDetails.setOnClickListener { onItemClick(shoppingList) }  // 查看详情
-            btnEdit.setOnClickListener { onEditClick(shoppingList) }
             btnMore.setOnClickListener { showMoreOptions(shoppingList) }
         }
         
@@ -143,23 +136,6 @@ class ShoppingListManagementAdapter(
             tvProgress.text = progressText
         }
         
-        private fun setupButtons(shoppingList: ShoppingListEntity) {
-            when (shoppingList.status) {
-                ShoppingListStatus.ACTIVE -> {
-                    btnEdit.visibility = View.VISIBLE
-                    btnEdit.text = "编辑"
-                    btnMore.visibility = View.VISIBLE
-                }
-                ShoppingListStatus.COMPLETED -> {
-                    btnEdit.visibility = View.GONE
-                    btnMore.visibility = View.VISIBLE
-                }
-                ShoppingListStatus.ARCHIVED -> {
-                    btnEdit.visibility = View.GONE
-                    btnMore.visibility = View.VISIBLE
-                }
-            }
-        }
         
         /**
          * 动态调整清单名称的约束关系
@@ -182,39 +158,50 @@ class ShoppingListManagementAdapter(
         }
         
         private fun showMoreOptions(shoppingList: ShoppingListEntity) {
-            val options = mutableListOf<String>()
+            val popup = androidx.appcompat.widget.PopupMenu(itemView.context, btnMore)
             
             // 根据状态显示不同选项
             when (shoppingList.status) {
                 ShoppingListStatus.ACTIVE -> {
-                    options.add("结束清单")
-                    options.add("删除清单")
+                    popup.menu.add(0, 1, 0, "编辑清单")
+                    popup.menu.add(0, 2, 1, "结束清单")
+                    popup.menu.add(0, 3, 2, "删除清单")
                 }
                 ShoppingListStatus.COMPLETED -> {
-                    options.add("重新激活")
-                    options.add("删除清单")
+                    popup.menu.add(0, 4, 0, "重新激活")
+                    popup.menu.add(0, 3, 1, "删除清单")
                 }
                 ShoppingListStatus.ARCHIVED -> {
-                    options.add("删除清单")
+                    popup.menu.add(0, 3, 0, "删除清单")
                 }
             }
             
-            MaterialAlertDialogBuilder(itemView.context)
-                .setTitle(shoppingList.name)
-                .setItems(options.toTypedArray()) { _, which ->
-                    when (options[which]) {
-                        "结束清单" -> {
-                            showCompleteConfirmDialog(shoppingList)
-                        }
-                        "重新激活" -> {
-                            onCompleteClick(shoppingList) // 重新激活清单
-                        }
-                        "删除清单" -> {
-                            showDeleteConfirmDialog(shoppingList)
-                        }
+            popup.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    1 -> {
+                        // 编辑清单
+                        onEditClick(shoppingList)
+                        true
                     }
+                    2 -> {
+                        // 结束清单
+                        showCompleteConfirmDialog(shoppingList)
+                        true
+                    }
+                    3 -> {
+                        // 删除清单
+                        showDeleteConfirmDialog(shoppingList)
+                        true
+                    }
+                    4 -> {
+                        // 重新激活
+                        onCompleteClick(shoppingList)
+                        true
+                    }
+                    else -> false
                 }
-                .show()
+            }
+            popup.show()
         }
         
         private fun showCompleteConfirmDialog(shoppingList: ShoppingListEntity) {

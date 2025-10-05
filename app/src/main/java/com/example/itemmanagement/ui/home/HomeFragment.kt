@@ -22,7 +22,6 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.HomeAdapter
 import com.example.itemmanagement.databinding.FragmentHomeBinding
 import com.example.itemmanagement.test.TestDataInserter
-import com.example.itemmanagement.test.WishlistTestDataInserter
 import com.example.itemmanagement.ui.utils.CustomSmoothScroller
 import com.example.itemmanagement.ui.utils.Material3Performance
 // import com.example.itemmanagement.ui.utils.Material3Animations
@@ -175,7 +174,7 @@ class HomeFragment : Fragment() {
 
     private fun setupSearchView() {
         // 移除实时搜索，改为手动触发搜索
-        // 只保留文本变化监听器来控制清除按钮的可见性
+        // 文本变化监听器：控制清除按钮可见性 + 处理手动清空搜索
         binding.searchEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -187,6 +186,12 @@ class HomeFragment : Fragment() {
                     SearchBoxAnimator.animateClearButtonShow(binding.clearSearchIcon)
                 } else {
                     SearchBoxAnimator.animateClearButtonHide(binding.clearSearchIcon)
+                    
+                    // ✅ 修复：当用户手动删除所有搜索内容时，自动显示所有内容
+                    // 检查当前是否处于搜索状态，如果是则清空搜索
+                    if (viewModel.isSearching.value == true) {
+                        viewModel.clearSearch()
+                    }
                 }
             }
         })
@@ -321,26 +326,20 @@ class HomeFragment : Fragment() {
      * 插入心愿单测试数据
      */
     private fun insertWishlistOnlyTestData() {
-        Toast.makeText(context, "正在生成心愿单测试数据...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "心愿单测试数据功能暂不可用", Toast.LENGTH_SHORT).show()
         
-        WishlistTestDataInserter.insertWishlistTestData(requireContext()) { success, message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-        }
+        // TODO: 实现基于统一架构的心愿单测试数据插入
+        // WishlistTestDataInserter已删除，需要基于新架构重新实现
     }
     
     /**
      * 插入组合测试数据（库存 + 心愿单）
      */
     private fun insertCombinedTestData() {
-        Toast.makeText(context, "正在生成组合测试数据（库存+心愿单）...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "组合测试数据功能暂不可用", Toast.LENGTH_SHORT).show()
         
-        WishlistTestDataInserter.insertCombinedTestData(requireContext()) { success, message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-            if (success) {
-                // 刷新数据显示
-                viewModel.refreshData()
-            }
-        }
+        // TODO: 实现基于统一架构的组合测试数据插入
+        // WishlistTestDataInserter已删除，需要基于新架构重新实现
     }
 
     private fun performSearch(query: String) {

@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.itemmanagement.R
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.model.ProfileItem
 import com.example.itemmanagement.data.repository.UserProfileRepository
 import kotlinx.coroutines.launch
@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
  */
 class ProfileViewModel(
     private val userProfileRepository: UserProfileRepository,
-    private val itemRepository: ItemRepository
+    private val itemRepository: UnifiedItemRepository
 ) : ViewModel() {
     
     // ==================== 数据 ====================

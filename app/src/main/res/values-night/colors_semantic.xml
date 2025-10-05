@@ -117,5 +117,10 @@
     <color name="teal_200">@color/md_theme_dark_secondary</color>
     <color name="teal_700">@color/md_theme_dark_secondary_container</color>
     <color name="colorAccent">@color/md_theme_dark_secondary</color>
+    
+    <!-- 购物清单专用高对比度颜色 (暗色模式) -->
+    <color name="shopping_text_primary">@color/md_theme_dark_on_surface</color>
+    <color name="shopping_text_secondary">@color/md_theme_dark_on_surface_variant</color>
+    <color name="shopping_text_tertiary">@color/md_theme_dark_outline</color>
 </resources>
 

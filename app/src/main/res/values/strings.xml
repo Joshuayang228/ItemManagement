@@ -41,4 +41,15 @@
     <!-- Warehouse Item -->
     <string name="warehouse_item_quantity">数量: %1$s %2$s</string>
     <string name="warehouse_item_location">位置: %1$s > %2$s</string>
+    
+    <!-- Shopping List -->
+    <string name="empty_shopping_list">购物清单为空</string>
+    <string name="no_shopping_lists">还没有购物清单</string>
+    <string name="create_shopping_list">创建购物清单</string>
+    <string name="more_options">更多选项</string>
+    <string name="record_price">记录价格</string>
+    <string name="mark_as_purchased">标记已购买</string>
+    <string name="unmark_as_purchased">取消购买标记</string>
+    <string name="transfer_to_inventory">转入库存</string>
+    <string name="delete">删除</string>
 </resources> 

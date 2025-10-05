@@ -4,11 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
-import com.example.itemmanagement.data.dao.WasteCategoryInfo
-import com.example.itemmanagement.data.dao.WasteDateInfo
-import com.example.itemmanagement.data.dao.WastedItemInfo
-import com.example.itemmanagement.data.dao.WasteSummaryInfo
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.model.WasteCategoryInfo
+import com.example.itemmanagement.data.model.WasteDateInfo
+import com.example.itemmanagement.data.model.WastedItemInfo
+import com.example.itemmanagement.data.model.WasteSummaryInfo
 import com.example.itemmanagement.data.model.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -17,7 +17,7 @@ import java.util.*
 private const val EXPIRED_CHECK_INTERVAL_MS = 60 * 60 * 1000L // 1小时
 
 class WasteReportViewModel(
-    private val repository: ItemRepository
+    private val repository: UnifiedItemRepository
 ) : ViewModel() {
 
     private val _wasteReportData = MutableLiveData<WasteReportData?>()
@@ -87,6 +87,11 @@ class WasteReportViewModel(
      */
     private suspend fun generateWasteReportInternal(periodType: ReportPeriodType, customRange: DateRange? = null) {
         val dateRange = when (periodType) {
+            ReportPeriodType.WEEK -> getThisWeekRange()
+            ReportPeriodType.MONTH -> getThisMonthRange()
+            ReportPeriodType.QUARTER -> getThisQuarterRange()
+            ReportPeriodType.HALF_YEAR -> getThisHalfYearRange()
+            ReportPeriodType.YEAR -> getThisYearRange()
             ReportPeriodType.LAST_WEEK -> getLastWeekRange()
             ReportPeriodType.LAST_MONTH -> getLastMonthRange()
             ReportPeriodType.LAST_THREE_MONTHS -> getLastThreeMonthsRange()
@@ -104,15 +109,15 @@ class WasteReportViewModel(
         val endTime = dateRange.endDate.time
 
         // 使用事务获取所有数据确保一致性
-        val rawData = repository.getWasteReportData(startTime, endTime)
+        val wastedItems = repository.getWasteReportData(startTime, endTime)
         
         // 调试信息
         println("WasteReportViewModel调试:")
         println("- 查询时间范围: ${Date(startTime)} 到 ${Date(endTime)}")
-        println("- 总结: 物品${rawData.summary.totalItems}件, 价值${rawData.summary.totalValue}元")
+        println("- 总结: 物品${wastedItems.size}件, 价值${wastedItems.sumOf { it.value }}元")
         println("- 浪费物品详情:")
-        rawData.wastedItems.forEach { item ->
-            println("  * ${item.name}: 状态=${item.status}, 浪费时间=${Date(item.wasteDate)}, 价格=${item.totalPrice}")
+        wastedItems.forEach { item ->
+            println("  * ${item.name}: 浪费时间=${item.wasteDate}, 价格=${item.value}")
         }
         
         // 检查是否有浪费状态但没有wasteDate的物品
@@ -120,7 +125,7 @@ class WasteReportViewModel(
         if (wastedItemsWithoutDate.isNotEmpty()) {
             println("- 发现${wastedItemsWithoutDate.size}个浪费物品没有wasteDate:")
             wastedItemsWithoutDate.forEach { item ->
-                println("  ! ${item.name}: 状态=${item.status}, 添加时间=${Date(item.wasteDate)}, 价格=${item.totalPrice}")
+                println("  ! ${item.name}: 添加时间=${item.wasteDate}, 价格=${item.value}")
             }
             
             // 自动修复这些物品
@@ -128,17 +133,11 @@ class WasteReportViewModel(
             println("- 已自动修复${fixedCount}个物品的wasteDate")
             
             // 修复后重新查询数据
-            val updatedRawData = repository.getWasteReportData(startTime, endTime)
-            println("- 修复后总结: 物品${updatedRawData.summary.totalItems}件, 价值${updatedRawData.summary.totalValue}元")
+            val updatedWastedItems = repository.getWasteReportData(startTime, endTime)
+            println("- 修复后总结: 物品${updatedWastedItems.size}件, 价值${updatedWastedItems.sumOf { it.value }}元")
             
             // 使用修复后的数据
-            val wasteReport = buildWasteReportData(
-                summary = updatedRawData.summary,
-                wastedItems = updatedRawData.wastedItems,
-                categoryData = updatedRawData.categoryData,
-                dateData = updatedRawData.dateData,
-                dateRange = dateRange
-            )
+            val wasteReport = buildWasteReportDataFromItems(updatedWastedItems, dateRange)
             
             _wasteReportData.value = wasteReport
             val insights = WasteInsightGenerator.generateInsights(wasteReport)
@@ -148,13 +147,7 @@ class WasteReportViewModel(
         }
 
         // 转换数据格式
-        val wasteReport = buildWasteReportData(
-            summary = rawData.summary,
-            wastedItems = rawData.wastedItems,
-            categoryData = rawData.categoryData,
-            dateData = rawData.dateData,
-            dateRange = dateRange
-        )
+        val wasteReport = buildWasteReportDataFromItems(wastedItems, dateRange)
 
         _wasteReportData.value = wasteReport
 
@@ -163,6 +156,56 @@ class WasteReportViewModel(
         _insights.value = insights
         
         _isLoading.value = false
+    }
+
+    /**
+     * 从废料物品列表构建报告数据
+     */
+    private fun buildWasteReportDataFromItems(
+        wastedItems: List<WastedItemInfo>,
+        dateRange: DateRange
+    ): WasteReportData {
+        // 统计过期和丢弃的数量
+        val expiredCount = wastedItems.count { it.status == "EXPIRED" }
+        val discardedCount = wastedItems.count { it.status == "DISCARDED" }
+        
+        // 构建摘要信息
+        val summary = WasteSummaryInfo(
+            totalItems = wastedItems.size,
+            totalValue = wastedItems.sumOf { it.value },
+            expiredItems = expiredCount,
+            discardedItems = discardedCount,
+            periodStartDate = dateRange.startDate,
+            periodEndDate = dateRange.endDate
+        )
+
+        // 按类别分组
+        val categoryData = wastedItems.groupBy { it.category }
+            .map { (category, items) ->
+                WasteCategoryInfo(
+                    category = category,
+                    count = items.size,
+                    value = items.sumOf { it.value }
+                )
+            }
+
+        // 按日期分组
+        val dateData = wastedItems.groupBy { item ->
+            java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(item.wasteDate)
+        }.map { (date, items) ->
+            WasteDateInfo(
+                date = date,
+                count = items.size,
+                value = items.sumOf { it.value }
+            )
+        }
+
+        return WasteReportData(
+            summary = summary,
+            wastedItems = wastedItems,
+            categoryData = categoryData,
+            dateData = dateData
+        )
     }
 
     /**
@@ -180,11 +223,11 @@ class WasteReportViewModel(
         val wasteByCategory = categoryData.map { category ->
             WasteCategoryData(
                 category = category.category,
-                itemCount = category.itemCount,
-                totalValue = category.totalValue,
+                count = category.count,
+                totalValue = category.value,
                 percentage = if (totalValue > 0) {
-                    (category.totalValue / totalValue * 100).toFloat()
-                } else 0f
+                    (category.value / totalValue * 100).toDouble()
+                } else 0.0
             )
         }
 
@@ -192,21 +235,21 @@ class WasteReportViewModel(
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         val wasteByTime = dateData.map { date ->
             WasteTimeData(
-                date = dateFormat.parse(date.date) ?: Date(),
-                itemCount = date.itemCount,
-                totalValue = date.totalValue
+                period = date.date,
+                count = date.count,
+                value = date.value
             )
         }
 
         // 转换浪费物品数据（取前10个）
         val topWastedItems = wastedItems.take(10).map { item ->
             WastedItemData(
-                itemId = item.id,
+                id = item.id,
                 name = item.name,
-                category = item.category ?: "未分类",
-                wasteReason = if (item.status == "EXPIRED") WasteReason.EXPIRED else WasteReason.DISCARDED,
-                wasteDate = Date(item.wasteDate),
-                value = if (item.totalPrice > 0) item.totalPrice else null,
+                category = item.category,
+                wasteReason = if (item.status == "EXPIRED") WasteReason.EXPIRED else WasteReason.OTHER,
+                wasteDate = item.wasteDate,
+                originalValue = item.totalPrice,
                 quantity = item.quantity,
                 unit = item.unit,
                 photoUri = item.photoUri
@@ -214,14 +257,23 @@ class WasteReportViewModel(
         }
 
         return WasteReportData(
-            totalWastedItems = summary.totalItems,
-            totalWastedValue = summary.totalValue,
-            expiredItems = summary.expiredItems,
-            discardedItems = summary.discardedItems,
-            wasteByCategory = wasteByCategory,
-            wasteByTime = wasteByTime,
-            topWastedItems = topWastedItems,
-            reportPeriod = dateRange
+            summary = summary,
+            wastedItems = topWastedItems.map { wastedItem ->
+                WastedItemInfo(
+                    id = wastedItem.id,
+                    name = wastedItem.name,
+                    category = wastedItem.category,
+                    wasteDate = wastedItem.wasteDate,
+                    value = wastedItem.originalValue,
+                    quantity = wastedItem.quantity,
+                    unit = wastedItem.unit,
+                    status = if (wastedItem.wasteReason == WasteReason.EXPIRED) "EXPIRED" else "DISCARDED",
+                    totalPrice = wastedItem.originalValue,
+                    photoUri = wastedItem.photoUri
+                )
+            },
+            categoryData = categoryData,
+            dateData = dateData
         )
     }
 
@@ -329,6 +381,79 @@ class WasteReportViewModel(
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
         val startDate = calendar.time
+        
+        return DateRange(startDate, endDate)
+    }
+
+    // 添加缺失的日期范围获取方法
+    private fun getThisWeekRange(): DateRange {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.DAY_OF_WEEK, calendar.firstDayOfWeek)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startDate = calendar.time
+        
+        calendar.add(Calendar.WEEK_OF_YEAR, 1)
+        calendar.add(Calendar.MILLISECOND, -1)
+        val endDate = calendar.time
+        
+        return DateRange(startDate, endDate)
+    }
+
+    private fun getThisMonthRange(): DateRange {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startDate = calendar.time
+        
+        calendar.add(Calendar.MONTH, 1)
+        calendar.add(Calendar.MILLISECOND, -1)
+        val endDate = calendar.time
+        
+        return DateRange(startDate, endDate)
+    }
+
+    private fun getThisQuarterRange(): DateRange {
+        val calendar = Calendar.getInstance()
+        val currentMonth = calendar.get(Calendar.MONTH)
+        val quarterStartMonth = (currentMonth / 3) * 3
+        
+        calendar.set(Calendar.MONTH, quarterStartMonth)
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startDate = calendar.time
+        
+        calendar.add(Calendar.MONTH, 3)
+        calendar.add(Calendar.MILLISECOND, -1)
+        val endDate = calendar.time
+        
+        return DateRange(startDate, endDate)
+    }
+
+    private fun getThisHalfYearRange(): DateRange {
+        val calendar = Calendar.getInstance()
+        val currentMonth = calendar.get(Calendar.MONTH)
+        val halfYearStartMonth = if (currentMonth < 6) 0 else 6
+        
+        calendar.set(Calendar.MONTH, halfYearStartMonth)
+        calendar.set(Calendar.DAY_OF_MONTH, 1)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startDate = calendar.time
+        
+        calendar.add(Calendar.MONTH, 6)
+        calendar.add(Calendar.MILLISECOND, -1)
+        val endDate = calendar.time
         
         return DateRange(startDate, endDate)
     }

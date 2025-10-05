@@ -125,16 +125,27 @@
             android:id="@+id/actionContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
+            android:orientation="horizontal"
             android:gravity="center"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
+
+            <!-- 编辑按钮 -->
+            <ImageButton
+                android:id="@+id/buttonEdit"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_edit_modern"
+                android:contentDescription="编辑"
+                app:tint="?attr/colorPrimary" />
 
             <!-- 删除按钮 -->
             <ImageButton
                 android:id="@+id/buttonDelete"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
+                android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_delete"
                 android:contentDescription="删除"

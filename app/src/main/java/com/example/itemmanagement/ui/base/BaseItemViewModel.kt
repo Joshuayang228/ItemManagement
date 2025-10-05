@@ -2,7 +2,7 @@ package com.example.itemmanagement.ui.base
 
 import android.net.Uri
 import androidx.lifecycle.*
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.ui.add.Field
 import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 import com.example.itemmanagement.ui.common.FieldProperties
@@ -25,7 +25,7 @@ import java.util.*
  * 4. 照片和标签管理
  */
 abstract class BaseItemViewModel(
-    protected val repository: ItemRepository,
+    protected val repository: UnifiedItemRepository,
     protected val cacheViewModel: ItemStateCacheViewModel
 ) : ViewModel(), FieldInteractionViewModel {
 
@@ -168,14 +168,28 @@ abstract class BaseItemViewModel(
     }
 
     /**
+     * 批量设置选中字段 - 性能优化版本，只触发一次LiveData更新
+     */
+    fun setSelectedFields(fields: Set<Field>) {
+        // 确保名称字段始终被包含
+        val fieldsWithName = fields.toMutableSet()
+        if (!fieldsWithName.any { it.name == "名称" }) {
+            fieldsWithName.add(Field("基础信息", "名称", true, 1))
+        }
+        
+        _selectedFields.value = fieldsWithName
+        saveToCache() // 只保存一次到缓存
+    }
+
+    /**
      * 保存字段值
      */
     override fun saveFieldValue(fieldName: String, value: Any?) {
         if (value != null || fieldValues.containsKey(fieldName)) {
             fieldValues[fieldName] = value
 
-            // 如果是标签字段，更新 selectedTags
-            if (getFieldProperties(fieldName).displayStyle == DisplayStyle.TAG) {
+            // 如果是真正的标签字段，更新 selectedTags（排除季节等其他TAG样式字段）
+            if (getFieldProperties(fieldName).displayStyle == DisplayStyle.TAG && fieldName == "标签") {
                 val currentSelectedTags = _selectedTags.value?.toMutableMap() ?: mutableMapOf()
                 if (value is Set<*>) {
                     @Suppress("UNCHECKED_CAST")
@@ -404,7 +418,7 @@ abstract class BaseItemViewModel(
     /**
      * 获取Repository（用于适配器）
      */
-    override fun getItemRepository(): ItemRepository {
+    override fun getItemRepository(): UnifiedItemRepository {
         return repository
     }
 

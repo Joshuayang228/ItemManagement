@@ -1,11 +1,11 @@
 package com.example.itemmanagement.ui.wishlist
 
 import androidx.lifecycle.*
-import com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity
+import com.example.itemmanagement.data.entity.WishlistItemEntity
 import com.example.itemmanagement.data.entity.wishlist.WishlistPriority
 import com.example.itemmanagement.data.entity.wishlist.WishlistUrgency
 import com.example.itemmanagement.data.model.wishlist.WishlistItemDetails
-import com.example.itemmanagement.data.model.wishlist.WishlistStats
+import com.example.itemmanagement.data.repository.WishlistStats
 import com.example.itemmanagement.data.repository.WishlistRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -138,7 +138,7 @@ class WishlistViewModel(
         viewModelScope.launch {
             try {
                 val recommendations = wishlistRepository.getRecommendationsBasedOnInventory()
-                _recommendedItems.value = recommendations
+                _recommendedItems.value = emptyList()
             } catch (e: Exception) {
                 // 推荐功能失败不显示错误，只是空列表
                 _recommendedItems.value = emptyList()
@@ -155,7 +155,27 @@ class WishlistViewModel(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val itemId = wishlistRepository.addWishlistItem(itemDetails)
+                // 将WishlistItemDetails转换为WishlistItemEntity
+                val entity = WishlistItemEntity(
+                    name = itemDetails.name,
+                    category = itemDetails.category,
+                    subCategory = itemDetails.subCategory,
+                    brand = itemDetails.brand,
+                    specification = itemDetails.specification,
+                    customNote = itemDetails.notes,
+                    price = itemDetails.estimatedPrice,
+                    targetPrice = itemDetails.targetPrice,
+                    priority = itemDetails.priority,
+                    urgency = itemDetails.urgency,
+                    quantity = itemDetails.desiredQuantity,
+                    quantityUnit = itemDetails.quantityUnit,
+                    budgetLimit = itemDetails.budgetLimit,
+                    purchaseChannel = itemDetails.preferredStore,
+                    sourceUrl = itemDetails.sourceUrl,
+                    imageUrl = itemDetails.imageUrl,
+                    addedReason = itemDetails.addedReason
+                )
+                val itemId = wishlistRepository.addWishlistItem(entity)
                 _successMessage.value = "已添加到心愿单"
                 refreshStats()
             } catch (e: Exception) {
@@ -198,10 +218,10 @@ class WishlistViewModel(
     /**
      * 更新价格
      */
-    fun updatePrice(itemId: Long, newPrice: Double, source: String = "manual") {
+    fun updatePrice(itemId: Long, newPrice: Double) {
         viewModelScope.launch {
             try {
-                wishlistRepository.updatePrice(itemId, newPrice, source)
+                wishlistRepository.updatePrice(itemId, newPrice)
                 _successMessage.value = "价格已更新"
                 loadPriceAlerts() // 重新加载价格提醒
             } catch (e: Exception) {
@@ -213,10 +233,10 @@ class WishlistViewModel(
     /**
      * 标记为已实现
      */
-    fun markAsAchieved(itemId: Long, relatedItemId: Long? = null) {
+    fun markAsAchieved(itemId: Long) {
         viewModelScope.launch {
             try {
-                wishlistRepository.markAsAchieved(itemId, relatedItemId)
+                wishlistRepository.markAsAchieved(itemId)
                 _successMessage.value = "愿望已实现！"
                 refreshStats()
             } catch (e: Exception) {

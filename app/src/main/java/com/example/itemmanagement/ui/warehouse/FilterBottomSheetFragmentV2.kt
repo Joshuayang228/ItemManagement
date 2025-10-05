@@ -1,9 +1,12 @@
 package com.example.itemmanagement.ui.warehouse
 
+import android.content.Context
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.itemmanagement.ItemManagementApplication
@@ -74,11 +77,12 @@ class FilterBottomSheetFragmentV2 : BottomSheetDialogFragment() {
         initializeComponents()
         setupBottomSheetBehavior()
         setupResetButton()
+        setupCloseAutoApply()  // 🎯 设置关闭时自动应用（保留）
         
         // 延迟启动状态观察和触摸处理，确保所有组件准备就绪
         view.post {
             startStateObservation()
-            touchManager.setupTouchHandling()
+            touchManager.setupTouchHandling()  // 🎯 触摸管理器已集成失焦逻辑
             // 强制更新导航高亮到初始状态
             navigationManager.forceUpdateNavigation()
         }
@@ -91,10 +95,10 @@ class FilterBottomSheetFragmentV2 : BottomSheetDialogFragment() {
         // 动画管理器（不依赖其他管理器）
         animationManager = FilterAnimationManager()
         
-        // 触摸事件管理器（提供BottomSheetBehavior访问）
-        touchManager = BottomSheetTouchManager(binding) {
+        // 触摸事件管理器（提供BottomSheetBehavior访问和Fragment引用）
+        touchManager = BottomSheetTouchManager(binding, {
             bottomSheetBehavior
-        }
+        }, this)  // 🎯 传入Fragment引用
         
         // 导航同步管理器
         navigationManager = NavigationSyncManager(binding, touchManager)
@@ -203,7 +207,7 @@ class FilterBottomSheetFragmentV2 : BottomSheetDialogFragment() {
         // 配置多状态展开 - 恢复原始3状态配置支持悬浮按钮
         behavior.isFitToContents = false        // 关键：支持多状态
         behavior.halfExpandedRatio = 0.78f      // 半展开状态占屏幕78%
-        behavior.isDraggable = true
+        behavior.isDraggable = false            // 🎯 禁用拖拽，筛选界面固定
         behavior.skipCollapsed = false          // 支持折叠状态  
         behavior.isHideable = true
         
@@ -242,6 +246,11 @@ class FilterBottomSheetFragmentV2 : BottomSheetDialogFragment() {
             }
             BottomSheetBehavior.STATE_HALF_EXPANDED -> {
                 // 半展开状态
+            }
+            BottomSheetBehavior.STATE_DRAGGING -> {
+                // 🎯 用户开始拖动关闭时，立即失焦所有输入框
+                clearAllInputFocus()
+                hideKeyboard()
             }
             BottomSheetBehavior.STATE_HIDDEN -> {
                 // 隐藏状态，关闭Fragment
@@ -403,6 +412,67 @@ class FilterBottomSheetFragmentV2 : BottomSheetDialogFragment() {
             stateManager.unregisterFilterComponent(dateRangeComponent)
             dateRangeComponent.cleanup()
         }
+    }
+    
+    // ==================== 🎯 失焦逻辑已集成到 BottomSheetTouchManager ====================
+    
+    /**
+     * 设置关闭时自动应用
+     * 功能：关闭筛选界面时强制所有输入框失焦，确保输入内容被应用
+     */
+    private fun setupCloseAutoApply() {
+        // 方案A: 使用 onDismiss 监听
+        dialog?.setOnDismissListener {
+            clearAllInputFocus()
+            hideKeyboard()
+        }
+    }
+    
+    /**
+     * 清除所有输入框焦点
+     */
+    private fun clearAllInputFocus() {
+        try {
+            // 方法1: 清除当前焦点
+            activity?.currentFocus?.clearFocus()
+            
+            // 方法2: 逐个清除所有输入框焦点（确保完整性）
+            binding.valueRangeSection.minQuantityInput?.clearFocus()
+            binding.valueRangeSection.maxQuantityInput?.clearFocus()
+            binding.valueRangeSection.minPriceInput?.clearFocus()
+            binding.valueRangeSection.maxPriceInput?.clearFocus()
+            binding.coreSection.brandDropdown?.clearFocus()
+            
+            android.util.Log.d("FilterV2", "✅ 已清除所有输入框焦点")
+        } catch (e: Exception) {
+            android.util.Log.e("FilterV2", "清除输入框焦点失败: ${e.message}")
+        }
+    }
+    
+    /**
+     * 隐藏软键盘
+     */
+    private fun hideKeyboard() {
+        try {
+            val imm = requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(view?.windowToken, 0)
+            android.util.Log.d("FilterV2", "✅ 已隐藏软键盘")
+        } catch (e: Exception) {
+            android.util.Log.e("FilterV2", "隐藏键盘失败: ${e.message}")
+        }
+    }
+    
+    override fun onDismiss(dialog: DialogInterface) {
+        // 🎯 关闭时强制失焦和应用
+        clearAllInputFocus()
+        hideKeyboard()
+        
+        // 延迟确保失焦事件完成
+        view?.postDelayed({
+            android.util.Log.d("FilterV2", "🔄 筛选界面关闭，所有输入已应用")
+        }, 100)
+        
+        super.onDismiss(dialog)
     }
     
     

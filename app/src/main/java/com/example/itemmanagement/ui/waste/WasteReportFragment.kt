@@ -1,13 +1,11 @@
 package com.example.itemmanagement.ui.waste
 
-import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.itemmanagement.ItemManagementApplication
@@ -16,6 +14,7 @@ import com.example.itemmanagement.adapter.WastedItemAdapter
 import com.example.itemmanagement.adapter.WasteInsightAdapter
 import com.example.itemmanagement.data.model.*
 import com.example.itemmanagement.databinding.FragmentWasteReportBinding
+import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
 import com.github.aachartmodel.aainfographics.aachartcreator.AAChartModel
 import com.github.aachartmodel.aainfographics.aachartcreator.AAChartType
 import com.github.aachartmodel.aainfographics.aachartcreator.AASeriesElement
@@ -23,7 +22,6 @@ import com.github.aachartmodel.aainfographics.aachartcreator.AAChartAnimationTyp
 import com.github.aachartmodel.aainfographics.aachartcreator.AAChartZoomType
 import com.github.aachartmodel.aainfographics.aaoptionsmodel.AAStyle
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -67,12 +65,11 @@ class WasteReportFragment : Fragment() {
     }
 
     private fun setupUI() {
-
         // 设置浪费物品列表
         wastedItemAdapter = WastedItemAdapter { wastedItem ->
             // 点击浪费物品，跳转到物品详情页面
             val action = WasteReportFragmentDirections
-                .actionWasteReportToItemDetail(wastedItem.itemId)
+                .actionWasteReportToItemDetail(wastedItem.id)
             findNavController().navigate(action)
         }
         
@@ -155,9 +152,6 @@ class WasteReportFragment : Fragment() {
         binding.layoutCustomDateRange.visibility = View.GONE
     }
 
-    /**
-     * 显示Material 3日期选择器
-     */
     private fun showDatePicker(isStartDate: Boolean) {
         val currentDate = if (isStartDate) customStartDate else customEndDate
         val title = if (isStartDate) "选择开始日期" else "选择结束日期"
@@ -193,9 +187,6 @@ class WasteReportFragment : Fragment() {
         }
     }
 
-    /**
-     * 验证日期范围
-     */
     private fun validateDateRange(startDate: Date, endDate: Date): Boolean {
         val currentTime = System.currentTimeMillis()
         
@@ -227,12 +218,7 @@ class WasteReportFragment : Fragment() {
             errorMessage?.let {
                 Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG)
                     .setAction("重试") { 
-                        // 重试时使用当前选择的时间范围和参数
-                        val currentPeriod = viewModel.currentPeriod.value ?: ReportPeriodType.LAST_MONTH
-                        val customRange = if (currentPeriod == ReportPeriodType.CUSTOM) {
-                            viewModel.customDateRange.value
-                        } else null
-                        viewModel.checkExpiredItemsAndGenerateReport(currentPeriod, customRange)
+                        viewModel.refreshReport()
                     }
                     .show()
                 viewModel.clearError()
@@ -264,12 +250,12 @@ class WasteReportFragment : Fragment() {
         updateSummaryCards(data)
 
         // 检查是否有数据，控制图表可见性
-        val hasData = data.totalWastedItems > 0
+        val hasData = data.summary.totalItems > 0
         
         if (hasData) {
             // 更新图表
-            updateCategoryChart(data.wasteByCategory)
-            updateTrendChart(data.wasteByTime)
+            updateCategoryChart(data.categoryData)
+            updateTrendChart(data.dateData)
             updateReasonChart(data)
             
             // 显示浪费物品详情卡片
@@ -284,20 +270,33 @@ class WasteReportFragment : Fragment() {
             binding.cardWastedItems.visibility = View.GONE
         }
 
-        // 更新浪费物品列表（只有在有数据时才会被看到）
-        wastedItemAdapter.submitList(data.topWastedItems)
+        // 更新浪费物品列表（转换为WastedItemData）
+        val wastedItemDataList = data.wastedItems.take(10).map { info ->
+            WastedItemData(
+                id = info.id,
+                name = info.name,
+                category = info.category,
+                wasteReason = if (info.status == "EXPIRED") WasteReason.EXPIRED else WasteReason.OTHER,
+                wasteDate = info.wasteDate,
+                originalValue = info.value,
+                quantity = info.quantity,
+                unit = info.unit,
+                photoUri = info.photoUri
+            )
+        }
+        wastedItemAdapter.submitList(wastedItemDataList)
     }
 
     private fun updateSummaryCards(data: WasteReportData) {
         with(binding) {
-            textTotalItems.text = data.totalWastedItems.toString()
-            textTotalValue.text = currencyFormat.format(data.totalWastedValue)
-            textExpiredItems.text = data.expiredItems.toString()
-            textDiscardedItems.text = data.discardedItems.toString()
+            textTotalItems.text = data.summary.totalItems.toString()
+            textTotalValue.text = currencyFormat.format(data.summary.totalValue)
+            textExpiredItems.text = data.summary.expiredItems.toString()
+            textDiscardedItems.text = data.summary.discardedItems.toString()
         }
     }
 
-    private fun updateCategoryChart(categoryData: List<WasteCategoryData>) {
+    private fun updateCategoryChart(categoryData: List<WasteCategoryInfo>) {
         if (categoryData.isEmpty()) {
             binding.cardCategoryChart.visibility = View.GONE
             return
@@ -305,17 +304,18 @@ class WasteReportFragment : Fragment() {
 
         binding.cardCategoryChart.visibility = View.VISIBLE
         
-        // 准备饼图数据 - 按照文档格式
+        // 准备饼图数据
         val seriesData = categoryData.map { category ->
-            arrayOf(category.category as Any, category.totalValue as Any)
+            arrayOf(category.category as Any, category.value as Any)
         }.toTypedArray()
 
         // 创建饼图配置
         val aaChartModel = AAChartModel()
             .chartType(AAChartType.Pie)
-            .title("标题") // 使用实际文字
-            .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .title("标题")
+            .titleStyle(AAStyle().color("transparent"))
             .subtitle("")
+            .subtitleStyle(AAStyle().color("transparent"))
             .backgroundColor("#FFFFFF")
             .dataLabelsEnabled(true)
             .legendEnabled(true)
@@ -328,12 +328,11 @@ class WasteReportFragment : Fragment() {
                     .data(seriesData as Array<Any>)
             ))
 
-        // 显示图表
         binding.categoryChart.aa_drawChartWithChartModel(aaChartModel)
     }
 
-    private fun updateTrendChart(timeData: List<WasteTimeData>) {
-        if (timeData.isEmpty()) {
+    private fun updateTrendChart(dateData: List<WasteDateInfo>) {
+        if (dateData.isEmpty()) {
             binding.cardTrendChart.visibility = View.GONE
             return
         }
@@ -341,15 +340,16 @@ class WasteReportFragment : Fragment() {
         binding.cardTrendChart.visibility = View.VISIBLE
         
         // 准备时间趋势数据
-        val chartData = timeData.map { it.totalValue }.toTypedArray()
-        val categories = timeData.map { dateFormat.format(it.date) }.toTypedArray()
+        val chartData = dateData.map { it.value }.toTypedArray()
+        val categories = dateData.map { it.date }.toTypedArray()
 
         // 创建折线图配置
         val aaChartModel = AAChartModel()
             .chartType(AAChartType.Line)
-            .title("标题") // 使用实际文字
-            .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .title("标题")
+            .titleStyle(AAStyle().color("transparent"))
             .subtitle("")
+            .subtitleStyle(AAStyle().color("transparent"))
             .backgroundColor("#FFFFFF")
             .dataLabelsEnabled(false)
             .categories(categories)
@@ -368,12 +368,11 @@ class WasteReportFragment : Fragment() {
                     .lineWidth(3)
             ))
 
-        // 显示图表
         binding.trendChart.aa_drawChartWithChartModel(aaChartModel)
     }
 
     private fun updateReasonChart(data: WasteReportData) {
-        if (data.totalWastedItems == 0) {
+        if (data.summary.totalItems == 0) {
             binding.cardReasonChart.visibility = View.GONE
             return
         }
@@ -382,8 +381,8 @@ class WasteReportFragment : Fragment() {
         
         // 准备浪费原因对比数据
         val reasonData = arrayOf(
-            data.expiredItems.toDouble() as Any,
-            data.discardedItems.toDouble() as Any
+            data.summary.expiredItems.toDouble() as Any,
+            data.summary.discardedItems.toDouble() as Any
         )
         
         val categories = arrayOf("过期", "丢弃")
@@ -391,9 +390,10 @@ class WasteReportFragment : Fragment() {
         // 创建柱状图配置
         val aaChartModel = AAChartModel()
             .chartType(AAChartType.Column)
-            .title("标题") // 使用实际文字
-            .titleStyle(AAStyle().color("transparent")) // 设置标题为透明
+            .title("标题")
+            .titleStyle(AAStyle().color("transparent"))
             .subtitle("")
+            .subtitleStyle(AAStyle().color("transparent"))
             .backgroundColor("#FFFFFF")
             .dataLabelsEnabled(true)
             .categories(categories)
@@ -408,7 +408,6 @@ class WasteReportFragment : Fragment() {
                     .data(reasonData)
             ))
 
-        // 显示图表
         binding.reasonChart.aa_drawChartWithChartModel(aaChartModel)
     }
 
@@ -417,9 +416,9 @@ class WasteReportFragment : Fragment() {
         binding.layoutEmptyState.visibility = View.VISIBLE
     }
 
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-} 
+}
+

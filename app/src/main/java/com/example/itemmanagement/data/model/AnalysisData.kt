@@ -5,7 +5,11 @@ data class CoreMetrics(
     val totalValue: Double,
     val categoriesCount: Int,
     val locationsCount: Int,
-    val tagsCount: Int // 新增标签数量统计
+    val tagsCount: Int, // 新增标签数量统计
+    val expiringItems: Int = 0, // 即将过期的物品数量
+    val expiredItems: Int = 0, // 已过期的物品数量
+    val lowStockItems: Int = 0, // 库存不足的物品数量
+    val recentlyAddedItems: Int = 0 // 最近添加的物品数量
 )
 
 data class CategoryValue(
@@ -32,6 +36,9 @@ data class MonthlyTrend(
     val count: Int,
     val totalValue: Double
 )
+
+// 库存统计类型别名
+typealias InventoryStats = CoreMetrics
 
 data class InventoryAnalysisData(
     val inventoryStats: InventoryStats, // 替换 coreMetrics 为完整的库存统计

@@ -10,7 +10,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.itemmanagement.databinding.FragmentEditFieldsBinding
 import com.example.itemmanagement.ui.base.BaseItemViewModel
 import com.example.itemmanagement.ui.base.FieldInteractionViewModel
-import com.example.itemmanagement.ui.shopping.ShoppingFieldManager
+import com.example.itemmanagement.ui.add.ShoppingFieldManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.tabs.TabLayoutMediator
 import android.util.Log
@@ -360,7 +360,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
     }
 
     /**
-     * 全选所有字段
+     * 全选所有字段 - 优化版本，批量更新避免性能问题
      */
     private fun selectAllFields() {
         Log.d("EditFieldsFragment", "=== 开始全选字段 ===")
@@ -379,13 +379,15 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             binding.selectAllButton.isEnabled = false
             binding.selectAllButton.text = "全选中..."
             
-            // 批量更新字段选择状态
-            allFields.forEach { field ->
-                val selectedField = Field(field.group, field.name, true, field.order)
-                baseViewModel.updateFieldSelection(selectedField, true)
-            }
+            // 🚀 性能优化：批量更新字段选择状态，避免多次LiveData更新
+            val selectedFields = allFields.map { field ->
+                Field(field.group, field.name, true, field.order)
+            }.toSet()
             
-            Log.d("EditFieldsFragment", "设置选中字段数量: ${allFields.size}")
+            // 直接批量设置所有字段，只触发一次LiveData更新
+            baseViewModel.setSelectedFields(selectedFields)
+            
+            Log.d("EditFieldsFragment", "批量设置选中字段数量: ${selectedFields.size}")
             
             // 延迟刷新UI，确保数据更新完成
             binding.root.post {
@@ -400,7 +402,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
                     // 显示完成提示
                     android.widget.Toast.makeText(
                         requireContext(), 
-                        "已全选 ${allFields.size} 个字段", 
+                        "已全选 ${selectedFields.size} 个字段", 
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                     

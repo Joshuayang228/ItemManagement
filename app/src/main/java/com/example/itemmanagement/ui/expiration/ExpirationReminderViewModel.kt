@@ -1,14 +1,14 @@
 package com.example.itemmanagement.ui.expiration
 
 import androidx.lifecycle.*
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.ReminderSettingsRepository
 import com.example.itemmanagement.reminder.ReminderManager
 import com.example.itemmanagement.reminder.model.*
 import kotlinx.coroutines.launch
 
 class ExpirationReminderViewModel(
-    private val repository: ItemRepository,
+    private val repository: UnifiedItemRepository,
     private val settingsRepository: ReminderSettingsRepository,
     private val reminderManager: ReminderManager
 ) : ViewModel() {

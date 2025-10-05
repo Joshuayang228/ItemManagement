@@ -4,11 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.itemmanagement.data.ItemRepository
+import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.model.InventoryAnalysisData
 import kotlinx.coroutines.launch
 
-class InventoryAnalysisViewModel(private val repository: ItemRepository) : ViewModel() {
+class InventoryAnalysisViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
 
     private val _analysisData = MutableLiveData<InventoryAnalysisData>()
     val analysisData: LiveData<InventoryAnalysisData> = _analysisData
