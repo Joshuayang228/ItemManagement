@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 商店图标（链接到已有的ic_store_24dp） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="M20,4H4C2.9,4 2,4.9 2,6v2c0,1.1 0.9,2 2,2v10c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2V10c1.1,0 2,-0.9 2,-2V6C22,4.9 21.1,4 20,4zM18,20H6V10h12V20zM20,8H4V6h16V8z"/>
+</vector>
+

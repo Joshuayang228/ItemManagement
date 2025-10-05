@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 备注背景颜色 (支持日间/夜间模式) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorSurfaceVariant" />
+</selector>
+

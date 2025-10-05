@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 各平台价格列表项 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="8dp">
+
+    <TextView
+        android:id="@+id/channelName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="京东"
+        android:textSize="14sp"
+        android:textColor="?attr/colorOnSurface"
+        tools:text="京东" />
+
+    <TextView
+        android:id="@+id/channelPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="¥7999"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorPrimary"
+        android:layout_marginEnd="8dp"
+        tools:text="¥7999" />
+
+    <TextView
+        android:id="@+id/channelDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="01-15"
+        android:textSize="12sp"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginEnd="8dp"
+        tools:text="01-15" />
+
+    <TextView
+        android:id="@+id/lowestBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="⭐最低"
+        android:textSize="12sp"
+        android:textColor="#4CAF50"
+        android:visibility="gone"
+        tools:visibility="visible" />
+</LinearLayout>
+
+

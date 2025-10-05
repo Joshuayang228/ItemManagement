@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- 来源信息浮动条（方案5：底部浮动条） -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/sourceInfoCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="?attr/colorSecondaryContainer"
+        app:strokeWidth="0dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="14dp"
+            android:paddingBottom="14dp">
+
+            <!-- 左侧图标 -->
+            <ImageView
+                android:id="@+id/sourceIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_shopping"
+                app:tint="?attr/colorOnSecondaryContainer"
+                android:alpha="0.8"
+                tools:ignore="ContentDescription" />
+
+            <!-- 来源文字 -->
+            <TextView
+                android:id="@+id/sourceTypeTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toEndOf="@id/sourceIcon"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="10dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSecondaryContainer"
+                android:textStyle="normal"
+                tools:text="来自购物清单转入" />
+
+            <!-- 展开/收起图标 -->
+            <ImageView
+                android:id="@+id/expandIcon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/ic_expand_more"
+                android:visibility="gone"
+                app:tint="?attr/colorOnSecondaryContainer"
+                android:alpha="0.7"
+                tools:visibility="visible"
+                tools:ignore="ContentDescription" />
+        </RelativeLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 购物详情卡片容器（展开后显示，默认隐藏） -->
+    <LinearLayout
+        android:id="@+id/shoppingDetailsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <!-- 购买信息卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/purchaseInfoCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="购买信息"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- 预估价格 -->
+                <LinearLayout
+                    android:id="@+id/estimatedPriceContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="24dp">
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="预估价格"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                    <TextView
+                        android:id="@+id/estimatedPriceTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorPrimary"
+                        android:textStyle="bold"
+                        android:gravity="end"
+                        tools:text="¥150" />
+                </LinearLayout>
+
+                <!-- 商店 -->
+                <LinearLayout
+                    android:id="@+id/storeContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="24dp">
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="商店"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                    <TextView
+                        android:id="@+id/storeTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:gravity="end"
+                        tools:text="家乐福超市" />
+                </LinearLayout>
+
+                <!-- 优先级 -->
+                <LinearLayout
+                    android:id="@+id/priorityContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="24dp">
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="重要程度"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                    <TextView
+                        android:id="@+id/priorityTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:gravity="end"
+                        tools:text="高" />
+                </LinearLayout>
+
+                <!-- 紧急程度 -->
+                <LinearLayout
+                    android:id="@+id/urgencyContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="24dp">
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="紧急程度"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                    <TextView
+                        android:id="@+id/urgencyTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:gravity="end"
+                        tools:text="紧急" />
+                </LinearLayout>
+
+                <!-- 购买状态 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="120dp"
+                        android:layout_height="wrap_content"
+                        android:text="购买状态"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                    <TextView
+                        android:id="@+id/purchaseStatusTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorTertiary"
+                        android:textStyle="bold"
+                        android:gravity="end"
+                        tools:text="已购买" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 购物备注卡片（如果有备注） -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/shoppingNoteCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutlineVariant"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="购物备注"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:id="@+id/shoppingNoteTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:lineSpacingMultiplier="1.4"
+                    tools:text="购物清单转入时的备注信息" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 价格跟踪卡片 -->
+        <include
+            android:id="@+id/sourcePriceTrackingCardInclude"
+            layout="@layout/card_price_tracking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" />
+    </LinearLayout>
+</LinearLayout>
+

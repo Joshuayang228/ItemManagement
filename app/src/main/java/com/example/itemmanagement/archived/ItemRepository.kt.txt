@@ -1,0 +1,690 @@
+package com.example.itemmanagement.data
+
+import androidx.room.withTransaction
+import androidx.sqlite.db.SimpleSQLiteQuery
+import com.example.itemmanagement.data.dao.ItemDao
+import com.example.itemmanagement.data.dao.WasteCategoryInfo
+import com.example.itemmanagement.data.dao.WasteDateInfo
+import com.example.itemmanagement.data.dao.WastedItemInfo
+import com.example.itemmanagement.data.dao.WasteSummaryInfo
+import com.example.itemmanagement.data.entity.*
+import com.example.itemmanagement.data.mapper.toItem
+import com.example.itemmanagement.data.model.*
+import com.example.itemmanagement.data.query.ItemQueryBuilder
+import com.example.itemmanagement.data.relation.ItemWithDetails
+import com.example.itemmanagement.ui.warehouse.FilterState
+import com.example.itemmanagement.ui.warehouse.SortDirection
+import com.example.itemmanagement.ui.warehouse.SortOption
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+class ItemRepository(private val itemDao: ItemDao, private val database: AppDatabase) {
+    
+    /**
+     * 获取所有物品列表（包含详细信息）
+     * @return Flow<List<Item>> 物品列表的数据流
+     */
+    suspend fun getAllItems(): List<Item> {
+        return itemDao.getAllItemsWithDetails().map { it.toItem() }
+    }
+
+    /**
+     * 获取所有物品的Flow
+     */
+    fun getAllItemsFlow(): Flow<List<Item>> {
+        return itemDao.getAllItemsWithDetailsFlow().map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 获取所有物品数量
+     */
+    suspend fun getItemCount(): Int {
+        return itemDao.getItemCount()
+    }
+
+    /**
+     * 获取所有库存物品详情
+     */
+    suspend fun getAllWarehouseItems(): List<WarehouseItem> {
+        return itemDao.getAllWarehouseItems()
+    }
+
+    /**
+     * 获取所有库存物品详情的Flow
+     */
+    fun getAllWarehouseItemsFlow(): Flow<List<WarehouseItem>> {
+        return itemDao.getAllWarehouseItemsFlow()
+    }
+
+    /**
+     * 获取所有库存物品详情的Flow（带筛选排序）
+     */
+    fun getAllWarehouseItemsFlow(
+        filterState: FilterState,
+        sortOption: SortOption = SortOption.NAME,
+        sortDirection: SortDirection = SortDirection.ASC
+    ): Flow<List<WarehouseItem>> {
+        val query = ItemQueryBuilder.buildWarehouseQuery(filterState, sortOption, sortDirection)
+        return itemDao.getWarehouseItemsByQuery(SimpleSQLiteQuery(query))
+    }
+
+    /**
+     * 添加物品
+     * @param item 要添加的物品
+     * @return 新添加物品的ID
+     */
+    suspend fun addItem(item: Item): Long {
+        return itemDao.insertItem(item.toItemEntity(item.location?.id))
+    }
+
+    /**
+     * 获取单个物品详情
+     * @param itemId 物品ID
+     * @return Item? 物品详情，如果不存在则返回null
+     */
+    suspend fun getItemById(itemId: Long): Item? {
+        return itemDao.getItemWithDetailsById(itemId)?.toItem()
+    }
+
+    /**
+     * 获取单个物品详情的Flow
+     * @param itemId 物品ID
+     * @return Flow<Item?> 物品详情的数据流
+     */
+    fun getItemByIdFlow(itemId: Long): Flow<Item?> {
+        return itemDao.getItemWithDetailsByIdFlow(itemId).map { it?.toItem() }
+    }
+
+    /**
+     * 删除物品
+     * @param itemId 要删除的物品ID
+     */
+    suspend fun deleteItem(itemId: Long) {
+        itemDao.deleteItemById(itemId)
+    }
+
+    /**
+     * 更新物品
+     * @param item 要更新的物品
+     */
+    suspend fun updateItem(item: Item) {
+        itemDao.updateItem(item.toItemEntity(item.location?.id))
+    }
+
+    /**
+     * 搜索物品
+     * @param query 搜索关键词
+     * @return List<Item> 匹配的物品列表
+     */
+    suspend fun searchItems(query: String): List<Item> {
+        return itemDao.searchItemsWithDetails(query).map { it.toItem() }
+    }
+
+    /**
+     * 搜索物品的Flow版本
+     * @param query 搜索关键词
+     * @return Flow<List<Item>> 匹配的物品列表的数据流
+     */
+    fun searchItemsFlow(query: String): Flow<List<Item>> {
+        return itemDao.searchItemsWithDetailsFlow(query).map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 根据分类获取物品
+     * @param category 分类名称
+     * @return List<Item> 该分类下的物品列表
+     */
+    suspend fun getItemsByCategory(category: String): List<Item> {
+        return itemDao.getItemsByCategoryWithDetails(category).map { it.toItem() }
+    }
+
+    /**
+     * 根据分类获取物品的Flow版本
+     * @param category 分类名称
+     * @return Flow<List<Item>> 该分类下的物品列表的数据流
+     */
+    fun getItemsByCategoryFlow(category: String): Flow<List<Item>> {
+        return itemDao.getItemsByCategoryWithDetailsFlow(category).map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 获取所有分类
+     * @return List<String> 分类列表
+     */
+    suspend fun getAllCategories(): List<String> {
+        return itemDao.getAllCategories()
+    }
+
+    /**
+     * 获取所有位置
+     * @return List<LocationEntity> 位置列表
+     */
+    suspend fun getAllLocations(): List<LocationEntity> {
+        return itemDao.getAllLocations()
+    }
+
+    /**
+     * 获取所有位置的Flow版本
+     * @return Flow<List<LocationEntity>> 位置列表的数据流
+     */
+    fun getAllLocationsFlow(): Flow<List<LocationEntity>> {
+        return itemDao.getAllLocationsFlow()
+    }
+
+    /**
+     * 添加位置
+     * @param location 要添加的位置
+     * @return 新添加位置的ID
+     */
+    suspend fun addLocation(location: LocationEntity): Long {
+        return itemDao.insertLocation(location)
+    }
+
+    /**
+     * 更新位置
+     * @param location 要更新的位置
+     */
+    suspend fun updateLocation(location: LocationEntity) {
+        itemDao.updateLocation(location)
+    }
+
+    /**
+     * 删除位置
+     * @param locationId 要删除的位置ID
+     */
+    suspend fun deleteLocation(locationId: Long) {
+        itemDao.deleteLocationById(locationId)
+    }
+
+    /**
+     * 获取即将过期的物品
+     * @param days 提前天数，默认7天
+     * @return List<Item> 即将过期的物品列表
+     */
+    suspend fun getItemsExpiringWithin(days: Int = 7): List<Item> {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, days)
+        val expiryDate = calendar.time
+        
+        return itemDao.getItemsExpiringBeforeWithDetails(expiryDate).map { it.toItem() }
+    }
+
+    /**
+     * 获取即将过期的物品的Flow版本
+     * @param days 提前天数，默认7天
+     * @return Flow<List<Item>> 即将过期的物品列表的数据流
+     */
+    fun getItemsExpiringWithinFlow(days: Int = 7): Flow<List<Item>> {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, days)
+        val expiryDate = calendar.time
+        
+        return itemDao.getItemsExpiringBeforeWithDetailsFlow(expiryDate).map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 获取已过期的物品
+     * @return List<Item> 已过期的物品列表
+     */
+    suspend fun getExpiredItems(): List<Item> {
+        val today = Date()
+        return itemDao.getExpiredItemsWithDetails(today).map { it.toItem() }
+    }
+
+    /**
+     * 获取已过期的物品的Flow版本
+     * @return Flow<List<Item>> 已过期的物品列表的数据流
+     */
+    fun getExpiredItemsFlow(): Flow<List<Item>> {
+        val today = Date()
+        return itemDao.getExpiredItemsWithDetailsFlow(today).map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 获取库存不足的物品
+     * @return List<Item> 库存不足的物品列表
+     */
+    suspend fun getLowStockItems(): List<Item> {
+        return itemDao.getLowStockItemsWithDetails().map { it.toItem() }
+    }
+
+    /**
+     * 获取库存不足的物品的Flow版本
+     * @return Flow<List<Item>> 库存不足的物品列表的数据流
+     */
+    fun getLowStockItemsFlow(): Flow<List<Item>> {
+        return itemDao.getLowStockItemsWithDetailsFlow().map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 根据位置获取物品
+     * @param locationId 位置ID
+     * @return List<Item> 该位置下的物品列表
+     */
+    suspend fun getItemsByLocation(locationId: Long): List<Item> {
+        return itemDao.getItemsByLocationWithDetails(locationId).map { it.toItem() }
+    }
+
+    /**
+     * 根据位置获取物品的Flow版本
+     * @param locationId 位置ID
+     * @return Flow<List<Item>> 该位置下的物品列表的数据流
+     */
+    fun getItemsByLocationFlow(locationId: Long): Flow<List<Item>> {
+        return itemDao.getItemsByLocationWithDetailsFlow(locationId).map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 添加照片
+     * @param photo 要添加的照片
+     * @return 新添加照片的ID
+     */
+    suspend fun addPhoto(photo: PhotoEntity): Long {
+        return itemDao.insertPhoto(photo)
+    }
+
+    /**
+     * 添加多张照片
+     * @param photos 要添加的照片列表
+     */
+    suspend fun addPhotos(photos: List<PhotoEntity>) {
+        itemDao.insertPhotos(photos)
+    }
+
+    /**
+     * 删除照片
+     * @param photoId 要删除的照片ID
+     */
+    suspend fun deletePhoto(photoId: Long) {
+        itemDao.deletePhotoById(photoId)
+    }
+
+    /**
+     * 获取物品的所有照片
+     * @param itemId 物品ID
+     * @return List<PhotoEntity> 该物品的照片列表
+     */
+    suspend fun getPhotosByItem(itemId: Long): List<PhotoEntity> {
+        return itemDao.getPhotosByItem(itemId)
+    }
+
+    /**
+     * 添加标签
+     * @param tag 要添加的标签
+     * @return 新添加标签的ID
+     */
+    suspend fun addTag(tag: TagEntity): Long {
+        return itemDao.insertTag(tag)
+    }
+
+    /**
+     * 删除标签
+     * @param tagId 要删除的标签ID
+     */
+    suspend fun deleteTag(tagId: Long) {
+        itemDao.deleteTagById(tagId)
+    }
+
+    /**
+     * 获取所有标签
+     * @return List<TagEntity> 标签列表
+     */
+    suspend fun getAllTags(): List<TagEntity> {
+        return itemDao.getAllTags()
+    }
+
+    /**
+     * 获取所有标签的Flow版本
+     * @return Flow<List<TagEntity>> 标签列表的数据流
+     */
+    fun getAllTagsFlow(): Flow<List<TagEntity>> {
+        return itemDao.getAllTagsFlow()
+    }
+
+    /**
+     * 为物品添加标签关联
+     * @param itemId 物品ID
+     * @param tagId 标签ID
+     */
+    suspend fun addItemTagRelation(itemId: Long, tagId: Long) {
+        itemDao.insertItemTagCrossRef(ItemTagCrossRef(itemId, tagId))
+    }
+
+    /**
+     * 移除物品标签关联
+     * @param itemId 物品ID
+     * @param tagId 标签ID
+     */
+    suspend fun removeItemTagRelation(itemId: Long, tagId: Long) {
+        itemDao.deleteItemTagCrossRef(ItemTagCrossRef(itemId, tagId))
+    }
+
+    /**
+     * 获取物品的所有标签
+     * @param itemId 物品ID
+     * @return List<TagEntity> 该物品的标签列表
+     */
+    suspend fun getTagsByItem(itemId: Long): List<TagEntity> {
+        return itemDao.getTagsByItem(itemId)
+    }
+
+    /**
+     * 根据标签获取物品
+     * @param tagId 标签ID
+     * @return List<Item> 该标签下的物品列表
+     */
+    suspend fun getItemsByTag(tagId: Long): List<Item> {
+        return itemDao.getItemsByTagWithDetails(tagId).map { it.toItem() }
+    }
+
+    /**
+     * 获取库存统计信息
+     * @return InventoryStats 库存统计
+     */
+    suspend fun getInventoryStats(): InventoryStats {
+        val totalItems = itemDao.getItemCount()
+        val totalCategories = itemDao.getCategoryCount()
+        val expiringItems = getItemsExpiringWithin(7).size
+        val lowStockItems = getLowStockItems().size
+        
+        return InventoryStats(
+            totalItems = totalItems,
+            totalCategories = totalCategories,
+            expiringItems = expiringItems,
+            lowStockItems = lowStockItems
+        )
+    }
+
+    /**
+     * 获取库存统计信息的Flow版本
+     * @return Flow<InventoryStats> 库存统计的数据流
+     */
+    fun getInventoryStatsFlow(): Flow<InventoryStats> {
+        return itemDao.getAllItemsWithDetailsFlow().map { items ->
+            val totalItems = items.size
+            val totalCategories = items.map { it.item.category }.distinct().size
+            val today = Date()
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.DAY_OF_YEAR, 7)
+            val expiryDate = calendar.time
+            
+            val expiringItems = items.count { 
+                it.item.expirationDate?.let { expiry -> expiry.before(expiryDate) && expiry.after(today) } ?: false
+            }
+            
+            val lowStockItems = items.count { 
+                it.item.stockWarningThreshold?.let { threshold -> it.item.quantity <= threshold } ?: false
+            }
+            
+            InventoryStats(
+                totalItems = totalItems,
+                totalCategories = totalCategories,
+                expiringItems = expiringItems,
+                lowStockItems = lowStockItems
+            )
+        }
+    }
+
+    // ==================== 批量操作 ====================
+    
+    /**
+     * 批量添加物品
+     * @param items 要添加的物品列表
+     */
+    suspend fun addItems(items: List<Item>) {
+        database.withTransaction {
+            items.forEach { item ->
+                addItem(item)
+            }
+        }
+    }
+    
+    /**
+     * 批量删除物品
+     * @param itemIds 要删除的物品ID列表
+     */
+    suspend fun deleteItems(itemIds: List<Long>) {
+        database.withTransaction {
+            itemIds.forEach { itemId ->
+                deleteItem(itemId)
+            }
+        }
+    }
+    
+    /**
+     * 批量更新物品
+     * @param items 要更新的物品列表
+     */
+    suspend fun updateItems(items: List<Item>) {
+        database.withTransaction {
+            items.forEach { item ->
+                updateItem(item)
+            }
+        }
+    }
+
+    // ==================== 废品损耗报告相关功能 ====================
+    
+    /**
+     * 获取按分类统计的废品损耗信息
+     * @return List<WasteCategoryInfo> 按分类统计的废品损耗信息
+     */
+    suspend fun getWasteCategoryStats(): List<WasteCategoryInfo> {
+        return itemDao.getWasteCategoryStats()
+    }
+
+    /**
+     * 获取按日期统计的废品损耗信息
+     * @param days 统计天数，默认30天
+     * @return List<WasteDateInfo> 按日期统计的废品损耗信息
+     */
+    suspend fun getWasteDateStats(days: Int = 30): List<WasteDateInfo> {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, -days)
+        val startDate = calendar.time
+        return itemDao.getWasteDateStats(startDate)
+    }
+
+    /**
+     * 获取具体的废品损耗物品信息
+     * @param days 统计天数，默认30天
+     * @return List<WastedItemInfo> 具体的废品损耗物品信息
+     */
+    suspend fun getWastedItemDetails(days: Int = 30): List<WastedItemInfo> {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, -days)
+        val startDate = calendar.time
+        return itemDao.getWastedItemDetails(startDate)
+    }
+
+    /**
+     * 获取废品损耗汇总信息
+     * @param days 统计天数，默认30天
+     * @return WasteSummaryInfo 废品损耗汇总信息
+     */
+    suspend fun getWasteSummary(days: Int = 30): WasteSummaryInfo {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, -days)
+        val startDate = calendar.time
+        return itemDao.getWasteSummary(startDate)
+    }
+
+    /**
+     * 将物品标记为废弃
+     * @param itemId 物品ID
+     * @param wasteDate 废弃日期，默认为当前日期
+     * @param wasteReason 废弃原因，可选
+     */
+    suspend fun markItemAsWasted(itemId: Long, wasteDate: Date = Date(), wasteReason: String? = null) {
+        val item = itemDao.getItemById(itemId)
+        if (item != null) {
+            val updatedItem = item.copy(
+                status = ItemStatus.DISCARDED,
+                wasteDate = wasteDate
+            )
+            itemDao.updateItem(updatedItem)
+        }
+    }
+
+    /**
+     * 批量将物品标记为废弃
+     * @param itemIds 物品ID列表
+     * @param wasteDate 废弃日期，默认为当前日期
+     * @param wasteReason 废弃原因，可选
+     */
+    suspend fun markItemsAsWasted(itemIds: List<Long>, wasteDate: Date = Date(), wasteReason: String? = null) {
+        database.withTransaction {
+            itemIds.forEach { itemId ->
+                markItemAsWasted(itemId, wasteDate, wasteReason)
+            }
+        }
+    }
+
+    /**
+     * 恢复废弃物品
+     * @param itemId 物品ID
+     */
+    suspend fun restoreWastedItem(itemId: Long) {
+        val item = itemDao.getItemById(itemId)
+        if (item != null && item.status == ItemStatus.DISCARDED) {
+            val updatedItem = item.copy(
+                status = ItemStatus.IN_STOCK,
+                wasteDate = null
+            )
+            itemDao.updateItem(updatedItem)
+        }
+    }
+
+    /**
+     * 获取所有废弃物品
+     * @return List<Item> 废弃物品列表
+     */
+    suspend fun getWastedItems(): List<Item> {
+        return itemDao.getWastedItemsWithDetails().map { it.toItem() }
+    }
+
+    /**
+     * 获取所有废弃物品的Flow版本
+     * @return Flow<List<Item>> 废弃物品列表的数据流
+     */
+    fun getWastedItemsFlow(): Flow<List<Item>> {
+        return itemDao.getWastedItemsWithDetailsFlow().map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 在指定时间范围内获取废弃物品
+     * @param startDate 开始日期
+     * @param endDate 结束日期，默认为当前日期
+     * @return List<Item> 废弃物品列表
+     */
+    suspend fun getWastedItemsInDateRange(startDate: Date, endDate: Date = Date()): List<Item> {
+        return itemDao.getWastedItemsInDateRangeWithDetails(startDate, endDate).map { it.toItem() }
+    }
+
+    /**
+     * 在指定时间范围内获取废弃物品的Flow版本
+     * @param startDate 开始日期
+     * @param endDate 结束日期，默认为当前日期
+     * @return Flow<List<Item>> 废弃物品列表的数据流
+     */
+    fun getWastedItemsInDateRangeFlow(startDate: Date, endDate: Date = Date()): Flow<List<Item>> {
+        return itemDao.getWastedItemsInDateRangeWithDetailsFlow(startDate, endDate).map { items ->
+            items.map { it.toItem() }
+        }
+    }
+
+    /**
+     * 根据月份获取废品损耗统计
+     * @param year 年份
+     * @param month 月份 (1-12)
+     * @return WasteSummaryInfo 月度废品损耗汇总
+     */
+    suspend fun getMonthlyWasteSummary(year: Int, month: Int): WasteSummaryInfo {
+        val calendar = Calendar.getInstance()
+        calendar.set(year, month - 1, 1, 0, 0, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startDate = calendar.time
+        
+        calendar.add(Calendar.MONTH, 1)
+        calendar.add(Calendar.DAY_OF_MONTH, -1)
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        val endDate = calendar.time
+        
+        return itemDao.getWasteSummaryInDateRange(startDate, endDate)
+    }
+
+    /**
+     * 获取自定义时间范围的废品损耗统计
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return WasteSummaryInfo 自定义时间范围的废品损耗汇总
+     */
+    suspend fun getCustomWasteSummary(startDate: Date, endDate: Date): WasteSummaryInfo {
+        return itemDao.getWasteSummaryInDateRange(startDate, endDate)
+    }
+
+    /**
+     * 获取废品损耗趋势数据（按周统计）
+     * @param weeks 统计周数，默认12周
+     * @return List<WasteDateInfo> 按周统计的废品损耗趋势
+     */
+    suspend fun getWeeklyWasteTrend(weeks: Int = 12): List<WasteDateInfo> {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.WEEK_OF_YEAR, -weeks)
+        val startDate = calendar.time
+        
+        return itemDao.getWeeklyWasteTrend(startDate)
+    }
+
+    /**
+     * 获取最消耗的物品分类（按废弃数量）
+     * @param limit 返回数量限制，默认5个
+     * @param days 统计天数，默认90天
+     * @return List<WasteCategoryInfo> 最消耗的物品分类
+     */
+    suspend fun getTopWasteCategories(limit: Int = 5, days: Int = 90): List<WasteCategoryInfo> {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, -days)
+        val startDate = calendar.time
+        
+        return itemDao.getTopWasteCategories(startDate, limit)
+    }
+
+    companion object {
+        @Volatile
+        private var INSTANCE: ItemRepository? = null
+        
+        fun getInstance(application: android.app.Application): ItemRepository {
+            return INSTANCE ?: synchronized(this) {
+                val database = AppDatabase.getDatabase(application)
+                val instance = ItemRepository(database.itemDao(), database)
+                INSTANCE = instance
+                instance
+            }
+        }
+    }
+}
+

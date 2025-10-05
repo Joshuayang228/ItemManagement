@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bottom_sheet_background">
+
+    <!-- 拖拽手柄 -->
+    <View
+        android:id="@+id/dragHandle"
+        android:layout_width="32dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bottom_sheet_drag_handle" />
+
+    <!-- 标题栏 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
+
+        <TextView
+            android:id="@+id/dialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="记录价格"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black" />
+
+        <!-- 物品名称 -->
+        <TextView
+            android:id="@+id/itemNameText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_alignParentEnd="true"
+            android:text="iPhone 15 Pro"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <!-- 底部分隔线 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="-24dp"
+            android:layout_marginEnd="-24dp"
+            android:background="#E3E8ED" />
+    </RelativeLayout>
+
+    <!-- 内容滚动区域 -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:paddingTop="16dp"
+        android:paddingBottom="24dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:scrollbars="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+    <!-- 价格 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="💰 价格"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="4dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.App.TextInputLayout.FlatRounded"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/priceInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="输入价格"
+                android:inputType="numberDecimal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:textSize="14sp"
+                android:maxLines="1" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.App.TextInputLayout.FlatRounded.ExposedDropdownMenu"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/priceUnitInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="单位"
+                android:inputType="none"
+                android:text="元"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:textSize="14sp"
+                android:maxLines="1"
+                android:gravity="center" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+
+    <!-- 购买渠道 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🏪 购买渠道"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="4dp" />
+
+    <!-- 快速选择 -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/channelChipGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:singleSelection="false"
+        android:layout_marginBottom="8dp">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/channelJD"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="京东"
+            style="@style/Widget.Material3.Chip.Suggestion" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/channelTmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="天猫"
+            style="@style/Widget.Material3.Chip.Suggestion" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/channelPDD"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="拼多多"
+            style="@style/Widget.Material3.Chip.Suggestion" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/channelStore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="实体店"
+            style="@style/Widget.Material3.Chip.Suggestion" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <!-- 自定义渠道输入框 -->
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.App.TextInputLayout.FlatRounded"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/channelInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="或输入自定义渠道"
+            android:inputType="text"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:textSize="14sp"
+            android:maxLines="1" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- 记录日期 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📅 记录日期"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="4dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.App.TextInputLayout.FlatRounded"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:endIconMode="custom"
+        app:endIconDrawable="@drawable/ic_calendar"
+        android:layout_marginBottom="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/dateInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="选择日期"
+            android:inputType="none"
+            android:focusable="false"
+            android:clickable="true"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:textSize="14sp"
+            android:maxLines="1" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- 备注 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="📝 备注（选填）"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="4dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.App.TextInputLayout.FlatRounded"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/notesInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="添加备注"
+            android:inputType="textMultiLine"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:textSize="14sp"
+            android:maxLines="3"
+            android:minLines="2"
+            android:gravity="top|start" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- 保存按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSave"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="保存"
+                android:textSize="16sp"
+                style="@style/Widget.Material3.Button" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

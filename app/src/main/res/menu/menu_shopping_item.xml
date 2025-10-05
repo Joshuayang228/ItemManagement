@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- ⭐ 标记已购买 - 移到第一位 -->
+    <item
+        android:id="@+id/action_mark_purchased"
+        android:title="@string/mark_as_purchased"
+        android:icon="@drawable/ic_check" />
+    
+    <item
+        android:id="@+id/action_record_price"
+        android:title="@string/record_price"
+        android:icon="@drawable/ic_price_tag" />
+    
+    <item
+        android:id="@+id/action_transfer_to_inventory"
+        android:title="@string/transfer_to_inventory"
+        android:icon="@drawable/ic_inventory" />
+    
+    <item
+        android:id="@+id/action_delete"
+        android:title="@string/delete"
+        android:icon="@drawable/ic_delete" />
+</menu>
+

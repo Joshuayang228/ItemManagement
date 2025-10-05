@@ -1,0 +1,71 @@
+package com.example.itemmanagement.data.dao
+
+import androidx.room.*
+import com.example.itemmanagement.data.entity.ShoppingItemEntity
+import com.example.itemmanagement.data.entity.ShoppingItemPriority
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface ShoppingDao {
+    
+    // 获取指定清单的所有物品
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId ORDER BY isPurchased ASC, priority DESC, addDate DESC")
+    fun getShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>>
+    
+    // 获取指定清单的待购买物品
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId AND isPurchased = 0 ORDER BY priority DESC, addDate DESC")
+    fun getPendingShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>>
+    
+    // 获取指定清单的已购买物品
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId AND isPurchased = 1 ORDER BY purchaseDate DESC")
+    fun getPurchasedShoppingItemsByListId(listId: Long): Flow<List<ShoppingItemEntity>>
+    
+    // 获取所有购物物品（用于兼容旧接口）
+    @Query("SELECT * FROM shopping_items ORDER BY isPurchased ASC, priority DESC, addDate DESC")
+    fun getAllShoppingItems(): Flow<List<ShoppingItemEntity>>
+    
+    // 根据ID获取购物物品
+    @Query("SELECT * FROM shopping_items WHERE id = :id")
+    suspend fun getShoppingItemById(id: Long): ShoppingItemEntity?
+    
+    // 插入购物物品
+    @Insert
+    suspend fun insertShoppingItem(item: ShoppingItemEntity): Long
+    
+    // 更新购物物品
+    @Update
+    suspend fun updateShoppingItem(item: ShoppingItemEntity)
+    
+    // 删除购物物品
+    @Delete
+    suspend fun deleteShoppingItem(item: ShoppingItemEntity)
+    
+    // 根据ID删除购物物品
+    @Query("DELETE FROM shopping_items WHERE id = :id")
+    suspend fun deleteShoppingItemById(id: Long)
+    
+    // 清除指定清单的已购买物品
+    @Query("DELETE FROM shopping_items WHERE listId = :listId AND isPurchased = 1")
+    suspend fun clearPurchasedItemsByListId(listId: Long)
+    
+    // 获取指定清单的待购买物品数量
+    @Query("SELECT COUNT(*) FROM shopping_items WHERE listId = :listId AND isPurchased = 0")
+    fun getPendingItemsCountByListId(listId: Long): Flow<Int>
+    
+    // 获取指定清单的物品总数
+    @Query("SELECT COUNT(*) FROM shopping_items WHERE listId = :listId")
+    fun getItemsCountByListId(listId: Long): Flow<Int>
+    
+    // 获取指定清单的总花费
+    @Query("SELECT SUM(actualPrice) FROM shopping_items WHERE listId = :listId AND isPurchased = 1 AND actualPrice IS NOT NULL")
+    fun getActualSpentByListId(listId: Long): Flow<Double?>
+    
+    // 获取指定清单的预估花费
+    @Query("SELECT SUM(price) FROM shopping_items WHERE listId = :listId AND price IS NOT NULL")
+    fun getEstimatedSpentByListId(listId: Long): Flow<Double?>
+    
+    // 根据优先级获取物品
+    @Query("SELECT * FROM shopping_items WHERE listId = :listId AND priority = :priority ORDER BY addDate DESC")
+    fun getShoppingItemsByPriority(listId: Long, priority: ShoppingItemPriority): Flow<List<ShoppingItemEntity>>
+} 
+

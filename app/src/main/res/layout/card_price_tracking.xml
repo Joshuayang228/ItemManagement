@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 价格跟踪卡片（简化版，始终显示）-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/priceTrackingCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toEndOf="parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- 标题栏 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="💰 价格跟踪"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:id="@+id/recordCountText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="(0条)"
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginEnd="8dp" />
+
+            <ImageButton
+                android:id="@+id/btnAddRecord"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_add"
+                android:contentDescription="添加价格记录"
+                app:tint="?attr/colorPrimary" />
+        </LinearLayout>
+
+        <!-- 折线图容器 -->
+        <FrameLayout
+            android:id="@+id/chartContainer"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_chart_placeholder">
+
+            <!-- AAChartView 将动态添加到这里 -->
+            
+            <!-- 空状态提示 -->
+            <TextView
+                android:id="@+id/emptyChartText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="暂无价格数据\n点击右上角 + 添加记录"
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:gravity="center"
+                android:alpha="0.6"
+                android:visibility="visible" />
+        </FrameLayout>
+
+        <!-- 价格统计 -->
+        <LinearLayout
+            android:id="@+id/statsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="最高"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/maxPriceText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorError"
+                    android:layout_marginTop="4dp"
+                    tools:text="¥899" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="平均"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/avgPriceText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary"
+                    android:layout_marginTop="4dp"
+                    tools:text="¥850" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="最低"
+                    android:textSize="12sp"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/minPriceText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="--"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#4CAF50"
+                    android:layout_marginTop="4dp"
+                    tools:text="¥799" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 最近记录列表 -->
+        <LinearLayout
+            android:id="@+id/recentRecordsLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="24dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="最近记录"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recentRecordsRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_price_record" />
+
+            <!-- 展示全部按钮 -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnShowAllRecords"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="展示全部"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                style="@style/Widget.Material3.Button.TextButton"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

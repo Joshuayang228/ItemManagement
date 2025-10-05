@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material 3 购物物品卡片 - 优化版V2（支持图片、移除预算条和按钮） -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+    app:strokeWidth="0dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:paddingEnd="12dp">
+
+        <!-- 左侧优先级指示条 -->
+        <View
+            android:id="@+id/priorityIndicator"
+            android:layout_width="4dp"
+            android:layout_height="0dp"
+            android:background="?attr/colorPrimary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <!-- 物品图片（可选显示） -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/itemImage"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginStart="8dp"
+            android:scaleType="centerCrop"
+            android:background="?attr/colorSurfaceVariant"
+            android:visibility="gone"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp"
+            app:layout_constraintStart_toEndOf="@id/priorityIndicator"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/ic_image_placeholder"
+            tools:visibility="visible" />
+
+        <!-- 购买状态复选框（图片存在时调整位置） -->
+        <CheckBox
+            android:id="@+id/checkboxPurchased"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="8dp"
+            android:buttonTint="?attr/colorPrimary"
+            app:layout_constraintStart_toEndOf="@id/itemImage"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- 物品名称 -->
+        <TextView
+            android:id="@+id/itemName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="苹果"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintStart_toEndOf="@id/checkboxPurchased"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="有机红富士苹果" />
+
+        <!-- 第二行：数量 + 预估价格 -->
+        <TextView
+            android:id="@+id/itemQuantityAndPrice"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="数量：2.5 kg | 预估：¥25.8"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintStart_toStartOf="@id/itemName"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/itemName"
+            tools:text="数量：2.5 kg | 预估：¥25.8" />
+
+        <!-- 第三行：商店 + 紧急程度 + 截止日期 Chip组 -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/infoChipGroup"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="4dp"
+            app:singleLine="false"
+            app:layout_constraintStart_toStartOf="@id/itemName"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/itemQuantityAndPrice">
+
+            <!-- 商店 Chip (使用SecondaryContainer) -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/storeChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="盒马鲜生"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnSecondaryContainer"
+                app:chipIcon="@drawable/ic_store_24dp"
+                app:chipIconTint="?attr/colorOnSecondaryContainer"
+                app:chipIconSize="16dp"
+                app:chipMinHeight="32dp"
+                app:chipBackgroundColor="?attr/colorSecondaryContainer"
+                android:visibility="gone"
+                tools:text="盒马鲜生"
+                tools:visibility="visible" />
+
+            <!-- 紧急程度 Chip (动态颜色) -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/urgencyChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="紧急"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:textSize="12sp"
+                app:chipIcon="@drawable/ic_urgent"
+                app:chipIconSize="16dp"
+                app:chipMinHeight="32dp"
+                app:chipStrokeWidth="0dp"
+                android:visibility="gone"
+                tools:text="紧急"
+                tools:visibility="visible" />
+
+            <!-- 截止日期 Chip (使用TertiaryContainer) -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/deadlineChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="明天截止"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:textSize="12sp"
+                android:textColor="?attr/colorOnTertiaryContainer"
+                app:chipIcon="@drawable/ic_calendar"
+                app:chipIconTint="?attr/colorOnTertiaryContainer"
+                app:chipIconSize="16dp"
+                app:chipMinHeight="32dp"
+                app:chipBackgroundColor="?attr/colorTertiaryContainer"
+                android:visibility="gone"
+                tools:text="明天截止"
+                tools:visibility="visible" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- 备注信息 (使用SurfaceVariant) -->
+        <TextView
+            android:id="@+id/itemNotes"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="备注：要买甜一点的"
+            android:textSize="13sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:background="@drawable/bg_note_m3"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="@id/itemName"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/infoChipGroup"
+            tools:text="📝 要买甜一点的"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>
