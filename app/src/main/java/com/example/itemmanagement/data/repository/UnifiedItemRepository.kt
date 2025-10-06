@@ -10,7 +10,6 @@ import com.example.itemmanagement.data.dao.unified.ItemStateDao
 import com.example.itemmanagement.data.dao.unified.ShoppingDetailDao
 import com.example.itemmanagement.data.dao.ShoppingListDao
 import com.example.itemmanagement.data.dao.unified.UnifiedItemDao
-import com.example.itemmanagement.data.dao.unified.WishlistDetailDao
 import com.example.itemmanagement.data.entity.LocationEntity
 import com.example.itemmanagement.data.entity.TagEntity
 import com.example.itemmanagement.data.entity.PhotoEntity
@@ -23,13 +22,9 @@ import com.example.itemmanagement.data.entity.unified.ItemStateEntity
 import com.example.itemmanagement.data.entity.unified.ItemStateType
 import com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity
 import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
-import com.example.itemmanagement.data.entity.unified.WishlistDetailEntity
-import com.example.itemmanagement.data.entity.wishlist.WishlistPriority
-import com.example.itemmanagement.data.entity.wishlist.WishlistUrgency
 import com.example.itemmanagement.data.model.ItemStatus
 import com.example.itemmanagement.data.view.InventoryItemView
 import com.example.itemmanagement.data.view.ShoppingItemView
-import com.example.itemmanagement.data.view.WishlistItemView
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.data.model.WarehouseItem
 import com.example.itemmanagement.data.relation.ItemWithDetails
@@ -51,7 +46,6 @@ class UnifiedItemRepository(
     private val appDatabase: AppDatabase,
     private val unifiedItemDao: UnifiedItemDao,
     private val itemStateDao: ItemStateDao,
-    private val wishlistDetailDao: WishlistDetailDao,
     private val shoppingDetailDao: ShoppingDetailDao,
     private val shoppingListDao: ShoppingListDao,
     private val inventoryDetailDao: InventoryDetailDao,
@@ -74,13 +68,47 @@ class UnifiedItemRepository(
     suspend fun getUnifiedItemById(itemId: Long): UnifiedItemEntity? {
         return unifiedItemDao.getById(itemId)
     }
-
-    // --- 心愿单操作 ---
-    suspend fun addWishlistItem(unifiedItem: UnifiedItemEntity, wishlistDetail: WishlistDetailEntity) {
-        appDatabase.withTransaction {
-            val itemId = unifiedItemDao.insert(unifiedItem)
-            wishlistDetailDao.insert(wishlistDetail.copy(itemId = itemId))
-            itemStateDao.insert(ItemStateEntity(itemId = itemId, stateType = ItemStateType.WISHLIST, isActive = true))
+    
+    /**
+     * 根据物品ID获取库存详情
+     */
+    suspend fun getInventoryDetailByItemId(itemId: Long): InventoryDetailEntity? {
+        return inventoryDetailDao.getByItemId(itemId)
+    }
+    
+    /**
+     * 根据物品ID获取照片列表
+     */
+    suspend fun getPhotosByItemId(itemId: Long): List<PhotoEntity> {
+        return try {
+            photoDao.getPhotosByItemId(itemId)
+        } catch (e: Exception) {
+            android.util.Log.e("UnifiedItemRepository", "查询照片失败: itemId=$itemId", e)
+            emptyList()
+        }
+    }
+    
+    /**
+     * 根据物品ID获取标签列表
+     */
+    suspend fun getTagsByItemId(itemId: Long): List<TagEntity> {
+        return try {
+            tagDao.getTagsByItemId(itemId)
+        } catch (e: Exception) {
+            android.util.Log.e("UnifiedItemRepository", "查询标签失败: itemId=$itemId", e)
+            emptyList()
+        }
+    }
+    
+    /**
+     * 根据位置ID获取位置信息
+     */
+    suspend fun getLocationById(locationId: Long): LocationEntity? {
+        return try {
+            locationDao.getById(locationId)
+        } catch (e: Exception) {
+            android.util.Log.e("UnifiedItemRepository", "查询位置失败: locationId=$locationId", e)
+            null
         }
     }
 
@@ -227,22 +255,6 @@ class UnifiedItemRepository(
                 isActive = true,
                 contextId = shoppingListId
             ))
-
-            // 2. 从心愿单详情复制到购物详情（如果存在）
-            val wishlistDetail = wishlistDetailDao.getByItemId(itemId)
-            if (wishlistDetail != null) {
-                shoppingDetailDao.insert(ShoppingDetailEntity(
-                    itemId = itemId,
-                    shoppingListId = shoppingListId,
-                    quantity = wishlistDetail.quantity,
-                    quantityUnit = wishlistDetail.quantityUnit,
-                    estimatedPrice = wishlistDetail.targetPrice,
-                    estimatedPriceUnit = wishlistDetail.priceUnit,  // ✅ 使用独立的价格单位
-                    priority = ShoppingItemPriority.NORMAL, // 默认或从wishlist priority映射
-                    urgencyLevel = UrgencyLevel.NORMAL, // 默认或从wishlist urgency映射
-                    addedReason = "从心愿单添加"
-                ))
-            }
         }
     }
 
@@ -1732,206 +1744,7 @@ class UnifiedItemRepository(
 
         // ==================== 心愿单相关方法 ====================
 
-        /**
-         * 删除心愿单物品
-         */
-        suspend fun deleteWishlistItem(itemId: Long) {
-            appDatabase.withTransaction {
-                // 将心愿单状态设为不活跃
-                val wishlistStates = itemStateDao.getByItemId(itemId)
-                val activeWishlistState = wishlistStates.find { state ->
-                    state.stateType == ItemStateType.WISHLIST && state.isActive 
-                }
-                activeWishlistState?.let { state ->
-                    itemStateDao.update(state.deactivate("用户删除"))
-                }
-            }
-        }
 
-        /**
-         * 将心愿单物品移动到购物清单
-         */
-        suspend fun moveWishlistToShopping(itemId: Long, shoppingListId: Long) {
-            appDatabase.withTransaction {
-                // 获取心愿单详情
-                val wishlistDetail = wishlistDetailDao.getByItemId(itemId)
-                if (wishlistDetail != null) {
-                    // 创建购物详情
-                    val shoppingDetail = ShoppingDetailEntity(
-                        itemId = itemId,
-                        shoppingListId = shoppingListId,
-                        quantity = wishlistDetail.quantity,
-                        estimatedPrice = wishlistDetail.currentPrice,
-                        addedReason = "从心愿单添加"
-                    )
-                    shoppingDetailDao.insert(shoppingDetail)
-                    
-                    // 添加购物状态
-                    itemStateDao.insert(ItemStateEntity(
-                        itemId = itemId,
-                        stateType = ItemStateType.SHOPPING,
-                        contextId = shoppingListId
-                    ))
-                }
-            }
-        }
-
-        /**
-         * 获取所有心愿单物品
-         * 完整实现：组合UnifiedItemEntity、WishlistDetailEntity、ItemStateEntity数据
-         */
-        fun getWishlistItems(): Flow<List<WishlistItemView>> {
-            return combine(
-                unifiedItemDao.getAllItems(),
-                wishlistDetailDao.getAllDetails(),
-                itemStateDao.getActiveStatesByType(ItemStateType.WISHLIST)
-            ) { unifiedItems, wishlistDetails, wishlistStates ->
-                
-                // 创建映射表以提高查询效率
-                val unifiedItemMap = unifiedItems.associateBy { it.id }
-                val wishlistDetailMap = wishlistDetails.associateBy { it.itemId }
-                val wishlistStateMap = wishlistStates.associateBy { it.itemId }
-                
-                // 组装WishlistItemView对象
-                wishlistDetails.mapNotNull { wishlistDetail ->
-                    val unifiedItem = unifiedItemMap[wishlistDetail.itemId]
-                    val itemState = wishlistStateMap[wishlistDetail.itemId]
-                    
-                    if (unifiedItem != null && itemState != null) {
-                        createWishlistItemView(unifiedItem, wishlistDetail, itemState)
-                    } else null
-                }.sortedByDescending { it.addedToWishlistDate }
-            }
-        }
-
-        /**
-         * 获取活跃的心愿单物品（未删除、未暂停）
-         */
-        fun getActiveWishlistItems(): Flow<List<WishlistItemView>> {
-            return getWishlistItems().map { allItems ->
-                allItems.filter { item -> 
-                    item.isActive && !item.isPaused 
-                }
-            }
-        }
-        
-        /**
-         * 根据ID获取特定心愿单物品
-         */
-        suspend fun getWishlistItemById(itemId: Long): WishlistItemView? {
-            val unifiedItem = unifiedItemDao.getById(itemId) ?: return null
-            val wishlistDetail = wishlistDetailDao.getByItemId(itemId) ?: return null
-            val itemState = itemStateDao.getActiveStateByItemIdAndType(itemId, ItemStateType.WISHLIST) ?: return null
-            
-            return createWishlistItemView(unifiedItem, wishlistDetail, itemState)
-        }
-        
-        /**
-         * 搜索心愿单物品
-         */
-        fun searchWishlistItems(query: String): Flow<List<WishlistItemView>> {
-            return getWishlistItems().map { allItems ->
-                allItems.filter { item ->
-                    item.name.contains(query, ignoreCase = true) ||
-                    item.brand?.contains(query, ignoreCase = true) == true ||
-                    item.category.contains(query, ignoreCase = true) ||
-                    item.customNote?.contains(query, ignoreCase = true) == true
-                }
-            }
-        }
-        
-        /**
-         * 获取高优先级心愿单物品
-         */
-        fun getHighPriorityWishlistItems(): Flow<List<WishlistItemView>> {
-            return getWishlistItems().map { allItems ->
-                allItems.filter { item ->
-                    item.needsImmediateAttention()
-                }
-            }
-        }
-        
-        /**
-         * 获取降价提醒物品
-         */
-        fun getPriceDropWishlistItems(): Flow<List<WishlistItemView>> {
-            return getWishlistItems().map { allItems ->
-                allItems.filter { item ->
-                    item.hasPriceDrop()
-                }
-            }
-        }
-        
-        /**
-         * 获取达到目标价的物品
-         */
-        fun getTargetPriceReachedItems(): Flow<List<WishlistItemView>> {
-            return getWishlistItems().map { allItems ->
-                allItems.filter { item ->
-                    item.hasReachedTargetPrice()
-                }
-            }
-        }
-        
-        /**
-         * 创建WishlistItemView对象的私有辅助方法
-         */
-        private fun createWishlistItemView(
-            unifiedItem: UnifiedItemEntity,
-            wishlistDetail: WishlistDetailEntity,
-            itemState: ItemStateEntity
-        ): WishlistItemView {
-            return WishlistItemView(
-                // 基础物品信息
-                id = unifiedItem.id,
-                name = unifiedItem.name,
-                category = unifiedItem.category,
-                subCategory = unifiedItem.subCategory,
-                brand = unifiedItem.brand,
-                specification = unifiedItem.specification,
-                customNote = unifiedItem.customNote,
-                
-                // 心愿单专用信息
-                price = wishlistDetail.price,
-                targetPrice = wishlistDetail.targetPrice,
-                priceUnit = wishlistDetail.priceUnit,
-                currentPrice = wishlistDetail.currentPrice,
-                lowestPrice = wishlistDetail.lowestPrice,
-                highestPrice = wishlistDetail.highestPrice,
-                
-                // 购买计划
-                priority = wishlistDetail.priority,
-                urgency = wishlistDetail.urgency,
-                quantity = wishlistDetail.quantity,
-                quantityUnit = wishlistDetail.quantityUnit,
-                budgetLimit = wishlistDetail.budgetLimit,
-                purchaseChannel = wishlistDetail.purchaseChannel,
-                
-                // 价格跟踪设置
-                isPriceTrackingEnabled = wishlistDetail.isPriceTrackingEnabled,
-                priceDropThreshold = wishlistDetail.priceDropThreshold,
-                lastPriceCheck = wishlistDetail.lastPriceCheck,
-                
-                // 状态信息
-                isActive = itemState.isActive,
-                isPaused = wishlistDetail.isPaused,
-                addedToWishlistDate = itemState.activatedDate,
-                lastModified = wishlistDetail.lastModified,
-                achievedDate = wishlistDetail.achievedDate,
-                
-                // 扩展信息
-                sourceUrl = wishlistDetail.sourceUrl,
-                imageUrl = wishlistDetail.imageUrl,
-                relatedInventoryItemId = wishlistDetail.relatedInventoryItemId,
-                addedReason = wishlistDetail.addedReason,
-                
-                // 统计信息
-                viewCount = wishlistDetail.viewCount,
-                lastViewDate = wishlistDetail.lastViewDate,
-                priceChangeCount = wishlistDetail.priceChangeCount
-            )
-        }
-    
     // ========================================
     // 价格记录管理
     // ========================================
@@ -2000,6 +1813,37 @@ class UnifiedItemRepository(
      */
     suspend fun getLatestPricesByChannel(itemId: Long): List<PriceRecord> {
         return priceRecordDao.getLatestPricesByChannel(itemId)
+    }
+    
+    /**
+     * 将已存在的物品添加到购物清单
+     * 用于从库存物品添加到购物清单的场景
+     */
+    suspend fun addShoppingItemToExistingItem(
+        itemId: Long,
+        shoppingDetail: ShoppingDetailEntity
+    ) {
+        appDatabase.withTransaction {
+            android.util.Log.d("UnifiedItemRepository", "🛒 开始添加购物详情: itemId=$itemId, listId=${shoppingDetail.shoppingListId}")
+            
+            // 1. 插入购物详情
+            shoppingDetailDao.insert(shoppingDetail)
+            android.util.Log.d("UnifiedItemRepository", "✓ 购物详情已插入")
+            
+            // 2. 创建购物状态
+            val shoppingState = ItemStateEntity(
+                itemId = itemId,
+                stateType = ItemStateType.SHOPPING,
+                contextId = shoppingDetail.shoppingListId,
+                isActive = true,
+                createdDate = java.util.Date(),
+                activatedDate = java.util.Date()
+            )
+            itemStateDao.insert(shoppingState)
+            android.util.Log.d("UnifiedItemRepository", "✓ 购物状态已创建")
+            
+            android.util.Log.d("UnifiedItemRepository", "✅ 添加到购物清单完成")
+        }
     }
 }
 

@@ -33,7 +33,6 @@ object TestDataInserter {
                     database,
                     database.unifiedItemDao(),
                     database.itemStateDao(),
-                    database.wishlistDetailDao(),
                     database.shoppingDetailDao(),
                     database.shoppingListDao(),
                     database.inventoryDetailDao(),

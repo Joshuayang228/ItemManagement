@@ -41,7 +41,7 @@
             android:paddingEnd="8dp"
             android:paddingBottom="3dp"
             android:background="@drawable/bg_status_label_normal"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/colorOnPrimaryContainer"
             app:layout_constraintEnd_toStartOf="@id/btnMore"
             app:layout_constraintTop_toTopOf="@id/listIcon"
             app:layout_constraintBottom_toBottomOf="@id/listIcon"

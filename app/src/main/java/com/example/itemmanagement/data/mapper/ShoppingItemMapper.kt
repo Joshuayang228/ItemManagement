@@ -69,7 +69,8 @@ object ShoppingItemMapper {
         inventoryDetail: InventoryDetailEntity,
         shoppingListId: Long,
         quantity: Double = 1.0,
-        priority: ShoppingItemPriority = ShoppingItemPriority.NORMAL
+        priority: ShoppingItemPriority = ShoppingItemPriority.NORMAL,
+        purchaseReason: String? = null
     ): Pair<UnifiedItemEntity, ShoppingDetailEntity> {
         
         // 统一项目保持不变（除了更新时间）
@@ -100,10 +101,11 @@ object ShoppingItemMapper {
             recurringInterval = null,
             // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
             recommendationReason = "从库存物品「${unifiedItem.name}」添加",
-            addedReason = "USER_MANUAL",
+            addedReason = "FROM_INVENTORY",
             completedDate = null,
             remindDate = null,
-            tags = null
+            tags = null,
+            purchaseReason = purchaseReason  // ⭐ 设置购买原因
         )
         
         return Pair(updatedUnifiedItem, shoppingDetail)

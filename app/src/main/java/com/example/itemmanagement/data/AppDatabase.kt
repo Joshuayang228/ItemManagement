@@ -22,11 +22,11 @@ import com.example.itemmanagement.data.dao.BorrowDao
 // import com.example.itemmanagement.data.dao.RecycleBinDao // 已归档
 import com.example.itemmanagement.data.dao.UserProfileDao
 // import com.example.itemmanagement.data.dao.wishlist.WishlistDao // 已归档
-import com.example.itemmanagement.data.dao.wishlist.WishlistPriceHistoryDao
+// import com.example.itemmanagement.data.dao.wishlist.WishlistPriceHistoryDao // 已删除
 import com.example.itemmanagement.data.dao.PriceRecordDao
 import com.example.itemmanagement.data.entity.*
 // import com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity // 已归档
-import com.example.itemmanagement.data.entity.wishlist.WishlistPriceHistoryEntity
+// import com.example.itemmanagement.data.entity.wishlist.WishlistPriceHistoryEntity // 已删除
 import com.example.itemmanagement.data.entity.unified.*
 import com.example.itemmanagement.data.dao.unified.*
 import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
@@ -36,7 +36,6 @@ import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
         // === 新的统一架构 ===
         UnifiedItemEntity::class,
         ItemStateEntity::class,
-        WishlistDetailEntity::class,
         ShoppingDetailEntity::class,
         InventoryDetailEntity::class,
         
@@ -53,7 +52,6 @@ import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
         WarrantyEntity::class,
         BorrowEntity::class,
         UserProfileEntity::class,
-        WishlistPriceHistoryEntity::class,
         PriceRecord::class,
         
         // === 旧表（已归档到archived文件夹） ===
@@ -62,7 +60,7 @@ import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
         // DeletedItemEntity::class,
         // WishlistItemEntity::class
     ],
-    version = 38,
+    version = 40,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -70,7 +68,6 @@ abstract class AppDatabase : RoomDatabase() {
     // === 新的统一架构Dao ===
     abstract fun unifiedItemDao(): UnifiedItemDao
     abstract fun itemStateDao(): ItemStateDao
-    abstract fun wishlistDetailDao(): WishlistDetailDao
     abstract fun shoppingDetailDao(): ShoppingDetailDao
     abstract fun inventoryDetailDao(): InventoryDetailDao
     
@@ -86,7 +83,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun warrantyDao(): WarrantyDao
     abstract fun borrowDao(): BorrowDao
     abstract fun userProfileDao(): UserProfileDao
-    abstract fun wishlistPriceHistoryDao(): WishlistPriceHistoryDao
     abstract fun priceRecordDao(): PriceRecordDao
     
     // === 旧Dao（已归档到archived文件夹） ===
@@ -106,7 +102,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
@@ -2181,6 +2177,54 @@ abstract class AppDatabase : RoomDatabase() {
                 android.util.Log.d("Migration", "✓ shopping_details 表已重建")
                 
                 android.util.Log.d("Migration", "✅ 迁移 37 → 38 完成：物品属性字段已整合到基础表，冗余字段已移除")
+            }
+        }
+        
+        /**
+         * 从版本38到39：删除心愿单功能
+         * 移除 wishlist_details 表和相关索引
+         * 移除 WISHLIST 状态类型的数据
+         */
+        private val MIGRATION_38_39 = object : Migration(38, 39) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 38 → 39: 删除心愿单功能")
+                
+                // 1. 删除 wishlist_details 表（如果存在）
+                database.execSQL("DROP TABLE IF EXISTS wishlist_details")
+                android.util.Log.d("Migration", "✓ wishlist_details 表已删除")
+                
+                // 2. 删除 wishlist_price_history 表（如果存在）
+                database.execSQL("DROP TABLE IF EXISTS wishlist_price_history")
+                android.util.Log.d("Migration", "✓ wishlist_price_history 表已删除")
+                
+                // 3. 删除旧的 wishlist_items 表（如果存在）
+                database.execSQL("DROP TABLE IF EXISTS wishlist_items")
+                android.util.Log.d("Migration", "✓ wishlist_items 表已删除")
+                
+                // 4. 删除 WISHLIST 状态类型的 item_states 记录
+                database.execSQL("DELETE FROM item_states WHERE stateType = 'WISHLIST'")
+                android.util.Log.d("Migration", "✓ WISHLIST 状态记录已删除")
+                
+                // 5. 删除没有任何活跃状态的孤立物品（可选，谨慎操作）
+                // 这里我们保留这些物品，因为它们可能有历史价值
+                
+                android.util.Log.d("Migration", "✅ 迁移 38 → 39 完成：心愿单功能已完全移除")
+            }
+        }
+        
+        /**
+         * 迁移 39 → 40：添加购买原因字段
+         * 为 shopping_details 表添加 purchaseReason 字段
+         */
+        private val MIGRATION_39_40 = object : Migration(39, 40) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 39 → 40: 添加购买原因字段")
+                
+                // 添加购买原因字段到 shopping_details 表
+                database.execSQL("ALTER TABLE shopping_details ADD COLUMN purchaseReason TEXT")
+                android.util.Log.d("Migration", "✓ shopping_details 表已添加 purchaseReason 字段")
+                
+                android.util.Log.d("Migration", "✅ 迁移 39 → 40 完成：购买原因字段已添加")
             }
         }
     }

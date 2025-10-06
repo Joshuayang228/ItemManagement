@@ -97,7 +97,6 @@ class FunctionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     FunctionCard.Type.WASTE_REPORT -> {
                         itemView.context.getColor(R.color.data_insights_accent)
                     }
-                    FunctionCard.Type.WISHLIST, 
                     FunctionCard.Type.REMINDER, 
                     FunctionCard.Type.WARRANTY -> {
                         itemView.context.getColor(R.color.smart_assistant_accent)

@@ -56,13 +56,6 @@ class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewMod
         // 智能助手功能组
         val smartAssistantFunctions = listOf(
             FunctionCard(
-                id = "wishlist",
-                title = "心愿单",
-                description = "记录想买的物品，价格跟踪提醒",
-                iconResId = com.example.itemmanagement.R.drawable.ic_star,
-                type = FunctionCard.Type.WISHLIST
-            ),
-            FunctionCard(
                 id = "recurring_reminders",
                 title = "周期提醒",
                 description = "到期提醒、库存预警、自定义规则设置",
@@ -174,10 +167,6 @@ class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewMod
             }
             
             // 智能助手类
-            "wishlist" -> {
-                // 导航到心愿单页面，记录想买的物品
-                _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_wishlist
-            }
             "recurring_reminders" -> {
                 // 导航到到期提醒页面，查看即将过期的物品
                 _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_expiration_reminder

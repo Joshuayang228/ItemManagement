@@ -15,4 +15,20 @@
         android:title="删除物品"
         app:iconTint="?attr/colorOnSurface"
         app:showAsAction="ifRoom" />
+    
+    <item
+        android:id="@+id/action_more"
+        android:icon="@drawable/ic_more_vert_24dp"
+        android:title="更多操作"
+        app:iconTint="?attr/colorOnSurface"
+        app:showAsAction="always">
+        
+        <menu>
+            <item
+                android:id="@+id/action_add_to_shopping_list"
+                android:title="加入购物清单"
+                android:icon="@drawable/ic_shopping_cart" />
+        </menu>
+        
+    </item>
 </menu> 

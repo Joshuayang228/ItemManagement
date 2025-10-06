@@ -79,9 +79,6 @@
             app:popExitAnim="@anim/fade_out_material" />
 
         <action
-            android:id="@+id/action_function_to_wishlist"
-            app:destination="@id/navigation_wishlist_main" />
-        <action
             android:id="@+id/action_function_to_waste_report"
             app:destination="@id/navigation_waste_report" />
         <action
@@ -428,53 +425,5 @@
         android:id="@+id/navigation_donation"
         android:name="com.example.itemmanagement.ui.profile.donation.DonationM3Fragment"
         android:label="打赏支持" />
-
-    <!-- 新心愿单系统 -->
-    <fragment
-        android:id="@+id/navigation_wishlist_main"
-        android:name="com.example.itemmanagement.ui.wishlist.fragment.WishlistMainM3Fragment"
-        android:label="心愿单">
-        <action
-            android:id="@+id/action_wishlist_to_add_item"
-            app:destination="@id/addItemFragment" />
-        <action
-            android:id="@+id/action_wishlist_to_item_detail"
-            app:destination="@id/navigation_item_detail" />
-        <action
-            android:id="@+id/action_wishlist_to_add"
-            app:destination="@id/navigation_wishlist_add" />
-        <action
-            android:id="@+id/action_wishlist_to_detail"
-            app:destination="@id/navigation_wishlist_detail" />
-    </fragment>
-
-    <!-- 心愿单添加页面 -->
-    <fragment
-        android:id="@+id/navigation_wishlist_add"
-        android:name="com.example.itemmanagement.ui.wishlist.fragment.WishlistAddFragment"
-        android:label="添加到心愿单" />
-
-    <!-- 心愿单详情页面 -->
-    <fragment
-        android:id="@+id/navigation_wishlist_detail"
-        android:name="com.example.itemmanagement.ui.wishlist.fragment.WishlistDetailFragment"
-        android:label="心愿单详情">
-        <argument
-            android:name="itemId"
-            app:argType="long" />
-        <action
-            android:id="@+id/action_wishlist_detail_to_edit"
-            app:destination="@id/navigation_wishlist_edit" />
-    </fragment>
-
-    <!-- 心愿单编辑页面 -->
-    <fragment
-        android:id="@+id/navigation_wishlist_edit"
-        android:name="com.example.itemmanagement.ui.wishlist.fragment.WishlistEditFragment"
-        android:label="编辑心愿单">
-        <argument
-            android:name="itemId"
-            app:argType="long" />
-    </fragment>
 
 </navigation> 

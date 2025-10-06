@@ -195,6 +195,20 @@ class ShoppingListManagementM3Fragment : Fragment() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_create_shopping_list, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etListName)
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.etListDescription)
+        val chipGroupListType = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupListType)
+        val tilCustomType = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilCustomType)
+        val etCustomType = dialogView.findViewById<TextInputEditText>(R.id.etCustomType)
+        val chipCustom = dialogView.findViewById<com.google.android.material.chip.Chip>(R.id.chipCustom)
+        
+        // 监听自定义chip的选中状态
+        chipGroupListType.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.contains(R.id.chipCustom)) {
+                tilCustomType.visibility = android.view.View.VISIBLE
+            } else {
+                tilCustomType.visibility = android.view.View.GONE
+                etCustomType.text?.clear()
+            }
+        }
         
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("创建购物清单")
@@ -203,11 +217,29 @@ class ShoppingListManagementM3Fragment : Fragment() {
                 val name = etName.text.toString().trim()
                 val description = etDescription.text.toString().trim()
                 
+                // 获取选中的清单类型
+                val selectedType = when (chipGroupListType.checkedChipId) {
+                    R.id.chipDaily -> ShoppingListType.DAILY
+                    R.id.chipWeekly -> ShoppingListType.WEEKLY
+                    R.id.chipParty -> ShoppingListType.PARTY
+                    R.id.chipTravel -> ShoppingListType.TRAVEL
+                    R.id.chipSpecial -> ShoppingListType.SPECIAL
+                    R.id.chipCustom -> {
+                        val customType = etCustomType.text.toString().trim()
+                        if (customType.isEmpty()) {
+                            Snackbar.make(binding.root, "请输入自定义类型名称", Snackbar.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        ShoppingListType.CUSTOM
+                    }
+                    else -> ShoppingListType.DAILY
+                }
+                
                 if (name.isNotEmpty()) {
                     viewModel.createShoppingList(
                         name = name,
                         description = description.takeIf { it.isNotEmpty() },
-                        type = ShoppingListType.DAILY
+                        type = selectedType
                     )
                 } else {
                     Snackbar.make(binding.root, "请输入清单名称", Snackbar.LENGTH_SHORT).show()
@@ -221,10 +253,39 @@ class ShoppingListManagementM3Fragment : Fragment() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_create_shopping_list, null)
         val etName = dialogView.findViewById<TextInputEditText>(R.id.etListName)
         val etDescription = dialogView.findViewById<TextInputEditText>(R.id.etListDescription)
+        val chipGroupListType = dialogView.findViewById<com.google.android.material.chip.ChipGroup>(R.id.chipGroupListType)
+        val tilCustomType = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilCustomType)
+        val etCustomType = dialogView.findViewById<TextInputEditText>(R.id.etCustomType)
         
         // 预填充数据
         etName.setText(shoppingList.name)
         etDescription.setText(shoppingList.description ?: "")
+        
+        // 预选清单类型
+        val chipIdToCheck = when (shoppingList.type) {
+            ShoppingListType.DAILY -> R.id.chipDaily
+            ShoppingListType.WEEKLY -> R.id.chipWeekly
+            ShoppingListType.PARTY -> R.id.chipParty
+            ShoppingListType.TRAVEL -> R.id.chipTravel
+            ShoppingListType.SPECIAL -> R.id.chipSpecial
+            ShoppingListType.CUSTOM -> R.id.chipCustom
+        }
+        chipGroupListType.check(chipIdToCheck)
+        
+        // 如果是自定义类型，显示输入框
+        if (shoppingList.type == ShoppingListType.CUSTOM) {
+            tilCustomType.visibility = android.view.View.VISIBLE
+        }
+        
+        // 监听自定义chip的选中状态
+        chipGroupListType.setOnCheckedStateChangeListener { _, checkedIds ->
+            if (checkedIds.contains(R.id.chipCustom)) {
+                tilCustomType.visibility = android.view.View.VISIBLE
+            } else {
+                tilCustomType.visibility = android.view.View.GONE
+                etCustomType.text?.clear()
+            }
+        }
         
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("编辑购物清单")
@@ -233,10 +294,29 @@ class ShoppingListManagementM3Fragment : Fragment() {
                 val name = etName.text.toString().trim()
                 val description = etDescription.text.toString().trim()
                 
+                // 获取选中的清单类型
+                val selectedType = when (chipGroupListType.checkedChipId) {
+                    R.id.chipDaily -> ShoppingListType.DAILY
+                    R.id.chipWeekly -> ShoppingListType.WEEKLY
+                    R.id.chipParty -> ShoppingListType.PARTY
+                    R.id.chipTravel -> ShoppingListType.TRAVEL
+                    R.id.chipSpecial -> ShoppingListType.SPECIAL
+                    R.id.chipCustom -> {
+                        val customType = etCustomType.text.toString().trim()
+                        if (customType.isEmpty()) {
+                            Snackbar.make(binding.root, "请输入自定义类型名称", Snackbar.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+                        ShoppingListType.CUSTOM
+                    }
+                    else -> ShoppingListType.DAILY
+                }
+                
                 if (name.isNotEmpty()) {
                     val updatedList = shoppingList.copy(
                         name = name,
-                        description = description.takeIf { it.isNotEmpty() }
+                        description = description.takeIf { it.isNotEmpty() },
+                        type = selectedType
                     )
                     viewModel.updateShoppingList(updatedList)
                 } else {

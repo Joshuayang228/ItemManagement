@@ -64,47 +64,6 @@ class ItemStateCacheViewModel : ViewModel() {
         var urgencyLevel: String? = null   // 紧急程度
     )
 
-    /**
-     * 心愿单物品模式的缓存
-     * 用于保存用户在"添加心愿单物品"页面的所有输入
-     * 与其他缓存完全独立，避免数据污染
-     */
-    data class WishlistItemCache(
-        var fieldValues: MutableMap<String, Any?> = mutableMapOf(),
-        var selectedFields: Set<Field> = setOf(),
-        var photoUris: List<Uri> = emptyList(),
-        var selectedTags: Map<String, Set<String>> = mapOf(),
-        var customOptions: MutableMap<String, MutableList<String>> = mutableMapOf(),
-        var customUnits: MutableMap<String, MutableList<String>> = mutableMapOf(),
-        var customTags: MutableMap<String, MutableList<String>> = mutableMapOf(),
-        // 心愿单专用字段
-        var priorityLevel: String? = null,        // 优先级
-        var urgencyLevel: String? = null,         // 紧急程度
-        var targetPrice: Double? = null,          // 目标价格
-        var priceTrackingEnabled: Boolean = true, // 价格跟踪开关
-        var purchaseTiming: String? = null        // 购买时机
-    )
-
-    /**
-     * 心愿单编辑模式的缓存
-     * 用于保存用户在"编辑特定心愿单物品"页面的所有修改
-     */
-    data class WishlistEditCache(
-        var fieldValues: MutableMap<String, Any?> = mutableMapOf(),
-        var selectedFields: Set<Field> = setOf(),
-        var photoUris: List<Uri> = emptyList(),
-        var selectedTags: Map<String, Set<String>> = mapOf(),
-        var customOptions: MutableMap<String, MutableList<String>> = mutableMapOf(),
-        var customUnits: MutableMap<String, MutableList<String>> = mutableMapOf(),
-        var customTags: MutableMap<String, MutableList<String>> = mutableMapOf(),
-        var originalWishlistItemId: Long? = null, // 原始心愿单物品ID
-        // 心愿单专用字段
-        var priorityLevel: String? = null,
-        var urgencyLevel: String? = null,
-        var targetPrice: Double? = null,
-        var priceTrackingEnabled: Boolean = true,
-        var purchaseTiming: String? = null
-    )
 
     /**
      * 购物清单转入库存模式的缓存
@@ -133,12 +92,6 @@ class ItemStateCacheViewModel : ViewModel() {
     
     // 购物物品编辑模式的缓存 - 按物品ID分组
     private val _editShoppingItemCaches = mutableMapOf<Long, EditItemCache>()
-
-    // 心愿单添加模式的缓存
-    private val _wishlistAddCache = WishlistItemCache()
-    
-    // 心愿单编辑模式的缓存 - 按心愿单物品ID分组
-    private val _wishlistEditCaches = mutableMapOf<Long, WishlistEditCache>()
 
     // 购物清单转入库存模式的缓存 - 按物品ID分组
     private val _transferToInventoryCaches = mutableMapOf<Long, TransferToInventoryCache>()
@@ -173,27 +126,6 @@ class ItemStateCacheViewModel : ViewModel() {
         return _shoppingItemCaches.getOrPut(shoppingListId) {
             ShoppingItemCache(shoppingListId = shoppingListId)
         }
-    }
-
-    /**
-     * 获取心愿单添加模式的缓存
-     */
-    fun getWishlistAddCache(): WishlistItemCache {
-        android.util.Log.d("ItemStateCacheViewModel", "获取心愿单添加缓存，当前fieldValues: ${_wishlistAddCache.fieldValues}")
-        return _wishlistAddCache
-    }
-
-    /**
-     * 获取特定心愿单物品的编辑缓存
-     * @param itemId 心愿单物品ID
-     * @return 该心愿单物品的编辑缓存，如果不存在则创建新的
-     */
-    fun getWishlistEditCache(itemId: Long): WishlistEditCache {
-        val cache = _wishlistEditCaches.getOrPut(itemId) { 
-            WishlistEditCache(originalWishlistItemId = itemId) 
-        }
-        android.util.Log.d("ItemStateCacheViewModel", "获取心愿单编辑缓存(ID:$itemId)，当前fieldValues: ${cache.fieldValues}")
-        return cache
     }
 
     /**
@@ -258,34 +190,6 @@ class ItemStateCacheViewModel : ViewModel() {
     }
 
     /**
-     * 清除心愿单添加模式的缓存
-     * 通常在心愿单物品成功保存后调用
-     */
-    fun clearWishlistAddCache() {
-        _wishlistAddCache.fieldValues.clear()
-        _wishlistAddCache.selectedFields = setOf()
-        _wishlistAddCache.photoUris = emptyList()
-        _wishlistAddCache.selectedTags = mapOf()
-        _wishlistAddCache.customOptions.clear()
-        _wishlistAddCache.customUnits.clear()
-        _wishlistAddCache.customTags.clear()
-        _wishlistAddCache.priorityLevel = null
-        _wishlistAddCache.urgencyLevel = null
-        _wishlistAddCache.targetPrice = null
-        _wishlistAddCache.priceTrackingEnabled = true
-        _wishlistAddCache.purchaseTiming = null
-    }
-
-    /**
-     * 清除特定心愿单物品的编辑缓存
-     * 通常在心愿单物品成功更新后调用
-     * @param itemId 心愿单物品ID
-     */
-    fun clearWishlistEditCache(itemId: Long) {
-        _wishlistEditCaches.remove(itemId)
-    }
-
-    /**
      * 获取特定购物物品的转入库存缓存
      * @param itemId 购物物品ID
      * @return 该购物物品的转入库存缓存，如果不存在则创建新的
@@ -331,8 +235,6 @@ class ItemStateCacheViewModel : ViewModel() {
         _editItemCaches.clear()
         _shoppingItemCaches.clear()
         _editShoppingItemCaches.clear()
-        clearWishlistAddCache()
-        _wishlistEditCaches.clear()
         _transferToInventoryCaches.clear()
     }
 
@@ -374,39 +276,13 @@ class ItemStateCacheViewModel : ViewModel() {
     }
 
     /**
-     * 检查心愿单添加缓存是否有数据
-     */
-    fun hasWishlistAddCache(): Boolean {
-        val hasData = _wishlistAddCache.fieldValues.isNotEmpty() || 
-                     _wishlistAddCache.selectedFields.isNotEmpty() ||
-                     _wishlistAddCache.photoUris.isNotEmpty()
-        android.util.Log.d("ItemStateCacheViewModel", "检查心愿单添加缓存: fieldValues=${_wishlistAddCache.fieldValues.size}, selectedFields=${_wishlistAddCache.selectedFields.size}, photoUris=${_wishlistAddCache.photoUris.size}, hasData=$hasData")
-        return hasData
-    }
-
-    /**
-     * 检查特定心愿单物品是否有编辑缓存
-     * @param itemId 心愿单物品ID
-     */
-    fun hasWishlistEditCache(itemId: Long): Boolean {
-        val cache = _wishlistEditCaches[itemId]
-        return cache != null && (
-            cache.fieldValues.isNotEmpty() || 
-            cache.selectedFields.isNotEmpty() ||
-            cache.photoUris.isNotEmpty()
-        )
-    }
-
-    /**
      * 获取指定字段的自定义单位列表
      * 优先返回当前缓存中的自定义单位，没有则返回空列表
      */
     fun getCustomUnits(fieldName: String): MutableList<String> {
         // 根据当前使用的缓存类型获取对应的自定义单位
         return when {
-            // 优先检查心愿单添加缓存
-            _wishlistAddCache.customUnits.containsKey(fieldName) -> _wishlistAddCache.customUnits[fieldName] ?: mutableListOf()
-            // 然后检查添加物品缓存
+            // 检查添加物品缓存
             _addItemCache.customUnits.containsKey(fieldName) -> _addItemCache.customUnits[fieldName] ?: mutableListOf()
             // 如果需要更精确的区分，可以在BaseItemViewModel中传递缓存类型标识
             else -> mutableListOf()
@@ -419,9 +295,7 @@ class ItemStateCacheViewModel : ViewModel() {
      */
     fun getCustomTags(fieldName: String): MutableList<String> {
         return when {
-            // 优先检查心愿单添加缓存
-            _wishlistAddCache.customTags.containsKey(fieldName) -> _wishlistAddCache.customTags[fieldName] ?: mutableListOf()
-            // 然后检查添加物品缓存
+            // 检查添加物品缓存
             _addItemCache.customTags.containsKey(fieldName) -> _addItemCache.customTags[fieldName] ?: mutableListOf()
             else -> mutableListOf()
         }

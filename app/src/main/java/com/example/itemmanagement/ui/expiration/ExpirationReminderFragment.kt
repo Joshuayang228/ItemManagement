@@ -11,8 +11,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.MainActivity
 import com.example.itemmanagement.R
-import com.example.itemmanagement.adapter.ItemAdapter
-import com.example.itemmanagement.data.mapper.toItem
+import com.example.itemmanagement.adapter.WarehouseItemAdapter
+import com.example.itemmanagement.data.mapper.toWarehouseItem
 import com.example.itemmanagement.databinding.FragmentExpirationReminderBinding
 import com.example.itemmanagement.reminder.model.ReminderSummary
 import com.google.android.material.snackbar.Snackbar
@@ -31,9 +31,9 @@ class ExpirationReminderFragment : Fragment() {
         )
     }
 
-    private lateinit var expiredAdapter: ItemAdapter
-    private lateinit var expiringAdapter: ItemAdapter
-    private lateinit var lowStockAdapter: ItemAdapter
+    private lateinit var expiredAdapter: WarehouseItemAdapter
+    private lateinit var expiringAdapter: WarehouseItemAdapter
+    private lateinit var lowStockAdapter: WarehouseItemAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,12 +48,32 @@ class ExpirationReminderFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         setupRecyclerViews()
+        setupSwipeRefresh()
         observeViewModel()
         setupSettingsButton()
         setupTestNotificationButton()
         
         // 初始加载数据
         viewModel.loadReminderData()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // 🔄 页面恢复时刷新数据（从设置页面返回时会更新）
+        viewModel.loadReminderData()
+    }
+    
+    private fun setupSwipeRefresh() {
+        // 🔄 设置下拉刷新
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            viewModel.loadReminderData()
+        }
+        
+        // 🎨 设置刷新指示器颜色为 Material Design 3 主题色
+        val typedValue = android.util.TypedValue()
+        val theme = requireContext().theme
+        theme.resolveAttribute(com.google.android.material.R.attr.colorPrimary, typedValue, true)
+        binding.swipeRefreshLayout.setColorSchemeColors(typedValue.data)
     }
     
     private fun setupSettingsButton() {
@@ -100,33 +120,48 @@ class ExpirationReminderFragment : Fragment() {
 
     private fun setupRecyclerViews() {
         // 已过期物品列表
-        expiredAdapter = ItemAdapter().apply {
-            setOnItemClickListener { item ->
-                navigateToItemDetail(item.id)
+        expiredAdapter = WarehouseItemAdapter(
+            onItemClick = { itemId -> navigateToItemDetail(itemId) },
+            onEdit = { itemId ->
+                val bundle = Bundle().apply { putLong("itemId", itemId) }
+                findNavController().navigate(R.id.action_expiration_reminder_to_item_detail, bundle)
+            },
+            onDelete = { itemId ->
+                // 周期提醒页面不需要删除功能
             }
-        }
+        )
         binding.recyclerExpired.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = expiredAdapter
         }
 
         // 即将到期物品列表
-        expiringAdapter = ItemAdapter().apply {
-            setOnItemClickListener { item ->
-                navigateToItemDetail(item.id)
+        expiringAdapter = WarehouseItemAdapter(
+            onItemClick = { itemId -> navigateToItemDetail(itemId) },
+            onEdit = { itemId ->
+                val bundle = Bundle().apply { putLong("itemId", itemId) }
+                findNavController().navigate(R.id.action_expiration_reminder_to_item_detail, bundle)
+            },
+            onDelete = { itemId ->
+                // 周期提醒页面不需要删除功能
             }
-        }
+        )
         binding.recyclerExpiring.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = expiringAdapter
         }
 
         // 库存不足物品列表
-        lowStockAdapter = ItemAdapter().apply {
-            setOnItemClickListener { item ->
-                navigateToItemDetail(item.id)
+        lowStockAdapter = WarehouseItemAdapter(
+            onItemClick = { itemId -> navigateToItemDetail(itemId) },
+            onEdit = { itemId ->
+                val bundle = Bundle().apply { putLong("itemId", itemId) }
+                findNavController().navigate(R.id.action_expiration_reminder_to_item_detail, bundle)
+            },
+            onDelete = { itemId ->
+                // 周期提醒页面不需要删除功能
             }
-        }
+        )
         binding.recyclerLowStock.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = lowStockAdapter
@@ -142,6 +177,10 @@ class ExpirationReminderFragment : Fragment() {
         // 观察加载状态
         viewModel.loading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+            // 🔄 停止下拉刷新动画
+            if (!isLoading) {
+                binding.swipeRefreshLayout.isRefreshing = false
+            }
         }
 
         // 观察错误消息
@@ -162,6 +201,17 @@ class ExpirationReminderFragment : Fragment() {
         updateExpiredItems(summary)
         updateExpiringItems(summary)
         updateLowStockItems(summary)
+        
+        // 🎯 控制空状态布局显示
+        val hasAnyItems = summary.expiredItems.isNotEmpty() || 
+                         summary.expiringItems.isNotEmpty() || 
+                         summary.lowStockItems.isNotEmpty()
+        
+        if (hasAnyItems) {
+            binding.layoutEmptyState.visibility = View.GONE
+        } else {
+            binding.layoutEmptyState.visibility = View.VISIBLE
+        }
     }
 
     private fun updateSummaryInfo(stats: ExpirationReminderViewModel.ReminderSummaryStats) {
@@ -197,28 +247,28 @@ class ExpirationReminderFragment : Fragment() {
         
         binding.textSummaryInfo.text = summaryText
         
-        // 根据情况调整汇总信息的颜色
+        // 🎨 使用 Material Design 3 语义色
+        val typedValue = android.util.TypedValue()
+        val theme = requireContext().theme
+        
         when {
             stats.expiredCount > 0 -> {
-                binding.textSummaryInfo.setTextColor(
-                    requireContext().getColor(android.R.color.holo_red_dark)
-                )
+                theme.resolveAttribute(com.google.android.material.R.attr.colorError, typedValue, true)
+                binding.textSummaryInfo.setTextColor(typedValue.data)
             }
             stats.upcomingExpiringCount > 0 || stats.lowStockCount > 0 -> {
-                binding.textSummaryInfo.setTextColor(
-                    requireContext().getColor(android.R.color.holo_orange_dark)
-                )
+                theme.resolveAttribute(com.google.android.material.R.attr.colorTertiary, typedValue, true)
+                binding.textSummaryInfo.setTextColor(typedValue.data)
             }
             else -> {
-                binding.textSummaryInfo.setTextColor(
-                    requireContext().getColor(android.R.color.darker_gray)
-                )
+                theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, typedValue, true)
+                binding.textSummaryInfo.setTextColor(typedValue.data)
             }
         }
     }
 
     private fun updateExpiredItems(summary: ReminderSummary) {
-        val expiredItems = summary.expiredItems.map { it.toItem() }
+        val expiredItems = summary.expiredItems.map { it.toWarehouseItem() }
         expiredAdapter.submitList(expiredItems)
         
         // 显示/隐藏相关的标题和RecyclerView
@@ -232,7 +282,7 @@ class ExpirationReminderFragment : Fragment() {
     }
 
     private fun updateExpiringItems(summary: ReminderSummary) {
-        val expiringItems = summary.expiringItems.map { it.toItem() }
+        val expiringItems = summary.expiringItems.map { it.toWarehouseItem() }
         expiringAdapter.submitList(expiringItems)
         
         // 显示/隐藏相关的标题和RecyclerView
@@ -246,7 +296,7 @@ class ExpirationReminderFragment : Fragment() {
     }
 
     private fun updateLowStockItems(summary: ReminderSummary) {
-        val lowStockItems = summary.lowStockItems.map { it.item.toItem() }
+        val lowStockItems = summary.lowStockItems.map { it.item.toWarehouseItem() }
         lowStockAdapter.submitList(lowStockItems)
         
         // 显示/隐藏相关的标题和RecyclerView

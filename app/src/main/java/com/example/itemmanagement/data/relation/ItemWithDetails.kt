@@ -23,12 +23,6 @@ data class UnifiedItemWithDetails(
         parentColumn = "id",
         entityColumn = "itemId"
     )
-    val wishlistDetail: WishlistDetailEntity?,
-    
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "itemId"
-    )
     val shoppingDetails: List<ShoppingDetailEntity>,
     
     @Relation(

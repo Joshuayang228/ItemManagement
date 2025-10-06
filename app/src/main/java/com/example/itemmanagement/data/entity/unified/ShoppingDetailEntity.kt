@@ -97,7 +97,10 @@ data class ShoppingDetailEntity(
     val recurringInterval: Int? = null,                       // 周期间隔（天数）
     
     // === 标签（临时存储，最终会迁移到tags表关联）===
-    val tags: String? = null                                  // 标签（逗号分隔）
+    val tags: String? = null,                                 // 标签（逗号分隔）
+    
+    // === 购买原因 ===
+    val purchaseReason: String? = null                        // 购买原因（用户填写，说明为什么要购买此物品）
 ) {
     /**
      * 获取综合购买优先级（艾森豪威尔矩阵）

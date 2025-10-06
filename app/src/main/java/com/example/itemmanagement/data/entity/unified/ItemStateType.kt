@@ -8,7 +8,6 @@ enum class ItemStateType(
     val displayName: String,
     val description: String
 ) {
-    WISHLIST("心愿单", "用户希望购买的物品"),
     SHOPPING("购物清单", "计划购买的物品"),
     INVENTORY("库存", "已拥有的物品"),
     DELETED("已删除", "已删除的物品（回收站）");
@@ -39,7 +38,7 @@ enum class ItemStateType(
          * 获取状态的默认顺序（用于UI显示）
          */
         fun getDefaultOrder(): List<ItemStateType> {
-            return listOf(WISHLIST, SHOPPING, INVENTORY, DELETED)
+            return listOf(SHOPPING, INVENTORY, DELETED)
         }
     }
 }

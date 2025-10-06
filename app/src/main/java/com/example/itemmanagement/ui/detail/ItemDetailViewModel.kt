@@ -11,6 +11,7 @@ import com.example.itemmanagement.data.entity.unified.ItemStateType
 import com.example.itemmanagement.data.entity.PriceRecord
 import com.example.itemmanagement.data.mapper.toItem
 import com.example.itemmanagement.data.model.Item
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ItemDetailViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
@@ -152,5 +153,76 @@ class ItemDetailViewModel(private val repository: UnifiedItemRepository) : ViewM
      */
     fun onNavigationComplete() {
         _navigateBack.value = false
+    }
+    
+    /**
+     * 加载所有活跃的购物清单
+     */
+    fun loadActiveShoppingLists(callback: (List<com.example.itemmanagement.data.entity.ShoppingListEntity>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                // 只获取第一个值，不持续监听
+                val lists = repository.getActiveShoppingLists().first()
+                callback(lists)
+            } catch (e: Exception) {
+                android.util.Log.e("ItemDetailViewModel", "❌ 加载购物清单失败", e)
+                callback(emptyList())
+            }
+        }
+    }
+    
+    /**
+     * 将库存物品添加到购物清单
+     */
+    fun addToShoppingList(
+        itemId: Long,
+        shoppingListId: Long,
+        quantity: Double,
+        purchaseReason: String
+    ) {
+        viewModelScope.launch {
+            try {
+                android.util.Log.d("ItemDetailViewModel", "🛒 开始添加到购物清单: itemId=$itemId, listId=$shoppingListId, quantity=$quantity")
+                
+                // 获取物品详情
+                val itemWithDetails = repository.getItemWithDetailsById(itemId)
+                if (itemWithDetails == null) {
+                    _errorMessage.value = "找不到该物品"
+                    return@launch
+                }
+                
+                val unifiedItem = itemWithDetails.unifiedItem
+                val inventoryDetail = itemWithDetails.inventoryDetail
+                
+                if (inventoryDetail == null) {
+                    _errorMessage.value = "该物品不是库存物品"
+                    return@launch
+                }
+                
+                // 使用 ShoppingItemMapper 转换
+                val mapper = com.example.itemmanagement.data.mapper.ShoppingItemMapper
+                val (updatedUnifiedItem, shoppingDetail) = mapper.inventoryToShoppingItem(
+                    unifiedItem = unifiedItem,
+                    inventoryDetail = inventoryDetail,
+                    shoppingListId = shoppingListId,
+                    quantity = quantity,
+                    priority = com.example.itemmanagement.data.entity.ShoppingItemPriority.NORMAL,
+                    purchaseReason = if (purchaseReason.isNotEmpty()) purchaseReason else null
+                )
+                
+                // 保存到数据库（使用事务）
+                repository.addShoppingItemToExistingItem(
+                    itemId = itemId,
+                    shoppingDetail = shoppingDetail
+                )
+                
+                _errorMessage.value = "已添加到购物清单"
+                android.util.Log.d("ItemDetailViewModel", "✅ 添加到购物清单成功")
+                
+            } catch (e: Exception) {
+                android.util.Log.e("ItemDetailViewModel", "❌ 添加到购物清单失败", e)
+                _errorMessage.value = "添加失败：${e.message}"
+            }
+        }
     }
 } 

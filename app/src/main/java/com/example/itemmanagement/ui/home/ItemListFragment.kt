@@ -79,7 +79,6 @@ class ItemListFragment : Fragment() {
             "expiring" -> viewModel.loadExpiringItems()
             "expired" -> viewModel.loadExpiredItems()
             "low_stock" -> viewModel.loadLowStockItems()
-            // "wishlist" -> 使用新心愿单系统，不再通过此处加载
             else -> viewModel.loadAllItems()
         }
     }

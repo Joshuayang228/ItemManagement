@@ -62,6 +62,21 @@ class ShoppingListFragment : Fragment() {
         DESC   // 降序 ↓
     }
 
+    override fun onCreateOptionsMenu(menu: android.view.Menu, inflater: android.view.MenuInflater) {
+        inflater.inflate(R.menu.menu_shopping_list, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_clear_purchased -> {
+                showClearPurchasedDialog()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -510,7 +525,7 @@ class ShoppingListFragment : Fragment() {
     }
 
     private fun setupActions() {
-        // 添加购物物品按钮
+        // 添加购物物品悬浮按钮
         binding.fabAddItem.setOnClickListener {
             // 导航到添加购物物品页面
             try {
@@ -521,11 +536,6 @@ class ShoppingListFragment : Fragment() {
                 android.util.Log.e("ShoppingList", "添加购物物品导航失败: listId=$listId", e)
                 android.widget.Toast.makeText(requireContext(), "打开添加页面失败", android.widget.Toast.LENGTH_SHORT).show()
             }
-        }
-        
-        // 清除已购买物品按钮
-        binding.buttonClearPurchased.setOnClickListener {
-            showClearPurchasedDialog()
         }
     }
     

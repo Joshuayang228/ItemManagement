@@ -125,26 +125,246 @@
                             tools:text="2.5 kg" />
                     </LinearLayout>
 
-                    <!-- 分类 -->
+                    <!-- 容量 -->
                     <LinearLayout
+                        android:id="@+id/capacityLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginBottom="24dp">
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="容量"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/capacityTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:gravity="end"
+                            tools:text="500 ml" />
+                    </LinearLayout>
+
+                    <!-- 规格 -->
+                    <LinearLayout
+                        android:id="@+id/specificationLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="规格"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/specificationTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:gravity="end"
+                            tools:text="有机认证" />
+                    </LinearLayout>
+
+                    <!-- 品牌 -->
+                    <LinearLayout
+                        android:id="@+id/brandLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="品牌"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/brandTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:gravity="end"
+                            tools:text="农夫山泉" />
+                    </LinearLayout>
+
+                    <!-- 序列号 -->
+                    <LinearLayout
+                        android:id="@+id/serialNumberLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="序列号"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/serialNumberTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurface"
+                            android:gravity="end"
+                            android:fontFamily="monospace"
+                            tools:text="SKU12345" />
+                    </LinearLayout>
+
+                    <!-- 分类 - 使用 Chips -->
+                    <LinearLayout
+                        android:id="@+id/categoryContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
                         <TextView
                             android:layout_width="120dp"
                             android:layout_height="wrap_content"
                             android:text="分类"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="end">
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/categoryChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:layout_marginTop="-4dp"
+                                android:layout_marginBottom="-4dp"
+                                style="@style/Widget.Material3.Chip.Suggestion"
+                                app:chipBackgroundColor="?attr/colorSecondaryContainer"
+                                app:chipStrokeWidth="0dp"
+                                android:textColor="?attr/colorOnSecondaryContainer"
+                                android:textSize="12sp"
+                                app:closeIconVisible="false"
+                                tools:text="食品" />
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/subCategoryChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="-4dp"
+                                android:layout_marginBottom="-4dp"
+                                style="@style/Widget.Material3.Chip.Suggestion"
+                                app:chipBackgroundColor="?attr/colorTertiaryContainer"
+                                app:chipStrokeWidth="0dp"
+                                android:textColor="?attr/colorOnTertiaryContainer"
+                                android:textSize="12sp"
+                                app:closeIconVisible="false"
+                                android:visibility="gone"
+                                tools:text="饮料" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 季节 -->
+                    <LinearLayout
+                        android:id="@+id/seasonLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
                         <TextView
-                            android:id="@+id/categoryTextView"
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="季节"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/seasonTextView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurface"
                             android:gravity="end"
-                            tools:text="食品" />
+                            tools:text="春夏秋冬" />
+                    </LinearLayout>
+
+                    <!-- 评分 -->
+                    <LinearLayout
+                        android:id="@+id/ratingLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="评分"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="end">
+                            <RatingBar
+                                android:id="@+id/ratingBar"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="-2dp"
+                                android:layout_marginBottom="-2dp"
+                                style="?android:attr/ratingBarStyleIndicator"
+                                android:numStars="5"
+                                android:stepSize="0.5"
+                                android:isIndicator="true"
+                                android:progressTint="?attr/colorPrimary"
+                                android:secondaryProgressTint="?attr/colorOutlineVariant"
+                                tools:rating="4.5" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 标签 -->
+                    <LinearLayout
+                        android:id="@+id/tagsLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="标签"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="end">
+                            <HorizontalScrollView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="-4dp"
+                                android:layout_marginBottom="-4dp"
+                                android:scrollbars="none">
+                                <com.google.android.material.chip.ChipGroup
+                                    android:id="@+id/tagsChipGroup"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    app:chipSpacingHorizontal="4dp"
+                                    app:singleLine="true" />
+                            </HorizontalScrollView>
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -196,18 +416,21 @@
                             android:id="@+id/estimatedPriceTextView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textColor="?attr/colorOnSurface"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorPrimary"
+                            android:textStyle="bold"
                             android:gravity="end"
                             tools:text="¥25.80" />
                     </LinearLayout>
 
                     <!-- 预算上限 -->
                     <LinearLayout
+                        android:id="@+id/budgetLimitLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginBottom="24dp">
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
                         <TextView
                             android:layout_width="120dp"
                             android:layout_height="wrap_content"
@@ -226,6 +449,7 @@
 
                     <!-- 实际价格 -->
                     <LinearLayout
+                        android:id="@+id/actualPriceLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -244,6 +468,31 @@
                             android:textColor="?attr/colorOnSurface"
                             android:gravity="end"
                             tools:text="未购买" />
+                    </LinearLayout>
+
+                    <!-- 总价 -->
+                    <LinearLayout
+                        android:id="@+id/totalPriceLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="总价"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/totalPriceTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorPrimary"
+                            android:textStyle="bold"
+                            android:gravity="end"
+                            tools:text="¥51.60" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -387,6 +636,41 @@
                             android:gravity="end"
                             tools:text="2025-10-04" />
                     </LinearLayout>
+
+                    <!-- 周期性购买 -->
+                    <LinearLayout
+                        android:id="@+id/recurringLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="周期性购买"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="end">
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/recurringChip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="-4dp"
+                                android:layout_marginBottom="-4dp"
+                                style="@style/Widget.Material3.Chip.Assist"
+                                app:chipBackgroundColor="?attr/colorTertiaryContainer"
+                                app:chipStrokeWidth="0dp"
+                                android:textColor="?attr/colorOnTertiaryContainer"
+                                android:textSize="12sp"
+                                app:chipMinHeight="32dp"
+                                tools:text="每7天" />
+                        </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -427,7 +711,8 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginBottom="24dp">
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
                         <TextView
                             android:layout_width="120dp"
                             android:layout_height="wrap_content"
@@ -444,9 +729,9 @@
                             tools:text="盒马鲜生" />
                     </LinearLayout>
 
-                    <!-- 推荐原因 -->
+                    <!-- 购买渠道 -->
                     <LinearLayout
-                        android:id="@+id/recommendLayout"
+                        android:id="@+id/purchaseChannelLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -455,17 +740,88 @@
                         <TextView
                             android:layout_width="120dp"
                             android:layout_height="wrap_content"
-                            android:text="推荐原因"
+                            android:text="购买渠道"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurfaceVariant" />
                         <TextView
-                            android:id="@+id/recommendTextView"
+                            android:id="@+id/purchaseChannelTextView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:textColor="?attr/colorOnSurface"
                             android:gravity="end"
-                            tools:text="品质好，价格合理" />
+                            tools:text="线上商城" />
+                    </LinearLayout>
+
+                    <!-- 购买原因 -->
+                    <LinearLayout
+                        android:id="@+id/purchaseReasonLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="购买原因"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/purchaseReasonTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:gravity="end"
+                            tools:text="快用完了" />
+                    </LinearLayout>
+
+                    <!-- 添加日期 -->
+                    <LinearLayout
+                        android:id="@+id/addDateLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="添加日期"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/addDateTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:gravity="end"
+                            tools:text="2025-10-05" />
+                    </LinearLayout>
+
+                    <!-- 购买日期 -->
+                    <LinearLayout
+                        android:id="@+id/purchaseDateLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="24dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="120dp"
+                            android:layout_height="wrap_content"
+                            android:text="购买日期"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                        <TextView
+                            android:id="@+id/purchaseDateTextView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:gravity="end"
+                            tools:text="2025-10-06" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -508,48 +864,21 @@
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="?attr/colorOnSurface"
                         android:lineSpacingMultiplier="1.4"
+                        android:maxLines="5"
                         android:layout_marginBottom="24dp"
                         tools:text="要买甜一点的，最好是山东产的" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            <!-- 标签卡片 -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/tagsCard"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:layout_marginTop="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOutlineVariant"
-                app:layout_constraintTop_toBottomOf="@id/noteCard"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
+                    <!-- 展开/收起按钮 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/expandNoteButton"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="标签"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
-                        android:textColor="?attr/colorOnSurface"
-                        android:layout_marginBottom="24dp" />
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/tagsChipGroup"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:chipSpacingHorizontal="8dp"
-                        app:chipSpacingVertical="4dp" />
+                        android:layout_gravity="center_horizontal"
+                        android:text="展开"
+                        android:textColor="?attr/colorPrimary"
+                        android:visibility="gone"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        tools:visibility="visible" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -563,7 +892,7 @@
                 android:layout_marginEnd="16dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="24dp"
-                app:layout_constraintTop_toBottomOf="@id/tagsCard"
+                app:layout_constraintTop_toBottomOf="@id/noteCard"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />

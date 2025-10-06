@@ -94,7 +94,7 @@ class ShoppingItemDetailFragment : Fragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.menu_item_detail, menu)
+        inflater.inflate(R.menu.menu_shopping_item_detail, menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
 
@@ -102,6 +102,10 @@ class ShoppingItemDetailFragment : Fragment() {
         return when (item.itemId) {
             R.id.action_edit -> {
                 navigateToEdit()
+                true
+            }
+            R.id.action_delete -> {
+                showDeleteConfirmDialog()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -165,11 +169,6 @@ class ShoppingItemDetailFragment : Fragment() {
 
         android.util.Log.d("ShoppingDetail", "========== 绑定物品数据 ==========")
         android.util.Log.d("ShoppingDetail", "物品名称: ${item.name}")
-        android.util.Log.d("ShoppingDetail", "预估价格: ${shoppingDetail.estimatedPrice}")
-        android.util.Log.d("ShoppingDetail", "预算上限: ${shoppingDetail.budgetLimit}")
-        android.util.Log.d("ShoppingDetail", "重要程度: ${shoppingDetail.priority}")
-        android.util.Log.d("ShoppingDetail", "紧急程度: ${shoppingDetail.urgencyLevel}")
-        android.util.Log.d("ShoppingDetail", "截止日期: ${shoppingDetail.deadline}")
 
         // 物品名称
         binding.nameTextView.text = item.name
@@ -193,33 +192,114 @@ class ShoppingItemDetailFragment : Fragment() {
             binding.photoViewPager.visibility = View.GONE
         }
 
-        // 基本信息
+        // ========== 基本信息卡片 ==========
+        // 数量
         binding.quantityTextView.text = "${shoppingDetail.quantity} ${shoppingDetail.quantityUnit}"
-        binding.categoryTextView.text = item.category ?: "未分类"
 
-        // 价格信息
+        // 容量
+        if (item.capacity != null && item.capacityUnit != null) {
+            binding.capacityLayout.visibility = View.VISIBLE
+            binding.capacityTextView.text = "${item.capacity} ${item.capacityUnit}"
+        } else {
+            binding.capacityLayout.visibility = View.GONE
+        }
+
+        // 规格
+        if (!item.specification.isNullOrBlank()) {
+            binding.specificationLayout.visibility = View.VISIBLE
+            binding.specificationTextView.text = item.specification
+        } else {
+            binding.specificationLayout.visibility = View.GONE
+        }
+
+        // 品牌
+        if (!item.brand.isNullOrBlank()) {
+            binding.brandLayout.visibility = View.VISIBLE
+            binding.brandTextView.text = item.brand
+        } else {
+            binding.brandLayout.visibility = View.GONE
+        }
+
+        // 序列号
+        if (!item.serialNumber.isNullOrBlank()) {
+            binding.serialNumberLayout.visibility = View.VISIBLE
+            binding.serialNumberTextView.text = item.serialNumber
+        } else {
+            binding.serialNumberLayout.visibility = View.GONE
+        }
+
+        // 分类 - 使用 Chips
+        binding.categoryChip.text = item.category ?: "未分类"
+        if (!item.subCategory.isNullOrBlank()) {
+            binding.subCategoryChip.visibility = View.VISIBLE
+            binding.subCategoryChip.text = item.subCategory
+        } else {
+            binding.subCategoryChip.visibility = View.GONE
+        }
+
+        // 季节
+        if (!item.season.isNullOrBlank()) {
+            binding.seasonLayout.visibility = View.VISIBLE
+            binding.seasonTextView.text = item.season
+        } else {
+            binding.seasonLayout.visibility = View.GONE
+        }
+
+        // 评分
+        if (item.rating != null && item.rating > 0) {
+            binding.ratingLayout.visibility = View.VISIBLE
+            binding.ratingBar.rating = item.rating.toFloat()
+        } else {
+            binding.ratingLayout.visibility = View.GONE
+        }
+
+        // 标签 - 在基本信息卡片内
+        if (item.tags.isNotEmpty()) {
+            binding.tagsLayout.visibility = View.VISIBLE
+            setupTagsInBasicInfo(item.tags)
+        } else {
+            binding.tagsLayout.visibility = View.GONE
+        }
+
+        // ========== 价格信息卡片 ==========
+        // 预估价格
         binding.estimatedPriceTextView.text = if (shoppingDetail.estimatedPrice != null) {
             "¥${String.format("%.2f", shoppingDetail.estimatedPrice)}"
         } else {
             "未设置"
         }
 
-        binding.budgetLimitTextView.text = if (shoppingDetail.budgetLimit != null) {
-            "¥${String.format("%.2f", shoppingDetail.budgetLimit)}"
+        // 预算上限
+        if (shoppingDetail.budgetLimit != null) {
+            binding.budgetLimitLayout.visibility = View.VISIBLE
+            binding.budgetLimitTextView.text = "¥${String.format("%.2f", shoppingDetail.budgetLimit)}"
         } else {
-            "未设置"
+            binding.budgetLimitLayout.visibility = View.GONE
         }
 
+        // 实际价格
         binding.actualPriceTextView.text = if (shoppingDetail.actualPrice != null) {
             "¥${String.format("%.2f", shoppingDetail.actualPrice)}"
         } else {
             if (shoppingDetail.isPurchased) "已购买（未记录价格）" else "未购买"
         }
 
-        // 购物计划
+        // 总价
+        if (shoppingDetail.totalPrice != null) {
+            binding.totalPriceLayout.visibility = View.VISIBLE
+            binding.totalPriceTextView.text = "¥${String.format("%.2f", shoppingDetail.totalPrice)}"
+        } else {
+            binding.totalPriceLayout.visibility = View.GONE
+        }
+
+        // ========== 购物计划卡片 ==========
+        // 重要程度
         setupPriorityChip(shoppingDetail.priority)
+
+        // 紧急程度
         setupUrgencyChip(shoppingDetail.urgencyLevel)
 
+        // 截止日期
         if (shoppingDetail.deadline != null) {
             binding.deadlineLayout.visibility = View.VISIBLE
             binding.deadlineTextView.text = dateFormat.format(shoppingDetail.deadline)
@@ -227,10 +307,24 @@ class ShoppingItemDetailFragment : Fragment() {
             binding.deadlineLayout.visibility = View.GONE
         }
 
-        // 提醒日期 - 暂时隐藏（字段未实现）
-        binding.reminderLayout.visibility = View.GONE
+        // 提醒日期
+        if (shoppingDetail.remindDate != null) {
+            binding.reminderLayout.visibility = View.VISIBLE
+            binding.reminderTextView.text = dateFormat.format(shoppingDetail.remindDate)
+        } else {
+            binding.reminderLayout.visibility = View.GONE
+        }
 
-        // 购买信息
+        // 周期性购买
+        if (shoppingDetail.isRecurring && shoppingDetail.recurringInterval != null) {
+            binding.recurringLayout.visibility = View.VISIBLE
+            binding.recurringChip.text = "每${shoppingDetail.recurringInterval}天"
+        } else {
+            binding.recurringLayout.visibility = View.GONE
+        }
+
+        // ========== 购买信息卡片 ==========
+        // 购买商店
         if (!shoppingDetail.storeName.isNullOrBlank()) {
             binding.storeLayout.visibility = View.VISIBLE
             binding.storeTextView.text = shoppingDetail.storeName
@@ -238,93 +332,177 @@ class ShoppingItemDetailFragment : Fragment() {
             binding.storeLayout.visibility = View.GONE
         }
 
-        // 推荐原因 - 暂时隐藏（字段未实现）
-        binding.recommendLayout.visibility = View.GONE
+        // 购买渠道
+        if (!shoppingDetail.purchaseChannel.isNullOrBlank()) {
+            binding.purchaseChannelLayout.visibility = View.VISIBLE
+            binding.purchaseChannelTextView.text = shoppingDetail.purchaseChannel
+        } else {
+            binding.purchaseChannelLayout.visibility = View.GONE
+        }
 
-        // 备注
+        // 购买原因
+        if (!shoppingDetail.purchaseReason.isNullOrBlank()) {
+            binding.purchaseReasonLayout.visibility = View.VISIBLE
+            binding.purchaseReasonTextView.text = shoppingDetail.purchaseReason
+        } else {
+            binding.purchaseReasonLayout.visibility = View.GONE
+        }
+
+        // 添加日期
+        binding.addDateTextView.text = dateFormat.format(shoppingDetail.addDate)
+
+        // 购买日期
+        if (shoppingDetail.purchaseDate != null) {
+            binding.purchaseDateLayout.visibility = View.VISIBLE
+            binding.purchaseDateTextView.text = dateFormat.format(shoppingDetail.purchaseDate)
+        } else {
+            binding.purchaseDateLayout.visibility = View.GONE
+        }
+
+        // ========== 备注卡片 ==========
         if (!item.customNote.isNullOrBlank()) {
             binding.noteCard.visibility = View.VISIBLE
             binding.noteTextView.text = item.customNote
+            setupNoteExpand()
         } else {
             binding.noteCard.visibility = View.GONE
         }
-
-        // 标签
-        setupTags(item.tags)
 
         // 底部按钮状态
         updatePurchaseButton(shoppingDetail.isPurchased)
     }
 
-    private fun setupPriorityChip(priority: ShoppingItemPriority) {
-        binding.priorityChip.text = priority.displayName
-        
-        val colorAttr = when (priority.level) {
-            4 -> com.google.android.material.R.attr.colorError
-            3 -> com.google.android.material.R.attr.colorPrimary
-            2 -> com.google.android.material.R.attr.colorTertiary
-            else -> com.google.android.material.R.attr.colorSecondary
-        }
-        
-        val color = getColorFromAttr(colorAttr)
-        binding.priorityChip.chipBackgroundColor = ColorStateList.valueOf(color)
-        binding.priorityChip.setTextColor(
-            ContextCompat.getColor(requireContext(), android.R.color.white)
-        )
-    }
-
-    private fun setupUrgencyChip(urgency: UrgencyLevel) {
-        binding.urgencyChip.text = urgency.displayName
-        
-        when (urgency) {
-            UrgencyLevel.CRITICAL -> {
-                val color = getColorFromAttr(com.google.android.material.R.attr.colorError)
-                binding.urgencyChip.chipBackgroundColor = ColorStateList.valueOf(color)
-                binding.urgencyChip.setTextColor(
-                    ContextCompat.getColor(requireContext(), android.R.color.white)
-                )
-            }
-            UrgencyLevel.URGENT -> {
-                val color = getColorFromAttr(com.google.android.material.R.attr.colorErrorContainer)
-                binding.urgencyChip.chipBackgroundColor = ColorStateList.valueOf(color)
-                binding.urgencyChip.setTextColor(
-                    getColorFromAttr(com.google.android.material.R.attr.colorOnErrorContainer)
-                )
-            }
-            else -> {
-                val color = getColorFromAttr(com.google.android.material.R.attr.colorTertiaryContainer)
-                binding.urgencyChip.chipBackgroundColor = ColorStateList.valueOf(color)
-                binding.urgencyChip.setTextColor(
-                    getColorFromAttr(com.google.android.material.R.attr.colorOnTertiaryContainer)
-                )
-            }
-        }
-    }
-
-    private fun setupTags(tags: List<com.example.itemmanagement.data.model.Tag>) {
-        if (tags.isEmpty()) {
-            binding.tagsCard.visibility = View.GONE
-            return
-        }
-
-        binding.tagsCard.visibility = View.VISIBLE
+    // 设置标签（在基本信息卡片内）- 统一粉色系
+    private fun setupTagsInBasicInfo(tags: List<com.example.itemmanagement.data.model.Tag>) {
         binding.tagsChipGroup.removeAllViews()
-
+        
         tags.forEach { tag ->
-            val chip = Chip(requireContext()).apply {
-                text = tag.name
-                isClickable = false
-                isCheckable = false
-                chipBackgroundColor = ColorStateList.valueOf(
-                    getColorFromAttr(com.google.android.material.R.attr.colorSecondaryContainer)
-                )
-                setTextColor(
-                    getColorFromAttr(com.google.android.material.R.attr.colorOnSecondaryContainer)
-                )
+            val chip = com.google.android.material.chip.Chip(requireContext())
+            chip.text = tag.name
+            
+            // 🎯 统一交互设置
+            chip.isClickable = true
+            chip.isFocusable = true
+            chip.isCheckable = false
+            
+            // 🎨 统一绿色系背景 - 自然、标签专属
+            chip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(
+                android.graphics.Color.parseColor("#E8F5E8") // 🟢 浅绿
+            )
+            
+            // 文字色使用主题色
+            val typedValue = android.util.TypedValue()
+            val theme = requireContext().theme
+            theme.resolveAttribute(com.google.android.material.R.attr.colorOnSecondaryContainer, typedValue, true)
+            chip.setTextColor(typedValue.data)
+            
+            chip.chipStrokeWidth = 0f
+            chip.isCloseIconVisible = false
+            chip.textSize = 12f
+            
+            // 📐 统一边距设置
+            val layoutParams = com.google.android.material.chip.ChipGroup.LayoutParams(
+                com.google.android.material.chip.ChipGroup.LayoutParams.WRAP_CONTENT,
+                com.google.android.material.chip.ChipGroup.LayoutParams.WRAP_CONTENT
+            )
+            layoutParams.setMargins(0, -4.dpToPx(), 0, -4.dpToPx())
+            chip.layoutParams = layoutParams
+            
+            // 🖱️ 添加点击事件 - 提供触觉反馈
+            chip.setOnClickListener {
+                chip.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
             }
+            
             binding.tagsChipGroup.addView(chip)
         }
     }
+    
+    /**
+     * dp转px的扩展函数
+     */
+    private fun Int.dpToPx(): Int {
+        return (this * resources.displayMetrics.density).toInt()
+    }
+
+    // 设置备注展开功能
+    private fun setupNoteExpand() {
+        binding.noteTextView.post {
+            val lineCount = binding.noteTextView.lineCount
+            if (lineCount > 5) {
+                binding.expandNoteButton.visibility = View.VISIBLE
+                binding.expandNoteButton.setOnClickListener {
+                    if (binding.noteTextView.maxLines == 5) {
+                        // 展开
+                        binding.noteTextView.maxLines = Integer.MAX_VALUE
+                        binding.expandNoteButton.text = "收起"
+                    } else {
+                        // 收起
+                        binding.noteTextView.maxLines = 5
+                        binding.expandNoteButton.text = "展开"
+                    }
+                }
+            } else {
+                binding.expandNoteButton.visibility = View.GONE
+            }
+        }
+    }
+
+    /**
+     * 设置重要程度 Chip - 统一黄色系
+     * 🎨 简洁统一的视觉风格
+     */
+    private fun setupPriorityChip(priority: ShoppingItemPriority) {
+        binding.priorityChip.text = priority.displayName
+        
+        // 🎨 统一黄色系背景 - 重要程度专属
+        binding.priorityChip.chipBackgroundColor = ColorStateList.valueOf(
+            android.graphics.Color.parseColor("#FFFDE7") // 🟡 浅黄
+        )
+        
+        // 文字色使用主题色
+        val typedValue = android.util.TypedValue()
+        val theme = requireContext().theme
+        theme.resolveAttribute(com.google.android.material.R.attr.colorOnSecondaryContainer, typedValue, true)
+        binding.priorityChip.setTextColor(typedValue.data)
+        
+        // 统一样式设置
+        binding.priorityChip.chipStrokeWidth = 0f
+        binding.priorityChip.isCloseIconVisible = false
+        
+        // 添加点击触觉反馈
+        binding.priorityChip.setOnClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+        }
+    }
+
+    /**
+     * 设置紧急程度 Chip - 统一黄色系
+     * 🎨 简洁统一的视觉风格
+     */
+    private fun setupUrgencyChip(urgency: UrgencyLevel) {
+        binding.urgencyChip.text = urgency.displayName
+        
+        // 🎨 统一黄色系背景 - 紧急程度专属
+        binding.urgencyChip.chipBackgroundColor = ColorStateList.valueOf(
+            android.graphics.Color.parseColor("#FFFDE7") // 🟡 浅黄
+        )
+        
+        // 文字色使用主题色
+        val typedValue = android.util.TypedValue()
+        val theme = requireContext().theme
+        theme.resolveAttribute(com.google.android.material.R.attr.colorOnSecondaryContainer, typedValue, true)
+        binding.urgencyChip.setTextColor(typedValue.data)
+        
+        // 统一样式设置
+        binding.urgencyChip.chipStrokeWidth = 0f
+        binding.urgencyChip.isCloseIconVisible = false
+        
+        // 添加点击触觉反馈
+        binding.urgencyChip.setOnClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+        }
+    }
+
 
     private fun updatePurchaseButton(isPurchased: Boolean) {
         if (isPurchased) {

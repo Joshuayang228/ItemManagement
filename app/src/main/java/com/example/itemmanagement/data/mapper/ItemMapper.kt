@@ -218,4 +218,45 @@ fun TagEntity.toTag(): Tag {
         name = name,
         color = color
     )
+}
+
+/**
+ * 将ItemWithDetails转换为WarehouseItem（用于周期提醒等列表显示）
+ */
+fun ItemWithDetails.toWarehouseItem(): com.example.itemmanagement.data.model.WarehouseItem {
+    val inventoryDetail = this.inventoryDetail
+    val location = this.location
+    
+    // 获取主图URI
+    val primaryPhotoUri = photos?.firstOrNull { it.isMain }?.uri 
+        ?: photos?.firstOrNull()?.uri
+    
+    // 获取标签列表字符串
+    val tagsList = tags?.joinToString(", ") { it.name }
+    
+    return com.example.itemmanagement.data.model.WarehouseItem(
+        id = unifiedItem.id,
+        name = unifiedItem.name,
+        primaryPhotoUri = primaryPhotoUri,
+        quantity = inventoryDetail?.quantity?.toInt() ?: 0,
+        expirationDate = inventoryDetail?.expirationDate?.time,
+        locationArea = location?.area,
+        locationContainer = location?.container,
+        locationSublocation = location?.sublocation,
+        category = unifiedItem.category,
+        subCategory = unifiedItem.subCategory,
+        brand = unifiedItem.brand,
+        rating = unifiedItem.rating?.toFloat(),
+        price = inventoryDetail?.price,
+        priceUnit = inventoryDetail?.priceUnit,
+        openStatus = when (inventoryDetail?.openStatus) {
+            OpenStatus.OPENED -> true
+            OpenStatus.UNOPENED -> false
+            else -> null
+        },
+        addDate = unifiedItem.createdDate.time,
+        tagsList = tagsList,
+        customNote = unifiedItem.customNote,
+        season = unifiedItem.season
+    )
 } 

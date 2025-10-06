@@ -290,8 +290,7 @@ class HomeFragment : Fragment() {
     private fun insertTestData() {
         val options = arrayOf(
             "仅生成库存测试数据",
-            "仅生成心愿单测试数据", 
-            "生成库存+心愿单组合测试数据"
+            "生成组合测试数据"
         )
         
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
@@ -299,8 +298,7 @@ class HomeFragment : Fragment() {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> insertInventoryTestData()
-                    1 -> insertWishlistOnlyTestData()
-                    2 -> insertCombinedTestData()
+                    1 -> insertCombinedTestData()
                 }
             }
             .setNegativeButton("取消", null)
@@ -322,24 +320,14 @@ class HomeFragment : Fragment() {
         }
     }
     
-    /**
-     * 插入心愿单测试数据
-     */
-    private fun insertWishlistOnlyTestData() {
-        Toast.makeText(context, "心愿单测试数据功能暂不可用", Toast.LENGTH_SHORT).show()
-        
-        // TODO: 实现基于统一架构的心愿单测试数据插入
-        // WishlistTestDataInserter已删除，需要基于新架构重新实现
-    }
     
     /**
-     * 插入组合测试数据（库存 + 心愿单）
+     * 插入组合测试数据
      */
     private fun insertCombinedTestData() {
         Toast.makeText(context, "组合测试数据功能暂不可用", Toast.LENGTH_SHORT).show()
         
         // TODO: 实现基于统一架构的组合测试数据插入
-        // WishlistTestDataInserter已删除，需要基于新架构重新实现
     }
 
     private fun performSearch(query: String) {

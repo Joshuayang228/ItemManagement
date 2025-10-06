@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
+<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/swipeRefreshLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<androidx.core.widget.NestedScrollView
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -56,7 +61,7 @@
                 android:layout_height="wrap_content"
                 android:text="正在加载..."
                 android:textSize="14sp"
-                android:textColor="@android:color/darker_gray"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:layout_marginBottom="16dp" />
 
             <!-- 进度条 -->
@@ -76,7 +81,7 @@
                 android:text="❌ 已过期物品"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/holo_red_dark"
+                android:textColor="?attr/colorError"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:visibility="gone" />
@@ -97,7 +102,7 @@
                 android:text="⏰ 即将到期物品"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/holo_orange_dark"
+                android:textColor="?attr/colorTertiary"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:visibility="gone" />
@@ -118,7 +123,7 @@
                 android:text="📦 库存不足物品"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/holo_blue_dark"
+                android:textColor="?attr/colorPrimary"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:visibility="gone" />
@@ -161,7 +166,7 @@
                     android:layout_height="wrap_content"
                     android:text="您的物品管理做得很好！"
                     android:textSize="14sp"
-                    android:textColor="@android:color/darker_gray" />
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
             </LinearLayout>
 
@@ -171,7 +176,7 @@
                 android:layout_height="wrap_content"
                 android:text="💡 提示：点击右上角 [测试通知] 按钮可立即发送测试通知"
                 android:textSize="12sp"
-                android:textColor="@android:color/darker_gray"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:gravity="center"
                 android:layout_marginTop="24dp"
                 android:padding="8dp"
@@ -181,3 +186,5 @@
         </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>
+
+</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

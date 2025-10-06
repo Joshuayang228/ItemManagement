@@ -8,7 +8,6 @@ import com.example.itemmanagement.data.repository.WarrantyRepository
 import com.example.itemmanagement.data.repository.BorrowRepository
 import com.example.itemmanagement.data.repository.RecycleBinRepository
 import com.example.itemmanagement.data.repository.UserProfileRepository
-import com.example.itemmanagement.data.repository.WishlistRepository
 import com.example.itemmanagement.notification.EnhancedNotificationManager
 import com.example.itemmanagement.reminder.ReminderManager
 import com.example.itemmanagement.reminder.ReminderScheduler
@@ -26,7 +25,6 @@ class ItemManagementApplication : Application() {
             database,
             database.unifiedItemDao(),
             database.itemStateDao(),
-            database.wishlistDetailDao(),
             database.shoppingDetailDao(),
             database.shoppingListDao(),
             database.inventoryDetailDao(),
@@ -53,16 +51,6 @@ class ItemManagementApplication : Application() {
     
     // 用户资料仓库
     val userProfileRepository by lazy { UserProfileRepository(database.userProfileDao()) }
-    
-    // 心愿单管理仓库（统一架构）
-    val wishlistRepository by lazy { 
-        WishlistRepository(
-            database,
-            database.unifiedItemDao(),
-            database.itemStateDao(),
-            database.wishlistDetailDao()
-        ) 
-    }
     
     // 提醒系统组件
     val reminderSettingsRepository by lazy { ReminderSettingsRepository.getInstance(database) }

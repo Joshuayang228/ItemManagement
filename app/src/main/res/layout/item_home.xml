@@ -61,7 +61,7 @@
                     android:id="@+id/itemDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@android:color/darker_gray"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="12sp"
                     tools:text="2023-05-20" />
             </LinearLayout>
@@ -75,7 +75,7 @@
                 android:maxLines="4"
                 android:ellipsize="end"
                 android:lineSpacingExtra="2dp"
-                android:textColor="@android:color/darker_gray"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="11sp"
                 tools:text="这是一段备注信息，现在可以显示多行内容，包括推荐理由等详细信息" />
 

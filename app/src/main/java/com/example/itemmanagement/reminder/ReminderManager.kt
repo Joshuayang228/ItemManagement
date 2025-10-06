@@ -6,6 +6,7 @@ import com.example.itemmanagement.data.repository.WarrantyRepository
 import com.example.itemmanagement.data.repository.BorrowRepository
 import com.example.itemmanagement.data.entity.CustomRuleEntity
 import com.example.itemmanagement.data.relation.ItemWithDetails
+import com.example.itemmanagement.data.model.WarehouseItem
 import com.example.itemmanagement.reminder.model.*
 import kotlinx.coroutines.flow.first
 import java.util.*
@@ -20,10 +21,14 @@ class ReminderManager(
     
     /**
      * 获取所有需要提醒的物品汇总
+     * 使用 getAllWarehouseItemsWithDetails() 以获取完整的照片和标签数据
      */
     suspend fun getAllReminders(): ReminderSummary {
         val settings = settingsRepository.getSettings()
-        val items = itemRepository.getAllItemsWithDetails().first()
+        // 🔄 使用 getAllWarehouseItemsWithDetails() 获取包含照片的数据
+        val warehouseItems = itemRepository.getAllWarehouseItemsWithDetails()
+        // 转换为 ItemWithDetails 格式
+        val items = warehouseItems.map { it.toItemWithDetails(itemRepository) }
         
         return ReminderSummary(
             expiredItems = getExpiredItems(items),
@@ -37,6 +42,32 @@ class ReminderManager(
                 getBorrowExpiringItems(settings.expirationAdvanceDays)
             } else emptyList()
         )
+    }
+    
+    /**
+     * 将 WarehouseItem 转换为 ItemWithDetails
+     * 用于提醒系统的数据处理
+     */
+    private suspend fun WarehouseItem.toItemWithDetails(repository: UnifiedItemRepository): ItemWithDetails {
+        // 获取完整的 UnifiedItem 和 InventoryDetail
+        val unifiedItem = repository.getUnifiedItemById(this.id)
+        val inventoryDetail = repository.getInventoryDetailByItemId(this.id)
+        
+        // 获取 photos 和 tags
+        val photos = repository.getPhotosByItemId(this.id)
+        val tags = repository.getTagsByItemId(this.id)
+        
+        // 获取 location
+        val location = inventoryDetail?.locationId?.let { repository.getLocationById(it) }
+        
+        return ItemWithDetails(
+            unifiedItem = unifiedItem!!,
+            inventoryDetail = inventoryDetail,
+            photos = photos,
+            tags = tags
+        ).apply {
+            this.locationEntity = location
+        }
     }
     
     /**

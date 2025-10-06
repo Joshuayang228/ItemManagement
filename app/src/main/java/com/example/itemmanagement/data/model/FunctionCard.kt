@@ -16,7 +16,6 @@ data class FunctionCard(
         WASTE_REPORT,
         
         // 智能助手
-        WISHLIST,
         REMINDER,
         WARRANTY,
         

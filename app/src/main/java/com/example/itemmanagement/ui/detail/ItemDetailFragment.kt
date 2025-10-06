@@ -81,6 +81,10 @@ class ItemDetailFragment : Fragment() {
                 showDeleteConfirmationDialog()
                 true
             }
+            R.id.action_add_to_shopping_list -> {
+                showAddToShoppingListDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -487,6 +491,10 @@ class ItemDetailFragment : Fragment() {
     /**
      * 设置标签Chips - 与分类Chip保持完全一致的样式
      */
+    /**
+     * 设置标签Chips - 统一粉色系
+     * 🎨 简洁统一的视觉风格，与购物物品详情页保持一致
+     */
     private fun setupTagChips(tags: List<com.example.itemmanagement.data.model.Tag>) {
         val tagsLayout = binding.root.findViewById<LinearLayout>(R.id.tagsLinearLayout)
         tagsLayout.removeAllViews()
@@ -495,16 +503,17 @@ class ItemDetailFragment : Fragment() {
             val chip = com.google.android.material.chip.Chip(requireContext())
             chip.text = tag.name
             
-            // 🎯 统一交互设置 - 与分类chip一致（启用点击）
+            // 🎯 统一交互设置
             chip.isClickable = true
             chip.isFocusable = true
             chip.isCheckable = false
             
-            // 🎨 动态M3样式 - 基于标签内容生成不同背景色，文字色保持统一
-            val backgroundColor = getTagBackgroundColor(tag.name)
-            chip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(backgroundColor)
+            // 🎨 统一绿色系背景 - 自然、标签专属
+            chip.chipBackgroundColor = android.content.res.ColorStateList.valueOf(
+                android.graphics.Color.parseColor("#E8F5E8") // 🟢 浅绿
+            )
             
-            // 文字色与分类chip保持一致
+            // 文字色使用主题色
             val typedValue = android.util.TypedValue()
             val theme = requireContext().theme
             theme.resolveAttribute(com.google.android.material.R.attr.colorOnSecondaryContainer, typedValue, true)
@@ -512,9 +521,9 @@ class ItemDetailFragment : Fragment() {
             
             chip.chipStrokeWidth = 0f
             chip.isCloseIconVisible = false
-            chip.textSize = 12f // 统一文字大小为12sp
+            chip.textSize = 12f
             
-            // 📐 统一边距设置 - 与分类chip一致的负边距处理
+            // 📐 统一边距设置
             val layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -527,39 +536,11 @@ class ItemDetailFragment : Fragment() {
             
             // 🖱️ 添加点击事件 - 提供触觉反馈
             chip.setOnClickListener {
-                // 触觉反馈
                 chip.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
-                // 可以在这里添加其他点击逻辑，比如显示标签详情等
             }
             
             tagsLayout.addView(chip)
         }
-    }
-    
-    /**
-     * 根据标签名称生成背景色
-     * 🎨 使用Material Design 3兼容的浅色调色板，文字色统一使用主题色
-     */
-    private fun getTagBackgroundColor(tagName: String): Int {
-        // M3 兼容背景色调色板 - 精心挑选的柔和浅色，确保与统一文字色有良好对比度
-        val backgroundColors = listOf(
-            android.graphics.Color.parseColor("#E3F2FD"), // 🔵 浅蓝 - 专业、可信
-            android.graphics.Color.parseColor("#E8F5E8"), // 🟢 浅绿 - 自然、健康
-            android.graphics.Color.parseColor("#FFF3E0"), // 🟠 浅橙 - 活力、温暖
-            android.graphics.Color.parseColor("#F3E5F5"), // 🟣 浅紫 - 优雅、创意
-            android.graphics.Color.parseColor("#FFEBEE"), // 🔴 浅红 - 重要、紧急
-            android.graphics.Color.parseColor("#FFFDE7"), // 🟡 浅黄 - 明亮、注意
-            android.graphics.Color.parseColor("#E0F2F1"), // 🩵 浅青 - 清新、冷静
-            android.graphics.Color.parseColor("#FCE4EC"), // 🩷 浅粉 - 温柔、可爱
-            android.graphics.Color.parseColor("#EFEBE9"), // 🤎 浅棕 - 稳重、自然
-            android.graphics.Color.parseColor("#F5F5F5")  // 🩶 浅灰 - 中性、平衡
-        )
-        
-        // 🎯 使用标签名称的哈希值来选择颜色，确保同样的标签总是同样的颜色
-        val hashCode = tagName.hashCode()
-        val colorIndex = kotlin.math.abs(hashCode) % backgroundColors.size
-        
-        return backgroundColors[colorIndex]
     }
 
     /**
@@ -787,5 +768,67 @@ class ItemDetailFragment : Fragment() {
         
         // 绘制图表
         chartView.aa_drawChartWithChartModel(chartModel)
+    }
+    
+    /**
+     * 显示添加到购物清单的对话框
+     */
+    private fun showAddToShoppingListDialog() {
+        viewModel.loadActiveShoppingLists { shoppingLists ->
+            // 检查 Fragment 是否还在活动状态
+            if (!isAdded || _binding == null) {
+                return@loadActiveShoppingLists
+            }
+            
+            if (shoppingLists.isEmpty()) {
+                com.google.android.material.snackbar.Snackbar.make(
+                    binding.root,
+                    "暂无购物清单，请先创建购物清单",
+                    com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                ).show()
+                return@loadActiveShoppingLists
+            }
+            
+            // 创建对话框视图
+            val dialogView = layoutInflater.inflate(R.layout.dialog_add_to_shopping_list, null)
+            val radioGroup = dialogView.findViewById<android.widget.RadioGroup>(R.id.radioGroupShoppingLists)
+            val etQuantity = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etQuantity)
+            val etPurchaseReason = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etPurchaseReason)
+            
+            // 动态添加购物清单选项
+            shoppingLists.forEachIndexed { index, list ->
+                val radioButton = android.widget.RadioButton(requireContext())
+                radioButton.id = View.generateViewId()
+                radioButton.text = list.name
+                radioButton.tag = list.id
+                if (index == 0) radioButton.isChecked = true
+                radioGroup.addView(radioButton)
+            }
+            
+            // 预填充数量（默认为1）
+            etQuantity.setText("1")
+            
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle("加入购物清单")
+                .setView(dialogView)
+                .setPositiveButton("确定") { _, _ ->
+                    val selectedRadioButtonId = radioGroup.checkedRadioButtonId
+                    if (selectedRadioButtonId != -1) {
+                        val selectedRadioButton = radioGroup.findViewById<android.widget.RadioButton>(selectedRadioButtonId)
+                        val selectedListId = selectedRadioButton.tag as Long
+                        val quantity = etQuantity.text.toString().toDoubleOrNull() ?: 1.0
+                        val purchaseReason = etPurchaseReason.text.toString().trim()
+                        
+                        viewModel.addToShoppingList(
+                            itemId = args.itemId,
+                            shoppingListId = selectedListId,
+                            quantity = quantity,
+                            purchaseReason = purchaseReason
+                        )
+                    }
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        }
     }
 }

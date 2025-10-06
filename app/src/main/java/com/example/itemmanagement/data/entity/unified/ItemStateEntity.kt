@@ -109,7 +109,6 @@ data class ItemStateEntity(
      */
     fun getStateDisplayLabel(): String {
         return when (stateType) {
-            ItemStateType.WISHLIST -> "心愿单"
             ItemStateType.SHOPPING -> if (contextId != null) "购物清单" else "待购买"
             ItemStateType.INVENTORY -> "库存"
             ItemStateType.DELETED -> "已删除"
