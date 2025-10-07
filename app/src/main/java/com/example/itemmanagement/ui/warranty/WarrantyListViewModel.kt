@@ -41,8 +41,8 @@ class WarrantyListViewModel(
      * 保修概览统计数据
      * Triple<总数, 有效数, 即将到期数>
      */
-    private val _warrantyOverview = MutableLiveData<Triple<Int, Int, Int>>()
-    val warrantyOverview: LiveData<Triple<Int, Int, Int>> = _warrantyOverview
+    private val _warrantyOverview = MutableLiveData<com.example.itemmanagement.data.repository.WarrantyOverview>()
+    val warrantyOverview: LiveData<com.example.itemmanagement.data.repository.WarrantyOverview> = _warrantyOverview
     
     /**
      * 搜索结果
@@ -59,10 +59,17 @@ class WarrantyListViewModel(
     // ==================== 筛选状态 ====================
     
     /**
-     * 当前筛选的状态
+     * 当前筛选的状态集合（支持多选）
      */
-    private val _filterStatus = MutableLiveData<WarrantyStatus?>()
-    val filterStatus: LiveData<WarrantyStatus?> = _filterStatus
+    private val _filterStatuses = MutableLiveData<Set<WarrantyStatus>>(emptySet())
+    val filterStatuses: LiveData<Set<WarrantyStatus>> = _filterStatuses
+    
+    /**
+     * 当前筛选的状态（单选模式，向后兼容）
+     */
+    val filterStatus: LiveData<WarrantyStatus?> = _filterStatuses.map { statuses ->
+        statuses.firstOrNull()
+    }
     
     /**
      * 筛选后的保修列表
@@ -134,17 +141,24 @@ class WarrantyListViewModel(
     }
     
     /**
-     * 设置状态筛选
+     * 设置状态筛选（单选模式）
      */
     fun setStatusFilter(status: WarrantyStatus?) {
-        _filterStatus.value = status
+        _filterStatuses.value = if (status != null) setOf(status) else emptySet()
+    }
+    
+    /**
+     * 设置多个状态筛选（多选模式）
+     */
+    fun setStatusFilters(statuses: Set<WarrantyStatus>) {
+        _filterStatuses.value = statuses
     }
     
     /**
      * 清除所有筛选
      */
     fun clearAllFilters() {
-        _filterStatus.value = null
+        _filterStatuses.value = emptySet()
     }
     
     /**
@@ -214,7 +228,7 @@ class WarrantyListViewModel(
             applyFilters(warranties)
         }
         
-        filteredWarranties.addSource(filterStatus) { _ ->
+        filteredWarranties.addSource(_filterStatuses) { _ ->
             warrantiesWithItemInfo.value?.let { warranties ->
                 applyFilters(warranties)
             }
@@ -227,9 +241,10 @@ class WarrantyListViewModel(
     private fun applyFilters(originalList: List<WarrantyWithItemInfo>) {
         var filtered = originalList
         
-        // 按状态筛选
-        filterStatus.value?.let { status ->
-            filtered = filtered.filter { it.status == status }
+        // 按状态筛选（多选）
+        val statuses = _filterStatuses.value
+        if (!statuses.isNullOrEmpty()) {
+            filtered = filtered.filter { it.status in statuses }
         }
         
         filteredWarranties.value = filtered

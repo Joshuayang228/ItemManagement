@@ -35,7 +35,6 @@ class CategoryThresholdAdapter(
         private val quantityEditText: EditText = itemView.findViewById(R.id.editTextMinQuantity)
         private val unitText: TextView = itemView.findViewById(R.id.textUnit)
         private val enabledSwitch: SwitchMaterial = itemView.findViewById(R.id.switchEnabled)
-        private val deleteButton: ImageButton = itemView.findViewById(R.id.buttonDelete)
         private val descriptionText: TextView = itemView.findViewById(R.id.textDescription)
         
         private var isUpdating = false
@@ -48,13 +47,8 @@ class CategoryThresholdAdapter(
             unitText.text = threshold.unit
             enabledSwitch.isChecked = threshold.enabled
             
-            // 显示描述（如果有）
-            if (threshold.description.isNotEmpty()) {
-                descriptionText.text = threshold.description
-                descriptionText.visibility = View.VISIBLE
-            } else {
-                descriptionText.visibility = View.GONE
-            }
+            // 隐藏描述（不再需要）
+            descriptionText.visibility = View.GONE
             
             isUpdating = false
             
@@ -86,22 +80,6 @@ class CategoryThresholdAdapter(
                 if (isUpdating) return@setOnCheckedChangeListener
                 onToggleEnabled?.invoke(threshold.category, isChecked)
             }
-            
-            // 删除按钮监听
-            deleteButton.setOnClickListener {
-                showDeleteConfirmDialog(threshold)
-            }
-        }
-        
-        private fun showDeleteConfirmDialog(threshold: CategoryThresholdEntity) {
-            androidx.appcompat.app.AlertDialog.Builder(itemView.context)
-                .setTitle("删除分类阈值")
-                .setMessage("确定要删除 \"${threshold.category}\" 的库存阈值设置吗？")
-                .setPositiveButton("删除") { _, _ ->
-                    onDeleteThreshold(threshold.category)
-                }
-                .setNegativeButton("取消", null)
-                .show()
         }
     }
     

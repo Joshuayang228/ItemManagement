@@ -30,8 +30,10 @@ class EditItemFragment : BaseItemFragment<EditItemViewModel>() {
 
     // 获取编辑物品专用的 ViewModel
     override val viewModel: EditItemViewModel by viewModels {
-        val repository = (requireActivity().application as ItemManagementApplication).repository
-        EditItemViewModelFactory(repository, cacheViewModel, args.itemId)
+        val app = requireActivity().application as ItemManagementApplication
+        val repository = app.repository
+        val warrantyRepository = app.warrantyRepository  // ✅ 获取warrantyRepository
+        EditItemViewModelFactory(repository, cacheViewModel, args.itemId, warrantyRepository)  // ✅ 传入warrantyRepository
     }
 
     override fun onViewModelReady() {

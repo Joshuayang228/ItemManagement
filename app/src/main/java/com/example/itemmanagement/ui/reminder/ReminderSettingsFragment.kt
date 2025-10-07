@@ -106,6 +106,9 @@ class ReminderSettingsFragment : Fragment() {
             },
             onDeleteThreshold = { category ->
                 viewModel.deleteCategoryThreshold(category)
+            },
+            onToggleEnabled = { category, enabled ->
+                viewModel.toggleCategoryThreshold(category, enabled)
             }
         )
         
@@ -285,7 +288,7 @@ class ReminderSettingsFragment : Fragment() {
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("添加分类阈值")
             .setView(dialogView)
-            .setPositiveButton("添加") { dialog, which ->
+            .setPositiveButton("添加") { _, _ ->
                 val category = categoryEditText.text.toString().trim()
                 val quantityStr = quantityEditText.text.toString().trim()
                 val unit = unitEditText.text.toString().trim().ifEmpty { "个" }
@@ -315,7 +318,7 @@ class ReminderSettingsFragment : Fragment() {
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("重置设置")
             .setMessage("确定要将所有设置重置为默认值吗？此操作无法撤销。")
-            .setPositiveButton("重置") { dialog, which ->
+            .setPositiveButton("重置") { _, _ ->
                 viewModel.resetToDefaults()
             }
             .setNegativeButton("取消", null)

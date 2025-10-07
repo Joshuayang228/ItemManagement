@@ -22,9 +22,6 @@ class EditProfileViewModel(
     private val _message = MutableLiveData<String?>()
     val message: LiveData<String?> = _message
 
-    private val _isLoading = MutableLiveData(false)
-    val isLoading: LiveData<Boolean> = _isLoading
-
     private val _saveSuccess = MutableLiveData<Boolean>()
     val saveSuccess: LiveData<Boolean> = _saveSuccess
 
@@ -35,14 +32,11 @@ class EditProfileViewModel(
     private fun loadUserProfile() {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
                 userProfileRepository.getUserProfileFlow().collect { profile ->
                     profile?.let { _userProfile.value = it }
                 }
             } catch (e: Exception) {
                 _message.value = "加载个人资料失败: ${e.localizedMessage}"
-            } finally {
-                _isLoading.value = false
             }
         }
     }
@@ -53,7 +47,6 @@ class EditProfileViewModel(
     fun updateNickname(nickname: String) {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
                 val currentProfile = userProfileRepository.getUserProfile()
                 val updatedProfile = currentProfile.copy(nickname = nickname)
                 userProfileRepository.updateUserProfile(updatedProfile)
@@ -62,8 +55,27 @@ class EditProfileViewModel(
             } catch (e: Exception) {
                 _message.value = "更新昵称失败: ${e.localizedMessage}"
                 _saveSuccess.value = false
-            } finally {
-                _isLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * 更新个人资料（昵称和签名）
+     */
+    fun updateProfile(nickname: String, signature: String?) {
+        viewModelScope.launch {
+            try {
+                val currentProfile = userProfileRepository.getUserProfile()
+                val updatedProfile = currentProfile.copy(
+                    nickname = nickname,
+                    signature = signature
+                )
+                userProfileRepository.updateUserProfile(updatedProfile)
+                _userProfile.value = updatedProfile
+                _saveSuccess.value = true
+            } catch (e: Exception) {
+                _message.value = "更新资料失败: ${e.localizedMessage}"
+                _saveSuccess.value = false
             }
         }
     }

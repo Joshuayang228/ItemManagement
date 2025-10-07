@@ -47,6 +47,7 @@ class AddItemViewModel(
 
     init {
         Log.d("AddItemViewModel", "=== 初始化添加ViewModel ===")
+        Log.d("AddItemViewModel", "📦 WarrantyRepository状态: ${if (warrantyRepository != null) "已注入✅" else "未注入❌"}")
         
         // 初始化字段属性
         initializeAllFieldProperties()
@@ -332,13 +333,22 @@ class AddItemViewModel(
                 val photos = buildPhotosFromUris()
                 android.util.Log.d("AddItemViewModel", "📸 构建的照片列表: ${photos.size}张")
                 
-                // 保存到数据库（使用新的统一架构）
-                repository.addInventoryItem(unifiedItem, inventoryDetail, tags, photos)
+                // 保存到数据库（使用新的统一架构）并获取itemId
+                val itemId = repository.addInventoryItem(unifiedItem, inventoryDetail, tags, photos)
+                android.util.Log.d("AddItemViewModel", "✅ 物品保存成功: itemId=$itemId")
+                
+                // 打印保修相关字段值
+                android.util.Log.d("AddItemViewModel", "📋 保修字段检查:")
+                android.util.Log.d("AddItemViewModel", "  - 保修期字段值: ${fieldValues["保修期"]}")
+                android.util.Log.d("AddItemViewModel", "  - 保修期单位字段值: ${fieldValues["保修期_unit"]}")
+                android.util.Log.d("AddItemViewModel", "  - 保修到期时间字段值: ${fieldValues["保修到期时间"]}")
+                android.util.Log.d("AddItemViewModel", "  - 购买日期字段值: ${fieldValues["购买日期"]}")
+                
+                // 保存保修信息（如果有）
+                saveWarrantyInfoIfNeeded(itemId)
             }
             
-            // 物品保存成功，检查是否需要同步保修信息
-            // TODO: 重构保修同步逻辑以适配新架构
-            // syncWarrantyInfoIfNeeded(itemId, item)
+            // 物品保存成功
             
             _saveResult.value = true
             _errorMessage.value = "物品添加成功"
@@ -419,7 +429,8 @@ class AddItemViewModel(
         val expirationDate = parseDate(fieldValues["保质过期时间"] as? String)
         val openDate = parseDate(fieldValues["开封时间"] as? String)
         val purchaseDate = parseDate(fieldValues["购买日期"] as? String)
-        val warrantyEndDate = parseDate(fieldValues["保修到期时间"] as? String)
+        // 保修信息已移至 WarrantyEntity，不再存储在 InventoryDetailEntity
+        // val warrantyEndDate = parseDate(fieldValues["保修到期时间"] as? String)
         
         // 开封状态
         val openStatus = when (fieldValues["开封状态"] as? String) {
@@ -473,8 +484,9 @@ class AddItemViewModel(
             totalPriceUnit = totalPriceUnit,
             purchaseDate = purchaseDate,
             shelfLife = shelfLife,
-            warrantyPeriod = warrantyPeriod,
-            warrantyEndDate = warrantyEndDate,
+            // 保修信息已移至 WarrantyEntity，不再存储在 InventoryDetailEntity
+            // warrantyPeriod = warrantyPeriod,
+            // warrantyEndDate = warrantyEndDate,
             isHighTurnover = isHighTurnover,
             wasteDate = null
             // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
@@ -578,7 +590,8 @@ class AddItemViewModel(
         val expirationDate = parseDate(fieldValues["保质过期时间"] as? String)
         val purchaseDate = parseDate(fieldValues["购买日期"] as? String)
         val addDate = parseDate(fieldValues["添加日期"] as? String) ?: Date()
-        val warrantyEndDate = parseDate(fieldValues["保修到期时间"] as? String)
+        // 保修信息已移至 WarrantyEntity
+        // val warrantyEndDate = parseDate(fieldValues["保修到期时间"] as? String)
         val openDate = parseDate(fieldValues["开封时间"] as? String)
         
         // 开封状态
@@ -673,8 +686,9 @@ class AddItemViewModel(
             totalPriceUnit = totalPriceUnit,
             purchaseDate = purchaseDate,
             shelfLife = shelfLife,
-            warrantyPeriod = warrantyPeriod,
-            warrantyEndDate = warrantyEndDate,
+            // 保修信息已移至 WarrantyEntity
+            warrantyPeriod = null,
+            warrantyEndDate = null,
             serialNumber = fieldValues["序列号"] as? String,
             addDate = addDate,
             isHighTurnover = isHighTurnover,
@@ -821,9 +835,147 @@ class AddItemViewModel(
     }
 
     /**
-     * 同步保修信息到独立的保修管理系统
-     * 当用户在添加物品时填写了保修信息，自动创建对应的WarrantyEntity记录
+     * 保存保修信息到独立的保修管理系统
+     * ✅ 新架构：直接从fieldValues读取保修信息
      */
+    private suspend fun saveWarrantyInfoIfNeeded(itemId: Long) {
+        android.util.Log.d("AddItemViewModel", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 开始检查保修信息...")
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] itemId: $itemId")
+        
+        // 提取保修期
+        val warrantyValue = fieldValues["保修期"]
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期原始值: $warrantyValue (类型: ${warrantyValue?.javaClass?.simpleName})")
+        
+        val warrantyPeriod = when (warrantyValue) {
+            is Pair<*, *> -> {
+                android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期是Pair类型: first=${warrantyValue.first}, second=${warrantyValue.second}")
+                (warrantyValue.first as? String)?.toIntOrNull()
+            }
+            is String -> {
+                android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期是String类型: $warrantyValue")
+                warrantyValue.toIntOrNull()
+            }
+            else -> {
+                android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期是其他类型或null")
+                null
+            }
+        }
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 解析后的保修期: $warrantyPeriod")
+        
+        // 提取保修期单位
+        val warrantyUnit = when (val warrantyValue = fieldValues["保修期"]) {
+            is Pair<*, *> -> warrantyValue.second as? String
+            else -> fieldValues["保修期_unit"] as? String
+        } ?: "月"
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期单位: $warrantyUnit")
+        
+        // 提取保修到期日期
+        val warrantyEndDateStr = fieldValues["保修到期时间"] as? String
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修到期时间字符串: $warrantyEndDateStr")
+        val warrantyEndDate = parseDate(warrantyEndDateStr)
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 解析后的保修到期日期: $warrantyEndDate")
+        
+        // 提取购买日期
+        val purchaseDateStr = fieldValues["购买日期"] as? String
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 购买日期字符串: $purchaseDateStr")
+        val purchaseDate = parseDate(purchaseDateStr) ?: Date()
+        android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 解析后的购买日期: $purchaseDate")
+        
+        // 检查是否有保修信息
+        if (warrantyPeriod == null || warrantyPeriod <= 0) {
+            android.util.Log.w("AddItemViewModel", "⚠️ [WARRANTY_SAVE] 无有效保修期信息，跳过保修信息保存")
+            android.util.Log.d("AddItemViewModel", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            return
+        }
+        
+        // 检查是否有WarrantyRepository依赖
+        if (warrantyRepository == null) {
+            android.util.Log.e("AddItemViewModel", "❌ [WARRANTY_SAVE] 未提供WarrantyRepository，无法保存保修信息")
+            android.util.Log.d("AddItemViewModel", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            return
+        }
+        
+        android.util.Log.d("AddItemViewModel", "✅ [WARRANTY_SAVE] WarrantyRepository已注入，准备保存保修信息")
+        
+        try {
+            // 转换保修期为月数
+            val warrantyMonths = when (warrantyUnit) {
+                "年" -> {
+                    android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期单位是年，转换为月: ${warrantyPeriod * 12}")
+                    warrantyPeriod * 12
+                }
+                "月" -> {
+                    android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期单位是月，保持不变: $warrantyPeriod")
+                    warrantyPeriod
+                }
+                "日" -> {
+                    val months = maxOf(1, warrantyPeriod / 30)
+                    android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期单位是日，转换为月: $months")
+                    months
+                }
+                else -> {
+                    android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 保修期单位未知($warrantyUnit)，按月处理: $warrantyPeriod")
+                    warrantyPeriod
+                }
+            }
+            
+            // 计算保修到期日期（如果没有手动设置）
+            val calculatedEndDate = warrantyEndDate ?: run {
+                android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 未手动设置到期日期，开始计算...")
+                val calendar = Calendar.getInstance().apply {
+                    time = purchaseDate
+                    add(Calendar.MONTH, warrantyMonths)
+                }
+                android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 计算的到期日期: ${calendar.time}")
+                calendar.time
+            }
+            
+            android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 准备构建WarrantyEntity:")
+            android.util.Log.d("AddItemViewModel", "  - itemId: $itemId")
+            android.util.Log.d("AddItemViewModel", "  - purchaseDate: $purchaseDate")
+            android.util.Log.d("AddItemViewModel", "  - warrantyPeriodMonths: $warrantyMonths")
+            android.util.Log.d("AddItemViewModel", "  - warrantyEndDate: $calculatedEndDate")
+            
+            // 构建保修实体
+            val warrantyEntity = WarrantyEntity(
+                itemId = itemId,
+                purchaseDate = purchaseDate,
+                warrantyPeriodMonths = warrantyMonths,
+                warrantyEndDate = calculatedEndDate,
+                receiptImageUris = null,
+                notes = "从添加物品界面自动创建",
+                status = if (calculatedEndDate.before(Date())) WarrantyStatus.EXPIRED else WarrantyStatus.ACTIVE,
+                warrantyProvider = null,
+                contactInfo = null,
+                createdDate = Date(),
+                updatedDate = Date()
+            )
+            
+            android.util.Log.d("AddItemViewModel", "🔧 [WARRANTY_SAVE] 开始调用warrantyRepository.insertWarranty()...")
+            
+            // 保存到保修系统
+            val warrantyId = warrantyRepository.insertWarranty(warrantyEntity)
+            
+            android.util.Log.d("AddItemViewModel", "✅ [WARRANTY_SAVE] 保修信息保存成功!")
+            android.util.Log.d("AddItemViewModel", "  - warrantyId: $warrantyId")
+            android.util.Log.d("AddItemViewModel", "  - period: ${warrantyMonths}月")
+            android.util.Log.d("AddItemViewModel", "  - endDate: $calculatedEndDate")
+            android.util.Log.d("AddItemViewModel", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            
+        } catch (e: Exception) {
+            android.util.Log.e("AddItemViewModel", "❌ [WARRANTY_SAVE] 保存失败: ${e.message}", e)
+            android.util.Log.e("AddItemViewModel", "❌ [WARRANTY_SAVE] 异常堆栈:", e)
+            android.util.Log.d("AddItemViewModel", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+            // 不影响主流程，仅记录错误
+        }
+    }
+    
+    /**
+     * 同步保修信息到独立的保修管理系统
+     * @Deprecated 使用saveWarrantyInfoIfNeeded(itemId)替代
+     */
+    @Deprecated("使用saveWarrantyInfoIfNeeded(itemId)替代")
     private fun syncWarrantyInfoIfNeeded(itemId: Long, item: Item) {
         // 检查是否有WarrantyRepository依赖
         if (warrantyRepository == null) {

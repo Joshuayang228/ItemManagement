@@ -193,14 +193,15 @@ class ProfileViewModel(
             // 第一个间隔
             add(ProfileItem.MenuSpacer)
             
-            // 回收站（独立卡片）
-            add(ProfileItem.MenuItem("recycle_bin", "回收站", R.drawable.ic_delete_colorful, showDivider = false))
+            // 工具卡片（回收站、应用设置、数据导出合并）
+            add(ProfileItem.MenuItem("recycle_bin", "回收站", R.drawable.ic_delete_colorful))
+            add(ProfileItem.MenuItem("app_settings", "应用设置", R.drawable.ic_tune_colorful))
+            add(ProfileItem.MenuItem("data_export", "数据导出", R.drawable.ic_save_colorful, showDivider = false))
             
             // 第二个间隔
             add(ProfileItem.MenuSpacer)
             
-            // 应用设置和打赏支持（合并卡片）
-            add(ProfileItem.MenuItem("app_settings", "应用设置", R.drawable.ic_tune_colorful))
+            // 打赏支持（独立卡片）
             add(ProfileItem.MenuItem("donation", "打赏支持", R.drawable.ic_favorite_colorful, showDivider = false))
         }
         _profileItems.value = items

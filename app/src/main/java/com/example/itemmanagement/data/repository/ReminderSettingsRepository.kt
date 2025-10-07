@@ -63,6 +63,54 @@ class ReminderSettingsRepository(private val database: AppDatabase) {
         database.reminderSettingsDao().updateStockReminderEnabled(enabled)
     }
     
+    /**
+     * 更新保修期提醒开关
+     */
+    suspend fun updateIncludeWarranty(enabled: Boolean) {
+        val settings = getSettings()
+        updateSettings(settings.copy(includeWarranty = enabled))
+    }
+    
+    /**
+     * 更新推送通知开关
+     */
+    suspend fun updatePushNotification(enabled: Boolean) {
+        val settings = getSettings()
+        updateSettings(settings.copy(pushNotificationEnabled = enabled))
+    }
+    
+    /**
+     * 更新应用内提醒开关
+     */
+    suspend fun updateInAppReminder(enabled: Boolean) {
+        val settings = getSettings()
+        updateSettings(settings.copy(inAppReminderEnabled = enabled))
+    }
+    
+    /**
+     * 更新周末暂停开关
+     */
+    suspend fun updateWeekendPause(enabled: Boolean) {
+        val settings = getSettings()
+        updateSettings(settings.copy(weekendPause = enabled))
+    }
+    
+    /**
+     * 更新免打扰开始时间
+     */
+    suspend fun updateQuietHourStart(time: String) {
+        val settings = getSettings()
+        updateSettings(settings.copy(quietHourStart = time))
+    }
+    
+    /**
+     * 更新免打扰结束时间
+     */
+    suspend fun updateQuietHourEnd(time: String) {
+        val settings = getSettings()
+        updateSettings(settings.copy(quietHourEnd = time))
+    }
+    
     // ==================== 分类阈值相关 ====================
     
     /**
@@ -196,6 +244,13 @@ class ReminderSettingsRepository(private val database: AppDatabase) {
      */
     suspend fun getRulesForItem(itemName: String): List<CustomRuleEntity> {
         return database.customRuleDao().getRulesForItem(itemName)
+    }
+    
+    /**
+     * 获取所有物品的分类列表（去重）
+     */
+    suspend fun getAllItemCategories(): List<String> {
+        return database.unifiedItemDao().getAllCategories()
     }
     
     // ==================== 工具方法 ====================

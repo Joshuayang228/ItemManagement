@@ -22,6 +22,19 @@ class AddBorrowViewModel(
     private val itemRepository: UnifiedItemRepository
 ) : ViewModel() {
 
+    // ==================== 编辑模式相关 ====================
+    
+    /**
+     * 当前编辑的借还记录ID（-1表示新建模式）
+     */
+    private var currentBorrowId: Long = -1
+    
+    /**
+     * 是否为编辑模式
+     */
+    val isEditMode: Boolean
+        get() = currentBorrowId > 0
+
     // ==================== 表单数据 ====================
     
     /**
@@ -57,10 +70,10 @@ class AddBorrowViewModel(
     // ==================== 可选择的物品列表 ====================
     
     /**
-     * 所有可选择的物品
+     * 所有可选择的物品（排除已删除的物品）
      */
     val availableItems: LiveData<List<ItemWithDetails>> = 
-        itemRepository.getAllItemsWithDetails().asLiveData()
+        itemRepository.getActiveItemsWithDetails().asLiveData()
 
     // ==================== 状态管理 ====================
     
@@ -172,33 +185,95 @@ class AddBorrowViewModel(
             try {
                 _isLoading.postValue(true)
                 
-                // 检查物品是否已经被借出
-                val currentBorrow = borrowRepository.getCurrentBorrowRecordForItem(selectedItem.item.id)
-                if (currentBorrow != null) {
-                    _errorMessage.postValue("该物品已经借出给 ${currentBorrow.borrowerName}，无法重复借出")
-                    return@launch
-                }
-                
-                // 创建借出记录
-                val borrowId = borrowRepository.createBorrowRecord(
-                    itemId = selectedItem.item.id,
-                    borrowerName = borrowerName,
-                    borrowerContact = _borrowerContact.value?.trim()?.takeIf { it.isNotBlank() },
-                    expectedReturnDate = expectedReturnDate,
-                    notes = _notes.value?.trim()?.takeIf { it.isNotBlank() }
-                )
-                
-                if (borrowId > 0) {
+                if (isEditMode) {
+                    // 编辑模式：更新现有记录
+                    val existingBorrow = borrowRepository.getBorrowById(currentBorrowId)
+                    if (existingBorrow == null) {
+                        _errorMessage.postValue("未找到要更新的借还记录")
+                        _saveResult.postValue(false)
+                        return@launch
+                    }
+                    
+                    // 更新借出记录
+                    val updatedBorrow = existingBorrow.copy(
+                        borrowerName = borrowerName,
+                        borrowerContact = _borrowerContact.value?.trim()?.takeIf { it.isNotBlank() },
+                        expectedReturnDate = expectedReturnDate.time,
+                        notes = _notes.value?.trim()?.takeIf { it.isNotBlank() }
+                    )
+                    
+                    borrowRepository.updateBorrow(updatedBorrow)
                     _saveResult.postValue(true)
-                    _errorMessage.postValue("借出记录创建成功")
+                    _errorMessage.postValue("借出记录更新成功")
+                    
                 } else {
-                    _errorMessage.postValue("创建借出记录失败")
-                    _saveResult.postValue(false)
+                    // 新建模式：创建新记录
+                    // 检查物品是否已经被借出
+                    val currentBorrow = borrowRepository.getCurrentBorrowRecordForItem(selectedItem.item.id)
+                    if (currentBorrow != null) {
+                        _errorMessage.postValue("该物品已经借出给 ${currentBorrow.borrowerName}，无法重复借出")
+                        return@launch
+                    }
+                    
+                    // 创建借出记录
+                    val borrowId = borrowRepository.createBorrowRecord(
+                        itemId = selectedItem.item.id,
+                        borrowerName = borrowerName,
+                        borrowerContact = _borrowerContact.value?.trim()?.takeIf { it.isNotBlank() },
+                        expectedReturnDate = expectedReturnDate,
+                        notes = _notes.value?.trim()?.takeIf { it.isNotBlank() }
+                    )
+                    
+                    if (borrowId > 0) {
+                        _saveResult.postValue(true)
+                        _errorMessage.postValue("借出记录创建成功")
+                    } else {
+                        _errorMessage.postValue("创建借出记录失败")
+                        _saveResult.postValue(false)
+                    }
                 }
                 
             } catch (e: Exception) {
                 _errorMessage.postValue("保存失败: ${e.message}")
                 _saveResult.postValue(false)
+            } finally {
+                _isLoading.postValue(false)
+            }
+        }
+    }
+
+    /**
+     * 加载借还记录进行编辑
+     */
+    fun loadBorrowRecord(borrowId: Long) {
+        viewModelScope.launch {
+            try {
+                _isLoading.postValue(true)
+                
+                val borrow = borrowRepository.getBorrowById(borrowId)
+                if (borrow == null) {
+                    _errorMessage.postValue("未找到借还记录")
+                    return@launch
+                }
+                
+                // 设置当前编辑的ID
+                currentBorrowId = borrowId
+                
+                // 加载物品信息
+                val item = itemRepository.getItemWithDetailsById(borrow.itemId)
+                _selectedItem.postValue(item)
+                
+                // 设置表单数据
+                _borrowerName.postValue(borrow.borrowerName)
+                _borrowerContact.postValue(borrow.borrowerContact ?: "")
+                _expectedReturnDate.postValue(Date(borrow.expectedReturnDate))
+                _notes.postValue(borrow.notes ?: "")
+                
+                // 验证表单
+                validateForm()
+                
+            } catch (e: Exception) {
+                _errorMessage.postValue("加载失败: ${e.message}")
             } finally {
                 _isLoading.postValue(false)
             }
@@ -211,6 +286,7 @@ class AddBorrowViewModel(
      * 清除表单
      */
     fun clearForm() {
+        currentBorrowId = -1
         _selectedItem.value = null
         _borrowerName.value = ""
         _borrowerContact.value = ""

@@ -31,7 +31,9 @@ class ItemManagementApplication : Application() {
             database.locationDao(),
             database.tagDao(),
             database.photoDao(),
-            database.priceRecordDao()
+            database.priceRecordDao(),
+            database.warrantyDao(),
+            database.borrowDao()  // ✅ 添加BorrowDao
         )
     }
     

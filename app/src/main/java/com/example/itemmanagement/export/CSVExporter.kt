@@ -46,7 +46,8 @@ object CSVExporter {
                 "${formatDate(inventoryDetail?.expirationDate)}," +
                 "${escapeCsvField("")}," + // TODO: 需要从inventoryDetail.locationId查询LocationEntity
                 "${escapeCsvField("")}," + // TODO: 需要从LocationEntity获取container
-                "${formatDate(inventoryDetail?.warrantyEndDate)}," +
+                // 保修信息已移至 WarrantyEntity，通过单独的保修CSV导出
+                "${""}," +
                 "${escapeCsvField(unifiedItem.customNote ?: "")}," +
                 "${escapeCsvField(tags)}," +
                 "${formatDateTime(unifiedItem.createdDate)}"

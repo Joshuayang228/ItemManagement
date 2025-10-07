@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
  */
 class WarrantyAdapter(
     private val onItemClick: (WarrantyWithItemInfo) -> Unit,
-    private val onMoreClick: (WarrantyWithItemInfo) -> Unit
+    private val onDeleteClick: (WarrantyWithItemInfo) -> Unit
 ) : ListAdapter<WarrantyWithItemInfo, WarrantyAdapter.WarrantyViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): WarrantyViewHolder {
@@ -29,7 +29,7 @@ class WarrantyAdapter(
             parent,
             false
         )
-        return WarrantyViewHolder(binding, onItemClick, onMoreClick)
+        return WarrantyViewHolder(binding, onItemClick, onDeleteClick)
     }
 
     override fun onBindViewHolder(holder: WarrantyViewHolder, position: Int) {
@@ -39,7 +39,7 @@ class WarrantyAdapter(
     class WarrantyViewHolder(
         private val binding: ItemWarrantyBinding,
         private val onItemClick: (WarrantyWithItemInfo) -> Unit,
-        private val onMoreClick: (WarrantyWithItemInfo) -> Unit
+        private val onDeleteClick: (WarrantyWithItemInfo) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -65,33 +65,41 @@ class WarrantyAdapter(
                     diffDays > 0 -> {
                         remainingDays.text = "剩余${diffDays}天"
                         remainingDays.setTextColor(getColorForRemainingDays(diffDays))
-                        remainingDays.setBackgroundColor(getBackgroundColorForRemainingDays(diffDays))
+                        remainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(getBackgroundColorForRemainingDays(diffDays))
                     }
                     diffDays == 0L -> {
                         remainingDays.text = "今日到期"
                         remainingDays.setTextColor(Color.parseColor("#FF5722"))
-                        remainingDays.setBackgroundColor(Color.parseColor("#FFEBEE"))
+                        remainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
                     }
                     else -> {
                         remainingDays.text = "已过期${-diffDays}天"
                         remainingDays.setTextColor(Color.parseColor("#F44336"))
-                        remainingDays.setBackgroundColor(Color.parseColor("#FFEBEE"))
+                        remainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
                     }
                 }
                 
                 // 设置保修状态
                 setupWarrantyStatus(warranty.status)
                 
-                // 加载物品图片（这里需要根据项目实际情况调整）
-                // 暂时使用占位符
-                Glide.with(itemImage.context)
-                    .load(R.drawable.ic_image_placeholder) // 需要替换为实际的图片加载逻辑
-                    .placeholder(R.drawable.ic_image_placeholder)
-                    .into(itemImage)
+                // 加载物品的第一张照片
+                if (!warranty.firstPhotoUri.isNullOrEmpty()) {
+                    Glide.with(itemImage.context)
+                        .load(warranty.firstPhotoUri)
+                        .placeholder(R.drawable.ic_image_placeholder)
+                        .error(R.drawable.ic_image_placeholder)
+                        .centerCrop()
+                        .into(itemImage)
+                } else {
+                    // 如果没有照片，显示占位符
+                    Glide.with(itemImage.context)
+                        .load(R.drawable.ic_image_placeholder)
+                        .into(itemImage)
+                }
                 
                 // 设置点击事件
                 root.setOnClickListener { onItemClick(warranty) }
-                moreOptionsButton.setOnClickListener { onMoreClick(warranty) }
+                deleteButton.setOnClickListener { onDeleteClick(warranty) }
             }
         }
 
@@ -103,26 +111,22 @@ class WarrantyAdapter(
                 WarrantyStatus.ACTIVE -> {
                     binding.warrantyStatus.text = "保修中"
                     binding.warrantyStatus.setTextColor(Color.parseColor("#4CAF50"))
-                    binding.warrantyStatus.setBackgroundColor(Color.parseColor("#E8F5E8"))
-                    binding.statusIndicator.setBackgroundColor(Color.parseColor("#4CAF50"))
+                    binding.warrantyStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E8"))
                 }
                 WarrantyStatus.EXPIRED -> {
                     binding.warrantyStatus.text = "已过期"
                     binding.warrantyStatus.setTextColor(Color.parseColor("#F44336"))
-                    binding.warrantyStatus.setBackgroundColor(Color.parseColor("#FFEBEE"))
-                    binding.statusIndicator.setBackgroundColor(Color.parseColor("#F44336"))
+                    binding.warrantyStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
                 }
                 WarrantyStatus.CLAIMED -> {
                     binding.warrantyStatus.text = "已报修"
                     binding.warrantyStatus.setTextColor(Color.parseColor("#FF9800"))
-                    binding.warrantyStatus.setBackgroundColor(Color.parseColor("#FFF3E0"))
-                    binding.statusIndicator.setBackgroundColor(Color.parseColor("#FF9800"))
+                    binding.warrantyStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFF3E0"))
                 }
                 WarrantyStatus.VOID -> {
                     binding.warrantyStatus.text = "已作废"
                     binding.warrantyStatus.setTextColor(Color.parseColor("#9E9E9E"))
-                    binding.warrantyStatus.setBackgroundColor(Color.parseColor("#F5F5F5"))
-                    binding.statusIndicator.setBackgroundColor(Color.parseColor("#9E9E9E"))
+                    binding.warrantyStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#F5F5F5"))
                 }
             }
         }

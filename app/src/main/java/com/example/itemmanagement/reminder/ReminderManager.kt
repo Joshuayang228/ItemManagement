@@ -76,9 +76,9 @@ class ReminderManager(
     private fun getExpiredItems(items: List<ItemWithDetails>): List<ItemWithDetails> {
         val now = Date()
         return items.filter { item ->
+            // 只检查物品过期日期，保修过期通过 WarrantyEntity 单独处理
             val expiredByDate = item.inventoryDetail?.expirationDate?.let { it.before(now) } ?: false
-            val expiredByWarranty = item.inventoryDetail?.warrantyEndDate?.let { it.before(now) } ?: false
-            expiredByDate || expiredByWarranty
+            expiredByDate
         }
     }
     
@@ -97,17 +97,12 @@ class ReminderManager(
         }.time
         
         return items.filter { item ->
+            // 只检查物品过期日期，保修即将过期通过 WarrantyEntity 单独处理
             val expiringByDate = item.inventoryDetail?.expirationDate?.let { 
                 it.after(now) && it.before(futureDate) 
             } ?: false
             
-            val expiringByWarranty = if (includeWarranty) {
-                item.inventoryDetail?.warrantyEndDate?.let { 
-                    it.after(now) && it.before(futureDate) 
-                } ?: false
-            } else false
-            
-            expiringByDate || expiringByWarranty
+            expiringByDate
         }
     }
     
@@ -198,16 +193,8 @@ class ReminderManager(
             }
             
             "WARRANTY" -> {
-                rule.advanceDays?.let { days ->
-                    val futureDate = Calendar.getInstance().apply {
-                        time = now
-                        add(Calendar.DAY_OF_YEAR, days)
-                    }.time
-                    
-                    item.inventoryDetail?.warrantyEndDate?.let { 
-                        it.after(now) && it.before(futureDate) 
-                    } ?: false
-                } ?: false
+                // 保修提醒通过 WarrantyEntity 单独处理，不再从 inventoryDetail 获取
+                false
             }
             
             "STOCK" -> {
@@ -246,10 +233,8 @@ class ReminderManager(
                 }
             }
             "WARRANTY" -> {
-                item.inventoryDetail?.warrantyEndDate?.let { warrantyDate ->
-                    val diffInMillis = warrantyDate.time - System.currentTimeMillis()
-                    (diffInMillis / TimeUnit.DAYS.toMillis(1)).toDouble()
-                }
+                // 保修剩余天数通过 WarrantyEntity 单独计算
+                null
             }
             else -> null
         }
@@ -326,24 +311,13 @@ class ReminderManager(
     }
     
     /**
-     * 计算距离过期的天数
+     * 计算距离过期的天数（仅物品过期日期，保修通过 WarrantyEntity 单独处理）
      */
     private fun calculateDaysUntilExpiration(item: ItemWithDetails): Int? {
         val now = Date()
-        val expirationDate = item.inventoryDetail?.expirationDate
-        val warrantyDate = item.inventoryDetail?.warrantyEndDate
+        val expirationDate = item.inventoryDetail?.expirationDate ?: return null
         
-        // 选择最早的到期日期
-        val earliestDate = when {
-            expirationDate != null && warrantyDate != null -> {
-                if (expirationDate.before(warrantyDate)) expirationDate else warrantyDate
-            }
-            expirationDate != null -> expirationDate
-            warrantyDate != null -> warrantyDate
-            else -> return null
-        }
-        
-        val diffInMillis = earliestDate.time - now.time
+        val diffInMillis = expirationDate.time - now.time
         return (diffInMillis / TimeUnit.DAYS.toMillis(1)).toInt()
     }
     

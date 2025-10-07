@@ -1,257 +1,246 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    tools:context=".ui.borrow.BorrowListFragment">
 
-    <!-- Toolbar移除，使用MainActivity统一管理导航 -->
-
-    <androidx.core.widget.NestedScrollView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
->
+        android:orientation="vertical">
 
-        <LinearLayout
+        <!-- 顶部统计卡片 -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.App.Card.Statistics"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
-            <!-- 统计信息卡片 -->
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOnSurface">
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="借还概况"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
+                    android:layout_marginBottom="12dp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="借还概况"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp"
-                        android:drawablePadding="8dp"
-                        app:drawableStartCompat="@drawable/ic_statistics"
-                        app:drawableTint="?attr/colorPrimary" />
-
+                    <!-- 总记录数 -->
                     <LinearLayout
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:baselineAligned="false">
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
 
-                        <!-- 总计 -->
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:id="@+id/tvTotalCount"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:textColor="#2196F3"
+                            tools:text="12" />
 
-                            <TextView
-                                android:id="@+id/tvTotalCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorOnSurface"
-                                tools:text="12" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="总记录"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                                android:textColor="?attr/colorOnSurface" />
-
-                        </LinearLayout>
-
-                        <!-- 未归还 -->
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:text="总记录"
+                            android:textSize="12sp"
+                            android:textColor="#666666" />
 
-                            <TextView
-                                android:id="@+id/tvBorrowedCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorPrimary"
-                                tools:text="3" />
+                    </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="未归还"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                                android:textColor="?attr/colorOnSurface" />
+                    <!-- 未归还 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
 
-                        </LinearLayout>
-
-                        <!-- 逾期 -->
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:id="@+id/tvBorrowedCount"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:textColor="#4CAF50"
+                            tools:text="3" />
 
-                            <TextView
-                                android:id="@+id/tvOverdueCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorError"
-                                tools:text="1" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="已逾期"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                                android:textColor="?attr/colorOnSurface" />
-
-                        </LinearLayout>
-
-                        <!-- 已归还 -->
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:gravity="center">
+                            android:text="未归还"
+                            android:textSize="12sp"
+                            android:textColor="#666666" />
 
-                            <TextView
-                                android:id="@+id/tvReturnedCount"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                                android:textStyle="bold"
-                                android:textColor="?attr/colorPrimary"
-                                tools:text="8" />
+                    </LinearLayout>
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="已归还"
-                                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                                android:textColor="?attr/colorOnSurface" />
+                    <!-- 已逾期 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
 
-                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/tvOverdueCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:textColor="#FF9800"
+                            tools:text="1" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="已逾期"
+                            android:textSize="12sp"
+                            android:textColor="#666666" />
+
+                    </LinearLayout>
+
+                    <!-- 已归还 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/tvReturnedCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:textColor="#4CAF50"
+                            tools:text="8" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="已归还"
+                            android:textSize="12sp"
+                            android:textColor="#666666" />
 
                     </LinearLayout>
 
                 </LinearLayout>
 
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- 操作栏 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"
-                android:gravity="center_vertical">
-
-                <!-- 筛选按钮 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnFilter"
-                    style="@style/Widget.App.Button.Secondary"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:text="全部"
-                    android:textSize="14sp"
-                    app:icon="@drawable/ic_filter_list_24dp"
-                    app:iconSize="18dp"
-                    app:iconPadding="8dp" />
-
-                <Space
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-
-                <!-- 测试提醒按钮 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnTestReminder"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:text="测试提醒"
-                    android:textSize="12sp"
-                    app:icon="@drawable/ic_notification"
-                    app:iconSize="16dp"
-                    app:iconPadding="4dp" />
-
             </LinearLayout>
 
-            <!-- 借还记录列表 -->
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 状态筛选 Chips -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/statusChipGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:chipSpacingHorizontal="8dp">
+
+                <!-- Chips 将在代码中动态添加 -->
+
+            </com.google.android.material.chip.ChipGroup>
+
+        </HorizontalScrollView>
+
+        <!-- 借还列表 -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- 借还列表RecyclerView -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvBorrowList"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"
+                android:layout_height="match_parent"
+                android:padding="8dp"
                 android:clipToPadding="false"
-                android:paddingBottom="80dp"
                 tools:listitem="@layout/item_borrow" />
 
-            <!-- 空状态提示 -->
+            <!-- 空状态视图 -->
             <LinearLayout
                 android:id="@+id/layoutEmpty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_marginBottom="90dp"
+                android:gravity="center_horizontal"
                 android:padding="32dp"
                 android:visibility="gone"
                 tools:visibility="visible">
 
                 <ImageView
-                    android:layout_width="120dp"
-                    android:layout_height="120dp"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
                     android:src="@drawable/ic_inventory_24dp"
-                    android:tint="?attr/colorOnSurface"
-                    android:alpha="0.6" />
+                    android:tint="#CCCCCC"
+                    android:contentDescription="无借还记录" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
                     android:text="暂无借还记录"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                    android:textColor="?attr/colorOnSurface" />
+                    android:textSize="18sp"
+                    android:textColor="#999999"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:text="点击右下角按钮开始添加借出记录"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textAlignment="center" />
+                    android:textSize="14sp"
+                    android:textColor="#CCCCCC"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center" />
 
             </LinearLayout>
 
-        </LinearLayout>
+            <!-- 加载中指示器 -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
 
-    </androidx.core.widget.NestedScrollView>
+        </FrameLayout>
+
+    </LinearLayout>
 
     <!-- 添加借出按钮 -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton

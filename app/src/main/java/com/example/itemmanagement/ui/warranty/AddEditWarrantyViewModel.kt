@@ -184,21 +184,36 @@ class AddEditWarrantyViewModel(
      * 设置选中的物品
      */
     fun setSelectedItem(item: ItemWithDetails?) {
+        android.util.Log.d("AddEditWarrantyVM", "setSelectedItem: ${item?.item?.name}")
         _selectedItem.value = item
+        android.util.Log.d("AddEditWarrantyVM", "setSelectedItem AFTER: ${_selectedItem.value?.item?.name}")
+        // 触发表单验证
+        _isFormValid.value = validateForm()
     }
     
     /**
      * 设置购买日期
      */
     fun setPurchaseDate(date: Date) {
+        android.util.Log.d("AddEditWarrantyVM", "setPurchaseDate: $date")
         _purchaseDate.value = date
+        // 重新计算到期日期
+        calculateWarrantyEndDate()
+        // 触发表单验证
+        _isFormValid.value = validateForm()
     }
     
     /**
      * 设置保修期
      */
     fun setWarrantyPeriodMonths(months: Int) {
+        android.util.Log.d("AddEditWarrantyVM", "setWarrantyPeriodMonths: $months")
         _warrantyPeriodMonths.value = months
+        android.util.Log.d("AddEditWarrantyVM", "setWarrantyPeriodMonths AFTER: ${_warrantyPeriodMonths.value}")
+        // 重新计算到期日期
+        calculateWarrantyEndDate()
+        // 触发表单验证
+        _isFormValid.value = validateForm()
     }
     
     /**
@@ -327,7 +342,7 @@ class AddEditWarrantyViewModel(
     private fun loadAvailableItems() {
         viewModelScope.launch {
             try {
-                itemRepository.getAllItemsWithDetails().collect { items ->
+                itemRepository.getActiveItemsWithDetails().collect { items ->
                     _availableItems.value = items
                 }
             } catch (e: Exception) {
@@ -361,52 +376,64 @@ class AddEditWarrantyViewModel(
     
     /**
      * 设置表单验证逻辑
+     * 注意：现在改为在 setter 中直接触发验证，不再使用 MediatorLiveData
      */
     private fun setupFormValidation() {
-        val mediator = MediatorLiveData<Boolean>()
-        
-        mediator.addSource(_selectedItem) { _isFormValid.value = validateForm() }
-        mediator.addSource(_purchaseDate) { _isFormValid.value = validateForm() }
-        mediator.addSource(_warrantyPeriodMonths) { _isFormValid.value = validateForm() }
+        android.util.Log.d("AddEditWarrantyVM", "setupFormValidation: 初始化验证")
+        // 初始化时验证一次
+        _isFormValid.value = validateForm()
     }
     
     /**
      * 验证表单是否有效
      */
     private fun validateForm(): Boolean {
-        return _selectedItem.value != null &&
-               _purchaseDate.value != null &&
-               _warrantyPeriodMonths.value != null &&
-               _warrantyPeriodMonths.value!! > 0
+        val hasItem = _selectedItem.value != null
+        val hasDate = _purchaseDate.value != null
+        val hasPeriod = _warrantyPeriodMonths.value != null && _warrantyPeriodMonths.value!! > 0
+        
+        val result = hasItem && hasDate && hasPeriod
+        
+        android.util.Log.d("AddEditWarrantyVM", "========== validateForm ==========")
+        android.util.Log.d("AddEditWarrantyVM", "hasItem=$hasItem (${_selectedItem.value?.item?.name})")
+        android.util.Log.d("AddEditWarrantyVM", "hasDate=$hasDate (${_purchaseDate.value})")
+        android.util.Log.d("AddEditWarrantyVM", "hasPeriod=$hasPeriod (${_warrantyPeriodMonths.value})")
+        android.util.Log.d("AddEditWarrantyVM", "结果: $result")
+        android.util.Log.d("AddEditWarrantyVM", "isFormValid.value 将被设置为: $result")
+        android.util.Log.d("AddEditWarrantyVM", "==================================")
+        
+        return result
+    }
+    
+    /**
+     * 计算保修到期日期
+     */
+    private fun calculateWarrantyEndDate() {
+        val purchaseDate = _purchaseDate.value
+        val period = _warrantyPeriodMonths.value
+        
+        android.util.Log.d("AddEditWarrantyVM", "计算保修到期日期: purchaseDate=$purchaseDate, period=$period")
+        
+        if (purchaseDate != null && period != null && period > 0) {
+            val calendar = Calendar.getInstance().apply {
+                time = purchaseDate
+                add(Calendar.MONTH, period)
+            }
+            val endDate = calendar.time
+            android.util.Log.d("AddEditWarrantyVM", "计算结果: $endDate")
+            _warrantyEndDate.value = endDate
+        } else {
+            android.util.Log.d("AddEditWarrantyVM", "计算条件不满足，无法计算")
+        }
     }
     
     /**
      * 设置保修到期日期自动计算
      */
     private fun setupWarrantyEndDateCalculation() {
-        val mediator = MediatorLiveData<Date>()
-        
-        val calculation = {
-            val purchaseDate = _purchaseDate.value
-            val period = _warrantyPeriodMonths.value
-            
-            if (purchaseDate != null && period != null && period > 0) {
-                val calendar = Calendar.getInstance().apply {
-                    time = purchaseDate
-                    add(Calendar.MONTH, period)
-                }
-                calendar.time
-            } else {
-                null
-            }
-        }
-        
-        mediator.addSource(_purchaseDate) { 
-            calculation()?.let { _warrantyEndDate.value = it }
-        }
-        mediator.addSource(_warrantyPeriodMonths) { 
-            calculation()?.let { _warrantyEndDate.value = it }
-        }
+        android.util.Log.d("AddEditWarrantyVM", "setupWarrantyEndDateCalculation: 初始化")
+        // 初始化时计算一次
+        calculateWarrantyEndDate()
     }
     
     /**

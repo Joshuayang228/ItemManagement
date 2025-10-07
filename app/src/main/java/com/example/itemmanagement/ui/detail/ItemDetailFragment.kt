@@ -210,6 +210,12 @@ class ItemDetailFragment : Fragment() {
             android.util.Log.d("ItemDetailFragment", "🔍 价格记录变化: ${records.size} 条")
             updateSourcePriceTracking(records)
         }
+        
+        // 观察保修信息
+        viewModel.warranty.observe(viewLifecycleOwner) { warranty ->
+            android.util.Log.d("ItemDetailFragment", "🔍 保修信息变化: $warranty")
+            updateWarrantyInfo(warranty)
+        }
     }
 
     private fun observeItem() {
@@ -241,7 +247,8 @@ class ItemDetailFragment : Fragment() {
                 productionDateTextView.text = item.productionDate?.let { dateFormat.format(it) } ?: "未设置"
                 openDateTextView.text = item.openDate?.let { dateFormat.format(it) } ?: "未设置"
                 expirationDateTextView.text = item.expirationDate?.let { dateFormat.format(it) } ?: "未设置"
-                warrantyEndDateTextView.text = item.warrantyEndDate?.let { dateFormat.format(it) } ?: "未设置"
+                // 保修信息已移至 WarrantyEntity，由 observeSourceInfo() 中的 warranty 观察者更新
+                // warrantyEndDateTextView.text = item.warrantyEndDate?.let { dateFormat.format(it) } ?: "未设置"
 
                 // 详细信息
                 brandTextView.text = item.brand ?: "未设置"
@@ -251,7 +258,8 @@ class ItemDetailFragment : Fragment() {
                 storeNameTextView.text = item.storeName ?: "未设置"
                 serialNumberTextView.text = item.serialNumber ?: "未设置"
                 shelfLifeTextView.text = buildShelfLifeString(item.shelfLife)
-                warrantyTextView.text = buildWarrantyString(item.warrantyPeriod)
+                // 保修信息已移至 WarrantyEntity，由 observeSourceInfo() 中的 warranty 观察者更新
+                // warrantyTextView.text = buildWarrantyString(item.warrantyPeriod)
                 specificationTextView.text = item.specification ?: "未设置"
                 customNoteTextView.text = item.customNote ?: "无备注"
 
@@ -321,17 +329,32 @@ class ItemDetailFragment : Fragment() {
 
     private fun buildShelfLifeString(shelfLife: Int?): String {
         return if (shelfLife != null && shelfLife > 0) {
-            "${shelfLife}个月"
+            "${shelfLife}天"
         } else {
             "未设置"
         }
     }
-
-    private fun buildWarrantyString(warrantyPeriod: Int?): String {
-        return if (warrantyPeriod != null && warrantyPeriod > 0) {
-            "${warrantyPeriod}个月"
-        } else {
-            "未设置"
+    
+    /**
+     * 更新保修信息显示
+     */
+    private fun updateWarrantyInfo(warranty: com.example.itemmanagement.data.entity.WarrantyEntity?) {
+        binding.apply {
+            if (warranty != null) {
+                // 保修期（转换为天数）
+                val warrantyDays = warranty.warrantyPeriodMonths * 30
+                warrantyTextView.text = "${warranty.warrantyPeriodMonths}个月（约${warrantyDays}天）"
+                warrantyContainer.visibility = View.VISIBLE
+                
+                // 保修到期日期
+                warrantyEndDateTextView.text = dateFormat.format(warranty.warrantyEndDate)
+                warrantyEndContainer.visibility = View.VISIBLE
+            } else {
+                warrantyTextView.text = "未设置"
+                warrantyContainer.visibility = View.GONE
+                warrantyEndDateTextView.text = "未设置"
+                warrantyEndContainer.visibility = View.GONE
+            }
         }
     }
 
@@ -353,8 +376,11 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun updateStatusTag(item: com.example.itemmanagement.data.model.Item) {
+        android.util.Log.d("ItemDetailFragment", "━━━━━ updateStatusTag ━━━━━")
         val statusText = calculateItemStatus(item)
+        android.util.Log.d("ItemDetailFragment", "计算得到的状态文本: $statusText")
         if (statusText != null) {
+            android.util.Log.d("ItemDetailFragment", "显示状态标签: $statusText")
             binding.statusTagView.apply {
                 text = statusText
                 visibility = View.VISIBLE
@@ -366,6 +392,10 @@ class ItemDetailFragment : Fragment() {
                     }
                     "临期" -> {
                         chipBackgroundColor = ContextCompat.getColorStateList(requireContext(), android.R.color.holo_orange_light)
+                        setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
+                    }
+                    "已借出" -> {
+                        chipBackgroundColor = ContextCompat.getColorStateList(requireContext(), android.R.color.holo_purple)
                         setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white))
                     }
                     else -> {
@@ -380,6 +410,19 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun calculateItemStatus(item: com.example.itemmanagement.data.model.Item): String? {
+        android.util.Log.d("ItemDetailFragment", "━━━━━ calculateItemStatus ━━━━━")
+        android.util.Log.d("ItemDetailFragment", "物品名称: ${item.name}")
+        android.util.Log.d("ItemDetailFragment", "物品ID: ${item.id}")
+        android.util.Log.d("ItemDetailFragment", "物品状态: ${item.status}")
+        
+        // 优先检查借出状态
+        if (item.status == com.example.itemmanagement.data.model.ItemStatus.BORROWED) {
+            android.util.Log.d("ItemDetailFragment", "✅ 状态匹配BORROWED，返回'已借出'")
+            return "已借出"
+        }
+        android.util.Log.d("ItemDetailFragment", "状态不是BORROWED，检查过期状态...")
+        
+        // 检查过期状态
         val expirationDate = item.expirationDate ?: return null
         val now = Date()
         val diffInMillis = expirationDate.time - now.time
@@ -394,21 +437,8 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun updateWarrantyProgress(item: com.example.itemmanagement.data.model.Item) {
-        val warrantyEndDate = item.warrantyEndDate
-        val addDate = item.addDate
-
-        if (warrantyEndDate != null && addDate != null) {
-            val now = Date()
-            val totalWarranty = warrantyEndDate.time - addDate.time
-            val usedWarranty = now.time - addDate.time
-            val progress = ((usedWarranty.toFloat() / totalWarranty.toFloat()) * 100).toInt()
-
-            // 保修进度条已在M3样式更新中移除
-            // binding.warrantyProgressBar.progress = progress.coerceIn(0, 100)
-            // binding.warrantyProgressContainer.visibility = View.VISIBLE
-        } else {
-            // binding.warrantyProgressContainer.visibility = View.GONE
-        }
+        // 保修信息已移至 WarrantyEntity，保修进度通过保修管理查看
+        // 此方法已废弃
     }
 
     private fun updateNoteExpandButton(customNote: String?) {
@@ -426,15 +456,14 @@ class ItemDetailFragment : Fragment() {
             // 基本信息卡片 - 总是显示
             basicInfoCard.visibility = View.VISIBLE
             
-            // 状态卡片
+            // 状态卡片（保修信息已移至 WarrantyEntity）
             statusCard.visibility = if (item.rating != null || item.tags.isNotEmpty() || 
-                                       item.shelfLife != null || item.warrantyPeriod != null ||
+                                       item.shelfLife != null ||
                                        item.season != null || item.openStatus != null) View.VISIBLE else View.GONE
             
-            // 日期信息卡片
+            // 日期信息卡片（保修日期已移至 WarrantyEntity）
             dateCard.visibility = if (item.addDate != null || item.purchaseDate != null || 
-                                     item.productionDate != null || item.expirationDate != null || 
-                                     item.warrantyEndDate != null) View.VISIBLE else View.GONE
+                                     item.productionDate != null || item.expirationDate != null) View.VISIBLE else View.GONE
             
             // 商业信息卡片
             commercialCard.visibility = if (item.brand != null || item.purchaseChannel != null || 
@@ -451,9 +480,9 @@ class ItemDetailFragment : Fragment() {
             categoryContainer.visibility = if (item.category != null || item.subCategory != null) View.VISIBLE else View.GONE
             locationContainer.visibility = if (item.location != null) View.VISIBLE else View.GONE
             
-            // 状态卡片字段
+            // 状态卡片字段（保修信息已移至 WarrantyEntity）
             shelfLifeContainer.visibility = if (item.shelfLife != null && item.shelfLife > 0) View.VISIBLE else View.GONE
-            warrantyContainer.visibility = if (item.warrantyPeriod != null && item.warrantyPeriod > 0) View.VISIBLE else View.GONE
+            // warrantyContainer.visibility = if (item.warrantyPeriod != null && item.warrantyPeriod > 0) View.VISIBLE else View.GONE
             seasonContainer.visibility = if (item.season != null) View.VISIBLE else View.GONE
             openStatusContainer.visibility = if (item.openStatus != null) View.VISIBLE else View.GONE
             ratingContainer.visibility = if (item.rating != null) View.VISIBLE else View.GONE
@@ -464,7 +493,8 @@ class ItemDetailFragment : Fragment() {
             productionDateContainer.visibility = if (item.productionDate != null) View.VISIBLE else View.GONE
             openDateContainer.visibility = if (item.openDate != null) View.VISIBLE else View.GONE
             expirationDateContainer.visibility = if (item.expirationDate != null) View.VISIBLE else View.GONE
-            warrantyEndContainer.visibility = if (item.warrantyEndDate != null) View.VISIBLE else View.GONE
+            // 保修日期已移至 WarrantyEntity
+            // warrantyEndContainer.visibility = if (item.warrantyEndDate != null) View.VISIBLE else View.GONE
             
             // 商业信息卡片字段
             brandContainer.visibility = if (item.brand != null) View.VISIBLE else View.GONE

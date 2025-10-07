@@ -56,36 +56,18 @@ class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewMod
         // 智能助手功能组
         val smartAssistantFunctions = listOf(
             FunctionCard(
-                id = "recurring_reminders",
-                title = "周期提醒",
-                description = "到期提醒、库存预警、自定义规则设置",
-                iconResId = com.example.itemmanagement.R.drawable.ic_calendar,
-                type = FunctionCard.Type.REMINDER
-            ),
-            FunctionCard(
                 id = "warranty_management",
                 title = "保修管理",
                 description = "管理保修期、上传凭证、到期提醒",
                 iconResId = com.example.itemmanagement.R.drawable.ic_settings,
                 type = FunctionCard.Type.WARRANTY
-            )
-        )
-
-        // 实用工具功能组
-        val utilitiesFunctions = listOf(
+            ),
             FunctionCard(
                 id = "lending_tracker",
                 title = "借还管理",
                 description = "记录借出归还、联系人管理",
                 iconResId = com.example.itemmanagement.R.drawable.ic_list,
                 type = FunctionCard.Type.LENDING
-            ),
-            FunctionCard(
-                id = "data_backup",
-                title = "数据导出",
-                description = "备份数据、CSV导出、迁移同步",
-                iconResId = com.example.itemmanagement.R.drawable.ic_save,
-                type = FunctionCard.Type.BACKUP
             )
         )
 
@@ -103,13 +85,6 @@ class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewMod
                 description = "主动帮助管理和决策",
                 iconResId = com.example.itemmanagement.R.drawable.ic_star,
                 functions = smartAssistantFunctions
-            ),
-            FunctionSection(
-                id = "utilities",
-                title = "实用工具",
-                description = "解决特定场景问题",
-                iconResId = com.example.itemmanagement.R.drawable.ic_settings,
-                functions = utilitiesFunctions
             )
         )
 
@@ -167,23 +142,13 @@ class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewMod
             }
             
             // 智能助手类
-            "recurring_reminders" -> {
-                // 导航到到期提醒页面，查看即将过期的物品
-                _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_expiration_reminder
-            }
             "warranty_management" -> {
                 // 导航到保修管理页面，管理保修信息和提醒
                 _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_warranty_list
             }
-            
-            // 实用工具类
             "lending_tracker" -> {
                 // 导航到借还管理页面，记录借出借入
                 _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_borrow_list
-            }
-            "data_backup" -> {
-                // 导航到数据导出页面
-                _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_data_export
             }
         }
     }

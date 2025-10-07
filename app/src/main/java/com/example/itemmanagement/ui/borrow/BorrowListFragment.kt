@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -15,6 +16,7 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.data.dao.BorrowWithItemInfo
 import com.example.itemmanagement.data.entity.BorrowStatus
 import com.example.itemmanagement.databinding.FragmentBorrowListBinding
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -48,6 +50,7 @@ class BorrowListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         setupRecyclerView()
+        setupStatusChips()
         setupButtons()
         observeViewModel()
     }
@@ -68,14 +71,14 @@ class BorrowListFragment : Fragment() {
     private fun setupRecyclerView() {
         borrowAdapter = BorrowAdapter(
             onItemClick = { borrow ->
-                // 点击查看详情（暂时显示Toast）
-                Toast.makeText(requireContext(), "查看 ${borrow.itemName} 的借还详情", Toast.LENGTH_SHORT).show()
+                // 跳转到编辑页面
+                findNavController().navigate(
+                    R.id.action_borrow_list_to_add_borrow,
+                    bundleOf("borrowId" to borrow.id)
+                )
             },
-            onReturnClick = { borrow ->
-                showReturnConfirmDialog(borrow)
-            },
-            onMoreClick = { borrow ->
-                showMoreOptionsDialog(borrow)
+            onMoreClick = { view, borrow ->
+                showPopupMenu(view, borrow)
             }
         )
         
@@ -86,22 +89,109 @@ class BorrowListFragment : Fragment() {
     }
 
     /**
+     * 设置状态筛选 Chips
+     */
+    private fun setupStatusChips() {
+        val statusOptions = listOf(
+            "全部" to null,
+            "已借出" to BorrowStatus.BORROWED,
+            "已归还" to BorrowStatus.RETURNED,
+            "已逾期" to BorrowStatus.OVERDUE
+        )
+        
+        statusOptions.forEach { (label, status) ->
+            val chip = Chip(requireContext()).apply {
+                text = label
+                isCheckable = true
+                isChecked = status == null // "全部" 默认选中
+                
+                // 使用 Material 3 颜色状态
+                val colorStateList = android.content.res.ColorStateList(
+                    arrayOf(
+                        intArrayOf(android.R.attr.state_checked),  // 选中状态
+                        intArrayOf(-android.R.attr.state_checked)  // 未选中状态
+                    ),
+                    intArrayOf(
+                        androidx.core.content.ContextCompat.getColor(
+                            requireContext(),
+                            com.google.android.material.R.color.material_dynamic_secondary90
+                        ),  // 选中背景色（M3 浅色）
+                        android.graphics.Color.TRANSPARENT  // 未选中透明
+                    )
+                )
+                chipBackgroundColor = colorStateList
+                
+                // 描边样式
+                val strokeColorStateList = android.content.res.ColorStateList(
+                    arrayOf(
+                        intArrayOf(android.R.attr.state_checked),
+                        intArrayOf(-android.R.attr.state_checked)
+                    ),
+                    intArrayOf(
+                        android.graphics.Color.TRANSPARENT,  // 选中时无描边
+                        androidx.core.content.ContextCompat.getColor(
+                            requireContext(),
+                            com.google.android.material.R.color.material_dynamic_neutral_variant50
+                        )  // 未选中时描边
+                    )
+                )
+                chipStrokeColor = strokeColorStateList
+                chipStrokeWidth = 2f
+                
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                
+                setOnClickListener {
+                    if (status == null) {
+                        // 点击"全部"，清除所有筛选
+                        viewModel.clearFilter()
+                        updateChipStates(null)
+                    } else {
+                        // 切换状态筛选
+                        val currentStatuses = viewModel.selectedStatuses.value?.toMutableSet() ?: mutableSetOf()
+                        if (isChecked) {
+                            currentStatuses.add(status)
+                        } else {
+                            currentStatuses.remove(status)
+                        }
+                        viewModel.setStatusFilters(currentStatuses)
+                        updateChipStates(currentStatuses)
+                    }
+                }
+            }
+            binding.statusChipGroup.addView(chip)
+        }
+    }
+    
+    /**
+     * 更新 Chip 选中状态
+     */
+    private fun updateChipStates(selectedStatuses: Set<BorrowStatus>?) {
+        val statusOptions = listOf(
+            null, // 全部
+            BorrowStatus.BORROWED,
+            BorrowStatus.RETURNED,
+            BorrowStatus.OVERDUE
+        )
+        
+        for (i in 0 until binding.statusChipGroup.childCount) {
+            val chip = binding.statusChipGroup.getChildAt(i) as? Chip ?: continue
+            val status = statusOptions.getOrNull(i)
+            
+            chip.isChecked = if (selectedStatuses == null || selectedStatuses.isEmpty()) {
+                status == null // 没有筛选时，"全部" 选中
+            } else {
+                status != null && status in selectedStatuses
+            }
+        }
+    }
+    
+    /**
      * 设置按钮点击事件
      */
     private fun setupButtons() {
         // 添加借出记录
         binding.fabAddBorrow.setOnClickListener {
             findNavController().navigate(R.id.action_borrow_list_to_add_borrow)
-        }
-        
-        // 筛选按钮
-        binding.btnFilter.setOnClickListener {
-            showFilterDialog()
-        }
-        
-        // 测试提醒按钮
-        binding.btnTestReminder.setOnClickListener {
-            viewModel.testBorrowReminders()
         }
     }
 
@@ -133,15 +223,9 @@ class BorrowListFragment : Fragment() {
             }
         }
         
-        // 观察筛选状态
-        viewModel.selectedStatus.observe(viewLifecycleOwner) { status ->
-            val filterText = when (status) {
-                null -> "全部"
-                BorrowStatus.BORROWED -> "已借出"
-                BorrowStatus.RETURNED -> "已归还"
-                BorrowStatus.OVERDUE -> "已逾期"
-            }
-            binding.btnFilter.text = filterText
+        // 观察筛选状态，更新 Chip 状态
+        viewModel.selectedStatuses.observe(viewLifecycleOwner) { statuses ->
+            updateChipStates(statuses)
         }
         
         // 观察错误消息
@@ -184,36 +268,32 @@ class BorrowListFragment : Fragment() {
     /**
      * 显示更多选项对话框
      */
-    private fun showMoreOptionsDialog(borrow: BorrowWithItemInfo) {
-        val options = mutableListOf<String>()
+    /**
+     * 显示弹出菜单
+     */
+    private fun showPopupMenu(view: View, borrow: BorrowWithItemInfo) {
+        val popup = PopupMenu(requireContext(), view)
+        popup.menuInflater.inflate(R.menu.menu_borrow_item, popup.menu)
         
-        // 根据状态显示不同选项
-        when (borrow.status) {
-            BorrowStatus.BORROWED, BorrowStatus.OVERDUE -> {
-                options.add("归还物品")
-            }
-            BorrowStatus.RETURNED -> {
-                // 已归还的记录暂时只能删除
+        // 根据状态显示/隐藏"归还"选项
+        val returnItem = popup.menu.findItem(R.id.action_return)
+        returnItem.isVisible = borrow.status == BorrowStatus.BORROWED || borrow.status == BorrowStatus.OVERDUE
+        
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_return -> {
+                    showReturnConfirmDialog(borrow)
+                    true
+                }
+                R.id.action_delete -> {
+                    showDeleteConfirmDialog(borrow)
+                    true
+                }
+                else -> false
             }
         }
         
-        options.add("删除记录")
-        
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(borrow.itemName)
-            .setItems(options.toTypedArray()) { _, which ->
-                when {
-                    // 归还物品
-                    options[which] == "归还物品" -> {
-                        showReturnConfirmDialog(borrow)
-                    }
-                    // 删除记录
-                    options[which] == "删除记录" -> {
-                        showDeleteConfirmDialog(borrow)
-                    }
-                }
-            }
-            .show()
+        popup.show()
     }
 
     /**
@@ -230,26 +310,6 @@ class BorrowListFragment : Fragment() {
             .show()
     }
 
-    /**
-     * 显示筛选对话框
-     */
-    private fun showFilterDialog() {
-        val options = viewModel.getFilterOptions()
-        val optionNames = options.map { it.name }.toTypedArray()
-        val currentIndex = options.indexOfFirst { 
-            it.status == viewModel.selectedStatus.value 
-        }.takeIf { it >= 0 } ?: 0
-        
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("筛选借还记录")
-            .setSingleChoiceItems(optionNames, currentIndex) { dialog, which ->
-                val selectedOption = options[which]
-                viewModel.setStatusFilter(selectedOption.status)
-                dialog.dismiss()
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
 
     /**
      * 刷新数据

@@ -19,13 +19,14 @@
         android:gravity="center_vertical">
 
         <!-- 用户头像 -->
-        <ImageView
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/ivUserAvatar"
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:src="@drawable/ic_person_placeholder"
-            android:background="@drawable/circle_background"
-            android:scaleType="centerCrop" />
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.App.CircleImageView"
+            android:contentDescription="用户头像" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -39,50 +40,33 @@
                 android:id="@+id/tvNickname"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceHeadline5"
+                android:textSize="20sp"
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold"
                 tools:text="物品管家用户" />
 
-            <!-- 等级信息 -->
-            <LinearLayout
+            <!-- 用户ID -->
+            <TextView
+                android:id="@+id/tvUserId"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_marginTop="6dp"
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="用户ID：123456789" />
 
-                <TextView
-                    android:id="@+id/tvLevelTitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/level_badge_background"
-                    android:padding="6dp"
-                    android:textAppearance="?attr/textAppearanceCaption"
-                    android:textColor="@android:color/white"
-                    android:textStyle="bold"
-                    tools:text="LV.5 管理高手" />
-
-                <TextView
-                    android:id="@+id/tvExperience"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="1350/1500 EXP" />
-
-            </LinearLayout>
-
-            <!-- 经验进度条 -->
-            <ProgressBar
-                android:id="@+id/progressExperience"
-                style="@android:style/Widget.ProgressBar.Horizontal"
+            <!-- 个性签名 -->
+            <TextView
+                android:id="@+id/tvSignature"
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:layout_marginTop="8dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
                 android:layout_marginEnd="16dp"
-                tools:progress="75" />
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:maxLines="2"
+                android:ellipsize="end"
+                tools:text="这是一段个性签名，展示用户的个人风格" />
 
         </LinearLayout>
 

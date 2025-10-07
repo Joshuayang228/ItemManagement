@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/cardView"
     style="@style/Widget.App.Card.ListItem"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    app:strokeWidth="1dp"
-    app:strokeColor="?attr/colorOutlineVariant">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,191 +12,187 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- 物品图片 -->
-        <ImageView
-            android:id="@+id/ivItemPhoto"
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:scaleType="centerCrop"
-            android:background="@drawable/rounded_corner_background"
-            tools:src="@drawable/ic_image_placeholder" />
+        <!-- 左侧物品图片 -->
+        <FrameLayout
+            android:layout_width="90dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="16dp">
 
-        <!-- 主要内容 -->
+            <ImageView
+                android:id="@+id/ivItemPhoto"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:background="@drawable/rounded_corner_background"
+                android:contentDescription="物品图片"
+                tools:src="@drawable/ic_image_placeholder" />
+
+        </FrameLayout>
+
+        <!-- 主要内容区域 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="16dp"
             android:orientation="vertical">
 
-            <!-- 物品信息区域 -->
+            <!-- 顶部：物品名称和状态 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical">
 
                 <TextView
                     android:id="@+id/tvItemName"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                    android:textSize="16sp"
                     android:textStyle="bold"
+                    android:textColor="?attr/colorOnSurface"
                     android:maxLines="1"
                     android:ellipsize="end"
-                    tools:text="iPhone 13" />
+                    tools:text="测试物品 622" />
 
                 <TextView
                     android:id="@+id/tvStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                    android:background="@drawable/rounded_background"
+                    android:backgroundTint="?attr/colorSuccessContainer"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:textSize="11sp"
+                    android:textColor="?attr/colorSuccess"
                     android:textStyle="bold"
-                    tools:text="还剩 3天" />
+                    tools:text="已借出" />
 
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tvItemCategory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="电子设备" />
-
-                <TextView
-                    android:id="@+id/tvItemBrand"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                <ImageView
+                    android:id="@+id/btnMore"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_more_vert_24dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:tint="?attr/colorOnSurfaceVariant"
                     android:layout_marginStart="8dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="Apple" />
+                    android:contentDescription="更多" />
 
             </LinearLayout>
 
-            <!-- 借用人信息 -->
+            <!-- 借用人信息行 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical">
+                android:layout_marginBottom="4dp">
 
                 <ImageView
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@drawable/ic_profile"
-                    android:tint="?attr/colorOnSurface" />
+                    android:tint="#666666"
+                    android:layout_marginEnd="4dp"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="借用人" />
 
                 <TextView
                     android:id="@+id/tvBorrowerName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="张三" />
+                    android:textSize="13sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="sss" />
 
                 <TextView
                     android:id="@+id/tvBorrowerContact"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                    android:textColor="?attr/colorOnSurface"
-                    tools:text="138****1234" />
+                    android:textSize="13sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    tools:text="111234444223" />
 
             </LinearLayout>
 
-            <!-- 时间信息 -->
+            <!-- 借出和归还信息行 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical">
+                android:layout_marginBottom="4dp">
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_calendar_24dp"
+                    android:tint="#666666"
+                    android:layout_marginEnd="4dp"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="借出日期" />
 
                 <TextView
                     android:id="@+id/tvBorrowDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="借出：2025-10-06" />
+
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                    android:textColor="?attr/colorOnSurface"
-                    android:drawablePadding="4dp"
-                    app:drawableStartCompat="@drawable/ic_calendar"
-                    app:drawableTint="?attr/colorOnSurface"
-                    tools:text="借出：2024-01-01" />
+                    android:layout_weight="1" />
+
+            </LinearLayout>
+
+            <!-- 预计归还信息行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/ivReturnDateIcon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_schedule_24dp"
+                    android:tint="#666666"
+                    android:layout_marginEnd="4dp"
+                    android:layout_gravity="center_vertical"
+                    android:contentDescription="归还日期" />
 
                 <TextView
                     android:id="@+id/tvExpectedReturnDate"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                    android:textColor="?attr/colorOnSurface"
-                    android:drawablePadding="4dp"
-                    app:drawableStartCompat="@drawable/ic_schedule_24dp"
-                    app:drawableTint="?attr/colorOnSurface"
-                    tools:text="应还：2024-01-15" />
+                    android:textSize="13sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="应还：2025-10-13" />
+
+                <TextView
+                    android:id="@+id/tvRemainingDays"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_background"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:paddingTop="2dp"
+                    android:paddingBottom="2dp"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    tools:text="还剩6天" />
 
             </LinearLayout>
-
-            <!-- 备注信息 -->
-            <TextView
-                android:id="@+id/tvNotes"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                android:textColor="?attr/colorOnSurface"
-                android:background="@drawable/rounded_corner_background"
-                android:padding="8dp"
-                android:maxLines="2"
-                android:ellipsize="end"
-                android:visibility="gone"
-                tools:text="借用原因：工作需要"
-                tools:visibility="visible" />
-
-        </LinearLayout>
-
-        <!-- 操作按钮区域 -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginStart="8dp"
-            android:gravity="center_horizontal">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnReturn"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="归还"
-                android:textSize="12sp"
-                app:icon="@drawable/ic_check"
-                app:iconSize="16dp"
-                app:iconPadding="4dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnMore"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="40dp"
-                android:layout_height="36dp"
-                android:layout_marginTop="4dp"
-                app:icon="@drawable/ic_more_vert_24dp"
-                app:iconSize="18dp"
-                app:iconPadding="0dp"
-                app:iconTint="?attr/colorOnSurface" />
 
         </LinearLayout>
 

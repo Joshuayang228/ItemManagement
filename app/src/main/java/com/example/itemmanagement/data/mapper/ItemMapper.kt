@@ -66,6 +66,12 @@ fun Item.toItemEntity(locationId: Long? = null): UnifiedItemEntity {
         brand = brand,
         specification = specification,
         customNote = customNote,
+        // 迁移的字段（从InventoryDetail/ShoppingDetail迁移到UnifiedItem）
+        capacity = capacity,
+        capacityUnit = capacityUnit,
+        rating = rating,
+        season = season,
+        serialNumber = serialNumber,
         createdDate = addDate,
         updatedDate = Date()
     )
@@ -127,8 +133,9 @@ fun ItemWithDetails.toItem(): Item {
         totalPriceUnit = inventoryDetail?.totalPriceUnit,
         purchaseDate = inventoryDetail?.purchaseDate,
         shelfLife = inventoryDetail?.shelfLife,
-        warrantyPeriod = inventoryDetail?.warrantyPeriod,
-        warrantyEndDate = inventoryDetail?.warrantyEndDate,
+        // warrantyPeriod 和 warrantyEndDate 已移至 WarrantyEntity
+        warrantyPeriod = null,
+        warrantyEndDate = null,
         serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
         isHighTurnover = inventoryDetail?.isHighTurnover ?: false,
         photos = photos?.map { 

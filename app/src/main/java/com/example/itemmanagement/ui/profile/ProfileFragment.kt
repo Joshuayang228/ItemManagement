@@ -126,6 +126,7 @@ class ProfileFragment : Fragment() {
     private fun handleMenuItemClick(menuId: String) {
         when (menuId) {
             "recycle_bin" -> navigateToRecycleBin()
+            "data_export" -> navigateToDataExport()
             "app_settings" -> navigateToAppSettings()
             "donation" -> navigateToDonation()
         }
@@ -169,7 +170,7 @@ class ProfileFragment : Fragment() {
      */
     private fun navigateToDataExport() {
         try {
-            findNavController().navigate(R.id.action_function_to_data_export)
+            findNavController().navigate(R.id.action_profile_to_data_export)
         } catch (e: Exception) {
             Toast.makeText(context, "数据导出功能开发中", Toast.LENGTH_SHORT).show()
         }

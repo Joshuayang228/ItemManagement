@@ -2,6 +2,9 @@ package com.example.itemmanagement.ui.edit
 
 import androidx.lifecycle.viewModelScope
 import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.repository.WarrantyRepository
+import com.example.itemmanagement.data.entity.WarrantyEntity
+import com.example.itemmanagement.data.entity.WarrantyStatus
 import com.example.itemmanagement.data.relation.ItemWithDetails
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.data.mapper.toItemEntity
@@ -26,7 +29,8 @@ import android.net.Uri
 class EditItemViewModel(
     repository: UnifiedItemRepository,
     cacheViewModel: ItemStateCacheViewModel,
-    private val itemId: Long
+    private val itemId: Long,
+    private val warrantyRepository: WarrantyRepository? = null  // 保修仓库（可选）
 ) : BaseItemViewModel(repository, cacheViewModel) {
 
     // 保存原始物品数据，用于保持某些字段不变
@@ -34,6 +38,7 @@ class EditItemViewModel(
 
     init {
         Log.d("EditItemViewModel", "=== 初始化编辑ViewModel，物品ID: $itemId ===")
+        Log.d("EditItemViewModel", "📦 WarrantyRepository状态: ${if (warrantyRepository != null) "已注入✅" else "未注入❌"}")
         
         // 初始化字段属性
         initializeDefaultFieldProperties()
@@ -139,6 +144,9 @@ class EditItemViewModel(
             Log.d("EditItemViewModel", "准备更新物品: itemId=$itemId, inventoryDetail=${inventoryDetail != null}, photos=${photoEntities.size}, tags=${tagEntities.size}, location=${locationEntity != null}")
             repository.updateItemWithDetails(itemWithDetails)
             
+            // 保存或更新保修信息（如果有）
+            saveOrUpdateWarrantyInfo()
+            
             // 清除缓存
             clearStateAndCache()
             
@@ -163,7 +171,29 @@ class EditItemViewModel(
                     // 将ItemWithDetails转换为Item对象
                     val item = itemWithDetails.toItem()
                     Log.d("EditItemViewModel", "找到物品: ${item.name}, 数量: ${item.quantity}, 标签数: ${item.tags.size}, 照片数: ${item.photos.size}")
-                    loadItemData(item)
+                    
+                    // 加载保修信息
+                    Log.d("EditItemViewModel", "🔍 开始加载保修信息...")
+                    val warranty = if (warrantyRepository != null) {
+                        try {
+                            warrantyRepository.getWarrantyByItemId(itemId)
+                        } catch (e: Exception) {
+                            Log.e("EditItemViewModel", "❌ 加载保修信息失败", e)
+                            null
+                        }
+                    } else {
+                        Log.w("EditItemViewModel", "⚠️ WarrantyRepository未注入，无法加载保修信息")
+                        null
+                    }
+                    
+                    if (warranty != null) {
+                        Log.d("EditItemViewModel", "✅ 找到保修信息: ${warranty.warrantyPeriodMonths}个月, 到期: ${warranty.warrantyEndDate}")
+                    } else {
+                        Log.d("EditItemViewModel", "ℹ️ 无保修信息")
+                    }
+                    
+                    // 加载物品数据和保修信息到字段
+                    loadItemData(item, warranty)
                     
                     // 加载照片到UI
                     if (item.photos.isNotEmpty()) {
@@ -217,8 +247,9 @@ class EditItemViewModel(
     /**
      * 将物品数据填充到表单字段中
      */
-    private fun loadItemData(item: Item) {
+    private fun loadItemData(item: Item, warranty: WarrantyEntity? = null) {
         Log.d("EditItemViewModel", "开始加载物品数据: ${item.name}")
+        Log.d("EditItemViewModel", "保修信息参数: ${if (warranty != null) "有" else "无"}")
         
         // 保存原始物品数据
         originalItem = item
@@ -394,18 +425,35 @@ class EditItemViewModel(
             Log.d("EditItemViewModel", "保质期已设置: $value $unit (原始天数: $it)")
         }}
         
-        // 保修期
-        item.warrantyPeriod?.let { if (it > 0) {
-            val (value, unit) = convertDaysToAppropriateUnit(it)
-            saveFieldValue("保修期", Pair(value, unit))
-            fieldsToShow.add(Field("日期类", "保修期", true, getEditModeOrder("保修期")))
-            Log.d("EditItemViewModel", "保修期已设置: $value $unit (原始天数: $it)")
-        }}
-        
-        // 保修到期时间
-        item.warrantyEndDate?.let { 
-            saveFieldValue("保修到期时间", dateFormat.format(it))
+        // 保修信息 - 从WarrantyEntity加载
+        warranty?.let { 
+            Log.d("EditItemViewModel", "🔧 处理保修信息: ${it.warrantyPeriodMonths}个月")
+            
+            // 保修期 - 转换为Pair格式
+            if (it.warrantyPeriodMonths > 0) {
+                // 判断使用哪个单位
+                val (value, unit) = when {
+                    it.warrantyPeriodMonths % 12 == 0 -> {
+                        // 整年
+                        Pair((it.warrantyPeriodMonths / 12).toString(), "年")
+                    }
+                    else -> {
+                        // 月
+                        Pair(it.warrantyPeriodMonths.toString(), "月")
+                    }
+                }
+                saveFieldValue("保修期", Pair(value, unit))
+                saveFieldValue("保修期_unit", unit)
+                fieldsToShow.add(Field("日期类", "保修期", true, getEditModeOrder("保修期")))
+                Log.d("EditItemViewModel", "✅ 保修期已设置: $value $unit")
+            }
+            
+            // 保修到期时间
+            saveFieldValue("保修到期时间", dateFormat.format(it.warrantyEndDate))
             fieldsToShow.add(Field("日期类", "保修到期时间", true, getEditModeOrder("保修到期时间")))
+            Log.d("EditItemViewModel", "✅ 保修到期时间已设置: ${dateFormat.format(it.warrantyEndDate)}")
+        } ?: run {
+            Log.d("EditItemViewModel", "ℹ️ 无保修信息需要加载")
         }
         
         // 标签处理
@@ -467,7 +515,8 @@ class EditItemViewModel(
         val expirationDate = parseDate(getFieldValue("保质过期时间")?.toString())
         val openDate = parseDate(getFieldValue("开封时间")?.toString())
         val purchaseDate = parseDate(getFieldValue("购买日期")?.toString())
-        val warrantyEndDate = parseDate(getFieldValue("保修到期时间")?.toString())
+        // 保修信息已移至 WarrantyEntity
+        // val warrantyEndDate = parseDate(getFieldValue("保修到期时间")?.toString())
         
         // 开封状态
         val openStatus = when (getFieldValue("开封状态")?.toString()) {
@@ -508,15 +557,7 @@ class EditItemViewModel(
             }
         }
         
-        val warrantyPeriod = getFieldValue("保修期")?.let { value ->
-            when (value) {
-                is Pair<*, *> -> {
-                    val (num, unit) = value
-                    convertTodays(num.toString().toIntOrNull() ?: 0, unit.toString())
-                }
-                else -> null
-            }
-        }
+        // 保修信息已移至 WarrantyEntity，不再从字段值读取
         
         return com.example.itemmanagement.data.entity.unified.InventoryDetailEntity(
             itemId = itemId,
@@ -538,8 +579,7 @@ class EditItemViewModel(
             totalPriceUnit = totalPriceUnit,
             purchaseDate = purchaseDate,
             shelfLife = shelfLife,
-            warrantyPeriod = warrantyPeriod,
-            warrantyEndDate = warrantyEndDate,
+            // 保修信息已移至 WarrantyEntity
             isHighTurnover = false,
             createdDate = Date(),
             updatedDate = Date()
@@ -592,7 +632,12 @@ class EditItemViewModel(
             stockWarningThreshold = (getFieldValue("库存预警")?.toString())?.toIntOrNull(),
             purchaseChannel = getFieldValue("购买渠道")?.toString(),
             storeName = getFieldValue("商家名称")?.toString(),
-            season = getFieldValue("季节")?.toString().also {
+            season = when (val seasonValue = getFieldValue("季节")) {
+                is Set<*> -> seasonValue.filterIsInstance<String>().joinToString(",")
+                is Collection<*> -> seasonValue.filterIsInstance<String>().joinToString(",")
+                is String -> seasonValue
+                else -> null
+            }.also {
                 Log.d("EditItemViewModel", "buildItemFromFields - 季节: fieldValue=${getFieldValue("季节")}, result=$it")
             },
             capacity = (getFieldValue("容量")?.toString())?.toDoubleOrNull(),
@@ -600,8 +645,9 @@ class EditItemViewModel(
             totalPrice = (getFieldValue("总价")?.toString())?.toDoubleOrNull(),
             totalPriceUnit = getFieldValue("总价_unit")?.toString() ?: "元",
             shelfLife = getShelfLifeFromField(),
-            warrantyPeriod = getWarrantyPeriodFromField(),
-            warrantyEndDate = parseDate(getFieldValue("保修到期时间")?.toString()),
+            // 保修信息已移至 WarrantyEntity
+            warrantyPeriod = null,
+            warrantyEndDate = null,
             serialNumber = getFieldValue("序列号")?.toString(),
             isHighTurnover = getFieldValue("高周转") as? Boolean ?: false
         )
@@ -718,6 +764,106 @@ class EditItemViewModel(
                 isMain = index == 0,
                 displayOrder = index
             )
+        }
+    }
+    
+    /**
+     * 保存或更新保修信息
+     * ✅ 新架构：直接从fieldValues读取保修信息
+     */
+    private suspend fun saveOrUpdateWarrantyInfo() {
+        Log.d("EditItemViewModel", "🔧 开始检查保修信息...")
+        
+        // 提取保修期
+        val warrantyPeriod = when (val warrantyValue = getFieldValue("保修期")) {
+            is Pair<*, *> -> (warrantyValue.first as? String)?.toIntOrNull()
+            is String -> warrantyValue.toIntOrNull()
+            else -> null
+        }
+        
+        // 提取保修期单位
+        val warrantyUnit = when (val warrantyValue = getFieldValue("保修期")) {
+            is Pair<*, *> -> warrantyValue.second as? String
+            else -> getFieldValue("保修期_unit") as? String
+        } ?: "月"
+        
+        // 提取保修到期日期
+        val warrantyEndDate = parseDate(getFieldValue("保修到期时间")?.toString())
+        
+        // 提取购买日期
+        val purchaseDate = parseDate(getFieldValue("购买日期")?.toString()) ?: Date()
+        
+        Log.d("EditItemViewModel", "🔧 保修信息: period=$warrantyPeriod $warrantyUnit, endDate=$warrantyEndDate")
+        
+        // 检查是否有WarrantyRepository依赖
+        if (warrantyRepository == null) {
+            Log.w("EditItemViewModel", "⚠️ 未提供WarrantyRepository，无法保存保修信息")
+            return
+        }
+        
+        try {
+            // 检查是否已存在保修记录
+            val existingWarranty = warrantyRepository.getWarrantyByItemId(itemId)
+            
+            if (warrantyPeriod == null || warrantyPeriod <= 0) {
+                // 如果保修期为空或无效，删除现有保修记录
+                if (existingWarranty != null) {
+                    warrantyRepository.deleteWarranty(existingWarranty)
+                    Log.d("EditItemViewModel", "🗑️ 保修信息已删除")
+                }
+                return
+            }
+            
+            // 转换保修期为月数
+            val warrantyMonths = when (warrantyUnit) {
+                "年" -> warrantyPeriod * 12
+                "月" -> warrantyPeriod
+                "日" -> maxOf(1, warrantyPeriod / 30)
+                else -> warrantyPeriod
+            }
+            
+            // 计算保修到期日期（如果没有手动设置）
+            val calculatedEndDate = warrantyEndDate ?: run {
+                val calendar = Calendar.getInstance().apply {
+                    time = purchaseDate
+                    add(Calendar.MONTH, warrantyMonths)
+                }
+                calendar.time
+            }
+            
+            if (existingWarranty != null) {
+                // 更新现有保修记录
+                val updatedWarranty = existingWarranty.copy(
+                    purchaseDate = purchaseDate,
+                    warrantyPeriodMonths = warrantyMonths,
+                    warrantyEndDate = calculatedEndDate,
+                    status = if (calculatedEndDate.before(Date())) WarrantyStatus.EXPIRED else WarrantyStatus.ACTIVE,
+                    updatedDate = Date()
+                )
+                warrantyRepository.updateWarranty(updatedWarranty)
+                Log.d("EditItemViewModel", "✅ 保修信息更新成功: period=${warrantyMonths}月, endDate=$calculatedEndDate")
+            } else {
+                // 创建新保修记录
+                val warrantyEntity = WarrantyEntity(
+                    itemId = itemId,
+                    purchaseDate = purchaseDate,
+                    warrantyPeriodMonths = warrantyMonths,
+                    warrantyEndDate = calculatedEndDate,
+                    receiptImageUris = null,
+                    notes = "从编辑物品界面创建",
+                    status = if (calculatedEndDate.before(Date())) WarrantyStatus.EXPIRED else WarrantyStatus.ACTIVE,
+                    warrantyProvider = null,
+                    contactInfo = null,
+                    createdDate = Date(),
+                    updatedDate = Date()
+                )
+                warrantyRepository.insertWarranty(warrantyEntity)
+                Log.d("EditItemViewModel", "✅ 保修信息创建成功: period=${warrantyMonths}月, endDate=$calculatedEndDate")
+            }
+            
+        } catch (e: Exception) {
+            Log.e("EditItemViewModel", "❌ 保修信息保存失败，但不影响物品更新", e)
+            // 不影响主流程，仅记录错误
         }
     }
     

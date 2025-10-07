@@ -59,13 +59,13 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="总保修数"
+                            android:text="总记录"
                             android:textSize="12sp"
                             android:textColor="#666666" />
 
                     </LinearLayout>
 
-                    <!-- 有效保修 -->
+                    <!-- 保修中 -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -86,7 +86,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="有效保修"
+                            android:text="保修中"
                             android:textSize="12sp"
                             android:textColor="#666666" />
 
@@ -119,33 +119,61 @@
 
                     </LinearLayout>
 
+                    <!-- 已过期 -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/expiredWarrantyCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="24sp"
+                            android:textStyle="bold"
+                            android:textColor="#F44336"
+                            tools:text="5" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="已过期"
+                            android:textSize="12sp"
+                            android:textColor="#666666" />
+
+                    </LinearLayout>
+
                 </LinearLayout>
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 筛选栏 -->
-        <LinearLayout
+        <!-- 状态筛选 Chips -->
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:paddingTop="0dp"
-            android:gravity="end">
+            android:scrollbars="none"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
-            <!-- 筛选按钮 -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/filterButton"
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/statusChipGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="筛选状态"
-                android:textSize="14sp"
-                app:icon="@drawable/ic_filter_list_24dp"
-                app:iconSize="18dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                app:singleLine="true"
+                app:chipSpacingHorizontal="8dp">
 
-        </LinearLayout>
+                <!-- Chips 将在代码中动态添加 -->
+
+            </com.google.android.material.chip.ChipGroup>
+
+        </HorizontalScrollView>
 
         <!-- 保修列表 -->
         <FrameLayout
@@ -166,9 +194,11 @@
             <LinearLayout
                 android:id="@+id/emptyStateLayout"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_marginBottom="90dp"
+                android:gravity="center_horizontal"
                 android:padding="32dp"
                 android:visibility="gone"
                 tools:visibility="visible">

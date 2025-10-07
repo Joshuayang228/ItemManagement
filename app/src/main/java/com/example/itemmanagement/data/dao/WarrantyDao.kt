@@ -104,7 +104,8 @@ interface WarrantyDao {
             w.id, w.itemId, w.purchaseDate, w.warrantyPeriodMonths, w.warrantyEndDate,
             w.receiptImageUris, w.notes, w.status, w.warrantyProvider, w.contactInfo,
             w.createdDate, w.updatedDate,
-            i.name as itemName, i.brand, i.category
+            i.name as itemName, i.brand, i.category,
+            (SELECT uri FROM photos WHERE itemId = w.itemId LIMIT 1) as firstPhotoUri
         FROM warranties w
         INNER JOIN unified_items i ON w.itemId = i.id
         WHERE w.status = 'ACTIVE'
@@ -165,7 +166,12 @@ interface WarrantyDao {
      * 获取包含物品信息的保修记录
      */
     @Query("""
-        SELECT w.*, i.name as itemName, i.brand, i.category
+        SELECT 
+            w.id, w.itemId, w.purchaseDate, w.warrantyPeriodMonths, w.warrantyEndDate,
+            w.receiptImageUris, w.notes, w.status, w.warrantyProvider, w.contactInfo,
+            w.createdDate, w.updatedDate,
+            i.name as itemName, i.brand, i.category,
+            (SELECT uri FROM photos WHERE itemId = w.itemId LIMIT 1) as firstPhotoUri
         FROM warranties w
         INNER JOIN unified_items i ON w.itemId = i.id
         ORDER BY w.warrantyEndDate ASC
@@ -224,5 +230,6 @@ data class WarrantyWithItemInfo(
     val updatedDate: Long,
     val itemName: String,
     val brand: String?,
-    val category: String
+    val category: String,
+    val firstPhotoUri: String?  // 物品的第一张照片URI
 )

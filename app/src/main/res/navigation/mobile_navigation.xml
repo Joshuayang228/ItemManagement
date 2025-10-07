@@ -30,13 +30,6 @@
         <action
             android:id="@+id/action_navigation_home_to_shopping_list"
             app:destination="@id/navigation_shopping_list" />
-        <action
-            android:id="@+id/action_home_to_expiration_reminder"
-            app:destination="@id/navigation_expiration_reminder"
-            app:enterAnim="@anim/material3_container_transform_enter"
-            app:exitAnim="@anim/material3_container_transform_exit"
-            app:popEnterAnim="@anim/material3_container_transform_exit"
-            app:popExitAnim="@anim/material3_container_transform_enter" />
     </fragment>
 
     <fragment
@@ -82,9 +75,6 @@
             android:id="@+id/action_function_to_waste_report"
             app:destination="@id/navigation_waste_report" />
         <action
-            android:id="@+id/action_function_to_expiration_reminder"
-            app:destination="@id/navigation_expiration_reminder" />
-        <action
             android:id="@+id/action_function_to_warranty_list"
             app:destination="@id/navigation_warranty_list" />
         <action
@@ -109,6 +99,9 @@
             android:id="@+id/action_profile_to_recycle_bin"
             app:destination="@id/navigation_recycle_bin" />
         <action
+            android:id="@+id/action_profile_to_data_export"
+            app:destination="@id/navigation_data_export" />
+        <action
             android:id="@+id/action_profile_to_donation"
             app:destination="@id/navigation_donation" />
     </fragment>
@@ -129,6 +122,9 @@
             app:exitAnim="@anim/material3_container_transform_exit"
             app:popEnterAnim="@anim/material3_container_transform_enter"
             app:popExitAnim="@anim/material3_container_transform_exit" />
+        <action
+            android:id="@+id/action_item_calendar_to_reminder_settings"
+            app:destination="@id/navigation_reminder_settings" />
     </fragment>
 
     <fragment
@@ -227,18 +223,6 @@
     </fragment>
 
     <fragment
-        android:id="@+id/navigation_expiration_reminder"
-        android:name="com.example.itemmanagement.ui.expiration.ExpirationReminderFragment"
-        android:label="周期提醒">
-        <action
-            android:id="@+id/action_expiration_reminder_to_item_detail"
-            app:destination="@id/navigation_item_detail" />
-        <action
-            android:id="@+id/action_expiration_reminder_to_reminder_settings"
-            app:destination="@id/navigation_reminder_settings" />
-    </fragment>
-
-    <fragment
         android:id="@+id/navigation_item_list"
         android:name="com.example.itemmanagement.ui.home.ItemListFragment"
         android:label="物品列表">
@@ -307,6 +291,10 @@
         android:label="添加借出记录">
         <argument
             android:name="preSelectedItemId"
+            app:argType="long"
+            android:defaultValue="-1L" />
+        <argument
+            android:name="borrowId"
             app:argType="long"
             android:defaultValue="-1L" />
     </fragment>
@@ -409,7 +397,11 @@
     <fragment
         android:id="@+id/navigation_app_settings"
         android:name="com.example.itemmanagement.ui.profile.settings.AppSettingsFragment"
-        android:label="应用设置" />
+        android:label="应用设置">
+        <action
+            android:id="@+id/action_app_settings_to_reminder_settings"
+            app:destination="@id/navigation_reminder_settings" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_edit_profile"
@@ -418,7 +410,7 @@
 
     <fragment
         android:id="@+id/navigation_recycle_bin"
-        android:name="com.example.itemmanagement.ui.profile.recycle.RecycleBinFragment"
+        android:name="com.example.itemmanagement.ui.recycle.RecycleBinFragment"
         android:label="回收站" />
 
     <fragment

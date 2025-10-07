@@ -98,10 +98,10 @@ class FunctionAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                         itemView.context.getColor(R.color.data_insights_accent)
                     }
                     FunctionCard.Type.REMINDER, 
-                    FunctionCard.Type.WARRANTY -> {
+                    FunctionCard.Type.WARRANTY,
+                    FunctionCard.Type.LENDING -> {
                         itemView.context.getColor(R.color.smart_assistant_accent)
                     }
-                    FunctionCard.Type.LENDING, 
                     FunctionCard.Type.BACKUP, 
                     FunctionCard.Type.UTILITY -> {
                         itemView.context.getColor(R.color.utilities_accent)

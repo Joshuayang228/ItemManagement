@@ -20,250 +20,297 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- 选择物品 -->
+            <!-- 物品信息卡片 -->
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Warranty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOnSurface">
+                android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
 
+                    <!-- 分组标题 -->
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
                         android:text="物品信息"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp"
-                        android:drawablePadding="8dp"
-                        app:drawableStartCompat="@drawable/ic_inventory_24dp"
-                        app:drawableTint="?attr/colorPrimary" />
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilSelectItem"
+                    <!-- 选择物品 -->
+                    <LinearLayout
+                        android:id="@+id/itemSelectionLayout"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="选择要借出的物品 *"
-                        app:boxStrokeColor="?attr/colorPrimary"
-                        app:hintTextColor="?attr/colorPrimary"
-                        app:endIconMode="dropdown_menu"
-                        app:endIconTint="?attr/colorOnSurface">
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
 
-                        <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                            android:id="@+id/actvSelectItem"
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:focusable="false"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                            tools:text="iPhone 13" />
+                            android:layout_weight="1"
+                            android:text="选择物品 *"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
+                        <TextView
+                            android:id="@+id/itemSelectionText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:hint="请选择"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 借用人信息 -->
+            <!-- 借用人信息卡片 -->
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Warranty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOnSurface">
+                android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
 
+                    <!-- 分组标题 -->
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
                         android:text="借用人信息"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp"
-                        android:drawablePadding="8dp"
-                        app:drawableStartCompat="@drawable/ic_profile"
-                        app:drawableTint="?attr/colorPrimary" />
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilBorrowerName"
+                    <!-- 借用人姓名 -->
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hint="借用人姓名 *"
-                        app:boxStrokeColor="?attr/colorPrimary"
-                        app:hintTextColor="?attr/colorPrimary">
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etBorrowerName"
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="120dp"
                             android:layout_height="wrap_content"
+                            android:text="借用人姓名 *"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <EditText
+                            android:id="@+id/etBorrowerName"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:hint="输入姓名"
                             android:inputType="textPersonName"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            android:gravity="end"
                             tools:text="张三" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilBorrowerContact"
+                    <View
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="联系方式（手机号码等）"
-                        app:boxStrokeColor="?attr/colorPrimary"
-                        app:hintTextColor="?attr/colorPrimary">
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="?attr/colorOutlineVariant" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etBorrowerContact"
-                            android:layout_width="match_parent"
+                    <!-- 联系方式 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <TextView
+                            android:layout_width="120dp"
                             android:layout_height="wrap_content"
+                            android:text="联系方式"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <EditText
+                            android:id="@+id/etBorrowerContact"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:hint="手机号码等"
                             android:inputType="phone"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            android:gravity="end"
                             tools:text="138****1234" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 时间信息 -->
+            <!-- 时间安排卡片 -->
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Warranty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOnSurface">
+                android:layout_marginBottom="16dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
 
+                    <!-- 分组标题 -->
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
                         android:text="时间安排"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp"
-                        android:drawablePadding="8dp"
-                        app:drawableStartCompat="@drawable/ic_schedule_24dp"
-                        app:drawableTint="?attr/colorPrimary" />
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilExpectedReturnDate"
+                    <!-- 预计归还日期 -->
+                    <LinearLayout
+                        android:id="@+id/returnDateLayout"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="预计归还日期 *"
-                        app:boxStrokeColor="?attr/colorPrimary"
-                        app:hintTextColor="?attr/colorPrimary"
-                        app:endIconMode="custom"
-                        app:endIconDrawable="@drawable/ic_calendar_24dp"
-                        app:endIconTint="?attr/colorOnSurface">
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etExpectedReturnDate"
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="120dp"
                             android:layout_height="wrap_content"
-                            android:inputType="none"
-                            android:focusable="false"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-                            tools:text="2024-01-15" />
+                            android:text="预计归还日期 *"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
+                        <TextView
+                            android:id="@+id/etExpectedReturnDate"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="点击选择"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:gravity="end"
+                            tools:text="2025-10-13" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 备注信息 -->
+            <!-- 备注信息卡片 -->
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Warranty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="32dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="1dp"
-                app:strokeColor="?attr/colorOnSurface">
+                android:layout_marginBottom="24dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
 
+                    <!-- 分组标题 -->
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
                         android:text="备注信息"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="16dp"
-                        android:drawablePadding="8dp"
-                        app:drawableStartCompat="@drawable/ic_note_24dp"
-                        app:drawableTint="?attr/colorPrimary" />
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilNotes"
+                    <!-- 备注 -->
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="借用原因、注意事项等（可选）"
-                        app:boxStrokeColor="?attr/colorPrimary"
-                        app:hintTextColor="?attr/colorPrimary">
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etNotes"
-                            android:layout_width="match_parent"
+                        <TextView
+                            android:layout_width="120dp"
                             android:layout_height="wrap_content"
-                            android:inputType="textMultiLine"
-                            android:maxLines="3"
-                            android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                            android:text="备注"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <EditText
+                            android:id="@+id/etNotes"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@null"
+                            android:hint="借用原因、注意事项等"
+                            android:inputType="text"
+                            android:maxLines="1"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            android:gravity="end"
                             tools:text="工作需要使用" />
 
-                    </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 确认按钮 -->
+            <!-- 保存按钮 -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnConfirm"
+                style="@style/Widget.Material3.Button"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:layout_marginBottom="16dp"
-                android:text="确认借出"
-                android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="80dp"
+                android:text="保存借出记录"
+                android:textSize="16sp"
                 android:enabled="false"
-                app:icon="@drawable/ic_check"
-                app:iconPadding="8dp" />
-
-            <!-- 必填项说明 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="* 表示必填项"
-                android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                android:textColor="?attr/colorOnSurface"
-                android:gravity="center"
-                android:layout_marginBottom="16dp" />
+                app:cornerRadius="16dp" />
 
         </LinearLayout>
 

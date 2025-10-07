@@ -14,7 +14,9 @@ data class UserProfileEntity(
     val id: Long = 1L, // 单用户应用，固定ID为1
     
     // ==================== 基本信息 ====================
+    val userId: String = generateUserId(), // 9位数字用户ID
     val nickname: String = "物品管家用户",
+    val signature: String? = null,          // 个性签名
     val avatarUri: String? = null,
     val joinDate: Date = Date(),
     
@@ -164,6 +166,22 @@ data class UserProfileEntity(
             7, 8 -> "#FF9800"      // 橙色 - 专家
             9, 10 -> "#F44336"     // 红色 - 大师
             else -> "#607D8B"      // 灰色 - 默认
+        }
+    }
+    
+    companion object {
+        /**
+         * 生成9位数字的用户ID
+         * 算法：使用时间戳的后6位 + 3位随机数，确保唯一性
+         */
+        fun generateUserId(): String {
+            val timestamp = System.currentTimeMillis()
+            // 取时间戳的后6位数字
+            val timePart = (timestamp % 1000000).toString().padStart(6, '0')
+            // 生成3位随机数
+            val randomPart = (100..999).random().toString()
+            // 组合成9位数字
+            return timePart + randomPart
         }
     }
 }

@@ -64,9 +64,9 @@ class MainActivity : AppCompatActivity() {
         // 设置 Material 3 工具栏
         setSupportActionBar(binding.toolbar)
         
-        // 🎯 初始化TopBar状态（默认显示，启用标题）
-        isTopBarVisible = true
-        isTopBarTitleEnabled = true
+        // 🎯 恢复或初始化TopBar状态
+        isTopBarVisible = savedInstanceState?.getBoolean("isTopBarVisible", true) ?: true
+        isTopBarTitleEnabled = savedInstanceState?.getBoolean("isTopBarTitleEnabled", true) ?: true
 
         // 初始化导航组件
         setupNavigation()
@@ -83,6 +83,12 @@ class MainActivity : AppCompatActivity() {
         
         // 注意：新架构不再需要Activity级别的ViewModel和导航监听器
         // 每个Fragment都有自己独立的ViewModel，避免数据污染
+    }
+    
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("isTopBarVisible", isTopBarVisible)
+        outState.putBoolean("isTopBarTitleEnabled", isTopBarTitleEnabled)
     }
     
     /**
@@ -435,8 +441,8 @@ class MainActivity : AppCompatActivity() {
     private fun handleNotificationNavigation() {
         val navigateTo = intent.getStringExtra("navigate_to")
         if (navigateTo == "expiration_reminder") {
-            // 导航到到期提醒页面
-            navController.navigate(R.id.navigation_expiration_reminder)
+            // 导航到物品日历页面
+            navController.navigate(R.id.navigation_item_calendar)
         }
     }
     

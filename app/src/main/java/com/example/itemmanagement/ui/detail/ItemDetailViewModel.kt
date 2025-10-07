@@ -31,6 +31,10 @@ class ItemDetailViewModel(private val repository: UnifiedItemRepository) : ViewM
     // 价格记录（用于来源信息的价格跟踪）
     private val _sourcePriceRecords = MutableLiveData<List<PriceRecord>>()
     val sourcePriceRecords: LiveData<List<PriceRecord>> = _sourcePriceRecords
+    
+    // 保修信息
+    private val _warranty = MutableLiveData<com.example.itemmanagement.data.entity.WarrantyEntity?>()
+    val warranty: LiveData<com.example.itemmanagement.data.entity.WarrantyEntity?> = _warranty
 
     /**
      * 加载物品详情
@@ -56,6 +60,9 @@ class ItemDetailViewModel(private val repository: UnifiedItemRepository) : ViewM
                     
                     // 加载来源信息（检查是否从购物清单转入）
                     loadSourceInfo(id)
+                    
+                    // 加载保修信息
+                    loadWarrantyInfo(id)
                     
                     android.util.Log.d("ItemDetailViewModel", "✅ 物品详情加载成功")
                 } else {
@@ -121,6 +128,21 @@ class ItemDetailViewModel(private val repository: UnifiedItemRepository) : ViewM
         } catch (e: Exception) {
             android.util.Log.e("ItemDetailViewModel", "❌ 加载价格记录失败", e)
             _sourcePriceRecords.value = emptyList()
+        }
+    }
+    
+    /**
+     * 加载保修信息
+     */
+    private suspend fun loadWarrantyInfo(itemId: Long) {
+        try {
+            android.util.Log.d("ItemDetailViewModel", "🔍 开始加载保修信息，itemId: $itemId")
+            val warranty = repository.getWarrantyByItemId(itemId)
+            _warranty.value = warranty
+            android.util.Log.d("ItemDetailViewModel", "✅ 获取到保修信息: ${if (warranty != null) "有效" else "无"}")
+        } catch (e: Exception) {
+            android.util.Log.e("ItemDetailViewModel", "❌ 加载保修信息失败", e)
+            _warranty.value = null
         }
     }
     

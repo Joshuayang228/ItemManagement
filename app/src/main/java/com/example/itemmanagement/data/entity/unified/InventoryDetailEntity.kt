@@ -83,10 +83,9 @@ data class InventoryDetailEntity(
     // val season: String? = null,                 // 季节 -> 已移至UnifiedItemEntity
     // val serialNumber: String? = null,           // 序列号 -> 已移至UnifiedItemEntity
     
-    // === 保修信息（冗余，主要数据在warranties表）===
+    // === 保修信息（已废弃，迁移到warranties表）===
     val shelfLife: Int? = null,                 // 保质期（天数）
-    val warrantyPeriod: Int? = null,            // 保修期（月数）
-    val warrantyEndDate: Date? = null,          // 保修结束日期
+    // warrantyPeriod 和 warrantyEndDate 已迁移至 WarrantyEntity
     
     // === 时间戳 ===
     val createdDate: Date = Date(),             // 创建时间
@@ -170,16 +169,5 @@ data class InventoryDetailEntity(
         } else null
     }
     
-    /**
-     * 检查保修是否即将到期
-     */
-    fun isWarrantyNearExpiration(advanceDays: Int = 30): Boolean {
-        if (warrantyEndDate == null) return false
-        
-        val now = System.currentTimeMillis()
-        val warrantyTime = warrantyEndDate.time
-        val daysUntilExp = (warrantyTime - now) / (1000 * 60 * 60 * 24)
-        
-        return daysUntilExp <= advanceDays && daysUntilExp >= 0
-    }
+    // isWarrantyNearExpiration 方法已移除，保修检查请使用 WarrantyEntity
 }

@@ -15,6 +15,7 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.data.dao.WarrantyWithItemInfo
 import com.example.itemmanagement.data.entity.WarrantyStatus
 import com.example.itemmanagement.databinding.FragmentWarrantyListBinding
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
@@ -48,6 +49,7 @@ class WarrantyListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         setupRecyclerView()
+        setupStatusChips()
         setupButtons()
         observeData()
         
@@ -67,8 +69,8 @@ class WarrantyListFragment : Fragment() {
                     bundleOf("warrantyId" to warranty.id)
                 )
             },
-            onMoreClick = { warranty ->
-                showMoreOptionsDialog(warranty)
+            onDeleteClick = { warranty ->
+                showDeleteConfirmDialog(warranty)
             }
         )
         
@@ -79,17 +81,107 @@ class WarrantyListFragment : Fragment() {
     }
 
     /**
+     * 设置状态筛选 Chips
+     */
+    private fun setupStatusChips() {
+        val statusOptions = listOf(
+            "全部" to null,
+            "保修中" to WarrantyStatus.ACTIVE,
+            "已过期" to WarrantyStatus.EXPIRED
+        )
+        
+        statusOptions.forEach { (label, status) ->
+            val chip = Chip(requireContext()).apply {
+                text = label
+                isCheckable = true
+                isChecked = status == null // "全部" 默认选中
+                
+                // 使用 Material 3 颜色状态
+                val colorStateList = android.content.res.ColorStateList(
+                    arrayOf(
+                        intArrayOf(android.R.attr.state_checked),  // 选中状态
+                        intArrayOf(-android.R.attr.state_checked)  // 未选中状态
+                    ),
+                    intArrayOf(
+                        androidx.core.content.ContextCompat.getColor(
+                            requireContext(),
+                            com.google.android.material.R.color.material_dynamic_secondary90
+                        ),  // 选中背景色（M3 浅色）
+                        android.graphics.Color.TRANSPARENT  // 未选中透明
+                    )
+                )
+                chipBackgroundColor = colorStateList
+                
+                // 描边样式
+                val strokeColorStateList = android.content.res.ColorStateList(
+                    arrayOf(
+                        intArrayOf(android.R.attr.state_checked),
+                        intArrayOf(-android.R.attr.state_checked)
+                    ),
+                    intArrayOf(
+                        android.graphics.Color.TRANSPARENT,  // 选中时无描边
+                        androidx.core.content.ContextCompat.getColor(
+                            requireContext(),
+                            com.google.android.material.R.color.material_dynamic_neutral_variant50
+                        )  // 未选中时描边
+                    )
+                )
+                chipStrokeColor = strokeColorStateList
+                chipStrokeWidth = 2f
+                
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                
+                setOnClickListener {
+                    if (status == null) {
+                        // 点击"全部"，清除所有筛选
+                        viewModel.clearAllFilters()
+                        updateChipStates(null)
+                    } else {
+                        // 切换状态筛选
+                        val currentStatuses = viewModel.filterStatuses.value?.toMutableSet() ?: mutableSetOf()
+                        if (isChecked) {
+                            currentStatuses.add(status)
+                        } else {
+                            currentStatuses.remove(status)
+                        }
+                        viewModel.setStatusFilters(currentStatuses)
+                        updateChipStates(currentStatuses)
+                    }
+                }
+            }
+            binding.statusChipGroup.addView(chip)
+        }
+    }
+    
+    /**
+     * 更新 Chip 选中状态
+     */
+    private fun updateChipStates(selectedStatuses: Set<WarrantyStatus>?) {
+        val statusOptions = listOf(
+            null, // 全部
+            WarrantyStatus.ACTIVE,
+            WarrantyStatus.EXPIRED
+        )
+        
+        for (i in 0 until binding.statusChipGroup.childCount) {
+            val chip = binding.statusChipGroup.getChildAt(i) as? Chip ?: continue
+            val status = statusOptions.getOrNull(i)
+            
+            chip.isChecked = if (selectedStatuses == null || selectedStatuses.isEmpty()) {
+                status == null // 没有筛选时，"全部" 选中
+            } else {
+                status != null && status in selectedStatuses
+            }
+        }
+    }
+    
+    /**
      * 设置按钮点击事件
      */
     private fun setupButtons() {
         // 添加保修按钮
         binding.addWarrantyFab.setOnClickListener {
             findNavController().navigate(R.id.action_warranty_list_to_add_edit_warranty)
-        }
-        
-        // 筛选按钮
-        binding.filterButton.setOnClickListener {
-            showFilterDialog()
         }
     }
 
@@ -104,10 +196,11 @@ class WarrantyListFragment : Fragment() {
         }
         
         // 观察保修概览数据
-        viewModel.warrantyOverview.observe(viewLifecycleOwner) { (total, active, nearExpiration) ->
-            binding.totalWarrantyCount.text = total.toString()
-            binding.activeWarrantyCount.text = active.toString()
-            binding.nearExpirationCount.text = nearExpiration.toString()
+        viewModel.warrantyOverview.observe(viewLifecycleOwner) { overview ->
+            binding.totalWarrantyCount.text = overview.total.toString()
+            binding.activeWarrantyCount.text = overview.active.toString()
+            binding.nearExpirationCount.text = overview.nearExpiration.toString()
+            binding.expiredWarrantyCount.text = overview.expired.toString()
         }
         
         // 观察加载状态
@@ -132,9 +225,9 @@ class WarrantyListFragment : Fragment() {
             }
         }
         
-        // 观察当前筛选状态
-        viewModel.filterStatus.observe(viewLifecycleOwner) { status ->
-            updateFilterButtonText(status)
+        // 观察当前筛选状态，更新 Chip 状态
+        viewModel.filterStatuses.observe(viewLifecycleOwner) { statuses ->
+            updateChipStates(statuses)
         }
     }
 
@@ -144,46 +237,6 @@ class WarrantyListFragment : Fragment() {
     private fun updateEmptyState(isEmpty: Boolean) {
         binding.emptyStateLayout.visibility = if (isEmpty) View.VISIBLE else View.GONE
         binding.warrantyRecyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
-    }
-
-    /**
-     * 更新筛选按钮文本
-     */
-    private fun updateFilterButtonText(status: WarrantyStatus?) {
-        val buttonText = when (status) {
-            null -> "筛选状态"
-            WarrantyStatus.ACTIVE -> "保修中"
-            WarrantyStatus.EXPIRED -> "已过期"
-            WarrantyStatus.CLAIMED -> "已报修"
-            WarrantyStatus.VOID -> "已作废"
-        }
-        binding.filterButton.text = buttonText
-    }
-
-    /**
-     * 显示筛选对话框
-     */
-    private fun showFilterDialog() {
-        val statusItems = arrayOf("全部", "保修中", "已过期", "已报修", "已作废")
-        val statusValues = arrayOf(null, WarrantyStatus.ACTIVE, WarrantyStatus.EXPIRED, WarrantyStatus.CLAIMED, WarrantyStatus.VOID)
-        
-        val currentStatus = viewModel.filterStatus.value
-        val currentIndex = statusValues.indexOf(currentStatus).takeIf { it >= 0 } ?: 0
-        
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("筛选保修状态")
-            .setSingleChoiceItems(statusItems, currentIndex) { dialog, which ->
-                viewModel.setStatusFilter(statusValues[which])
-                dialog.dismiss()
-            }
-            .setNegativeButton("取消") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .setNeutralButton("清除筛选") { dialog, _ ->
-                viewModel.clearAllFilters()
-                dialog.dismiss()
-            }
-            .show()
     }
 
     /**

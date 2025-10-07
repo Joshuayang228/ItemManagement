@@ -1,10 +1,10 @@
 package com.example.itemmanagement.ui.borrow
 
+import android.graphics.Color
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -14,7 +14,6 @@ import com.example.itemmanagement.data.dao.BorrowWithItemInfo
 import com.example.itemmanagement.data.entity.BorrowStatus
 import com.example.itemmanagement.databinding.ItemBorrowBinding
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -23,8 +22,7 @@ import java.util.Locale
  */
 class BorrowAdapter(
     private val onItemClick: (BorrowWithItemInfo) -> Unit,
-    private val onReturnClick: (BorrowWithItemInfo) -> Unit,
-    private val onMoreClick: (BorrowWithItemInfo) -> Unit
+    private val onMoreClick: (View, BorrowWithItemInfo) -> Unit
 ) : ListAdapter<BorrowWithItemInfo, BorrowAdapter.BorrowViewHolder>(BorrowDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BorrowViewHolder {
@@ -48,13 +46,6 @@ class BorrowAdapter(
             with(binding) {
                 // 物品信息
                 tvItemName.text = borrow.itemName
-                tvItemCategory.text = borrow.category
-                if (borrow.brand?.isNotBlank() == true) {
-                    tvItemBrand.text = borrow.brand
-                    tvItemBrand.visibility = View.VISIBLE
-                } else {
-                    tvItemBrand.visibility = View.GONE
-                }
 
                 // 加载物品图片
                 if (borrow.photoUri?.isNotBlank() == true) {
@@ -99,20 +90,15 @@ class BorrowAdapter(
                     }
                 }
 
-                // 备注信息
-                if (borrow.notes?.isNotBlank() == true) {
-                    tvNotes.text = borrow.notes
-                    tvNotes.visibility = View.VISIBLE
-                } else {
-                    tvNotes.visibility = View.GONE
-                }
-
                 // 点击事件
                 root.setOnClickListener { onItemClick(borrow) }
-                btnMore.setOnClickListener { onMoreClick(borrow) }
+                btnMore.setOnClickListener { view -> onMoreClick(view, borrow) }
             }
         }
 
+        /**
+         * 设置已借出状态显示
+         */
         private fun setupBorrowedStatus(borrow: BorrowWithItemInfo) {
             with(binding) {
                 // 计算剩余天数
@@ -120,68 +106,131 @@ class BorrowAdapter(
                 val remainingDays = ((borrow.expectedReturnDate - currentTime) / (1000 * 60 * 60 * 24)).toInt()
 
                 when {
-                    remainingDays > 3 -> {
-                        // 还有较多时间
-                        tvStatus.text = "还剩 ${remainingDays} 天"
-                        tvStatus.setTextColor(ContextCompat.getColor(root.context, R.color.color_success))
-                        cardView.setCardBackgroundColor(ContextCompat.getColor(root.context, R.color.color_surface))
+                    remainingDays > 14 -> {
+                        // 时间充足（> 14天）- 绿色
+                        tvStatus.text = "已借出"
+                        tvStatus.setTextColor(Color.parseColor("#4CAF50"))
+                        tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E8"))
+                        
+                        ivReturnDateIcon.setColorFilter(Color.parseColor("#4CAF50"))
+                        tvExpectedReturnDate.setTextColor(Color.parseColor("#4CAF50"))
+                        
+                        tvRemainingDays.text = "还剩${remainingDays}天"
+                        tvRemainingDays.setTextColor(Color.parseColor("#4CAF50"))
+                        tvRemainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#E8F5E8"))
+                        tvRemainingDays.visibility = View.VISIBLE
+                    }
+                    remainingDays in 7..14 -> {
+                        // 提前提醒（7-14天）- 浅橙色
+                        tvStatus.text = "已借出"
+                        tvStatus.setTextColor(Color.parseColor("#FFA726"))
+                        tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFF8E1"))
+                        
+                        ivReturnDateIcon.setColorFilter(Color.parseColor("#FFA726"))
+                        tvExpectedReturnDate.setTextColor(Color.parseColor("#FFA726"))
+                        
+                        tvRemainingDays.text = "还剩${remainingDays}天"
+                        tvRemainingDays.setTextColor(Color.parseColor("#FFA726"))
+                        tvRemainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFF8E1"))
+                        tvRemainingDays.visibility = View.VISIBLE
+                    }
+                    remainingDays in 4..6 -> {
+                        // 注意提醒（4-6天）- 橙色
+                        tvStatus.text = "即将到期"
+                        tvStatus.setTextColor(Color.parseColor("#FF9800"))
+                        tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFF3E0"))
+                        
+                        ivReturnDateIcon.setColorFilter(Color.parseColor("#FF9800"))
+                        tvExpectedReturnDate.setTextColor(Color.parseColor("#FF9800"))
+                        
+                        tvRemainingDays.text = "还剩${remainingDays}天"
+                        tvRemainingDays.setTextColor(Color.parseColor("#FF9800"))
+                        tvRemainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFF3E0"))
+                        tvRemainingDays.visibility = View.VISIBLE
                     }
                     remainingDays in 1..3 -> {
-                        // 即将到期
-                        tvStatus.text = "还剩 ${remainingDays} 天"
-                        tvStatus.setTextColor(ContextCompat.getColor(root.context, R.color.color_warning))
-                        cardView.setCardBackgroundColor(ContextCompat.getColor(root.context, R.color.color_warning_surface))
+                        // 即将到期（1-3天）- 深橙色
+                        tvStatus.text = "即将到期"
+                        tvStatus.setTextColor(Color.parseColor("#F57C00"))
+                        tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFE0B2"))
+                        
+                        ivReturnDateIcon.setColorFilter(Color.parseColor("#F57C00"))
+                        tvExpectedReturnDate.setTextColor(Color.parseColor("#F57C00"))
+                        
+                        tvRemainingDays.text = "还剩${remainingDays}天"
+                        tvRemainingDays.setTextColor(Color.parseColor("#F57C00"))
+                        tvRemainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFE0B2"))
+                        tvRemainingDays.visibility = View.VISIBLE
                     }
                     remainingDays == 0 -> {
-                        // 今天到期
+                        // 今天到期 - 红色
                         tvStatus.text = "今日到期"
-                        tvStatus.setTextColor(ContextCompat.getColor(root.context, R.color.color_error))
-                        cardView.setCardBackgroundColor(ContextCompat.getColor(root.context, R.color.color_error_surface))
+                        tvStatus.setTextColor(Color.parseColor("#F44336"))
+                        tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
+                        
+                        ivReturnDateIcon.setColorFilter(Color.parseColor("#F44336"))
+                        tvExpectedReturnDate.setTextColor(Color.parseColor("#F44336"))
+                        
+                        tvRemainingDays.text = "今日到期"
+                        tvRemainingDays.setTextColor(Color.parseColor("#F44336"))
+                        tvRemainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
+                        tvRemainingDays.visibility = View.VISIBLE
                     }
                     else -> {
-                        // 应该是逾期状态，但这里防御性处理
-                        tvStatus.text = "已逾期 ${-remainingDays} 天"
-                        tvStatus.setTextColor(ContextCompat.getColor(root.context, R.color.color_error))
-                        cardView.setCardBackgroundColor(ContextCompat.getColor(root.context, R.color.color_error_surface))
+                        // 已逾期 - 红色
+                        val overdueDays = -remainingDays
+                        tvStatus.text = "已逾期"
+                        tvStatus.setTextColor(Color.parseColor("#F44336"))
+                        tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
+                        
+                        ivReturnDateIcon.setColorFilter(Color.parseColor("#F44336"))
+                        tvExpectedReturnDate.setTextColor(Color.parseColor("#F44336"))
+                        
+                        tvRemainingDays.text = "逾期${overdueDays}天"
+                        tvRemainingDays.setTextColor(Color.parseColor("#F44336"))
+                        tvRemainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
+                        tvRemainingDays.visibility = View.VISIBLE
                     }
                 }
-
-                // 显示归还按钮
-                btnReturn.visibility = View.VISIBLE
-                btnReturn.setOnClickListener { onReturnClick(borrow) }
             }
         }
 
+        /**
+         * 设置已逾期状态显示
+         */
         private fun setupOverdueStatus(borrow: BorrowWithItemInfo) {
             with(binding) {
                 val currentTime = System.currentTimeMillis()
                 val overdueDays = ((currentTime - borrow.expectedReturnDate) / (1000 * 60 * 60 * 24)).toInt()
 
-                tvStatus.text = "已逾期 ${overdueDays} 天"
-                tvStatus.setTextColor(ContextCompat.getColor(root.context, R.color.color_error))
-                cardView.setCardBackgroundColor(ContextCompat.getColor(root.context, R.color.color_error_surface))
-
-                // 显示归还按钮
-                btnReturn.visibility = View.VISIBLE
-                btnReturn.setOnClickListener { onReturnClick(borrow) }
+                tvStatus.text = "已逾期"
+                tvStatus.setTextColor(Color.parseColor("#F44336"))
+                tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
+                
+                ivReturnDateIcon.setColorFilter(Color.parseColor("#F44336"))
+                tvExpectedReturnDate.setTextColor(Color.parseColor("#F44336"))
+                
+                tvRemainingDays.text = "逾期${overdueDays}天"
+                tvRemainingDays.setTextColor(Color.parseColor("#F44336"))
+                tvRemainingDays.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#FFEBEE"))
+                tvRemainingDays.visibility = View.VISIBLE
             }
         }
 
+        /**
+         * 设置已归还状态显示
+         */
         private fun setupReturnedStatus(borrow: BorrowWithItemInfo) {
             with(binding) {
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                val returnDate = if (borrow.actualReturnDate != null) {
-                    dateFormat.format(Date(borrow.actualReturnDate))
-                } else {
-                    "未知"
-                }
-
-                tvStatus.text = "已归还 ($returnDate)"
-                tvStatus.setTextColor(ContextCompat.getColor(root.context, R.color.color_success))
-                cardView.setCardBackgroundColor(ContextCompat.getColor(root.context, R.color.color_surface))
-
-                // 隐藏归还按钮
-                btnReturn.visibility = View.GONE
+                tvStatus.text = "已归还"
+                tvStatus.setTextColor(Color.parseColor("#9E9E9E"))
+                tvStatus.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#F5F5F5"))
+                
+                ivReturnDateIcon.setColorFilter(Color.parseColor("#9E9E9E"))
+                tvExpectedReturnDate.setTextColor(Color.parseColor("#9E9E9E"))
+                
+                // 已归还不显示剩余天数
+                tvRemainingDays.visibility = View.GONE
             }
         }
     }

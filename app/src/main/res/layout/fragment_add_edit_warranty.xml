@@ -15,335 +15,415 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:paddingBottom="24dp">
 
             <!-- 顶部凭证图片区域 -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/receiptImageCard"
+                style="@style/Widget.App.Card.Warranty.Receipt"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardCornerRadius="8dp"
-                app:cardBackgroundColor="#F5F5F5">
+                android:layout_marginBottom="24dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="8dp">
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="保修凭证"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:textColor="@android:color/black"
-                        android:layout_marginBottom="8dp"
-                        android:layout_marginStart="8dp" />
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle"
+                        android:layout_marginBottom="12dp" />
 
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/receiptImageRecyclerView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:padding="8dp" />
+                        android:clipToPadding="false" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 表单字段区域 -->
-            <LinearLayout
+            <!-- 基本信息分组 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Warranty"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_marginBottom="16dp">
 
-                <!-- 选择物品 -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/itemSelectionLayout"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_inventory_24dp"
-                    app:endIconMode="dropdown_menu"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
+                    android:orientation="vertical"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
 
-                    <AutoCompleteTextView
-                        android:id="@+id/itemSelectionAutoComplete"
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="选择物品"
-                        android:inputType="none"
-                        android:focusable="false"
-                        android:clickable="true" />
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="基本信息"
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle" />
 
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- 选中物品信息预览 -->
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/selectedItemPreviewCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:visibility="gone"
-                    app:cardCornerRadius="8dp"
-                    app:cardElevation="2dp"
-                    tools:visibility="visible">
-
+                    <!-- 选择物品行 -->
                     <LinearLayout
+                        android:id="@+id/itemSelectionLayout"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="56dp"
                         android:orientation="horizontal"
-                        android:padding="12dp">
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                        <ImageView
-                            android:id="@+id/selectedItemImage"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
-                            android:scaleType="centerCrop"
-                            android:background="@drawable/rounded_corner_background"
-                            android:layout_marginEnd="12dp"
-                            android:contentDescription="选中物品图片"
-                            tools:src="@drawable/ic_image_placeholder" />
-
-                        <LinearLayout
+                        <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:layout_gravity="center_vertical">
+                            android:text="选择物品"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/itemSelectionAutoComplete"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:maxWidth="200dp"
+                            android:hint="请选择"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            tools:text="iPhone 14 Pro" />
+
+                    </LinearLayout>
+
+                    <!-- 分割线 -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 购买日期行 -->
+                    <LinearLayout
+                        android:id="@+id/purchaseDateLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="购买日期"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/purchaseDateEditText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="2025-10-06" />
+
+                    </LinearLayout>
+
+                    <!-- 分割线 -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 保修期长度行 -->
+                    <LinearLayout
+                        android:id="@+id/warrantyPeriodLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="保修期长度"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <EditText
+                                android:id="@+id/warrantyPeriodEditText"
+                                android:layout_width="60dp"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:gravity="end"
+                                android:background="@android:color/transparent"
+                                android:inputType="number"
+                                android:hint="0"
+                                android:textColorHint="?attr/colorOutlineVariant"
+                                tools:text="12" />
 
                             <TextView
-                                android:id="@+id/selectedItemName"
-                                android:layout_width="match_parent"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:textSize="16sp"
-                                android:textStyle="bold"
-                                android:textColor="@android:color/black"
-                                android:maxLines="1"
-                                android:ellipsize="end"
-                                tools:text="iPhone 14 Pro" />
-
-                            <TextView
-                                android:id="@+id/selectedItemInfo"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:textSize="13sp"
-                                android:textColor="#666666"
-                                android:maxLines="1"
-                                android:ellipsize="end"
-                                tools:text="数码产品 • Apple" />
+                                android:text=" 个月"
+                                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:layout_marginStart="2dp" />
 
                         </LinearLayout>
 
                     </LinearLayout>
 
-                </com.google.android.material.card.MaterialCardView>
+                    <!-- 分割线 -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="?attr/colorOutlineVariant" />
 
-                <!-- 购买日期 -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/purchaseDateLayout"
+                    <!-- 保修到期日期行 -->
+                    <LinearLayout
+                        android:id="@+id/warrantyEndDateLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="保修到期日期"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:id="@+id/warrantyEndDateEditText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:hint="自动计算"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            tools:text="2026-10-06" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 服务商信息分组 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Warranty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_calendar_24dp"
-                    app:endIconMode="custom"
-                    app:endIconDrawable="@drawable/ic_date_range_24dp"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
+                    android:orientation="vertical"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/purchaseDateEditText"
-                        android:layout_width="match_parent"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:hint="购买日期"
-                        android:inputType="none"
-                        android:focusable="false"
-                        android:clickable="true"
-                        tools:text="2023-01-15" />
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="服务商信息（可选）"
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle" />
 
-                </com.google.android.material.textfield.TextInputLayout>
+                    <!-- 保修服务商行 -->
+                    <LinearLayout
+                        android:id="@+id/warrantyProviderLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
 
-                <!-- 保修期长度 -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/warrantyPeriodLayout"
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="保修服务商"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <EditText
+                            android:id="@+id/warrantyProviderEditText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.5"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:gravity="end"
+                            android:background="@android:color/transparent"
+                            android:inputType="text"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:hint="输入服务商"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            tools:text="官方售后服务" />
+
+                    </LinearLayout>
+
+                    <!-- 分割线 -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginStart="16dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 联系方式行 -->
+                    <LinearLayout
+                        android:id="@+id/contactInfoLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="联系方式"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <EditText
+                            android:id="@+id/contactInfoEditText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.5"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:gravity="end"
+                            android:background="@android:color/transparent"
+                            android:inputType="text"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:hint="输入联系方式"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            tools:text="400-123-4567" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 备注分组 -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Warranty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_schedule_24dp"
-                    app:suffixText="个月"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
+                    android:orientation="vertical"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/warrantyPeriodEditText"
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="备注（可选）"
+                        android:textAppearance="@style/TextAppearance.App.Warranty.SectionTitle" />
+
+                    <!-- 备注行 -->
+                    <LinearLayout
+                        android:id="@+id/notesLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="保修期长度"
-                        android:inputType="number"
-                        android:maxLength="3"
-                        tools:text="12" />
+                        android:minHeight="56dp"
+                        android:orientation="horizontal"
+                        android:gravity="top"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingBottom="12dp">
 
-                </com.google.android.material.textfield.TextInputLayout>
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="备注"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:paddingTop="4dp" />
 
-                <!-- 保修到期日期（自动计算） -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/warrantyEndDateLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_event_24dp"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
+                        <EditText
+                            android:id="@+id/notesEditText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:gravity="end|top"
+                            android:background="@android:color/transparent"
+                            android:inputType="textMultiLine"
+                            android:maxLines="3"
+                            android:hint="输入备注"
+                            android:textColorHint="?attr/colorOutlineVariant"
+                            tools:text="保修期内免费维修，保修卡需妥善保存" />
 
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/warrantyEndDateEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="保修到期日期"
-                        android:inputType="none"
-                        android:focusable="false"
-                        android:enabled="false"
-                        tools:text="2024-01-15" />
+                    </LinearLayout>
 
-                </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
 
-                <!-- 保修服务商 -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/warrantyProviderLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_store_24dp"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/warrantyProviderEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="保修服务商（可选）"
-                        android:inputType="text"
-                        android:maxLines="1"
-                        tools:text="官方售后服务" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- 联系方式 -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/contactInfoLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_phone_24dp"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/contactInfoEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="联系方式（可选）"
-                        android:inputType="text"
-                        android:maxLines="1"
-                        tools:text="400-123-4567" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- 保修状态（编辑模式时显示） -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/warrantyStatusLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:visibility="gone"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_info_24dp"
-                    app:endIconMode="dropdown_menu"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
-
-                    <AutoCompleteTextView
-                        android:id="@+id/warrantyStatusAutoComplete"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="保修状态"
-                        android:inputType="none"
-                        android:focusable="false"
-                        android:clickable="true"
-                        tools:text="保修期内" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <!-- 备注 -->
-                <com.google.android.material.textfield.TextInputLayout
-                    android:id="@+id/notesLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    app:boxBackgroundMode="outline"
-                    app:boxCornerRadiusTopStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:startIconDrawable="@drawable/ic_note_24dp"
-                    app:hintTextAppearance="@style/TextAppearance.Material3.BodyMedium">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/notesEditText"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="备注（可选）"
-                        android:inputType="textMultiLine"
-                        android:maxLines="4"
-                        android:minLines="2"
-                        tools:text="保修期内免费维修，保修卡需妥善保存" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 底部保存按钮 -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/saveButton"
+                style="@style/Widget.Material3.Button"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="16dp"
+                android:layout_height="64dp"
                 android:text="保存保修信息"
                 android:textSize="16sp"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp"
-                app:cornerRadius="8dp" />
+                app:cornerRadius="16dp" />
 
         </LinearLayout>
 
@@ -363,8 +443,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:indeterminateTint="@android:color/white" />
+            android:indeterminateTint="?attr/colorPrimary" />
 
     </FrameLayout>
+
+    <!-- 隐藏的视图用于代码兼容 -->
+    <LinearLayout
+        android:id="@+id/selectedItemPreviewCard"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone">
+        <ImageView android:id="@+id/selectedItemImage" android:layout_width="0dp" android:layout_height="0dp" />
+        <TextView android:id="@+id/selectedItemName" android:layout_width="0dp" android:layout_height="0dp" />
+        <TextView android:id="@+id/selectedItemInfo" android:layout_width="0dp" android:layout_height="0dp" />
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

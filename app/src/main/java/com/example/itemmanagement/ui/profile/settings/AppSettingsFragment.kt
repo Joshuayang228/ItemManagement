@@ -1,30 +1,61 @@
 package com.example.itemmanagement.ui.profile.settings
 
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentAppSettingsBinding
+import com.example.itemmanagement.data.repository.ReminderSettingsRepository
+import com.example.itemmanagement.ui.reminder.ReminderSettingsViewModel
+import com.example.itemmanagement.ui.reminder.ReminderSettingsViewModelFactory
+import com.example.itemmanagement.ui.reminder.CategoryThresholdAdapter
 import kotlinx.coroutines.launch
-import androidx.lifecycle.lifecycleScope
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * 应用设置Fragment
- * 包含主题切换、通知偏好等设置项
+ * 简化版：不使用LiveData观察，直接控制UI
  */
 class AppSettingsFragment : Fragment() {
 
     private var _binding: FragmentAppSettingsBinding? = null
     private val binding get() = _binding!!
-
     private lateinit var viewModel: AppSettingsViewModel
+    
+    // 提醒设置 ViewModel
+    private val reminderViewModel: ReminderSettingsViewModel by viewModels {
+        ReminderSettingsViewModelFactory(
+            ReminderSettingsRepository.getInstance(
+                (requireActivity().application as ItemManagementApplication).database
+            )
+        )
+    }
+    
+    // RecyclerView 适配器
+    private var categoryThresholdAdapter: CategoryThresholdAdapter? = null
+    
+    // 防抖：避免快速点击导致重复触发
+    private var lastClickTime = 0L
+    private val DEBOUNCE_DELAY = 300L
+    
+    // 标志位：正在初始化UI时忽略监听器触发
+    private var isInitializing = true
+    
+    // 标志位：监听器是否已经设置
+    private var isListenerSet = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,170 +71,313 @@ class AppSettingsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
+        
+        val isRecreated = savedInstanceState != null
+        
+        // 初始化 RecyclerView
+        setupRecyclerView()
+        
+        // 观察 ViewModel
         observeViewModel()
-        setupClickListeners()
+        
+        // 初始化UI（在协程中完成后才设置监听器）
+        initializeUI(isRecreated)
     }
-
-    // Toolbar功能移除，导航由MainActivity统一管理
-
+    
+    /**
+     * 设置 RecyclerView
+     */
+    private fun setupRecyclerView() {
+        categoryThresholdAdapter = CategoryThresholdAdapter(
+            onUpdateThreshold = { category, minQuantity ->
+                reminderViewModel.updateCategoryThreshold(category, minQuantity)
+            },
+            onDeleteThreshold = { category ->
+                reminderViewModel.deleteCategoryThreshold(category)
+            },
+            onToggleEnabled = { category, enabled ->
+                reminderViewModel.toggleCategoryThreshold(category, enabled)
+            }
+        )
+        
+        binding.recyclerViewCategoryThresholds.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = categoryThresholdAdapter
+        }
+    }
+    
+    /**
+     * 观察 ViewModel 数据变化
+     */
     private fun observeViewModel() {
-        viewModel.userProfile.observe(viewLifecycleOwner) { profile ->
-            profile?.let { updateUI(it) }
+        reminderViewModel.settings.observe(viewLifecycleOwner) { settings ->
+            // 更新 UI
+            binding.apply {
+                seekBarExpirationDays.progress = settings.expirationAdvanceDays
+                textExpirationDays.text = "${settings.expirationAdvanceDays}天"
+                switchIncludeWarranty.isChecked = settings.includeWarranty
+                switchStockReminder.isChecked = settings.stockReminderEnabled
+                switchPushNotification.isChecked = settings.pushNotificationEnabled
+                switchInAppReminder.isChecked = settings.inAppReminderEnabled
+                textNotificationTime.text = settings.notificationTime
+                textQuietStart.text = settings.quietHourStart
+                textQuietEnd.text = settings.quietHourEnd
+                switchWeekendPause.isChecked = settings.weekendPause
+                
+                // 根据库存提醒开关动态显示/隐藏库存阈值容器
+                layoutCategoryThresholds.visibility = if (settings.stockReminderEnabled) View.VISIBLE else View.GONE
+            }
         }
-
-        viewModel.message.observe(viewLifecycleOwner) { message ->
-            message?.let {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-                viewModel.clearMessage()
+        
+        reminderViewModel.categoryThresholds.observe(viewLifecycleOwner) { thresholds ->
+            categoryThresholdAdapter?.submitList(thresholds.filter { it.enabled })
+        }
+        
+        // 加载已有物品的分类并自动创建阈值
+        lifecycleScope.launch {
+            try {
+                reminderViewModel.ensureCategoryThresholdsFromItems()
+            } catch (e: Exception) {
+                android.util.Log.e("AppSettings", "加载分类失败: ${e.message}")
             }
         }
     }
-
-    private fun updateUI(profile: com.example.itemmanagement.data.entity.UserProfileEntity) {
-        binding.apply {
-            // 主题设置
-            when (profile.preferredTheme) {
-                "LIGHT" -> rgTheme.check(R.id.rbThemeLight)
-                "DARK" -> rgTheme.check(R.id.rbThemeDark)
-                else -> rgTheme.check(R.id.rbThemeAuto)
-            }
-
-            // 通知设置
-            switchNotifications.isChecked = profile.enableNotifications
-            switchSoundEffects.isChecked = profile.enableSoundEffects
-
-            // 其他设置
-            switchCompactMode.isChecked = profile.compactModeEnabled
-            switchTutorialTips.isChecked = profile.showTutorialTips
-            switchShowStats.isChecked = profile.showStatsInProfile
-
-            // 默认设置
-            etDefaultUnit.setText(profile.defaultUnit)
-            etDefaultCategory.setText(profile.defaultCategory ?: "")
-        }
-    }
-
-    private fun setupClickListeners() {
-        binding.apply {
-            // 主题切换
-            rgTheme.setOnCheckedChangeListener { _, checkedId ->
-                val theme = when (checkedId) {
-                    R.id.rbThemeLight -> "LIGHT"
-                    R.id.rbThemeDark -> "DARK"
-                    else -> "AUTO"
-                }
-                
-                // 先保存设置，再应用主题
-                viewModel.updateTheme(theme)
-                
-                // 提供视觉反馈，然后应用主题
-                view?.let { v ->
-                    com.example.itemmanagement.ui.utils.Material3Feedback.showInfo(v, "正在切换主题...")
-                }
+    
+    /**
+     * 初始化UI：从数据库读取主题设置
+     * @param isRecreated 是否是配置更改后重建（如主题切换导致的Activity重建）
+     */
+    private fun initializeUI(isRecreated: Boolean) {
+        lifecycleScope.launch {
+            // 标记开始初始化
+            isInitializing = true
+            
+            val theme = viewModel.getTheme()
+            
+            // 设置UI状态
+            setThemeRadioButton(theme)
+            
+            // 初始化完成后，才设置监听器
+            setupClickListeners()
+            
+            // 标记初始化完成
+            isInitializing = false
+            
+            // 只在非重建时应用主题
+            // Activity因主题切换而重建时，系统已经应用了新主题，无需重复应用
+            if (!isRecreated) {
                 applyTheme(theme)
             }
-
-            // 通知设置
-            switchNotifications.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.updateNotifications(isChecked)
-            }
-
-            switchSoundEffects.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.updateSoundEffects(isChecked)
-            }
-
-            // 其他设置
-            switchCompactMode.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.updateCompactMode(isChecked)
-            }
-
-            switchTutorialTips.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.updateTutorialTips(isChecked)
-            }
-
-            switchShowStats.setOnCheckedChangeListener { _, isChecked ->
-                viewModel.updateShowStats(isChecked)
-            }
-
-            // 默认值设置
-            btnSaveDefaults.setOnClickListener {
-                val unit = etDefaultUnit.text.toString().trim()
-                val category = etDefaultCategory.text.toString().trim()
-                
-                if (unit.isNotEmpty()) {
-                    viewModel.updateDefaultUnit(unit)
-                }
-                
-                if (category.isNotEmpty()) {
-                    viewModel.updateDefaultCategory(category)
-                } else {
-                    viewModel.updateDefaultCategory(null)
-                }
-            }
-
-            // 重置设置
+        }
+    }
+    
+    /**
+     * 设置RadioButton选中状态（不会触发监听器，因为此时监听器还未设置）
+     */
+    private fun setThemeRadioButton(theme: String) {
+        // 设置选中状态
+        val targetId = when (theme) {
+            "LIGHT" -> R.id.rbThemeLight
+            "DARK" -> R.id.rbThemeDark
+            else -> R.id.rbThemeAuto
+        }
+        
+        // 直接check，不用担心触发监听器（因为还没设置）
+        if (binding.rgTheme.checkedRadioButtonId != targetId) {
+            binding.rgTheme.check(targetId)
+        }
+    }
+    
+    private fun getThemeName(id: Int): String {
+        return when (id) {
+            R.id.rbThemeLight -> "LIGHT"
+            R.id.rbThemeDark -> "DARK"
+            R.id.rbThemeAuto -> "AUTO"
+            else -> "UNKNOWN"
+        }
+    }
+    
+    /**
+     * 主题切换监听器
+     */
+    private val themeChangeListener = RadioGroup.OnCheckedChangeListener { _, checkedId ->
+        // 如果正在初始化，忽略所有触发（双重保险）
+        if (isInitializing) {
+            return@OnCheckedChangeListener
+        }
+        
+        // 防抖：300ms内的重复点击忽略
+        val now = System.currentTimeMillis()
+        if (now - lastClickTime < DEBOUNCE_DELAY) {
+            return@OnCheckedChangeListener
+        }
+        lastClickTime = now
+        
+        // 获取选中的主题
+        val theme = when (checkedId) {
+            R.id.rbThemeLight -> "LIGHT"
+            R.id.rbThemeDark -> "DARK"
+            else -> "AUTO"
+        }
+        
+        // 在协程中保存并应用主题
+        lifecycleScope.launch {
+            // 先同步保存到数据库（确保保存完成）
+            viewModel.saveThemeSync(theme)
+            
+            // 再应用主题（会触发Activity重建）
+            applyTheme(theme)
+            
+            // 显示提示
+            Toast.makeText(context, "主题已切换", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * 设置点击监听器（只在初始化完成后调用，且只设置一次）
+     */
+    private fun setupClickListeners() {
+        if (isListenerSet) {
+            return
+        }
+        
+        binding.apply {
+            // 先移除可能存在的旧监听器
+            rgTheme.setOnCheckedChangeListener(null)
+            
+            // 主题切换监听器
+            rgTheme.setOnCheckedChangeListener(themeChangeListener)
+            
+            // 重置设置按钮
             btnResetSettings.setOnClickListener {
                 showResetConfirmation()
             }
-
-            // 清理数据
-            btnCleanupData.setOnClickListener {
-                showCleanupConfirmation()
+            
+            // === 提醒设置监听器 ===
+            
+            // 到期提前天数 SeekBar
+            seekBarExpirationDays.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        textExpirationDays.text = "${progress}天"
+                    }
+                }
+                override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
+                    seekBar?.let {
+                        reminderViewModel.updateExpirationAdvanceDays(it.progress)
+                    }
+                }
+            })
+            
+            // 保修期提醒
+            switchIncludeWarranty.setOnCheckedChangeListener { _, isChecked ->
+                reminderViewModel.updateIncludeWarranty(isChecked)
+            }
+            
+            // 库存提醒
+            switchStockReminder.setOnCheckedChangeListener { _, isChecked ->
+                reminderViewModel.updateStockReminder(isChecked)
+                // 动态显示/隐藏库存阈值容器
+                layoutCategoryThresholds.visibility = if (isChecked) View.VISIBLE else View.GONE
+            }
+            
+            // 推送通知
+            switchPushNotification.setOnCheckedChangeListener { _, isChecked ->
+                reminderViewModel.updatePushNotification(isChecked)
+            }
+            
+            // 应用内提醒
+            switchInAppReminder.setOnCheckedChangeListener { _, isChecked ->
+                reminderViewModel.updateInAppReminder(isChecked)
+            }
+            
+            // 周末暂停
+            switchWeekendPause.setOnCheckedChangeListener { _, isChecked ->
+                reminderViewModel.updateWeekendPause(isChecked)
+            }
+            
+            // 通知时间（点击整行或时间文本）
+            layoutNotificationTime.setOnClickListener {
+                showTimePicker { time ->
+                    reminderViewModel.updateNotificationTime(time)
+                }
+            }
+            
+            // 免打扰开始时间
+            textQuietStart.setOnClickListener {
+                showTimePicker { time ->
+                    reminderViewModel.updateQuietHourStart(time)
+                }
+            }
+            
+            // 免打扰结束时间
+            textQuietEnd.setOnClickListener {
+                showTimePicker { time ->
+                    reminderViewModel.updateQuietHourEnd(time)
+                }
             }
         }
+        
+        isListenerSet = true
     }
-
+    
+    /**
+     * 应用主题到系统
+     */
     private fun applyTheme(theme: String) {
         val mode = when (theme) {
             "LIGHT" -> AppCompatDelegate.MODE_NIGHT_NO
             "DARK" -> AppCompatDelegate.MODE_NIGHT_YES
             else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         }
-        
-        // 添加Material 3主题切换动画
-        view?.let { v ->
-            // 播放过渡动画
-            val animation = android.view.animation.AnimationUtils.loadAnimation(
-                requireContext(), 
-                com.example.itemmanagement.R.anim.material3_theme_transition
-            )
-            
-            v.startAnimation(animation)
-            
-            // 在动画播放时切换主题
-            v.postDelayed({
-                // 在主线程中应用主题切换
-                AppCompatDelegate.setDefaultNightMode(mode)
-            }, 200) // 与动画时长同步
-        }
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
-
+    
+    /**
+     * 显示重置确认对话框
+     */
     private fun showResetConfirmation() {
         androidx.appcompat.app.AlertDialog.Builder(requireContext())
             .setTitle("重置设置")
-            .setMessage("确定要重置所有应用设置吗？这将清除您的个性化配置。")
+            .setMessage("确定要将所有设置重置为默认值吗？")
             .setPositiveButton("重置") { _, _ ->
-                viewModel.resetSettings()
-                Toast.makeText(context, "设置已重置", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    // 重置到AUTO模式
+                    viewModel.resetSettings()
+                    setThemeRadioButton("AUTO")
+                    applyTheme("AUTO")
+                    Toast.makeText(context, "设置已重置", Toast.LENGTH_SHORT).show()
+                }
             }
             .setNegativeButton("取消", null)
             .show()
     }
-
-    private fun showCleanupConfirmation() {
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("清理数据")
-            .setMessage("这将清理回收站中超过30天的已删除物品，无法恢复。")
-            .setPositiveButton("清理") { _, _ ->
-                viewModel.performDataCleanup()
-            }
-            .setNegativeButton("取消", null)
-            .show()
+    
+    /**
+     * 显示时间选择器
+     */
+    private fun showTimePicker(onTimeSelected: (String) -> Unit) {
+        val calendar = Calendar.getInstance()
+        val hour = calendar.get(Calendar.HOUR_OF_DAY)
+        val minute = calendar.get(Calendar.MINUTE)
+        
+        TimePickerDialog(
+            requireContext(),
+            { _, selectedHour, selectedMinute ->
+                val timeString = String.format("%02d:%02d", selectedHour, selectedMinute)
+                onTimeSelected(timeString)
+            },
+            hour,
+            minute,
+            true
+        ).show()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        categoryThresholdAdapter = null
         _binding = null
     }
 }
+ 

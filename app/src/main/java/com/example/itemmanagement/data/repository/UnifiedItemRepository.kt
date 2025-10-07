@@ -5,6 +5,7 @@ import com.example.itemmanagement.data.dao.LocationDao
 import com.example.itemmanagement.data.dao.TagDao
 import com.example.itemmanagement.data.dao.PhotoDao
 import com.example.itemmanagement.data.dao.PriceRecordDao
+import com.example.itemmanagement.data.dao.BorrowDao
 import com.example.itemmanagement.data.dao.unified.InventoryDetailDao
 import com.example.itemmanagement.data.dao.unified.ItemStateDao
 import com.example.itemmanagement.data.dao.unified.ShoppingDetailDao
@@ -23,6 +24,7 @@ import com.example.itemmanagement.data.entity.unified.ItemStateType
 import com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity
 import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
 import com.example.itemmanagement.data.model.ItemStatus
+import com.example.itemmanagement.data.entity.BorrowStatus
 import com.example.itemmanagement.data.view.InventoryItemView
 import com.example.itemmanagement.data.view.ShoppingItemView
 import com.example.itemmanagement.data.model.Item
@@ -53,7 +55,9 @@ class UnifiedItemRepository(
     private val locationDao: LocationDao,
     private val tagDao: TagDao,
     private val photoDao: PhotoDao,
-    private val priceRecordDao: PriceRecordDao
+    private val priceRecordDao: PriceRecordDao,
+    private val warrantyDao: com.example.itemmanagement.data.dao.WarrantyDao,
+    private val borrowDao: BorrowDao  // ✅ 添加BorrowDao
 ) {
 
     // --- 通用物品操作 ---
@@ -97,6 +101,18 @@ class UnifiedItemRepository(
         } catch (e: Exception) {
             android.util.Log.e("UnifiedItemRepository", "查询标签失败: itemId=$itemId", e)
             emptyList()
+        }
+    }
+    
+    /**
+     * 根据物品ID获取保修信息
+     */
+    suspend fun getWarrantyByItemId(itemId: Long): com.example.itemmanagement.data.entity.WarrantyEntity? {
+        return try {
+            warrantyDao.getByItemId(itemId)
+        } catch (e: Exception) {
+            android.util.Log.e("UnifiedItemRepository", "查询保修信息失败: itemId=$itemId", e)
+            null
         }
     }
     
@@ -161,8 +177,8 @@ class UnifiedItemRepository(
     }
 
     // --- 库存操作 ---
-    suspend fun addInventoryItem(unifiedItem: UnifiedItemEntity, inventoryDetail: InventoryDetailEntity, tags: List<TagEntity> = emptyList(), photos: List<PhotoEntity> = emptyList()) {
-        appDatabase.withTransaction {
+    suspend fun addInventoryItem(unifiedItem: UnifiedItemEntity, inventoryDetail: InventoryDetailEntity, tags: List<TagEntity> = emptyList(), photos: List<PhotoEntity> = emptyList()): Long {
+        return appDatabase.withTransaction {
             android.util.Log.d("UnifiedItemRepository", "📦 开始保存库存物品: name='${unifiedItem.name}'")
             
             // 1. 保存基础物品信息
@@ -216,6 +232,7 @@ class UnifiedItemRepository(
             }
             
             android.util.Log.d("UnifiedItemRepository", "✅ 库存物品保存完成: itemId=$itemId")
+            itemId  // ✅ 返回itemId
         }
     }
 
@@ -376,8 +393,9 @@ class UnifiedItemRepository(
                         totalPriceUnit = inventoryDetail.totalPriceUnit,
                         purchaseDate = inventoryDetail.purchaseDate,
                         shelfLife = inventoryDetail.shelfLife,
-                        warrantyPeriod = inventoryDetail.warrantyPeriod,
-                        warrantyEndDate = inventoryDetail.warrantyEndDate,
+                        // warrantyPeriod 和 warrantyEndDate 已移至 WarrantyEntity
+                        warrantyPeriod = null,
+                        warrantyEndDate = null,
                         serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
                         isHighTurnover = inventoryDetail.isHighTurnover,
                         photos = photos, // ✅ 照片数据 (UI显示)
@@ -431,6 +449,38 @@ class UnifiedItemRepository(
         }
         android.util.Log.d("UnifiedItemRepository", "标签数量: ${tags.size}")
         
+        // ✅ 检查借出状态
+        android.util.Log.d("UnifiedItemRepository", "━━━━━ 开始检查借出状态 ━━━━━")
+        android.util.Log.d("UnifiedItemRepository", "正在查询itemId=$itemId 的借出记录...")
+        val borrowRecords = borrowDao.getAll()
+        android.util.Log.d("UnifiedItemRepository", "数据库中总共有 ${borrowRecords.size} 条借出记录")
+        
+        // 打印所有借出记录
+        borrowRecords.forEachIndexed { index, record ->
+            android.util.Log.d("UnifiedItemRepository", "  借出记录[$index]: itemId=${record.itemId}, borrower=${record.borrowerName}, status=${record.status}")
+        }
+        
+        // 查找当前物品的未归还记录
+        val currentBorrow = borrowRecords.find { 
+            it.itemId == itemId && 
+            (it.status == BorrowStatus.BORROWED || it.status == BorrowStatus.OVERDUE)
+        }
+        
+        val itemStatus = if (currentBorrow != null) {
+            android.util.Log.d("UnifiedItemRepository", "✅ 找到未归还记录！")
+            android.util.Log.d("UnifiedItemRepository", "  - 借给: ${currentBorrow.borrowerName}")
+            android.util.Log.d("UnifiedItemRepository", "  - 状态: ${currentBorrow.status}")
+            android.util.Log.d("UnifiedItemRepository", "  - 预计归还: ${java.util.Date(currentBorrow.expectedReturnDate)}")
+            android.util.Log.d("UnifiedItemRepository", "  → 设置物品状态为: BORROWED")
+            ItemStatus.BORROWED
+        } else {
+            android.util.Log.d("UnifiedItemRepository", "❌ 未找到未归还的借出记录")
+            val fallbackStatus = inventoryDetail?.status ?: ItemStatus.IN_STOCK
+            android.util.Log.d("UnifiedItemRepository", "  → 使用库存状态: $fallbackStatus")
+            fallbackStatus
+        }
+        android.util.Log.d("UnifiedItemRepository", "━━━━━ 最终物品状态: $itemStatus ━━━━━")
+        
         return Item(
             id = unifiedItem.id,
             name = unifiedItem.name,
@@ -445,7 +495,7 @@ class UnifiedItemRepository(
             openDate = inventoryDetail?.openDate,
             brand = unifiedItem.brand,
             specification = unifiedItem.specification,
-            status = inventoryDetail?.status ?: ItemStatus.IN_STOCK,
+            status = itemStatus,  // ✅ 使用检查后的状态
             stockWarningThreshold = inventoryDetail?.stockWarningThreshold,
             price = inventoryDetail?.price,
             priceUnit = inventoryDetail?.priceUnit,
@@ -461,8 +511,9 @@ class UnifiedItemRepository(
             totalPriceUnit = inventoryDetail?.totalPriceUnit,
             purchaseDate = inventoryDetail?.purchaseDate,
             shelfLife = inventoryDetail?.shelfLife,
-            warrantyPeriod = inventoryDetail?.warrantyPeriod,
-            warrantyEndDate = inventoryDetail?.warrantyEndDate,
+            // warrantyPeriod 和 warrantyEndDate 已移至 WarrantyEntity
+            warrantyPeriod = null,
+            warrantyEndDate = null,
             serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
             isHighTurnover = inventoryDetail?.isHighTurnover ?: false,
             photos = photos,
@@ -728,8 +779,40 @@ class UnifiedItemRepository(
             return null
         }
         
-        val inventoryDetail = inventoryDetailDao.getByItemId(itemId)
+        var inventoryDetail = inventoryDetailDao.getByItemId(itemId)
         android.util.Log.d("UnifiedItemRepository", "📦 查询到的InventoryDetail: $inventoryDetail")
+        
+        // ✅ 检查借出状态并更新InventoryDetail的status
+        android.util.Log.d("UnifiedItemRepository", "━━━━━ 开始检查借出状态 ━━━━━")
+        android.util.Log.d("UnifiedItemRepository", "正在查询itemId=$itemId 的借出记录...")
+        val borrowRecords = borrowDao.getAll()
+        android.util.Log.d("UnifiedItemRepository", "数据库中总共有 ${borrowRecords.size} 条借出记录")
+        
+        // 打印所有借出记录
+        borrowRecords.forEachIndexed { index, record ->
+            android.util.Log.d("UnifiedItemRepository", "  借出记录[$index]: itemId=${record.itemId}, borrower=${record.borrowerName}, status=${record.status}")
+        }
+        
+        // 查找当前物品的未归还记录
+        val currentBorrow = borrowRecords.find { 
+            it.itemId == itemId && 
+            (it.status == BorrowStatus.BORROWED || it.status == BorrowStatus.OVERDUE)
+        }
+        
+        if (currentBorrow != null) {
+            android.util.Log.d("UnifiedItemRepository", "✅ 找到未归还记录！")
+            android.util.Log.d("UnifiedItemRepository", "  - 借给: ${currentBorrow.borrowerName}")
+            android.util.Log.d("UnifiedItemRepository", "  - 状态: ${currentBorrow.status}")
+            android.util.Log.d("UnifiedItemRepository", "  - 预计归还: ${java.util.Date(currentBorrow.expectedReturnDate)}")
+            android.util.Log.d("UnifiedItemRepository", "  → 设置物品状态为: BORROWED")
+            // 更新InventoryDetail的status
+            inventoryDetail = inventoryDetail?.copy(status = ItemStatus.BORROWED)
+            android.util.Log.d("UnifiedItemRepository", "✅ InventoryDetail状态已更新: ${inventoryDetail?.status}")
+        } else {
+            android.util.Log.d("UnifiedItemRepository", "❌ 未找到未归还的借出记录")
+            android.util.Log.d("UnifiedItemRepository", "  → 保持原有状态: ${inventoryDetail?.status}")
+        }
+        android.util.Log.d("UnifiedItemRepository", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         
         // 查询照片
         val photos = try {
@@ -923,6 +1006,20 @@ class UnifiedItemRepository(
                         tags = emptyList() // TODO: 查询TagEntity
                     )
                 }
+            }
+        }
+    }
+    
+    /**
+     * 获取所有物品详情（排除已删除的物品）
+     */
+    fun getActiveItemsWithDetails(): Flow<List<ItemWithDetails>> {
+        return getAllItemsWithDetails().map { items ->
+            items.filter { item ->
+                // 检查物品是否被标记为删除状态
+                val deletedStates = itemStateDao.getStatesByItemIdAndType(item.item.id, ItemStateType.DELETED)
+                val hasActiveDeletedState = deletedStates.any { it.isActive }
+                !hasActiveDeletedState
             }
         }
     }

@@ -269,8 +269,9 @@ class TransferToInventoryViewModel(
             storeName = getFieldValueAsString("商家名称"),
             stockWarningThreshold = getFieldValueAsInt("库存预警阈值"),
             shelfLife = getFieldValueAsInt("保质期"),
-            warrantyPeriod = getFieldValueAsInt("保修期"),
-            warrantyEndDate = getFieldValueAsDate("保修到期时间"),
+            // 保修信息已移至 WarrantyEntity
+            // warrantyPeriod = getFieldValueAsInt("保修期"),
+            // warrantyEndDate = getFieldValueAsDate("保修到期时间"),
             isHighTurnover = getFieldValueAsBoolean("高周转") ?: false,
             openStatus = getFieldValueAsOpenStatus("开封状态"),
             openDate = getFieldValueAsDate("开封时间"),

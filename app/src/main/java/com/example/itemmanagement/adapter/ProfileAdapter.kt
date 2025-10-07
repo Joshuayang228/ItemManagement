@@ -1,5 +1,6 @@
 package com.example.itemmanagement.adapter
 
+import android.net.Uri
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
 import android.view.View
@@ -7,6 +8,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.itemmanagement.R
 import com.example.itemmanagement.data.entity.UserProfileEntity
 import com.example.itemmanagement.data.model.ProfileItem
@@ -90,23 +92,43 @@ class ProfileAdapter(
         }
 
         fun bind(profile: UserProfileEntity) {
+            // 设置昵称
             binding.tvNickname.text = profile.nickname
-            binding.tvLevelTitle.text = "LV.${profile.achievementLevel} ${getLevelTitle(profile.achievementLevel)}"
-            binding.tvExperience.text = "${profile.experiencePoints}/1500 EXP"
             
-            // 计算经验进度
-            val progress = (profile.experiencePoints * 100 / 1500).coerceIn(0, 100)
-            binding.progressExperience.progress = progress
-        }
-
-        private fun getLevelTitle(level: Int): String {
-            return when (level) {
-                in 1..2 -> "新手"
-                in 3..4 -> "入门"
-                in 5..7 -> "管理高手"
-                in 8..10 -> "专家"
-                else -> "大师"
+            // 设置用户ID（9位数字，不带#号）
+            binding.tvUserId.text = "用户ID：${profile.userId}"
+            
+            // 设置个性签名（直接显示内容，不加前缀）
+            if (!profile.signature.isNullOrEmpty()) {
+                binding.tvSignature.text = profile.signature
+                binding.tvSignature.visibility = View.VISIBLE
+            } else {
+                binding.tvSignature.visibility = View.GONE
             }
+            
+            // 设置头像
+            if (!profile.avatarUri.isNullOrEmpty()) {
+                try {
+                    val uri = Uri.parse(profile.avatarUri)
+                    Glide.with(binding.root.context)
+                        .load(uri)
+                        .placeholder(R.drawable.ic_person_placeholder)
+                        .error(R.drawable.ic_person_placeholder)
+                        .circleCrop()
+                        .into(binding.ivUserAvatar)
+                } catch (e: Exception) {
+                    setDefaultAvatar()
+                }
+            } else {
+                setDefaultAvatar()
+            }
+        }
+        
+        private fun setDefaultAvatar() {
+            Glide.with(binding.root.context)
+                .load(R.drawable.ic_person_placeholder)
+                .circleCrop()
+                .into(binding.ivUserAvatar)
         }
     }
 

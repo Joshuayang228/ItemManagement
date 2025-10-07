@@ -54,8 +54,8 @@ object TestDataGenerator {
                 totalPriceUnit = "元",
                 purchaseDate = getDateDaysAgo(30), // 30天前购买
                 shelfLife = 1095, // 3年保质期
-                warrantyPeriod = null,
-                warrantyEndDate = null,
+                // warrantyPeriod = null, // 已移至 WarrantyEntity
+                // warrantyEndDate = null,
                 isHighTurnover = true,
                 wasteDate = null
                 // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
@@ -112,8 +112,8 @@ object TestDataGenerator {
                 totalPriceUnit = "元",
                 purchaseDate = getDateDaysAgo(5), // 5天前购买
                 shelfLife = 30, // 30天保质期
-                warrantyPeriod = null,
-                warrantyEndDate = null,
+                // warrantyPeriod = null, // 已移至 WarrantyEntity
+                // warrantyEndDate = null,
                 isHighTurnover = true,
                 wasteDate = null
                 // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
@@ -169,8 +169,8 @@ object TestDataGenerator {
                 totalPriceUnit = "元",
                 purchaseDate = getDateDaysAgo(30), // 1个月前购买
                 shelfLife = null,
-                warrantyPeriod = 365, // 1年保修
-                warrantyEndDate = getDateDaysFromNow(335), // 还有335天保修
+                // warrantyPeriod = 365, // 1年保修 - 已移至 WarrantyEntity
+                // warrantyEndDate = getDateDaysFromNow(335), // 还有335天保修
                 isHighTurnover = false,
                 wasteDate = null
                 // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
@@ -228,8 +228,8 @@ object TestDataGenerator {
                 totalPriceUnit = "元",
                 purchaseDate = getDateDaysAgo(60), // 2个月前购买
                 shelfLife = null,
-                warrantyPeriod = 90, // 3个月质保
-                warrantyEndDate = getDateDaysFromNow(30), // 还有30天质保
+                // warrantyPeriod = 90, // 3个月质保 - 已移至 WarrantyEntity
+                // warrantyEndDate = getDateDaysFromNow(30), // 还有30天质保
                 isHighTurnover = false,
                 wasteDate = null
                 // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
@@ -285,8 +285,8 @@ object TestDataGenerator {
                 totalPriceUnit = "元",
                 purchaseDate = getDateDaysAgo(45), // 45天前购买
                 shelfLife = 1095, // 3年保质期
-                warrantyPeriod = null,
-                warrantyEndDate = null,
+                // warrantyPeriod = null, // 已移至 WarrantyEntity
+                // warrantyEndDate = null,
                 isHighTurnover = false,
                 wasteDate = null
                 // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity

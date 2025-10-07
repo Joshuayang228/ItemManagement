@@ -14,8 +14,8 @@
 
         <!-- 左侧物品图片 -->
         <FrameLayout
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="90dp"
+            android:layout_height="match_parent"
             android:layout_marginEnd="16dp">
 
             <ImageView
@@ -27,16 +27,6 @@
                 android:contentDescription="物品图片"
                 tools:src="@drawable/ic_image_placeholder" />
 
-            <!-- 保修状态指示器 -->
-            <View
-                android:id="@+id/statusIndicator"
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_gravity="top|end"
-                android:background="@drawable/circle_background"
-                android:backgroundTint="?attr/colorSuccess"
-                tools:backgroundTint="?attr/colorSuccess" />
-
         </FrameLayout>
 
         <!-- 主要内容区域 -->
@@ -46,12 +36,13 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- 顶部：物品名称和品牌 -->
+            <!-- 顶部：物品名称和状态 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="4dp">
+                android:layout_marginBottom="4dp"
+                android:gravity="center_vertical">
 
                 <TextView
                     android:id="@+id/itemName"
@@ -79,6 +70,18 @@
                     android:textColor="?attr/colorSuccess"
                     android:textStyle="bold"
                     tools:text="保修中" />
+
+                <ImageView
+                    android:id="@+id/deleteButton"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_delete_24dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:tint="?attr/colorError"
+                    android:layout_marginStart="8dp"
+                    android:contentDescription="删除" />
 
             </LinearLayout>
 
@@ -198,20 +201,6 @@
             </LinearLayout>
 
         </LinearLayout>
-
-        <!-- 右侧更多操作按钮 -->
-        <ImageView
-            android:id="@+id/moreOptionsButton"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_more_vert_24dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:clickable="true"
-            android:focusable="true"
-            android:tint="#999999"
-            android:layout_gravity="center_vertical"
-            android:layout_marginStart="8dp"
-            android:contentDescription="更多选项" />
 
     </LinearLayout>
 

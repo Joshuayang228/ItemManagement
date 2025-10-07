@@ -50,8 +50,7 @@ object ShoppingItemMapper {
 
             purchaseDate = shoppingDetail.purchaseDate ?: Date(),
             shelfLife = null, // 需要用户后续补充
-            warrantyPeriod = null, // 需要用户后续补充
-            warrantyEndDate = null,
+            // warrantyPeriod 和 warrantyEndDate 已移至 WarrantyEntity
             isHighTurnover = false,
             wasteDate = null
             // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity

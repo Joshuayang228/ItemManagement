@@ -6,6 +6,7 @@ import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.itemmanagement.data.dao.BorrowStatistics
 import com.example.itemmanagement.data.dao.BorrowWithItemInfo
@@ -26,16 +27,28 @@ class BorrowListViewModel(
     // ==================== 数据状态 ====================
     
     /**
-     * 当前选中的筛选状态
+     * 当前选中的筛选状态集合（支持多选）
      */
-    private val _selectedStatus = MutableLiveData<BorrowStatus?>(null)
-    val selectedStatus: LiveData<BorrowStatus?> = _selectedStatus
+    private val _selectedStatuses = MutableLiveData<Set<BorrowStatus>>(emptySet())
+    val selectedStatuses: LiveData<Set<BorrowStatus>> = _selectedStatuses
+    
+    /**
+     * 当前选中的筛选状态（单选模式，向后兼容）
+     */
+    val selectedStatus: LiveData<BorrowStatus?> = _selectedStatuses.map { statuses ->
+        statuses.firstOrNull()
+    }
     
     /**
      * 借还记录列表（根据筛选状态）
      */
     private val _borrowList = MediatorLiveData<List<BorrowWithItemInfo>>()
     val borrowList: LiveData<List<BorrowWithItemInfo>> = _borrowList
+    
+    /**
+     * 所有借还记录（未筛选）
+     */
+    private val allBorrowsLiveData = borrowRepository.getAllBorrowsWithItemInfoFlow().asLiveData()
     
     /**
      * 统计信息
@@ -76,18 +89,34 @@ class BorrowListViewModel(
      * 设置借还记录列表的响应式监听
      */
     private fun setupBorrowListListener() {
-        _selectedStatus.observeForever { status ->
-            val source = if (status == null) {
-                borrowRepository.getAllBorrowsWithItemInfoFlow().asLiveData()
-            } else {
-                borrowRepository.getBorrowsWithItemInfoByStatusFlow(status).asLiveData()
-            }
-            
-            _borrowList.removeSource(_borrowList)
-            _borrowList.addSource(source) { newList ->
-                _borrowList.value = newList
+        // 监听原始数据变化
+        _borrowList.addSource(allBorrowsLiveData) { allBorrows ->
+            applyFilters(allBorrows)
+        }
+        
+        // 监听筛选条件变化
+        _borrowList.addSource(_selectedStatuses) { _ ->
+            allBorrowsLiveData.value?.let { allBorrows ->
+                applyFilters(allBorrows)
             }
         }
+    }
+    
+    /**
+     * 应用筛选条件
+     */
+    private fun applyFilters(originalList: List<BorrowWithItemInfo>) {
+        val statuses = _selectedStatuses.value
+        
+        val filtered = if (!statuses.isNullOrEmpty()) {
+            // 多选筛选：显示任意匹配的状态
+            originalList.filter { it.status in statuses }
+        } else {
+            // 无筛选：显示全部
+            originalList
+        }
+        
+        _borrowList.value = filtered
     }
 
     // ==================== 数据操作 ====================
@@ -130,20 +159,25 @@ class BorrowListViewModel(
     // ==================== 筛选功能 ====================
     
     /**
-     * 设置状态筛选
+     * 设置状态筛选（单选模式）
      * @param status 筛选的状态，null表示显示全部
      */
     fun setStatusFilter(status: BorrowStatus?) {
-        if (_selectedStatus.value != status) {
-            _selectedStatus.value = status
-        }
+        _selectedStatuses.value = if (status != null) setOf(status) else emptySet()
+    }
+    
+    /**
+     * 设置多个状态筛选（多选模式）
+     */
+    fun setStatusFilters(statuses: Set<BorrowStatus>) {
+        _selectedStatuses.value = statuses
     }
     
     /**
      * 清除筛选
      */
     fun clearFilter() {
-        setStatusFilter(null)
+        _selectedStatuses.value = emptySet()
     }
     
     /**

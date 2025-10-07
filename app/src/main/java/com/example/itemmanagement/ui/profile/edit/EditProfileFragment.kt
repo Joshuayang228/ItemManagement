@@ -86,23 +86,22 @@ class EditProfileFragment : Fragment() {
         observeViewModel()
     }
 
-    // Toolbar功能移除，保存功能需要在UI中添加专门的保存按钮
-    // TODO: 在后续UI升级阶段添加FloatingActionButton或保存按钮
-
     private fun setupClickListeners() {
         binding.apply {
-            // 头像点击
-            ivAvatar.setOnClickListener {
+            // 头像容器点击
+            avatarContainer.setOnClickListener {
+                it.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
                 checkPermissionAndPickImage()
             }
-
-            fabEditAvatar.setOnClickListener {
-                checkPermissionAndPickImage()
+            
+            // 用户ID点击复制
+            layoutUserId.setOnClickListener {
+                copyUserIdToClipboard()
             }
 
-            // 移除头像
-            btnRemoveAvatar.setOnClickListener {
-                showRemoveAvatarConfirmation()
+            // 保存按钮
+            btnSave.setOnClickListener {
+                saveProfile()
             }
         }
     }
@@ -119,10 +118,6 @@ class EditProfileFragment : Fragment() {
             }
         }
 
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-
         viewModel.saveSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
                 Toast.makeText(context, "个人资料已保存", Toast.LENGTH_SHORT).show()
@@ -135,6 +130,9 @@ class EditProfileFragment : Fragment() {
         binding.apply {
             // 设置昵称
             etNickname.setText(profile.nickname)
+            
+            // 设置个性签名
+            etSignature.setText(profile.signature ?: "")
 
             // 设置头像
             if (!profile.avatarUri.isNullOrEmpty()) {
@@ -146,21 +144,18 @@ class EditProfileFragment : Fragment() {
                         .error(R.drawable.ic_person_placeholder)
                         .circleCrop()
                         .into(ivAvatar)
-                    btnRemoveAvatar.visibility = View.VISIBLE
                 } catch (e: Exception) {
                     setDefaultAvatar()
                 }
             } else {
                 setDefaultAvatar()
             }
+            
+            // 设置用户ID（9位数字）
+            tvUserId.text = profile.userId
 
             // 设置加入日期
-            tvJoinDate.text = "加入时间: ${dateFormat.format(profile.joinDate)}"
-
-            // 设置统计信息
-            tvItemsManaged.text = "${profile.totalItemsManaged} 件"
-            tvCurrentItems.text = "${profile.currentItemCount} 件"
-            tvConsecutiveDays.text = "${profile.consecutiveDays} 天"
+            tvJoinDate.text = dateFormat.format(profile.joinDate)
         }
     }
 
@@ -170,20 +165,38 @@ class EditProfileFragment : Fragment() {
                 .load(R.drawable.ic_person_placeholder)
                 .circleCrop()
                 .into(ivAvatar)
-            btnRemoveAvatar.visibility = View.GONE
         }
     }
 
     private fun checkPermissionAndPickImage() {
+        // Android 13 (API 33) 及以上使用新的图片权限
+        val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+        
         when {
             ContextCompat.checkSelfPermission(
                 requireContext(),
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                permission
             ) == PackageManager.PERMISSION_GRANTED -> {
                 showImagePickerDialog()
             }
+            shouldShowRequestPermissionRationale(permission) -> {
+                // 用户之前拒绝过，显示说明
+                androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setTitle("需要相册权限")
+                    .setMessage("为了选择头像，需要访问您的相册")
+                    .setPositiveButton("授权") { _, _ ->
+                        requestPermissionLauncher.launch(permission)
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
             else -> {
-                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                // 首次请求权限
+                requestPermissionLauncher.launch(permission)
             }
         }
     }
@@ -235,7 +248,6 @@ class EditProfileFragment : Fragment() {
                 
                 // 保存URI
                 viewModel.updateAvatarUri(compressedUri.toString())
-                binding.btnRemoveAvatar.visibility = View.VISIBLE
                 
                 Toast.makeText(context, "头像已更新", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
@@ -244,21 +256,21 @@ class EditProfileFragment : Fragment() {
         }
     }
 
-    private fun showRemoveAvatarConfirmation() {
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("移除头像")
-            .setMessage("确定要移除当前头像吗？")
-            .setPositiveButton("移除") { _, _ ->
-                viewModel.removeAvatar()
-                setDefaultAvatar()
-                Toast.makeText(context, "头像已移除", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("取消", null)
-            .show()
+    private fun copyUserIdToClipboard() {
+        val userId = binding.tvUserId.text.toString()
+        val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        val clip = android.content.ClipData.newPlainText("用户ID", userId)
+        clipboard.setPrimaryClip(clip)
+        
+        // 触觉反馈
+        binding.layoutUserId.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        
+        Toast.makeText(context, "用户ID已复制: $userId", Toast.LENGTH_SHORT).show()
     }
-
+    
     private fun saveProfile() {
         val nickname = binding.etNickname.text.toString().trim()
+        val signature = binding.etSignature.text.toString().trim()
         
         if (nickname.isEmpty()) {
             Toast.makeText(context, "请输入昵称", Toast.LENGTH_SHORT).show()
@@ -269,8 +281,13 @@ class EditProfileFragment : Fragment() {
             Toast.makeText(context, "昵称不能超过20个字符", Toast.LENGTH_SHORT).show()
             return
         }
+        
+        if (signature.length > 50) {
+            Toast.makeText(context, "个性签名不能超过50个字符", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        viewModel.updateNickname(nickname)
+        viewModel.updateProfile(nickname, signature.ifEmpty { null })
     }
 
     override fun onDestroyView() {

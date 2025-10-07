@@ -60,7 +60,7 @@ import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
         // DeletedItemEntity::class,
         // WishlistItemEntity::class
     ],
-    version = 40,
+    version = 43,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -102,7 +102,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43)
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
@@ -2225,6 +2225,126 @@ abstract class AppDatabase : RoomDatabase() {
                 android.util.Log.d("Migration", "✓ shopping_details 表已添加 purchaseReason 字段")
                 
                 android.util.Log.d("Migration", "✅ 迁移 39 → 40 完成：购买原因字段已添加")
+            }
+        }
+        
+        /**
+         * 迁移 40 → 41：移除 inventory_details 表中的冗余保修字段
+         * 删除 warrantyPeriod 和 warrantyEndDate 字段（已迁移至 warranties 表）
+         */
+        private val MIGRATION_40_41 = object : Migration(40, 41) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 40 → 41: 移除 inventory_details 表中的冗余保修字段")
+                
+                // SQLite 不支持直接删除列，需要重建表
+                // 1. 创建新表（不包含 warrantyPeriod 和 warrantyEndDate）
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS inventory_details_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        itemId INTEGER NOT NULL,
+                        quantity REAL NOT NULL,
+                        unit TEXT NOT NULL,
+                        locationId INTEGER,
+                        productionDate INTEGER,
+                        expirationDate INTEGER,
+                        openDate INTEGER,
+                        purchaseDate INTEGER,
+                        wasteDate INTEGER,
+                        openStatus TEXT,
+                        status TEXT NOT NULL,
+                        stockWarningThreshold INTEGER,
+                        isHighTurnover INTEGER NOT NULL,
+                        price REAL,
+                        priceUnit TEXT,
+                        totalPrice REAL,
+                        totalPriceUnit TEXT,
+                        purchaseChannel TEXT,
+                        storeName TEXT,
+                        shelfLife INTEGER,
+                        createdDate INTEGER NOT NULL,
+                        updatedDate INTEGER NOT NULL,
+                        FOREIGN KEY (itemId) REFERENCES unified_items(id) ON DELETE CASCADE,
+                        FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
+                    )
+                """.trimIndent())
+                android.util.Log.d("Migration", "✓ 已创建新的 inventory_details_new 表")
+                
+                // 2. 复制数据（排除 warrantyPeriod 和 warrantyEndDate）
+                database.execSQL("""
+                    INSERT INTO inventory_details_new (
+                        id, itemId, quantity, unit, locationId,
+                        productionDate, expirationDate, openDate, purchaseDate, wasteDate,
+                        openStatus, status, stockWarningThreshold, isHighTurnover,
+                        price, priceUnit, totalPrice, totalPriceUnit,
+                        purchaseChannel, storeName, shelfLife,
+                        createdDate, updatedDate
+                    )
+                    SELECT 
+                        id, itemId, quantity, unit, locationId,
+                        productionDate, expirationDate, openDate, purchaseDate, wasteDate,
+                        openStatus, status, stockWarningThreshold, isHighTurnover,
+                        price, priceUnit, totalPrice, totalPriceUnit,
+                        purchaseChannel, storeName, shelfLife,
+                        createdDate, updatedDate
+                    FROM inventory_details
+                """.trimIndent())
+                android.util.Log.d("Migration", "✓ 已复制数据到新表")
+                
+                // 3. 删除旧表
+                database.execSQL("DROP TABLE inventory_details")
+                android.util.Log.d("Migration", "✓ 已删除旧的 inventory_details 表")
+                
+                // 4. 重命名新表
+                database.execSQL("ALTER TABLE inventory_details_new RENAME TO inventory_details")
+                android.util.Log.d("Migration", "✓ 已重命名新表为 inventory_details")
+                
+                // 5. 重建索引
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_itemId ON inventory_details(itemId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_locationId ON inventory_details(locationId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_status ON inventory_details(status)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_expirationDate ON inventory_details(expirationDate)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_stockWarningThreshold ON inventory_details(stockWarningThreshold)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_inventory_details_status_expirationDate ON inventory_details(status, expirationDate)")
+                android.util.Log.d("Migration", "✓ 已重建所有索引")
+                
+                android.util.Log.d("Migration", "✅ 迁移 40 → 41 完成：冗余保修字段已从 inventory_details 表中移除")
+            }
+        }
+        
+        /**
+         * 数据库版本41到42的迁移
+         * 添加个性签名字段到user_profile表
+         */
+        private val MIGRATION_41_42 = object : Migration(41, 42) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 41 → 42: 添加个性签名字段到user_profile表")
+                
+                // 添加signature字段（默认为null）
+                database.execSQL("ALTER TABLE user_profile ADD COLUMN signature TEXT DEFAULT NULL")
+                
+                android.util.Log.d("Migration", "迁移 41 → 42 完成")
+            }
+        }
+        
+        /**
+         * 数据库版本42到43的迁移
+         * 添加userId字段到user_profile表（9位数字用户ID）
+         */
+        private val MIGRATION_42_43 = object : Migration(42, 43) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 42 → 43: 添加userId字段到user_profile表")
+                
+                // 生成一个9位数字的用户ID
+                val timestamp = System.currentTimeMillis()
+                val timePart = (timestamp % 1000000).toString().padStart(6, '0')
+                val randomPart = (100..999).random().toString()
+                val userId = timePart + randomPart
+                
+                // 添加userId字段，并为现有用户设置生成的ID
+                database.execSQL("ALTER TABLE user_profile ADD COLUMN userId TEXT NOT NULL DEFAULT '$userId'")
+                
+                android.util.Log.d("Migration", "✓ user_profile 表已添加 userId 字段，默认值: $userId")
+                android.util.Log.d("Migration", "✅ 迁移 42 → 43 完成")
             }
         }
     }

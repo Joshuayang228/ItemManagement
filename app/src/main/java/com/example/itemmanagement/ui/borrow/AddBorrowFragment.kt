@@ -56,10 +56,17 @@ class AddBorrowFragment : Fragment() {
         setupButtons()
         observeViewModel()
         
-        // 检查是否有预选择的物品
-        arguments?.getLong("preSelectedItemId", -1L)?.let { itemId ->
-            if (itemId > 0) {
-                viewModel.preSelectItem(itemId)
+        // 检查是否为编辑模式
+        val borrowId = arguments?.getLong("borrowId", -1L) ?: -1L
+        if (borrowId > 0) {
+            // 编辑模式：加载现有借还记录
+            viewModel.loadBorrowRecord(borrowId)
+        } else {
+            // 新建模式：检查是否有预选择的物品
+            arguments?.getLong("preSelectedItemId", -1L)?.let { itemId ->
+                if (itemId > 0) {
+                    viewModel.preSelectItem(itemId)
+                }
             }
         }
     }
@@ -98,26 +105,43 @@ class AddBorrowFragment : Fragment() {
             mutableListOf<ItemDisplayWrapper>()
         )
         
-        binding.actvSelectItem.apply {
-            setAdapter(itemAdapter)
-            setOnItemClickListener { _, _, position, _ ->
-                val selectedWrapper = itemAdapter.getItem(position)
-                viewModel.setSelectedItem(selectedWrapper?.item)
-            }
+        binding.itemSelectionLayout.setOnClickListener {
+            showItemSelectionDialog()
         }
+    }
+    
+    /**
+     * 显示物品选择对话框
+     */
+    private fun showItemSelectionDialog() {
+        val items = viewModel.availableItems.value ?: emptyList()
+        if (items.isEmpty()) {
+            Toast.makeText(requireContext(), "暂无可借出的物品", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
+        val itemNames = items.map { "${it.item.name} (${it.item.category})" }.toTypedArray()
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("选择物品")
+            .setItems(itemNames) { _, which ->
+                viewModel.setSelectedItem(items[which])
+            }
+            .setNegativeButton("取消") { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     /**
      * 设置日期选择器
      */
     private fun setupDateSelector() {
-        binding.etExpectedReturnDate.setOnClickListener {
+        binding.returnDateLayout.setOnClickListener {
             showDatePicker()
         }
         
         // 显示当前选择的日期
         viewModel.expectedReturnDate.value?.let { date ->
-            binding.etExpectedReturnDate.setText(dateFormat.format(date))
+            binding.etExpectedReturnDate.text = dateFormat.format(date)
         }
     }
 
@@ -165,16 +189,37 @@ class AddBorrowFragment : Fragment() {
         // 观察选择的物品
         viewModel.selectedItem.observe(viewLifecycleOwner) { item ->
             if (item != null) {
-                binding.actvSelectItem.setText(item.item.name, false)
+                binding.itemSelectionText.text = item.item.name
             } else {
-                binding.actvSelectItem.setText("", false)
+                binding.itemSelectionText.text = ""
+            }
+        }
+        
+        // 观察借用人姓名
+        viewModel.borrowerName.observe(viewLifecycleOwner) { name ->
+            if (binding.etBorrowerName.text.toString() != name) {
+                binding.etBorrowerName.setText(name)
+            }
+        }
+        
+        // 观察借用人联系方式
+        viewModel.borrowerContact.observe(viewLifecycleOwner) { contact ->
+            if (binding.etBorrowerContact.text.toString() != contact) {
+                binding.etBorrowerContact.setText(contact)
+            }
+        }
+        
+        // 观察备注
+        viewModel.notes.observe(viewLifecycleOwner) { notes ->
+            if (binding.etNotes.text.toString() != notes) {
+                binding.etNotes.setText(notes)
             }
         }
         
         // 观察预计归还日期
         viewModel.expectedReturnDate.observe(viewLifecycleOwner) { date ->
             if (date != null) {
-                binding.etExpectedReturnDate.setText(dateFormat.format(date))
+                binding.etExpectedReturnDate.text = dateFormat.format(date)
             }
         }
         

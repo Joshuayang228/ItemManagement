@@ -260,11 +260,31 @@ class WarrantyRepository(
      * 获取保修概览数据
      * @return Triple<总数, 有效数, 即将到期数>
      */
-    suspend fun getWarrantyOverview(): Triple<Int, Int, Int> {
+    /**
+     * 获取保修概览数据
+     * @return 保修概览（总数、保修中、即将到期、已过期）
+     */
+    suspend fun getWarrantyOverview(): WarrantyOverview {
         val totalCount = warrantyDao.getAllWarrantiesOnce().size
-        val activeCount = getActiveWarrantyCount()
+        val activeCount = getActiveWarrantyCount() // 保修中（状态为ACTIVE）
         val nearExpirationCount = getWarrantiesExpiringInDays(30) // 30天内到期
+        val expiredCount = getExpiredWarrantyCount() // 已过期
         
-        return Triple(totalCount, activeCount, nearExpirationCount)
+        return WarrantyOverview(
+            total = totalCount,
+            active = activeCount,
+            nearExpiration = nearExpirationCount,
+            expired = expiredCount
+        )
     }
 }
+
+/**
+ * 保修概览数据类
+ */
+data class WarrantyOverview(
+    val total: Int,        // 总记录数
+    val active: Int,       // 保修中（包含即将到期的）
+    val nearExpiration: Int, // 即将到期
+    val expired: Int       // 已过期
+)

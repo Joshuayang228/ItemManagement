@@ -91,24 +91,8 @@ interface InventoryDetailDao {
     @Query("SELECT * FROM inventory_details WHERE status = 'OUT_OF_STOCK' ORDER BY updatedDate DESC")
     fun getOutOfStockItems(): Flow<List<InventoryDetailEntity>>
     
-    // === 保修相关查询 ===
-    
-    @Query("""
-        SELECT * FROM inventory_details 
-        WHERE warrantyEndDate IS NOT NULL 
-        AND warrantyEndDate > :now 
-        AND warrantyEndDate <= :warningDate
-        ORDER BY warrantyEndDate ASC
-    """)
-    fun getItemsWithWarrantyNearExpiration(now: Date = Date(), warningDate: Date): Flow<List<InventoryDetailEntity>>
-    
-    @Query("""
-        SELECT * FROM inventory_details 
-        WHERE warrantyEndDate IS NOT NULL 
-        AND warrantyEndDate <= :date
-        ORDER BY warrantyEndDate ASC
-    """)
-    fun getItemsWithExpiredWarranty(date: Date = Date()): Flow<List<InventoryDetailEntity>>
+    // === 保修相关查询已废弃 ===
+    // 保修信息已移至 WarrantyEntity，请使用 WarrantyDao 进行保修查询
     
     // === 开封状态查询 ===
     
@@ -223,21 +207,18 @@ interface InventoryDetailDao {
         SELECT * FROM inventory_details 
         WHERE (expirationDate IS NOT NULL AND expirationDate <= :warningDate)
         OR (stockWarningThreshold IS NOT NULL AND quantity <= stockWarningThreshold)
-        OR (warrantyEndDate IS NOT NULL AND warrantyEndDate <= :warrantyWarningDate)
         ORDER BY 
             CASE 
                 WHEN expirationDate IS NOT NULL AND expirationDate <= :now THEN 1
                 WHEN stockWarningThreshold IS NOT NULL AND quantity <= stockWarningThreshold THEN 2
                 WHEN expirationDate IS NOT NULL AND expirationDate <= :warningDate THEN 3
-                WHEN warrantyEndDate IS NOT NULL AND warrantyEndDate <= :warrantyWarningDate THEN 4
                 ELSE 5
             END,
             expirationDate ASC
     """)
     fun getItemsNeedingAttention(
         now: Date = Date(),
-        warningDate: Date,
-        warrantyWarningDate: Date
+        warningDate: Date
     ): Flow<List<InventoryDetailEntity>>
     
     // === 批量操作 ===

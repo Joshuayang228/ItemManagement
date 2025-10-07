@@ -27,10 +27,16 @@ class RecycleBinRepository(
             states.mapNotNull { state ->
                 val item = unifiedItemDao.getById(state.itemId)
                 item?.let {
+                    // 查找删除前的最后一个活跃状态
+                    val previousState = itemStateDao.getByItemId(state.itemId)
+                        .filter { s -> s.stateType != ItemStateType.DELETED && !s.isActive }
+                        .maxByOrNull { s -> s.deactivatedDate ?: Date(0) }
+                    
                     DeletedItemView(
                         unifiedItem = it,
                         deletedDate = state.activatedDate,
-                        deletedReason = state.notes
+                        deletedReason = state.notes,
+                        previousStateType = previousState?.stateType
                     )
                 }
             }

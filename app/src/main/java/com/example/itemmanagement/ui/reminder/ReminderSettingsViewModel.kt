@@ -108,6 +108,97 @@ class ReminderSettingsViewModel(
     }
     
     /**
+     * 更新库存提醒开关 (别名方法，与上面功能相同)
+     */
+    fun updateStockReminder(enabled: Boolean) {
+        updateStockReminderEnabled(enabled)
+    }
+    
+    /**
+     * 更新保修期提醒开关
+     */
+    fun updateIncludeWarranty(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.updateIncludeWarranty(enabled)
+                refreshCurrentSettings()
+            } catch (e: Exception) {
+                _errorMessage.value = "更新失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 更新推送通知开关
+     */
+    fun updatePushNotification(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.updatePushNotification(enabled)
+                refreshCurrentSettings()
+            } catch (e: Exception) {
+                _errorMessage.value = "更新失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 更新应用内提醒开关
+     */
+    fun updateInAppReminder(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.updateInAppReminder(enabled)
+                refreshCurrentSettings()
+            } catch (e: Exception) {
+                _errorMessage.value = "更新失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 更新周末暂停开关
+     */
+    fun updateWeekendPause(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                repository.updateWeekendPause(enabled)
+                refreshCurrentSettings()
+            } catch (e: Exception) {
+                _errorMessage.value = "更新失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 更新免打扰开始时间
+     */
+    fun updateQuietHourStart(time: String) {
+        viewModelScope.launch {
+            try {
+                repository.updateQuietHourStart(time)
+                refreshCurrentSettings()
+            } catch (e: Exception) {
+                _errorMessage.value = "更新失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 更新免打扰结束时间
+     */
+    fun updateQuietHourEnd(time: String) {
+        viewModelScope.launch {
+            try {
+                repository.updateQuietHourEnd(time)
+                refreshCurrentSettings()
+            } catch (e: Exception) {
+                _errorMessage.value = "更新失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
      * 更新完整设置
      */
     fun updateSettings(newSettings: ReminderSettingsEntity) {
@@ -155,6 +246,18 @@ class ReminderSettingsViewModel(
     }
     
     /**
+     * 添加新的分类阈值（简化版本）
+     */
+    fun addCategoryThreshold(category: String, minQuantity: Int) {
+        val threshold = CategoryThresholdEntity(
+            category = category,
+            minQuantity = minQuantity.toDouble(),
+            enabled = true
+        )
+        addCategoryThreshold(threshold)
+    }
+    
+    /**
      * 删除分类阈值
      */
     fun deleteCategoryThreshold(category: String) {
@@ -169,6 +272,24 @@ class ReminderSettingsViewModel(
                 _saveSuccess.value = true
             } catch (e: Exception) {
                 _errorMessage.value = "删除分类阈值失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 切换分类阈值启用状态
+     */
+    fun toggleCategoryThreshold(category: String, enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                val existing = repository.getThresholdByCategory(category)
+                if (existing != null) {
+                    repository.updateCategoryThreshold(existing.copy(enabled = enabled))
+                }
+                refreshCategoryThresholds()
+                _saveSuccess.value = true
+            } catch (e: Exception) {
+                _errorMessage.value = "更新分类状态失败：${e.message}"
             }
         }
     }
@@ -264,6 +385,40 @@ class ReminderSettingsViewModel(
                 _saveSuccess.value = true
             } catch (e: Exception) {
                 _errorMessage.value = "重置失败：${e.message}"
+            }
+        }
+    }
+    
+    /**
+     * 从已有物品中确保所有分类都有阈值
+     */
+    fun ensureCategoryThresholdsFromItems() {
+        viewModelScope.launch {
+            try {
+                // 获取所有已有的分类阈值
+                val existingThresholds = repository.getAllThresholds().map { it.category }.toSet()
+                
+                // 获取数据库中所有物品的分类（从UnifiedItemEntity）
+                val allCategories = repository.getAllItemCategories()
+                
+                // 为没有阈值的分类创建默认阈值
+                allCategories.forEach { category ->
+                    if (category.isNotEmpty() && category !in existingThresholds) {
+                        val threshold = CategoryThresholdEntity(
+                            category = category,
+                            minQuantity = 1.0, // 默认最低库存为1
+                            unit = "个",
+                            enabled = true,
+                            description = ""
+                        )
+                        repository.updateCategoryThreshold(threshold)
+                    }
+                }
+                
+                // 刷新阈值列表
+                refreshCategoryThresholds()
+            } catch (e: Exception) {
+                _errorMessage.value = "加载分类失败：${e.message}"
             }
         }
     }

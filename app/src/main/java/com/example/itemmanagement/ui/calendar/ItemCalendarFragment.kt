@@ -51,6 +51,9 @@ class ItemCalendarFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         android.util.Log.d("CalendarFragment", "=== onViewCreated() 开始 ===")
         
+        // 启用菜单
+        setHasOptionsMenu(true)
+        
         setupRecyclerView()
         setupObservers()
         setupClickListeners()
@@ -189,6 +192,21 @@ class ItemCalendarFragment : Fragment() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: android.view.Menu, inflater: android.view.MenuInflater) {
+        inflater.inflate(R.menu.menu_calendar, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+    
+    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_calendar_settings -> {
+                findNavController().navigate(R.id.action_item_calendar_to_reminder_settings)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
     private fun setupClickListeners() {
         // 月份导航按钮
         binding.previousMonthButton.setOnClickListener {
@@ -198,7 +216,6 @@ class ItemCalendarFragment : Fragment() {
         binding.nextMonthButton.setOnClickListener {
             viewModel.nextMonth()
         }
-        
     }
 
     private fun showSelectedDateEvents(date: Date) {

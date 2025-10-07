@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -87,7 +88,7 @@ class AddEditWarrantyFragment : Fragment() {
         setupItemSelection()
         setupDatePickers()
         setupWarrantyPeriodInput()
-        setupWarrantyStatusDropdown()
+        // setupWarrantyStatusDropdown() // 已移除保修详情卡片
         setupSaveButton()
     }
 
@@ -95,7 +96,7 @@ class AddEditWarrantyFragment : Fragment() {
      * 设置物品选择
      */
     private fun setupItemSelection() {
-        binding.itemSelectionAutoComplete.setOnClickListener {
+        binding.itemSelectionLayout.setOnClickListener {
             showItemSelectionDialog()
         }
     }
@@ -104,7 +105,7 @@ class AddEditWarrantyFragment : Fragment() {
      * 设置日期选择器
      */
     private fun setupDatePickers() {
-        binding.purchaseDateEditText.setOnClickListener {
+        binding.purchaseDateLayout.setOnClickListener {
             showDatePicker { date ->
                 viewModel.setPurchaseDate(date)
             }
@@ -115,20 +116,28 @@ class AddEditWarrantyFragment : Fragment() {
      * 设置保修期输入
      */
     private fun setupWarrantyPeriodInput() {
+        android.util.Log.d("AddEditWarrantyFrag", "setupWarrantyPeriodInput: 设置监听器")
+        // 直接在EditText中输入，监听文本变化
         binding.warrantyPeriodEditText.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
                 val text = s.toString()
+                android.util.Log.d("AddEditWarrantyFrag", "warrantyPeriodEditText afterTextChanged: '$text'")
                 if (text.isNotEmpty()) {
                     try {
                         val months = text.toInt()
+                        android.util.Log.d("AddEditWarrantyFrag", "解析保修期: $months 个月")
                         if (months > 0) {
                             viewModel.setWarrantyPeriodMonths(months)
+                        } else {
+                            android.util.Log.d("AddEditWarrantyFrag", "保修期 <= 0，忽略")
                         }
                     } catch (e: NumberFormatException) {
-                        // 忽略无效输入
+                        android.util.Log.d("AddEditWarrantyFrag", "解析保修期失败: ${e.message}")
                     }
+                } else {
+                    android.util.Log.d("AddEditWarrantyFrag", "保修期文本为空")
                 }
             }
         })
@@ -138,20 +147,10 @@ class AddEditWarrantyFragment : Fragment() {
      * 设置保修状态下拉菜单
      */
     private fun setupWarrantyStatusDropdown() {
-        val statusOptions = listOf("保修期内", "已过期", "已报修", "已作废")
-        val statusValues = listOf(
-            WarrantyStatus.ACTIVE,
-            WarrantyStatus.EXPIRED,
-            WarrantyStatus.CLAIMED,
-            WarrantyStatus.VOID
-        )
-        
-        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, statusOptions)
-        binding.warrantyStatusAutoComplete.setAdapter(adapter)
-        
-        binding.warrantyStatusAutoComplete.setOnItemClickListener { _, _, position, _ ->
-            viewModel.setStatus(statusValues[position])
-        }
+        // 保修状态已移除，不再需要
+        // binding.warrantyStatusLayout.setOnClickListener {
+        //     showWarrantyStatusDialog()
+        // }
     }
 
     /**
@@ -196,7 +195,7 @@ class AddEditWarrantyFragment : Fragment() {
         
         // 观察购买日期
         viewModel.purchaseDate.observe(viewLifecycleOwner) { date ->
-            binding.purchaseDateEditText.setText(dateFormat.format(date))
+            binding.purchaseDateEditText.text = dateFormat.format(date)
         }
         
         // 观察保修期
@@ -208,7 +207,42 @@ class AddEditWarrantyFragment : Fragment() {
         
         // 观察到期日期（自动计算）
         viewModel.warrantyEndDate.observe(viewLifecycleOwner) { date ->
-            binding.warrantyEndDateEditText.setText(dateFormat.format(date))
+            if (date != null) {
+                binding.warrantyEndDateEditText.text = dateFormat.format(date)
+            } else {
+                binding.warrantyEndDateEditText.text = ""
+            }
+        }
+        
+        // 观察保修状态 - 已移除保修详情卡片
+        // viewModel.status.observe(viewLifecycleOwner) { status ->
+        //     binding.warrantyStatusAutoComplete.text = when (status) {
+        //         WarrantyStatus.ACTIVE -> "保修期内"
+        //         WarrantyStatus.EXPIRED -> "已过期"
+        //         WarrantyStatus.CLAIMED -> "已报修"
+        //         WarrantyStatus.VOID -> "已作废"
+        //     }
+        // }
+        
+        // 观察保修服务商
+        viewModel.warrantyProvider.observe(viewLifecycleOwner) { provider ->
+            if (binding.warrantyProviderEditText.text.toString() != (provider ?: "")) {
+                binding.warrantyProviderEditText.setText(provider ?: "")
+            }
+        }
+        
+        // 观察联系方式
+        viewModel.contactInfo.observe(viewLifecycleOwner) { contact ->
+            if (binding.contactInfoEditText.text.toString() != (contact ?: "")) {
+                binding.contactInfoEditText.setText(contact ?: "")
+            }
+        }
+        
+        // 观察备注
+        viewModel.notes.observe(viewLifecycleOwner) { notes ->
+            if (binding.notesEditText.text.toString() != (notes ?: "")) {
+                binding.notesEditText.setText(notes ?: "")
+            }
         }
         
         // 观察凭证图片
@@ -218,13 +252,19 @@ class AddEditWarrantyFragment : Fragment() {
         
         // 观察表单验证状态
         viewModel.isFormValid.observe(viewLifecycleOwner) { isValid ->
+            android.util.Log.d("AddEditWarrantyFrag", "========== isFormValid 变化 ==========")
+            android.util.Log.d("AddEditWarrantyFrag", "isValid: $isValid")
+            android.util.Log.d("AddEditWarrantyFrag", "saveButton.isEnabled 之前: ${binding.saveButton.isEnabled}")
             binding.saveButton.isEnabled = isValid
             binding.saveButton.alpha = if (isValid) 1.0f else 0.5f
+            android.util.Log.d("AddEditWarrantyFrag", "saveButton.isEnabled 之后: ${binding.saveButton.isEnabled}")
+            android.util.Log.d("AddEditWarrantyFrag", "saveButton.alpha: ${binding.saveButton.alpha}")
+            android.util.Log.d("AddEditWarrantyFrag", "=====================================")
         }
         
         // 观察编辑模式
         viewModel.isEditMode.observe(viewLifecycleOwner) { isEditMode ->
-            binding.warrantyStatusLayout.visibility = if (isEditMode) View.VISIBLE else View.GONE
+            // binding.warrantyStatusLayout.visibility = if (isEditMode) View.VISIBLE else View.GONE // 已移除保修详情卡片
             binding.saveButton.text = if (isEditMode) "更新保修信息" else "保存保修信息"
         }
         
@@ -255,10 +295,11 @@ class AddEditWarrantyFragment : Fragment() {
      */
     private fun updateSelectedItemDisplay(item: ItemWithDetails?) {
         if (item != null) {
-            binding.itemSelectionAutoComplete.setText(item.item.name)
-            binding.selectedItemPreviewCard.visibility = View.VISIBLE
-            binding.selectedItemName.text = item.item.name
-            binding.selectedItemInfo.text = "${item.item.category} • ${item.item.brand ?: "未知品牌"}"
+            binding.itemSelectionAutoComplete.text = item.item.name
+            // 不再显示预览卡片，已经隐藏
+            // binding.selectedItemPreviewCard.visibility = View.VISIBLE
+            // binding.selectedItemName.text = item.item.name
+            // binding.selectedItemInfo.text = "${item.item.category} • ${item.item.brand ?: "未知品牌"}"
             
             // 加载物品图片
             val firstPhoto = item.photos.firstOrNull()
@@ -267,8 +308,8 @@ class AddEditWarrantyFragment : Fragment() {
                 // binding.selectedItemImage.setImageURI(Uri.parse(firstPhoto.uri))
             }
         } else {
-            binding.itemSelectionAutoComplete.setText("")
-            binding.selectedItemPreviewCard.visibility = View.GONE
+            binding.itemSelectionAutoComplete.text = "请选择物品"
+            // 预览卡片已隐藏
         }
     }
 
@@ -306,6 +347,90 @@ class AddEditWarrantyFragment : Fragment() {
     }
 
     /**
+     * 显示保修期输入对话框
+     */
+    private fun showWarrantyPeriodInputDialog() {
+        val currentValue = viewModel.warrantyPeriodMonths.value?.toString() ?: ""
+        val editText = EditText(requireContext()).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(currentValue)
+            hint = "请输入月数"
+        }
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("设置保修期")
+            .setView(editText)
+            .setPositiveButton("确定") { _, _ ->
+                val text = editText.text.toString()
+                if (text.isNotEmpty()) {
+                    try {
+                        val months = text.toInt()
+                        if (months > 0) {
+                            viewModel.setWarrantyPeriodMonths(months)
+                        } else {
+                            Toast.makeText(requireContext(), "保修期必须大于0", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: NumberFormatException) {
+                        Toast.makeText(requireContext(), "请输入有效的数字", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+    
+    /**
+     * 显示保修状态选择对话框
+     */
+    private fun showWarrantyStatusDialog() {
+        val statusOptions = arrayOf("保修期内", "已过期", "已报修", "已作废")
+        val statusValues = listOf(
+            WarrantyStatus.ACTIVE,
+            WarrantyStatus.EXPIRED,
+            WarrantyStatus.CLAIMED,
+            WarrantyStatus.VOID
+        )
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("选择保修状态")
+            .setItems(statusOptions) { _, which ->
+                viewModel.setStatus(statusValues[which])
+            }
+            .setNegativeButton("取消") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+    
+    /**
+     * 显示文本输入对话框
+     */
+    private fun showTextInputDialog(
+        title: String, 
+        currentValue: String, 
+        isMultiLine: Boolean = false,
+        onConfirm: (String) -> Unit
+    ) {
+        val editText = EditText(requireContext()).apply {
+            setText(currentValue)
+            hint = "请输入$title"
+            if (isMultiLine) {
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or 
+                            android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                minLines = 3
+                maxLines = 5
+            }
+        }
+        
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setView(editText)
+            .setPositiveButton("确定") { _, _ ->
+                onConfirm(editText.text.toString())
+            }
+            .setNegativeButton("取消") { dialog, _ -> dialog.dismiss() }
+            .show()
+    }
+
+    /**
      * 显示图片来源选择对话框
      */
     private fun showImageSourceDialog() {
@@ -335,10 +460,10 @@ class AddEditWarrantyFragment : Fragment() {
      * 保存表单数据到ViewModel
      */
     private fun saveFormData() {
-        // 保存其他表单字段
-        viewModel.setNotes(binding.notesEditText.text?.toString())
-        viewModel.setWarrantyProvider(binding.warrantyProviderEditText.text?.toString())
-        viewModel.setContactInfo(binding.contactInfoEditText.text?.toString())
+        // 保存其他表单字段（现在都是EditText了）
+        viewModel.setNotes(binding.notesEditText.text.toString().takeIf { it.isNotBlank() })
+        viewModel.setWarrantyProvider(binding.warrantyProviderEditText.text.toString().takeIf { it.isNotBlank() })
+        viewModel.setContactInfo(binding.contactInfoEditText.text.toString().takeIf { it.isNotBlank() })
     }
 
     // === 权限和图片选择相关方法 ===
