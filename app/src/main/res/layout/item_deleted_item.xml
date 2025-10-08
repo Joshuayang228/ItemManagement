@@ -5,15 +5,13 @@
     android:id="@+id/root"
     style="@style/Widget.App.Card.ListItem"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="6dp">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:padding="16dp">
 
         <!-- 选择框（选择模式时显示） -->
         <com.google.android.material.checkbox.MaterialCheckBox
@@ -26,23 +24,27 @@
             tools:visibility="visible" />
 
         <!-- 左侧：物品图标 -->
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/ivItemIcon"
+        <FrameLayout
             android:layout_width="90dp"
             android:layout_height="90dp"
-            android:layout_marginEnd="12dp"
-            android:background="?attr/colorSecondaryContainer"
-            android:contentDescription="物品图标"
-            android:padding="20dp"
-            android:scaleType="centerInside"
-            android:src="@drawable/ic_inventory_24dp"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
-            app:tint="?attr/colorOnSecondaryContainer" />
+            android:layout_marginEnd="16dp">
+
+            <ImageView
+                android:id="@+id/ivItemIcon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:background="@drawable/rounded_corner_background"
+                android:contentDescription="物品图片"
+                android:src="@drawable/ic_image_placeholder"
+                android:padding="20dp" />
+
+        </FrameLayout>
 
         <!-- 右侧：物品信息 -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="90dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -50,6 +52,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -66,30 +69,52 @@
                     tools:text="iPhone 15 Pro Max" />
 
                 <!-- 来源标签 -->
-                <com.google.android.material.chip.Chip
+                <TextView
                     android:id="@+id/tvSourceTag"
-                    style="@style/Widget.Material3.Chip.Assist"
                     android:layout_width="wrap_content"
-                    android:layout_height="24dp"
-                    android:layout_marginStart="8dp"
-                    android:text="库存"
-                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_background"
+                    android:backgroundTint="?attr/colorSecondaryContainer"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
                     android:textSize="11sp"
-                    app:chipBackgroundColor="?attr/colorSecondaryContainer"
-                    app:chipCornerRadius="6dp"
-                    app:chipMinHeight="24dp"
-                    app:chipMinTouchTargetSize="0dp"
-                    tools:text="库存" />
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:textStyle="bold"
+                    tools:text="库存物品" />
 
             </LinearLayout>
 
-            <!-- 第二行：分类 + 品牌 -->
+            <!-- 第二行：数量 · 分类 · 品牌 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvQuantity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp"
+                    android:visibility="gone"
+                    tools:text="数量：5"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/tvQuantityDivider"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="  •  "
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
                 <TextView
                     android:id="@+id/tvCategory"
@@ -105,8 +130,7 @@
                     android:id="@+id/tvBrandDivider"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="6dp"
-                    android:text="•"
+                    android:text="  •  "
                     android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="13sp"
                     android:visibility="gone"
@@ -127,44 +151,27 @@
 
             </LinearLayout>
 
-            <!-- 第三行：额外信息（容量、评分等） -->
-            <LinearLayout
-                android:id="@+id/layoutExtraInfo"
+            <!-- 弹性空间：将第三行推到底部 -->
+            <Space
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                tools:visibility="visible">
+                android:layout_height="0dp"
+                android:layout_weight="1" />
 
-                <TextView
-                    android:id="@+id/tvExtraInfo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="12sp"
-                    tools:text="256GB • ★4.5" />
-
-            </LinearLayout>
-
-            <!-- 第四行：删除时间 -->
+            <!-- 第三行：删除时间 + 操作按钮 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginBottom="0dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
                     android:layout_marginEnd="4dp"
                     android:contentDescription="删除时间"
                     android:src="@drawable/ic_schedule_24dp"
-                    app:tint="?attr/colorOnSurfaceVariant" />
+                    android:tint="#666666" />
 
                 <TextView
                     android:id="@+id/tvDeletedDate"
@@ -172,55 +179,69 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     tools:text="删除于 2天前" />
 
-            </LinearLayout>
-
-            <!-- 第五行：操作按钮（非选择模式时显示） -->
-            <LinearLayout
-                android:id="@+id/layoutActions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="end"
-                android:orientation="horizontal"
-                tools:visibility="visible">
-
-                <!-- 恢复按钮 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRestore"
-                    style="@style/Widget.Material3.Button.TextButton"
+                <!-- 操作按钮（非选择模式时显示） -->
+                <LinearLayout
+                    android:id="@+id/layoutActions"
                     android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginEnd="4dp"
-                    android:minWidth="72dp"
-                    android:paddingHorizontal="12dp"
-                    android:text="恢复"
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="13sp"
-                    app:icon="@drawable/ic_restore_24dp"
-                    app:iconGravity="textStart"
-                    app:iconPadding="4dp"
-                    app:iconSize="16dp"
-                    app:iconTint="?attr/colorPrimary" />
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    tools:visibility="visible">
 
-                <!-- 永久删除按钮 -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnDelete"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:minWidth="72dp"
-                    android:paddingHorizontal="12dp"
-                    android:text="删除"
-                    android:textColor="?attr/colorError"
-                    android:textSize="13sp"
-                    app:icon="@drawable/ic_delete_24dp"
-                    app:iconGravity="textStart"
-                    app:iconPadding="4dp"
-                    app:iconSize="16dp"
-                    app:iconTint="?attr/colorError" />
+                    <!-- 恢复按钮 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnRestore"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="4dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp"
+                        android:text="恢复"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="13sp"
+                        app:icon="@drawable/ic_restore_24dp"
+                        app:iconGravity="textStart"
+                        app:iconPadding="2dp"
+                        app:iconSize="14dp"
+                        app:iconTint="?attr/colorPrimary"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp" />
+
+                    <!-- 永久删除按钮 -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDelete"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="6dp"
+                        android:paddingTop="0dp"
+                        android:paddingBottom="0dp"
+                        android:text="删除"
+                        android:textColor="?attr/colorError"
+                        android:textSize="13sp"
+                        app:icon="@drawable/ic_delete_24dp"
+                        app:iconGravity="textStart"
+                        app:iconPadding="2dp"
+                        app:iconSize="14dp"
+                        app:iconTint="?attr/colorError"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp" />
+
+                </LinearLayout>
 
             </LinearLayout>
 

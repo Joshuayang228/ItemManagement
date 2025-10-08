@@ -247,7 +247,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="72dp"
         android:contentDescription="添加保修记录"
         style="@style/Widget.App.FloatingActionButton"
         app:srcCompat="@drawable/ic_add_24dp" />

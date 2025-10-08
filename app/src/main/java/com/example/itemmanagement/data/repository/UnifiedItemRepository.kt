@@ -1942,6 +1942,39 @@ class UnifiedItemRepository(
             android.util.Log.d("UnifiedItemRepository", "✅ 添加到购物清单完成")
         }
     }
+    
+    // ==================== 导出功能相关方法 ====================
+    
+    /**
+     * 获取所有位置（同步版本，用于导出）
+     */
+    suspend fun getAllLocationsSync(): List<LocationEntity> {
+        return locationDao.getAllLocationsSync()
+    }
+    
+    /**
+     * 获取所有购物详情
+     */
+    fun getAllShoppingDetails(): Flow<List<ShoppingDetailEntity>> {
+        return shoppingDetailDao.getAllPendingItems()
+    }
+    
+    /**
+     * 获取购物物品及统一物品信息（用于导出）
+     */
+    suspend fun getAllShoppingItemsWithUnifiedItem(): List<Pair<ShoppingDetailEntity, UnifiedItemEntity>> {
+        return try {
+            val shoppingDetails = shoppingDetailDao.getAllPendingItems().first()
+            shoppingDetails.mapNotNull { detail ->
+                unifiedItemDao.getById(detail.itemId)?.let { unifiedItem ->
+                    detail to unifiedItem
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("UnifiedItemRepository", "获取购物清单物品失败", e)
+            emptyList()
+        }
+    }
 }
 
 /**

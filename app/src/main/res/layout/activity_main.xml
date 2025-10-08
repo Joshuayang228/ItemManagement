@@ -29,7 +29,45 @@
                 android:id="@+id/toolbar"
                 style="@style/Widget.App.Toolbar.Material3"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize" />
+                android:layout_height="?attr/actionBarSize">
+                
+                <!-- 搜索框容器（覆盖标题位置） -->
+                <LinearLayout
+                    android:id="@+id/searchBarContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/toolbarSearchBar"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="56dp"
+                        android:layout_marginEnd="56dp"
+                        android:hint="搜索已删除的物品..."
+                        android:background="@null"
+                        android:textSize="16sp"
+                        android:singleLine="true"
+                        android:imeOptions="actionSearch"
+                        android:inputType="text" />
+                    
+                    <!-- 清除搜索按钮 -->
+                    <ImageButton
+                        android:id="@+id/btnClearSearch"
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_close"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="清除搜索"
+                        android:visibility="gone"
+                        app:tint="?attr/colorOnSurface" />
+                        
+                </LinearLayout>
+                
+            </com.google.android.material.appbar.MaterialToolbar>
 
         </com.google.android.material.appbar.AppBarLayout>
 

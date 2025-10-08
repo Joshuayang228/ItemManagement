@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.itemmanagement.ItemManagementApplication
+import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentInventoryAnalysisBinding
 import com.example.itemmanagement.data.model.InventoryAnalysisData
 import com.example.itemmanagement.data.model.InventoryStats
@@ -49,9 +50,15 @@ class InventoryAnalysisFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        hideBottomNavigation()
         setupObservers()
         setupRefreshListener()
         setupChartToggleListeners() // 添加图表切换监听器
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideBottomNavigation()
     }
 
     private fun setupObservers() {
@@ -470,6 +477,21 @@ class InventoryAnalysisFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        showBottomNavigation()
         _binding = null
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 }

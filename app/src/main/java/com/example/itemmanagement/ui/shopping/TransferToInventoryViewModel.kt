@@ -272,9 +272,9 @@ class TransferToInventoryViewModel(
             // 保修信息已移至 WarrantyEntity
             // warrantyPeriod = getFieldValueAsInt("保修期"),
             // warrantyEndDate = getFieldValueAsDate("保修到期时间"),
-            isHighTurnover = getFieldValueAsBoolean("高周转") ?: false,
+            isHighTurnover = false,
             openStatus = getFieldValueAsOpenStatus("开封状态"),
-            openDate = getFieldValueAsDate("开封时间"),
+            openDate = null,
             wasteDate = null,
             createdDate = currentDate,
             updatedDate = currentDate

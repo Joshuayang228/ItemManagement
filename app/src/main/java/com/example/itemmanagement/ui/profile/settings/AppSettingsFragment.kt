@@ -72,6 +72,8 @@ class AppSettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        hideBottomNavigation()
+        
         val isRecreated = savedInstanceState != null
         
         // 初始化 RecyclerView
@@ -82,6 +84,11 @@ class AppSettingsFragment : Fragment() {
         
         // 初始化UI（在协程中完成后才设置监听器）
         initializeUI(isRecreated)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideBottomNavigation()
     }
     
     /**
@@ -376,8 +383,23 @@ class AppSettingsFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        showBottomNavigation()
         categoryThresholdAdapter = null
         _binding = null
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 }
  

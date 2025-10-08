@@ -14,7 +14,10 @@ import java.util.Date
  */
 class RecycleBinRepository(
     private val unifiedItemDao: UnifiedItemDao,
-    private val itemStateDao: ItemStateDao
+    private val itemStateDao: ItemStateDao,
+    private val photoDao: com.example.itemmanagement.data.dao.PhotoDao,
+    private val inventoryDetailDao: com.example.itemmanagement.data.dao.unified.InventoryDetailDao,
+    private val shoppingDetailDao: com.example.itemmanagement.data.dao.unified.ShoppingDetailDao
 ) {
     
     // ==================== 数据流 ====================
@@ -32,11 +35,48 @@ class RecycleBinRepository(
                         .filter { s -> s.stateType != ItemStateType.DELETED && !s.isActive }
                         .maxByOrNull { s -> s.deactivatedDate ?: Date(0) }
                     
+                    // 获取第一张照片
+                    val firstPhoto = photoDao.getPhotosByItemId(state.itemId).firstOrNull()
+                    
+                    // 获取数量和价格信息（根据之前的状态类型）
+                    var quantity: Double? = null
+                    var quantityUnit: String? = null
+                    var price: Double? = null
+                    
+                    when (previousState?.stateType) {
+                        ItemStateType.INVENTORY -> {
+                            // 从库存详情获取
+                            val inventoryDetail = inventoryDetailDao.getByItemId(state.itemId)
+                            quantity = inventoryDetail?.quantity
+                            quantityUnit = inventoryDetail?.unit
+                            price = inventoryDetail?.price
+                        }
+                        ItemStateType.SHOPPING -> {
+                            // 从购物清单详情获取
+                            val shoppingDetail = shoppingDetailDao.getByItemId(state.itemId)
+                            quantity = shoppingDetail?.quantity
+                            quantityUnit = shoppingDetail?.quantityUnit
+                            price = shoppingDetail?.estimatedPrice
+                        }
+                        else -> {
+                            // 未知状态，尝试两者都查询
+                            val inventoryDetail = inventoryDetailDao.getByItemId(state.itemId)
+                            val shoppingDetail = shoppingDetailDao.getByItemId(state.itemId)
+                            quantity = inventoryDetail?.quantity ?: shoppingDetail?.quantity
+                            quantityUnit = inventoryDetail?.unit ?: shoppingDetail?.quantityUnit
+                            price = inventoryDetail?.price ?: shoppingDetail?.estimatedPrice
+                        }
+                    }
+                    
                     DeletedItemView(
                         unifiedItem = it,
                         deletedDate = state.activatedDate,
                         deletedReason = state.notes,
-                        previousStateType = previousState?.stateType
+                        previousStateType = previousState?.stateType,
+                        firstPhotoUri = firstPhoto?.uri,
+                        quantity = quantity,
+                        quantityUnit = quantityUnit,
+                        price = price
                     )
                 }
             }

@@ -12,6 +12,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.itemmanagement.ItemManagementApplication
+import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentDataExportBinding
 import com.example.itemmanagement.export.ExportManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -57,12 +58,19 @@ class DataExportFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        hideBottomNavigation()
         setupButtons()
         observeViewModel()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideBottomNavigation()
     }
     
     override fun onDestroyView() {
         super.onDestroyView()
+        showBottomNavigation()
         _binding = null
     }
     
@@ -93,6 +101,12 @@ class DataExportFragment : Fragment() {
         binding.btnExportBorrows.setOnClickListener {
             checkPermissionAndExport {
                 viewModel.exportBorrows()
+            }
+        }
+        
+        binding.btnExportShopping.setOnClickListener {
+            checkPermissionAndExport {
+                viewModel.exportShoppingList()
             }
         }
     }
@@ -132,6 +146,7 @@ class DataExportFragment : Fragment() {
         binding.tvItemCount.text = stats.itemCount.toString()
         binding.tvWarrantyCount.text = stats.warrantyCount.toString()
         binding.tvBorrowCount.text = stats.borrowCount.toString()
+        binding.tvShoppingCount.text = stats.shoppingCount.toString()
     }
     
     /**
@@ -142,6 +157,7 @@ class DataExportFragment : Fragment() {
         binding.btnExportItems.isEnabled = hasData
         binding.btnExportWarranties.isEnabled = hasData
         binding.btnExportBorrows.isEnabled = hasData
+        binding.btnExportShopping.isEnabled = hasData
         
         if (!hasData) {
             showNoDataMessage()
@@ -163,6 +179,14 @@ class DataExportFragment : Fragment() {
      * 检查权限并执行导出
      */
     private fun checkPermissionAndExport(exportAction: () -> Unit) {
+        // Android 10+ (API 29+) 使用 MediaStore API，不需要存储权限
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            // 直接执行导出
+            exportAction()
+            return
+        }
+        
+        // Android 10 以下需要检查存储权限
         when {
             ContextCompat.checkSelfPermission(
                 requireContext(),
@@ -261,5 +285,19 @@ class DataExportFragment : Fragment() {
             .setMessage(message)
             .setPositiveButton("知道了", null)
             .show()
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 }

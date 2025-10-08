@@ -34,7 +34,11 @@ data class DeletedItemView(
     @Embedded val unifiedItem: UnifiedItemEntity,
     val deletedDate: Date, // 从 ItemStateEntity 获取
     val deletedReason: String?, // 从 ItemStateEntity 获取
-    val previousStateType: ItemStateType? = null // 删除前的状态（用于显示来源）
+    val previousStateType: ItemStateType? = null, // 删除前的状态（用于显示来源）
+    val firstPhotoUri: String? = null, // 第一张照片的URI
+    val quantity: Double? = null, // 数量（库存或购物清单）
+    val quantityUnit: String? = null, // 数量单位
+    val price: Double? = null // 价格（可选）
 ) {
     /**
      * 获取物品ID

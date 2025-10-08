@@ -37,6 +37,7 @@ class ExportManager(private val context: Context) {
         ITEMS("物品清单", "items"),
         WARRANTIES("保修记录", "warranties"),
         BORROWS("借还记录", "borrows"),
+        SHOPPING("购物清单", "shopping"),
         SUMMARY("数据摘要", "summary"),
         ALL("完整数据", "complete")
     }
@@ -114,6 +115,7 @@ class ExportManager(private val context: Context) {
         itemsContent: String,
         warrantiesContent: String,
         borrowsContent: String,
+        shoppingContent: String,
         summaryContent: String
     ): List<ExportResult> = withContext(Dispatchers.IO) {
         
@@ -131,6 +133,10 @@ class ExportManager(private val context: Context) {
         
         if (borrowsContent.isNotEmpty() && !borrowsContent.startsWith("没有")) {
             results.add(saveCSVFile(borrowsContent, ExportType.BORROWS, "借还记录_${timestamp}.csv"))
+        }
+        
+        if (shoppingContent.isNotEmpty() && !shoppingContent.startsWith("没有")) {
+            results.add(saveCSVFile(shoppingContent, ExportType.SHOPPING, "购物清单_${timestamp}.csv"))
         }
         
         // 导出摘要

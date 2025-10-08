@@ -34,26 +34,30 @@ class ReminderSettingsFragment : Fragment() {
     // UI组件
     private lateinit var loadingProgressBar: ProgressBar
     
-    // 基础设置
+    // 通知方式
+    private lateinit var pushNotificationSwitch: SwitchMaterial
+    private lateinit var inAppReminderSwitch: SwitchMaterial
+    private lateinit var layoutNotificationTime: android.view.ViewGroup
+    private lateinit var textNotificationTime: TextView
+    private lateinit var layoutQuietHours: android.view.ViewGroup
+    private lateinit var textQuietStart: TextView
+    private lateinit var textQuietEnd: TextView
+    private lateinit var weekendPauseSwitch: SwitchMaterial
+    
+    // 提醒规则
     private lateinit var expirationDaysSeekBar: SeekBar
     private lateinit var expirationDaysText: TextView
     private lateinit var includeWarrantySwitch: SwitchMaterial
-    private lateinit var notificationTimeButton: Button
     private lateinit var stockReminderSwitch: SwitchMaterial
-    private lateinit var pushNotificationSwitch: SwitchMaterial
-    private lateinit var inAppReminderSwitch: SwitchMaterial
-    private lateinit var quietStartButton: Button
-    private lateinit var quietEndButton: Button
-    private lateinit var weekendPauseSwitch: SwitchMaterial
     
     // 分类阈值设置
     private lateinit var categoryThresholdsRecyclerView: RecyclerView
+    private lateinit var layoutCategoryThresholds: android.view.ViewGroup
     private lateinit var addCategoryButton: Button
     private var categoryThresholdAdapter: CategoryThresholdAdapter? = null
     
     // 操作按钮
-    private lateinit var resetButton: Button
-    private lateinit var saveButton: Button
+    private lateinit var resetButton: android.widget.TextView
     
     private var currentSettings: ReminderSettingsEntity? = null
     
@@ -78,25 +82,29 @@ class ReminderSettingsFragment : Fragment() {
         // 加载指示器
         loadingProgressBar = view.findViewById(R.id.progressBar)
         
-        // 基础设置控件
+        // 通知方式控件
+        pushNotificationSwitch = view.findViewById(R.id.switchPushNotification)
+        inAppReminderSwitch = view.findViewById(R.id.switchInAppReminder)
+        layoutNotificationTime = view.findViewById(R.id.layoutNotificationTime)
+        textNotificationTime = view.findViewById(R.id.textNotificationTime)
+        layoutQuietHours = view.findViewById(R.id.layoutQuietHours)
+        textQuietStart = view.findViewById(R.id.textQuietStart)
+        textQuietEnd = view.findViewById(R.id.textQuietEnd)
+        weekendPauseSwitch = view.findViewById(R.id.switchWeekendPause)
+        
+        // 提醒规则控件
         expirationDaysSeekBar = view.findViewById(R.id.seekBarExpirationDays)
         expirationDaysText = view.findViewById(R.id.textExpirationDays)
         includeWarrantySwitch = view.findViewById(R.id.switchIncludeWarranty)
-        notificationTimeButton = view.findViewById(R.id.buttonNotificationTime)
         stockReminderSwitch = view.findViewById(R.id.switchStockReminder)
-        pushNotificationSwitch = view.findViewById(R.id.switchPushNotification)
-        inAppReminderSwitch = view.findViewById(R.id.switchInAppReminder)
-        quietStartButton = view.findViewById(R.id.buttonQuietStart)
-        quietEndButton = view.findViewById(R.id.buttonQuietEnd)
-        weekendPauseSwitch = view.findViewById(R.id.switchWeekendPause)
         
         // 分类阈值设置
         categoryThresholdsRecyclerView = view.findViewById(R.id.recyclerViewCategoryThresholds)
+        layoutCategoryThresholds = view.findViewById(R.id.layoutCategoryThresholds)
         addCategoryButton = view.findViewById(R.id.buttonAddCategory)
         
         // 操作按钮
         resetButton = view.findViewById(R.id.buttonReset)
-        saveButton = view.findViewById(R.id.buttonSave)
     }
     
     private fun setupRecyclerView() {
@@ -135,14 +143,14 @@ class ReminderSettingsFragment : Fragment() {
         })
         
         // 通知时间设置
-        notificationTimeButton.setOnClickListener {
+        layoutNotificationTime.setOnClickListener {
             showTimePickerDialog { time ->
                 viewModel.updateNotificationTime(time)
             }
         }
         
-        // 勿扰时间设置
-        quietStartButton.setOnClickListener {
+        // 勿扰时间设置 - 开始时间
+        textQuietStart.setOnClickListener {
             showTimePickerDialog { time ->
                 currentSettings?.let { settings ->
                     val updated = settings.copy(quietHourStart = time)
@@ -151,7 +159,8 @@ class ReminderSettingsFragment : Fragment() {
             }
         }
         
-        quietEndButton.setOnClickListener {
+        // 勿扰时间设置 - 结束时间
+        textQuietEnd.setOnClickListener {
             showTimePickerDialog { time ->
                 currentSettings?.let { settings ->
                     val updated = settings.copy(quietHourEnd = time)
@@ -160,9 +169,21 @@ class ReminderSettingsFragment : Fragment() {
             }
         }
         
+        // 勿扰时段容器点击（方便用户点击）
+        layoutQuietHours.setOnClickListener {
+            showTimePickerDialog { time ->
+                currentSettings?.let { settings ->
+                    val updated = settings.copy(quietHourStart = time)
+                    viewModel.updateSettings(updated)
+                }
+            }
+        }
+        
         // 开关监听
         stockReminderSwitch.setOnCheckedChangeListener { _, isChecked ->
             viewModel.updateStockReminderEnabled(isChecked)
+            // 显示/隐藏库存阈值容器
+            layoutCategoryThresholds.visibility = if (isChecked) View.VISIBLE else View.GONE
         }
         
         pushNotificationSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -202,17 +223,6 @@ class ReminderSettingsFragment : Fragment() {
         resetButton.setOnClickListener {
             showResetConfirmDialog()
         }
-        
-        // 保存按钮
-        saveButton.setOnClickListener {
-            currentSettings?.let { settings ->
-                viewModel.validateSettings(settings)?.let { error ->
-                    showSnackbar(error)
-                    return@setOnClickListener
-                }
-                showSnackbar("设置已保存")
-            }
-        }
     }
     
     private fun observeViewModel() {
@@ -227,7 +237,6 @@ class ReminderSettingsFragment : Fragment() {
         
         viewModel.loading.observe(viewLifecycleOwner) { loading ->
             loadingProgressBar.visibility = if (loading) View.VISIBLE else View.GONE
-            saveButton.isEnabled = !loading
         }
         
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
@@ -247,17 +256,21 @@ class ReminderSettingsFragment : Fragment() {
     
     private fun updateUI(settings: ReminderSettingsEntity) {
         // 更新UI控件值（不触发监听器）
-        expirationDaysSeekBar.progress = settings.expirationAdvanceDays
-        expirationDaysText.text = "${settings.expirationAdvanceDays}天"
-        
-        includeWarrantySwitch.isChecked = settings.includeWarranty
-        notificationTimeButton.text = "通知时间：${settings.notificationTime}"
-        stockReminderSwitch.isChecked = settings.stockReminderEnabled
+        // 通知方式
         pushNotificationSwitch.isChecked = settings.pushNotificationEnabled
         inAppReminderSwitch.isChecked = settings.inAppReminderEnabled
-        quietStartButton.text = "开始：${settings.quietHourStart}"
-        quietEndButton.text = "结束：${settings.quietHourEnd}"
+        textNotificationTime.text = settings.notificationTime
+        textQuietStart.text = settings.quietHourStart
+        textQuietEnd.text = settings.quietHourEnd
         weekendPauseSwitch.isChecked = settings.weekendPause
+        
+        // 提醒规则
+        expirationDaysSeekBar.progress = settings.expirationAdvanceDays
+        expirationDaysText.text = "${settings.expirationAdvanceDays}天"
+        includeWarrantySwitch.isChecked = settings.includeWarranty
+        stockReminderSwitch.isChecked = settings.stockReminderEnabled
+        // 显示/隐藏库存阈值容器
+        layoutCategoryThresholds.visibility = if (settings.stockReminderEnabled) View.VISIBLE else View.GONE
     }
     
     private fun showTimePickerDialog(onTimeSet: (String) -> Unit) {

@@ -594,11 +594,6 @@ abstract class BaseItemViewModel(
             hint = "点击选择日期"
         ))
 
-        setFieldProperties("开封时间", FieldProperties(
-            validationType = ValidationType.DATE,
-            hint = "点击选择日期"
-        ))
-
         setFieldProperties("保修到期时间", FieldProperties(
             validationType = ValidationType.DATE,
             hint = "点击选择日期"
@@ -655,16 +650,6 @@ abstract class BaseItemViewModel(
             isCustomizable = true
         ))
 
-        // Switch类型字段（FieldViewFactory会根据字段名自动创建Switch）
-        setFieldProperties("加入心愿单", FieldProperties(
-            displayStyle = DisplayStyle.DEFAULT,
-            hint = "是否加入心愿单"
-        ))
-
-        setFieldProperties("高周转", FieldProperties(
-            displayStyle = DisplayStyle.DEFAULT,
-            hint = "是否为高周转物品"
-        ))
     }
     
     /**

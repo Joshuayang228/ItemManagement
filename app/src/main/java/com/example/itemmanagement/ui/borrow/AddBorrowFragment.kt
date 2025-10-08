@@ -52,6 +52,7 @@ class AddBorrowFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        hideBottomNavigation()
         setupFormInputs()
         setupButtons()
         observeViewModel()
@@ -71,8 +72,14 @@ class AddBorrowFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        hideBottomNavigation()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        showBottomNavigation()
         _binding = null
     }
 
@@ -312,5 +319,19 @@ class AddBorrowFragment : Fragment() {
      */
     private data class ItemDisplayWrapper(val item: ItemWithDetails) {
         override fun toString(): String = item.item.name
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 }

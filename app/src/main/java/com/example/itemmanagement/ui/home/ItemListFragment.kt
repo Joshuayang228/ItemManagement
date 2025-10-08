@@ -53,10 +53,33 @@ class ItemListFragment : Fragment() {
         val listType = arguments?.getString("listType") ?: "all"
         val title = arguments?.getString("title") ?: "物品列表"
         
+        // 隐藏底部导航栏
+        hideBottomNavigation()
+        
         setupUI(title)
         setupRecyclerView()
         loadData(listType)
         observeData()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // 确保底部导航栏隐藏
+        view?.post { hideBottomNavigation() }
+    }
+    
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        requireActivity().findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+    
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        requireActivity().findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
     
     private fun setupUI(title: String) {
@@ -92,6 +115,8 @@ class ItemListFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        // 恢复显示底部导航栏
+        showBottomNavigation()
         _binding = null
     }
 } 

@@ -57,11 +57,17 @@ class WasteReportFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        hideBottomNavigation()
         setupUI()
         setupObservers()
         
         // 先检查并更新过期物品状态，然后加载报告
         viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.LAST_MONTH)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideBottomNavigation()
     }
 
     private fun setupUI() {
@@ -418,7 +424,22 @@ class WasteReportFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        showBottomNavigation()
         _binding = null
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 }
 

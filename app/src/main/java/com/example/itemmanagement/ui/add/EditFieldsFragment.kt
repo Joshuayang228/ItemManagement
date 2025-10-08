@@ -10,7 +10,6 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.itemmanagement.databinding.FragmentEditFieldsBinding
 import com.example.itemmanagement.ui.base.BaseItemViewModel
 import com.example.itemmanagement.ui.base.FieldInteractionViewModel
-import com.example.itemmanagement.ui.add.ShoppingFieldManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.tabs.TabLayoutMediator
 import android.util.Log
@@ -50,12 +49,22 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         // 获取购物模式参数
         isShoppingMode = arguments?.getBoolean(ARG_IS_SHOPPING_MODE, false) ?: false
         
-        // 根据模式设置tabs - 与原版完全一致
+        // 添加日志，帮助排查问题
+        Log.d("EditFieldsFragment", "=== 📦 初始化编辑字段Fragment ===")
+        Log.d("EditFieldsFragment", "购物模式参数: isShoppingMode = $isShoppingMode")
+        
+        // 根据模式设置tabs - 优化后的分类
         tabs = if (isShoppingMode) {
-            listOf("全部", "基础信息", "购物字段", "数字类", "日期类", "状态类", "分类", "商业类", "其他")
+            // 购物模式：购物管理紧跟基础信息
+            Log.d("EditFieldsFragment", "✅ 使用购物模式 - 显示「购物管理」tab")
+            listOf("全部", "基础信息", "购物管理", "数字类", "日期类", "商业类", "其他")
         } else {
-            listOf("全部", "基础信息", "数字类", "日期类", "状态类", "分类", "商业类", "其他")
+            // 库存模式：库存管理紧跟基础信息
+            Log.d("EditFieldsFragment", "✅ 使用库存模式 - 显示「库存管理」tab")
+            listOf("全部", "基础信息", "库存管理", "数字类", "日期类", "商业类", "其他")
         }
+        
+        Log.d("EditFieldsFragment", "标签页列表: ${tabs.joinToString(", ")}")
     }
 
     override fun onCreateView(
@@ -129,11 +138,10 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             val fields = when (tabName) {
                 "全部" -> getAllFields()
                 "基础信息" -> getBasicFields()
-                "购物字段" -> getShoppingFields()
+                "购物管理" -> getShoppingFields()
                 "数字类" -> getNumberFields()
                 "日期类" -> getDateFields()
-                "状态类" -> getStatusFields()
-                "分类" -> getCategoryFields()
+                "库存管理" -> getInventoryFields()
                 "商业类" -> getCommercialFields()
                 "其他" -> getOtherFields()
                 else -> emptyList()
@@ -197,31 +205,107 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             Log.d("EditFieldsFragment", "ViewModel选中字段: ${field.name} (order: ${field.order})")
         }
         
-        // 获取所有可能的字段名称
-        val allFieldNames = setOf(
-            "名称", "数量", "位置", "加入心愿单", "高周转",
-            "单价", "总价", "容量", "评分",
-            "添加日期", "购买日期", "生产日期", "保修期", "保修到期时间", 
-            "保质期", "保质过期时间", "开封时间",
-            "开封状态",
-            "分类", "子分类", "标签", "季节",
-            "购买渠道", "商家名称", "品牌", "序列号",
-            "备注"
+        // 获取所有可能的字段名称（区分库存和购物模式）
+        
+        // === 通用字段（两种模式都需要）===
+        val commonFieldNames = setOf(
+            // 基础信息
+            "名称", "数量", "分类", "子分类", "品牌", "标签", "季节", "备注",
+            // 数字类
+            "单价", "总价", "容量", "规格", "评分",
+            // 日期类（通用）
+            "添加日期",
+            // 商业类（通用）
+            "购买渠道", "商家名称", "序列号"
         )
         
-        // 字段组映射
-        val fieldGroupMap = mapOf(
-            "名称" to "基础信息", "数量" to "基础信息", "位置" to "基础信息", 
-            "加入心愿单" to "基础信息", "高周转" to "基础信息",
-            "单价" to "数字类", "总价" to "数字类", "容量" to "数字类", "评分" to "数字类",
-            "添加日期" to "日期类", "购买日期" to "日期类", "生产日期" to "日期类", 
-            "保修期" to "日期类", "保修到期时间" to "日期类", "保质期" to "日期类", 
-            "保质过期时间" to "日期类", "开封时间" to "日期类",
-            "开封状态" to "状态类",
-            "分类" to "分类", "子分类" to "分类", "标签" to "分类", "季节" to "分类",
-            "购买渠道" to "商业类", "商家名称" to "商业类", "品牌" to "商业类", "序列号" to "商业类",
-            "备注" to "其他"
+        // === 库存专有字段（仅库存模式）===
+        val inventoryOnlyFields = setOf(
+            "位置", "开封状态",
+            // 食品相关日期
+            "生产日期", "保质期", "保质过期时间", "购买日期",
+            // 电子产品相关日期
+            "保修期", "保修到期时间"
         )
+        
+        // === 购物专有字段（仅购物模式）===
+        val shoppingOnlyFields = setOf(
+            "预估价格", "预算上限", "购买商店",
+            "重要程度", "紧急程度", "截止日期", "购买原因"
+        )
+        
+        // 根据模式选择字段
+        val allFieldNames = if (isShoppingMode) {
+            Log.d("EditFieldsFragment", "🛒 购物模式：通用字段(${commonFieldNames.size}) + 购物专有(${shoppingOnlyFields.size})")
+            commonFieldNames + shoppingOnlyFields
+        } else {
+            Log.d("EditFieldsFragment", "📦 库存模式：通用字段(${commonFieldNames.size}) + 库存专有(${inventoryOnlyFields.size})")
+            commonFieldNames + inventoryOnlyFields
+        }
+        
+        Log.d("EditFieldsFragment", "总字段数: ${allFieldNames.size}")
+        
+        // 字段组映射（优化后的分组）
+        val fieldGroupMap = mutableMapOf<String, String>().apply {
+            // 基础信息：物品核心属性
+            put("名称", "基础信息")
+            put("数量", "基础信息")
+            put("分类", "基础信息")
+            put("子分类", "基础信息")
+            put("品牌", "基础信息")
+            put("标签", "基础信息")
+            put("季节", "基础信息")
+            put("单价", "基础信息")
+            put("备注", "基础信息")
+            
+            // 数字类
+            put("总价", "数字类")
+            put("容量", "数字类")
+            put("评分", "数字类")
+            put("规格", "数字类")
+            
+            // 日期类（通用）
+            put("添加日期", "日期类")
+            put("购买日期", "日期类")
+            
+            // 商业类
+            put("商家名称", "商业类")
+            put("序列号", "商业类")
+            
+            if (isShoppingMode) {
+                // === 购物模式独有映射 ===
+                // 购物管理
+                put("预估价格", "购物管理")
+                put("购买渠道", "购物管理")
+                put("购买商店", "购物管理")
+                put("预算上限", "购物管理")
+                put("重要程度", "购物管理")
+                put("紧急程度", "购物管理")
+                put("截止日期", "购物管理")
+                put("购买原因", "购物管理")
+                
+                // 日期类（购物模式专有）
+                put("截止日期", "日期类")
+            } else {
+                // === 库存模式独有映射 ===
+                // 库存管理
+                put("位置", "库存管理")
+                put("开封状态", "库存管理")
+                put("生产日期", "库存管理")
+                put("保质期", "库存管理")
+                put("保质过期时间", "库存管理")
+                
+                // 日期类（库存专有）
+                put("生产日期", "日期类")
+                put("保修期", "日期类")
+                put("保修到期时间", "日期类")
+                put("保质期", "日期类")
+                put("保质过期时间", "日期类")
+                
+                // 商业类（库存模式下"购买渠道"在这里）
+                put("购买渠道", "商业类")
+            }
+        }
         
         val commonFields = mutableListOf<Field>()
         
@@ -255,22 +339,14 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             }
         }
         
-        Log.d("EditFieldsFragment", "创建的通用字段数量: ${commonFields.size}")
+        Log.d("EditFieldsFragment", "创建的字段数量: ${commonFields.size}")
         commonFields.sortedBy { it.order }.forEachIndexed { index, field ->
-            Log.d("EditFieldsFragment", "通用字段[$index]: ${field.name} (order: ${field.order}, selected: ${field.isSelected})")
+            Log.d("EditFieldsFragment", "字段[$index]: ${field.name} (order: ${field.order}, selected: ${field.isSelected})")
         }
         
-        // 如果是购物模式，添加购物专用字段
-        val finalFields = if (isShoppingMode) {
-            val shoppingFields = getShoppingFields()
-            Log.d("EditFieldsFragment", "购物字段数量: ${shoppingFields.size}")
-            commonFields + shoppingFields
-        } else {
-            commonFields
-        }
-        
-        Log.d("EditFieldsFragment", "最终字段列表数量: ${finalFields.size}")
-        return finalFields
+        // 所有字段已经在 commonFields 中（包括购物/库存专有字段），无需额外添加
+        Log.d("EditFieldsFragment", "最终字段列表数量: ${commonFields.size}")
+        return commonFields
     }
 
     private fun getBasicFields(): List<Field> {
@@ -278,9 +354,13 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         return listOf(
             Field("基础信息", "名称", selectedFields.any { it.name == "名称" }),
             Field("基础信息", "数量", selectedFields.any { it.name == "数量" }),
-            Field("基础信息", "位置", selectedFields.any { it.name == "位置" }),
-            Field("基础信息", "加入心愿单", selectedFields.any { it.name == "加入心愿单" }),
-            Field("基础信息", "高周转", selectedFields.any { it.name == "高周转" })
+            Field("基础信息", "分类", selectedFields.any { it.name == "分类" }),
+            Field("基础信息", "子分类", selectedFields.any { it.name == "子分类" }),
+            Field("基础信息", "品牌", selectedFields.any { it.name == "品牌" }),
+            Field("基础信息", "标签", selectedFields.any { it.name == "标签" }),
+            Field("基础信息", "季节", selectedFields.any { it.name == "季节" }),
+            Field("基础信息", "单价", selectedFields.any { it.name == "单价" }),
+            Field("基础信息", "备注", selectedFields.any { it.name == "备注" })
         )
     }
 
@@ -295,105 +375,185 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         )
     }
 
+    /**
+     * 日期类字段（根据模式返回不同字段）
+     */
     private fun getDateFields(): List<Field> {
         val selectedFields = baseViewModel.selectedFields.value ?: emptySet()
-        return listOf(
-            Field("日期类", "添加日期", selectedFields.any { it.name == "添加日期" }),
-            Field("日期类", "购买日期", selectedFields.any { it.name == "购买日期" }),
-            Field("日期类", "生产日期", selectedFields.any { it.name == "生产日期" }),
-            Field("日期类", "保修期", selectedFields.any { it.name == "保修期" }),
-            Field("日期类", "保修到期时间", selectedFields.any { it.name == "保修到期时间" }),
-            Field("日期类", "保质期", selectedFields.any { it.name == "保质期" }),
-            Field("日期类", "保质过期时间", selectedFields.any { it.name == "保质过期时间" }),
-            Field("日期类", "开封时间", selectedFields.any { it.name == "开封时间" })
-        )
+        
+        return if (isShoppingMode) {
+            // 购物模式：只显示购物相关日期（2个）
+            listOf(
+                Field("日期类", "添加日期", selectedFields.any { it.name == "添加日期" }),
+                Field("日期类", "截止日期", selectedFields.any { it.name == "截止日期" })
+            )
+        } else {
+            // 库存模式：显示所有日期字段（7个）
+            listOf(
+                Field("日期类", "添加日期", selectedFields.any { it.name == "添加日期" }),
+                Field("日期类", "购买日期", selectedFields.any { it.name == "购买日期" }),
+                Field("日期类", "生产日期", selectedFields.any { it.name == "生产日期" }),
+                Field("日期类", "保修期", selectedFields.any { it.name == "保修期" }),
+                Field("日期类", "保修到期时间", selectedFields.any { it.name == "保修到期时间" }),
+                Field("日期类", "保质期", selectedFields.any { it.name == "保质期" }),
+                Field("日期类", "保质过期时间", selectedFields.any { it.name == "保质过期时间" })
+            )
+        }
     }
 
-    private fun getStatusFields(): List<Field> {
+    private fun getInventoryFields(): List<Field> {
         val selectedFields = baseViewModel.selectedFields.value ?: emptySet()
         return listOf(
-            Field("状态类", "开封状态", selectedFields.any { it.name == "开封状态" })
+            Field("库存管理", "数量", selectedFields.any { it.name == "数量" }),
+            Field("库存管理", "位置", selectedFields.any { it.name == "位置" }),
+            Field("库存管理", "开封状态", selectedFields.any { it.name == "开封状态" }),
+            Field("库存管理", "生产日期", selectedFields.any { it.name == "生产日期" }),
+            Field("库存管理", "保质期", selectedFields.any { it.name == "保质期" }),
+            Field("库存管理", "保质过期时间", selectedFields.any { it.name == "保质过期时间" })
         )
     }
 
-    private fun getCategoryFields(): List<Field> {
-        val selectedFields = baseViewModel.selectedFields.value ?: emptySet()
-        return listOf(
-            Field("分类", "分类", selectedFields.any { it.name == "分类" }),
-            Field("分类", "子分类", selectedFields.any { it.name == "子分类" }),
-            Field("分类", "标签", selectedFields.any { it.name == "标签" }),
-            Field("分类", "季节", selectedFields.any { it.name == "季节" })
-        )
-    }
-
+    /**
+     * 商业类字段（购物模式下不重复显示"购买渠道"）
+     */
     private fun getCommercialFields(): List<Field> {
         val selectedFields = baseViewModel.selectedFields.value ?: emptySet()
-        return listOf(
-            Field("商业类", "单价", selectedFields.any { it.name == "单价" }),
-            Field("商业类", "购买渠道", selectedFields.any { it.name == "购买渠道" }),
-            Field("商业类", "商家名称", selectedFields.any { it.name == "商家名称" }),
-            Field("商业类", "品牌", selectedFields.any { it.name == "品牌" }),
-            Field("商业类", "序列号", selectedFields.any { it.name == "序列号" })
-        )
+        
+        val fields = mutableListOf<Field>()
+        fields.add(Field("商业类", "单价", selectedFields.any { it.name == "单价" }))
+        
+        // 购买渠道：购物模式下只在"购物管理"tab显示，库存模式下在"商业类"显示
+        if (!isShoppingMode) {
+            fields.add(Field("商业类", "购买渠道", selectedFields.any { it.name == "购买渠道" }))
+        }
+        
+        fields.add(Field("商业类", "商家名称", selectedFields.any { it.name == "商家名称" }))
+        fields.add(Field("商业类", "品牌", selectedFields.any { it.name == "品牌" }))
+        fields.add(Field("商业类", "序列号", selectedFields.any { it.name == "序列号" }))
+        
+        return fields
     }
 
     private fun getOtherFields(): List<Field> {
         val selectedFields = baseViewModel.selectedFields.value ?: emptySet()
         return listOf(
-            Field("其他", "备注", selectedFields.any { it.name == "备注" })
+            Field("其他", "备注", selectedFields.any { it.name == "备注" }),
+            Field("其他", "规格", selectedFields.any { it.name == "规格" }),
+            Field("其他", "序列号", selectedFields.any { it.name == "序列号" })
         )
     }
     
+    /**
+     * 购物管理字段（购物清单专用）
+     * 8个字段，覆盖购物计划和执行
+     */
     private fun getShoppingFields(): List<Field> {
         if (!isShoppingMode) return emptyList()
         
         val selectedFields = baseViewModel.selectedFields.value ?: emptySet()
-        val shoppingFieldNames = ShoppingFieldManager.getDefaultShoppingFields().filter { fieldName ->
-            // 过滤掉基础信息字段，因为它们在"基础信息"tab中
-            !setOf("名称", "数量", "分类", "品牌", "备注").contains(fieldName)
-        }
         
-        return shoppingFieldNames.map { fieldName ->
-            val group = ShoppingFieldManager.getShoppingFieldGroup(fieldName)
-            Field(group, fieldName, selectedFields.any { it.name == fieldName })
-        }.sortedBy { ShoppingFieldManager.getShoppingFieldOrder(it.name) }
+        // 按逻辑分组定义购物管理字段
+        return listOf(
+            // === 价格预算（4个）===
+            Field("购物管理", "预估价格", selectedFields.any { it.name == "预估价格" }),
+            Field("购物管理", "购买渠道", selectedFields.any { it.name == "购买渠道" }),
+            Field("购物管理", "购买商店", selectedFields.any { it.name == "购买商店" }),
+            Field("购物管理", "预算上限", selectedFields.any { it.name == "预算上限" }),
+            
+            // === 优先级规划（3个）===
+            Field("购物管理", "重要程度", selectedFields.any { it.name == "重要程度" }),
+            Field("购物管理", "紧急程度", selectedFields.any { it.name == "紧急程度" }),
+            Field("购物管理", "截止日期", selectedFields.any { it.name == "截止日期" }),
+            
+            // === 备注（1个）===
+            Field("购物管理", "购买原因", selectedFields.any { it.name == "购买原因" })
+        )
     }
 
     /**
-     * 全选所有字段 - 优化版本，批量更新避免性能问题
+     * 全选当前tab的字段 - 只选中当前tab，保留其他tab已选字段
      */
     private fun selectAllFields() {
-        Log.d("EditFieldsFragment", "=== 开始全选字段 ===")
+        Log.d("EditFieldsFragment", "=== 开始全选当前tab字段 ===")
         
         try {
-            // 获取所有字段
-            val allFields = getAllFields()
-            Log.d("EditFieldsFragment", "获取到所有字段数量: ${allFields.size}")
+            // 获取当前tab位置
+            val currentPosition = binding.viewPager.currentItem
+            val currentTabName = if (currentPosition < tabs.size) tabs[currentPosition] else "未知"
             
-            if (allFields.isEmpty()) {
-                Log.w("EditFieldsFragment", "没有可选择的字段")
+            Log.d("EditFieldsFragment", "当前tab: $currentTabName (位置: $currentPosition)")
+            
+            // 获取当前tab的字段
+            val currentTabFields = when (currentTabName) {
+                "全部" -> getAllFields()
+                "基础信息" -> getBasicFields()
+                "购物管理" -> getShoppingFields()
+                "数字类" -> getNumberFields()
+                "日期类" -> getDateFields()
+                "库存管理" -> getInventoryFields()
+                "商业类" -> getCommercialFields()
+                "其他" -> getOtherFields()
+                else -> emptyList()
+            }
+            
+            Log.d("EditFieldsFragment", "当前tab有 ${currentTabFields.size} 个字段")
+            
+            if (currentTabFields.isEmpty()) {
+                Log.w("EditFieldsFragment", "当前tab没有可选择的字段")
+                android.widget.Toast.makeText(
+                    requireContext(), 
+                    "当前tab没有可选字段", 
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
                 return
             }
             
             // 更新全选按钮状态，防止重复点击
             binding.selectAllButton.isEnabled = false
-            binding.selectAllButton.text = "全选中..."
+            binding.selectAllButton.text = "选中中..."
             
-            // 🚀 性能优化：批量更新字段选择状态，避免多次LiveData更新
-            val selectedFields = allFields.map { field ->
+            // 获取当前已选中的字段（转为可变集合）
+            val currentSelectedFields = (baseViewModel.selectedFields.value ?: emptySet()).toMutableSet()
+            
+            // 将当前tab的所有字段标记为选中
+            val fieldsToSelect = currentTabFields.map { field ->
                 Field(field.group, field.name, true, field.order)
-            }.toSet()
+            }
             
-            // 直接批量设置所有字段，只触发一次LiveData更新
-            baseViewModel.setSelectedFields(selectedFields)
+            // 合并到已选中的字段集合中（去重）
+            fieldsToSelect.forEach { field ->
+                // 移除旧的同名字段，添加新的选中状态
+                currentSelectedFields.removeIf { it.name == field.name }
+                currentSelectedFields.add(field)
+            }
             
-            Log.d("EditFieldsFragment", "批量设置选中字段数量: ${selectedFields.size}")
+            Log.d("EditFieldsFragment", "准备选中当前tab的 ${fieldsToSelect.size} 个字段，总共 ${currentSelectedFields.size} 个已选字段")
+            
+            // 批量更新字段选择状态
+            baseViewModel.setSelectedFields(currentSelectedFields)
             
             // 延迟刷新UI，确保数据更新完成
             binding.root.post {
                 try {
-                    // 刷新所有页面的UI
-                    currentAdapter?.notifyDataSetChanged()
+                    // 获取当前显示的Fragment并更新其UI
+                    val currentFragment = childFragmentManager.findFragmentByTag("f$currentPosition")
+                    if (currentFragment is FieldListFragment) {
+                        // 重新获取当前tab的字段（已包含更新后的选中状态）
+                        val updatedFields = when (currentTabName) {
+                            "全部" -> getAllFields()
+                            "基础信息" -> getBasicFields()
+                            "购物管理" -> getShoppingFields()
+                            "数字类" -> getNumberFields()
+                            "日期类" -> getDateFields()
+                            "库存管理" -> getInventoryFields()
+                            "商业类" -> getCommercialFields()
+                            "其他" -> getOtherFields()
+                            else -> emptyList()
+                        }
+                        // 直接更新当前Fragment的字段列表
+                        currentFragment.updateFields(updatedFields)
+                        Log.d("EditFieldsFragment", "已更新当前Fragment的UI，字段数: ${updatedFields.size}")
+                    }
                     
                     // 恢复按钮状态
                     binding.selectAllButton.isEnabled = true
@@ -402,11 +562,11 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
                     // 显示完成提示
                     android.widget.Toast.makeText(
                         requireContext(), 
-                        "已全选 ${selectedFields.size} 个字段", 
+                        "已全选「$currentTabName」的 ${fieldsToSelect.size} 个字段", 
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                     
-                    Log.d("EditFieldsFragment", "全选完成，UI已刷新")
+                    Log.d("EditFieldsFragment", "全选当前tab完成，UI已刷新")
                 } catch (e: Exception) {
                     Log.e("EditFieldsFragment", "刷新UI时出错: ${e.message}")
                     // 确保按钮状态恢复

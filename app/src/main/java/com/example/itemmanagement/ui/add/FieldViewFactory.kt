@@ -150,10 +150,6 @@ class FieldViewFactory(
                 android.util.Log.d("FieldViewFactory", "   ⚪ 创建 RadioGroup (开封状态)")
                 createRadioGroup()
             }
-            field.name == "加入心愿单" || field.name == "高周转" -> {
-                android.util.Log.d("FieldViewFactory", "   🔘 创建 Switch (${field.name})")
-                createSwitchView(field.name, properties)
-            }
             properties.displayStyle == DisplayStyle.TAG -> {
                 android.util.Log.d("FieldViewFactory", "   🏷️ 创建 TagSelector (DisplayStyle.TAG)")
                 createTagSelector(field.name, properties)

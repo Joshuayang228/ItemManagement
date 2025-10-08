@@ -57,9 +57,10 @@ class DataExportViewModel(
         val itemCount: Int = 0,
         val warrantyCount: Int = 0,
         val borrowCount: Int = 0,
+        val shoppingCount: Int = 0,
         val hasData: Boolean = false
     ) {
-        val totalCount: Int get() = itemCount + warrantyCount + borrowCount
+        val totalCount: Int get() = itemCount + warrantyCount + borrowCount + shoppingCount
     }
     
     // ==================== 初始化 ====================
@@ -101,7 +102,10 @@ class DataExportViewModel(
             
             try {
                 val items = itemRepository.getAllItemsWithDetails().first()
-                val csvContent = CSVExporter.exportItems(items)
+                val locations = itemRepository.getAllLocationsSync()
+                val locationsMap = locations.associateBy { it.id }
+                
+                val csvContent = CSVExporter.exportItems(items, locationsMap)
                 val result = exportManager.saveCSVFile(csvContent, ExportManager.ExportType.ITEMS)
                 
                 _exportResult.value = ExportResult(
@@ -114,6 +118,35 @@ class DataExportViewModel(
                 _exportResult.value = ExportResult(
                     success = false,
                     message = "导出物品清单失败: ${e.message}"
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    
+    /**
+     * 导出购物清单
+     */
+    fun exportShoppingList() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            
+            try {
+                val shoppingItems = itemRepository.getAllShoppingItemsWithUnifiedItem()
+                val csvContent = CSVExporter.exportShoppingList(shoppingItems)
+                val result = exportManager.saveCSVFile(csvContent, ExportManager.ExportType.SHOPPING)
+                
+                _exportResult.value = ExportResult(
+                    success = result.success,
+                    message = result.message,
+                    exportedFiles = listOf(result)
+                )
+                
+            } catch (e: Exception) {
+                _exportResult.value = ExportResult(
+                    success = false,
+                    message = "导出购物清单失败: ${e.message}"
                 )
             } finally {
                 _isLoading.value = false
@@ -238,11 +271,20 @@ class DataExportViewModel(
                     }
                 } ?: 0
                 
+                val shoppingCount = withContext(Dispatchers.IO) {
+                    try {
+                        itemRepository.getAllShoppingDetails().first().size
+                    } catch (e: Exception) {
+                        0
+                    }
+                }
+                
                 _dataStatistics.value = DataStatistics(
                     itemCount = itemCount,
                     warrantyCount = warrantyCount,
                     borrowCount = borrowCount,
-                    hasData = itemCount > 0 || warrantyCount > 0 || borrowCount > 0
+                    shoppingCount = shoppingCount,
+                    hasData = itemCount > 0 || warrantyCount > 0 || borrowCount > 0 || shoppingCount > 0
                 )
                 
             } catch (e: Exception) {
@@ -261,16 +303,26 @@ class DataExportViewModel(
         val items = itemRepository.getAllItemsWithDetails().first()
         val warranties = warrantyRepository?.getAllWarrantiesStream()?.first() ?: emptyList()
         val borrows = borrowRepository?.getAllBorrowsWithItemInfoFlow()?.first() ?: emptyList()
+        val shoppingItems = try {
+            itemRepository.getAllShoppingItemsWithUnifiedItem()
+        } catch (e: Exception) {
+            emptyList()
+        }
+        
+        // 获取位置信息
+        val locations = itemRepository.getAllLocationsSync()
+        val locationsMap = locations.associateBy { it.id }
         
         // 生成CSV内容
-        val itemsContent = CSVExporter.exportItems(items)
+        val itemsContent = CSVExporter.exportItems(items, locationsMap)
         val warrantiesContent = CSVExporter.exportWarranties(warranties)
         val borrowsContent = CSVExporter.exportBorrows(borrows)
-        val summaryContent = CSVExporter.exportSummary(items.size, warranties.size, borrows.size)
+        val shoppingContent = CSVExporter.exportShoppingList(shoppingItems)
+        val summaryContent = CSVExporter.exportSummary(items.size, warranties.size, borrows.size, shoppingItems.size)
         
         // 批量导出
         val exportResults = exportManager.exportAllData(
-            itemsContent, warrantiesContent, borrowsContent, summaryContent
+            itemsContent, warrantiesContent, borrowsContent, shoppingContent, summaryContent
         )
         
         results.addAll(exportResults)

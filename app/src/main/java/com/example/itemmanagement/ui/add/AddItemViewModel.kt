@@ -427,7 +427,6 @@ class AddItemViewModel(
         // 日期字段
         val productionDate = parseDate(fieldValues["生产日期"] as? String)
         val expirationDate = parseDate(fieldValues["保质过期时间"] as? String)
-        val openDate = parseDate(fieldValues["开封时间"] as? String)
         val purchaseDate = parseDate(fieldValues["购买日期"] as? String)
         // 保修信息已移至 WarrantyEntity，不再存储在 InventoryDetailEntity
         // val warrantyEndDate = parseDate(fieldValues["保修到期时间"] as? String)
@@ -449,7 +448,6 @@ class AddItemViewModel(
         val stockWarningThreshold = (fieldValues["库存预警值"] as? String)?.toIntOrNull()
         val purchaseChannel = fieldValues["购买渠道"] as? String
         val storeName = fieldValues["商家名称"] as? String
-        val isHighTurnover = fieldValues["高周转"] as? Boolean ?: false
         // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
         
         // 期限字段
@@ -473,7 +471,7 @@ class AddItemViewModel(
             productionDate = productionDate,
             expirationDate = expirationDate,
             openStatus = openStatus,
-            openDate = openDate,
+            openDate = null,
             status = ItemStatus.IN_STOCK, // 默认在库状态
             stockWarningThreshold = stockWarningThreshold,
             price = price,
@@ -487,7 +485,7 @@ class AddItemViewModel(
             // 保修信息已移至 WarrantyEntity，不再存储在 InventoryDetailEntity
             // warrantyPeriod = warrantyPeriod,
             // warrantyEndDate = warrantyEndDate,
-            isHighTurnover = isHighTurnover,
+            isHighTurnover = false,
             wasteDate = null
             // 注意：capacity, rating, season, serialNumber 已移至 UnifiedItemEntity
         )
@@ -592,7 +590,6 @@ class AddItemViewModel(
         val addDate = parseDate(fieldValues["添加日期"] as? String) ?: Date()
         // 保修信息已移至 WarrantyEntity
         // val warrantyEndDate = parseDate(fieldValues["保修到期时间"] as? String)
-        val openDate = parseDate(fieldValues["开封时间"] as? String)
         
         // 开封状态
         val openStatus = when (fieldValues["开封状态"] as? String) {
@@ -668,7 +665,7 @@ class AddItemViewModel(
             productionDate = productionDate,
             expirationDate = expirationDate,
             openStatus = openStatus,
-            openDate = openDate,
+            openDate = null,
             brand = fieldValues["品牌"] as? String,
             specification = fieldValues["规格"] as? String,
             stockWarningThreshold = (fieldValues["库存预警值"] as? String)?.toIntOrNull(),
@@ -691,7 +688,7 @@ class AddItemViewModel(
             warrantyEndDate = null,
             serialNumber = fieldValues["序列号"] as? String,
             addDate = addDate,
-            isHighTurnover = isHighTurnover,
+            isHighTurnover = false,
             tags = tags
         )
     }
@@ -777,11 +774,11 @@ class AddItemViewModel(
             Field("基础信息", "名称", true),
             Field("基础信息", "数量", true),
             Field("基础信息", "位置", true),
+            Field("基础信息", "单价", true),  // 添加单价为默认选中
             Field("其他", "备注", true),
             Field("分类", "分类", true),
             Field("分类", "标签", true),  // 添加标签为默认选中
-            Field("日期类", "添加日期", true),
-            Field("基础信息", "高周转", false)
+            Field("日期类", "添加日期", true)
         )
         
         _selectedFields.value = defaultFields.toSet()

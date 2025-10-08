@@ -360,7 +360,7 @@ class WarehouseItemAdapter(
                     val daysExpired = -daysUntilExpiration
                     binding.expirationStatusView.setStatus(
                         progress, 
-                        "已过期 $daysExpired 天", 
+                        "过期 $daysExpired 天", 
                         itemView.context.getColor(R.color.status_error)
                     )
                 }

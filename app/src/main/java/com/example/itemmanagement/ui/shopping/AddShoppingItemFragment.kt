@@ -126,8 +126,12 @@ class AddShoppingItemFragment : BaseItemFragment<AddShoppingItemViewModel>() {
             fieldValueManager.saveFieldValues(fieldViews)
         }
         
-        // 使用EditFieldsFragment
-        val editFieldsFragment = com.example.itemmanagement.ui.add.EditFieldsFragment.newInstance(viewModel, false)
+        // 使用EditFieldsFragment，传递isShoppingMode=true
+        android.util.Log.d("AddShoppingItemFragment", "🛒 打开编辑字段对话框 - 购物模式")
+        val editFieldsFragment = com.example.itemmanagement.ui.add.EditFieldsFragment.newInstance(
+            fieldViewModel = viewModel,
+            isShoppingMode = true  // ⭐ 修复：传递购物模式参数
+        )
         editFieldsFragment.show(childFragmentManager, "EditFieldsDialog")
     }
 

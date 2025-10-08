@@ -47,7 +47,10 @@ class ItemManagementApplication : Application() {
     val recycleBinRepository by lazy { 
         RecycleBinRepository(
             database.unifiedItemDao(),
-            database.itemStateDao()
+            database.itemStateDao(),
+            database.photoDao(),
+            database.inventoryDetailDao(),
+            database.shoppingDetailDao()
         ) 
     }
     

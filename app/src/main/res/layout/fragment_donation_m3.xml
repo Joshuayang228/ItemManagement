@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Material 3 捐赠界面 - 升级版 -->
+<!-- Material 3 捐赠界面 - 优化版 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="?attr/colorSurface"
     tools:context=".ui.profile.donation.DonationFragment">
 
     <LinearLayout
@@ -19,12 +19,13 @@
 
         <!-- 感谢卡片 - Material 3设计 -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Material3.CardView.Elevated"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
-            app:cardElevation="3dp"
-            app:cardBackgroundColor="@color/primary"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="?attr/colorPrimary"
             app:strokeWidth="0dp">
 
             <LinearLayout
@@ -36,18 +37,17 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="💝 感谢您的支持"
-                    android:textSize="20sp"
+                    android:text="感谢您的支持"
+                    android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                     android:textColor="@color/white"
-                    android:textStyle="bold"
                     android:gravity="center"
                     android:layout_marginBottom="12dp" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="您的打赏是我持续优化和更新这款应用的动力。\n每一份支持都让我倍感温暖！"
-                    android:textSize="14sp"
+                    android:text="如果这款应用对您有帮助，欢迎请开发者喝杯咖啡。\n每一份支持都是我持续优化的动力！"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                     android:textColor="@color/white"
                     android:gravity="center"
                     android:lineSpacingExtra="4dp"
@@ -62,20 +62,18 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="选择支付方式"
-            android:textSize="18sp"
-            android:textColor="@color/black"
-            android:textStyle="bold"
+            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
             android:layout_marginBottom="16dp" />
 
-        <!-- 微信打赏 - Material 3卡片 -->
+        <!-- 微信请喝咖啡 - Material 3卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardWechat"
+            style="@style/Widget.Material3.CardView.Elevated"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/white"
             app:strokeWidth="1dp"
             app:strokeColor="#E0E0E0"
             android:foreground="?android:attr/selectableItemBackground">
@@ -97,7 +95,7 @@
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_list"
+                        android:src="@drawable/ic_wechat"
                         android:layout_marginEnd="12dp"
                         app:tint="#00C851" />
 
@@ -110,42 +108,36 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="微信打赏"
-                            android:textSize="16sp"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
+                            android:text="微信请喝咖啡"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="推荐使用微信支付"
-                            android:textSize="12sp"
-                            android:textColor="#666666"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:layout_marginTop="2dp" />
 
                     </LinearLayout>
 
                     <!-- 推荐标签 -->
-                    <TextView
+                    <com.google.android.material.chip.Chip
+                        style="@style/Widget.Material3.Chip.Suggestion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="推荐"
-                        android:textSize="10sp"
-                        android:textStyle="bold"
                         android:textColor="@color/white"
-                        android:background="@drawable/bg_status_label_normal"
-                        android:backgroundTint="#00C851"
-                        android:paddingStart="6dp"
-                        android:paddingTop="2dp"
-                        android:paddingEnd="6dp"
-                        android:paddingBottom="2dp" />
+                        app:chipBackgroundColor="#00C851"
+                        app:chipStrokeWidth="0dp"
+                        app:chipMinHeight="24dp" />
 
                 </LinearLayout>
 
                 <!-- 微信收款码 -->
                 <com.google.android.material.card.MaterialCardView
-                    android:layout_width="220dp"
-                    android:layout_height="220dp"
+                    android:layout_width="180dp"
+                    android:layout_height="180dp"
                     android:layout_gravity="center"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="2dp"
@@ -167,23 +159,23 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:text="长按二维码保存图片"
-                    android:textSize="11sp"
-                    android:textColor="#888888"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:gravity="center" />
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 支付宝打赏 - Material 3卡片 -->
+        <!-- 支付宝请喝咖啡 - Material 3卡片 -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardAlipay"
+            style="@style/Widget.Material3.CardView.Elevated"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/white"
             app:strokeWidth="1dp"
             app:strokeColor="#E0E0E0"
             android:foreground="?android:attr/selectableItemBackground">
@@ -205,7 +197,7 @@
                     <ImageView
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:src="@drawable/ic_list"
+                        android:src="@drawable/ic_alipay"
                         android:layout_marginEnd="12dp"
                         app:tint="#1677FF" />
 
@@ -218,17 +210,15 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="支付宝打赏"
-                            android:textSize="16sp"
-                            android:textColor="@color/black"
-                            android:textStyle="bold" />
+                            android:text="支付宝请喝咖啡"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="同样支持支付宝支付"
-                            android:textSize="12sp"
-                            android:textColor="#666666"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:layout_marginTop="2dp" />
 
                     </LinearLayout>
@@ -237,8 +227,8 @@
 
                 <!-- 支付宝收款码 -->
                 <com.google.android.material.card.MaterialCardView
-                    android:layout_width="220dp"
-                    android:layout_height="220dp"
+                    android:layout_width="180dp"
+                    android:layout_height="180dp"
                     android:layout_gravity="center"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="2dp"
@@ -260,22 +250,21 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:text="长按二维码保存图片"
-                    android:textSize="11sp"
-                    android:textColor="#888888"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:gravity="center" />
 
             </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- 感谢名单 - Material 3卡片 -->
+        <!-- 联系我 - Material 3卡片 -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.Material3.CardView.Elevated"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/white"
             app:strokeWidth="1dp"
             app:strokeColor="#E0E0E0">
 
@@ -285,83 +274,75 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
+                <!-- 卡片标题：图标+文字 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_wechat"
+                        android:layout_marginEnd="8dp"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="联系我"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
+                </LinearLayout>
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🙏 感谢名单"
-                    android:textSize="16sp"
-                    android:textColor="@color/black"
-                    android:textStyle="bold"
+                    android:text="如有问题或建议，欢迎联系"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:layout_marginBottom="12dp" />
 
-                <TextView
-                    android:id="@+id/tvDonorList"
+                <!-- 微信号显示 -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="感谢每一位支持者的打赏！\n您的支持将在这里展示（可选择匿名）"
-                    android:textSize="14sp"
-                    android:textColor="#666666"
-                    android:lineSpacingExtra="4dp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_hint_rounded"
+                    android:padding="12dp">
 
-            </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="微信号："
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
 
-        </com.google.android.material.card.MaterialCardView>
+                    <TextView
+                        android:id="@+id/tvWechatId"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Joshuayang2228"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
 
-        <!-- 留言板 - Material 3卡片 -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/white"
-            app:strokeWidth="1dp"
-            app:strokeColor="#E0E0E0">
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCopyWechat"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="复制"
+                        android:textSize="12sp"
+                        app:icon="@drawable/ic_content_copy_24dp"
+                        app:iconSize="16dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="💌 留言鼓励"
-                    android:textSize="16sp"
-                    android:textColor="@color/black"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    app:boxStrokeColor="@color/primary"
-                    app:hintTextColor="@color/primary"
-                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etMessage"
-                        android:layout_width="match_parent"
-                        android:layout_height="80dp"
-                        android:hint="写点什么鼓励一下开发者吧..."
-                        android:textSize="14sp"
-                        android:textColor="@color/black"
-                        android:gravity="start|top"
-                        android:maxLength="200"
-                        android:inputType="textMultiLine" />
-
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSendMessage"
-                    style="@style/Widget.Material3.Button"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_gravity="end"
-                    android:text="发送留言"
-                    android:textSize="14sp"
-                    app:backgroundTint="@color/primary" />
+                </LinearLayout>
 
             </LinearLayout>
 

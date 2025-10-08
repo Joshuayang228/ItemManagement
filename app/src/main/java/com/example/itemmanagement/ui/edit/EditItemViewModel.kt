@@ -355,11 +355,6 @@ class EditItemViewModel(
             fieldsToShow.add(Field("基础信息", "开封状态", true, getEditModeOrder("开封状态")))
         }
         
-        item.openDate?.let { 
-            saveFieldValue("开封时间", dateFormat.format(it))
-            fieldsToShow.add(Field("日期类", "开封时间", true, getEditModeOrder("开封时间")))
-        }
-        
         // 商业信息字段
         item.purchaseChannel?.let { if (it.isNotBlank() && it != "未指定") {
             saveFieldValue("购买渠道", it)
@@ -463,13 +458,6 @@ class EditItemViewModel(
             fieldsToShow.add(Field("分类", "标签", true, getEditModeOrder("标签")))
         }
         
-        
-        // 高周转状态
-        if (item.isHighTurnover) {
-            saveFieldValue("高周转", true)
-            fieldsToShow.add(Field("基础信息", "高周转", true, getEditModeOrder("高周转")))
-        }
-        
         // 设置字段选择状态
         Log.d("EditItemViewModel", "设置字段选择状态，总共 ${fieldsToShow.size} 个字段")
         fieldsToShow.forEach { field ->
@@ -513,7 +501,6 @@ class EditItemViewModel(
         // 日期字段
         val productionDate = parseDate(getFieldValue("生产日期")?.toString())
         val expirationDate = parseDate(getFieldValue("保质过期时间")?.toString())
-        val openDate = parseDate(getFieldValue("开封时间")?.toString())
         val purchaseDate = parseDate(getFieldValue("购买日期")?.toString())
         // 保修信息已移至 WarrantyEntity
         // val warrantyEndDate = parseDate(getFieldValue("保修到期时间")?.toString())
@@ -567,7 +554,7 @@ class EditItemViewModel(
             productionDate = productionDate,
             expirationDate = expirationDate,
             openStatus = openStatus,
-            openDate = openDate,
+            openDate = null,
             status = com.example.itemmanagement.data.model.ItemStatus.IN_STOCK,
             stockWarningThreshold = null,
             price = price,
@@ -627,7 +614,7 @@ class EditItemViewModel(
             tags = buildTagsFromSelectedTags(),
             // 从字段值获取其他字段
             openStatus = getOpenStatusFromField(),
-            openDate = parseDate(getFieldValue("开封时间")?.toString()),
+            openDate = null,
             status = com.example.itemmanagement.data.model.ItemStatus.IN_STOCK,
             stockWarningThreshold = (getFieldValue("库存预警")?.toString())?.toIntOrNull(),
             purchaseChannel = getFieldValue("购买渠道")?.toString(),
@@ -649,7 +636,7 @@ class EditItemViewModel(
             warrantyPeriod = null,
             warrantyEndDate = null,
             serialNumber = getFieldValue("序列号")?.toString(),
-            isHighTurnover = getFieldValue("高周转") as? Boolean ?: false
+            isHighTurnover = false
         )
     }
     
@@ -885,7 +872,6 @@ class EditItemViewModel(
         "单价" -> 11
         "总价" -> 12
         "添加日期" -> 13
-        "开封时间" -> 14
         "购买日期" -> 15
         "生产日期" -> 16
         "保质期" -> 17
@@ -897,7 +883,6 @@ class EditItemViewModel(
         "购买渠道" -> 23
         "商家名称" -> 24
         "序列号" -> 25
-        "高周转" -> 26
         // 旧编辑模式特有字段保持向后兼容
         "规格" -> 28
         else -> Int.MAX_VALUE

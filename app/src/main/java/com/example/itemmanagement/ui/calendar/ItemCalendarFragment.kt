@@ -51,6 +51,8 @@ class ItemCalendarFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         android.util.Log.d("CalendarFragment", "=== onViewCreated() 开始 ===")
         
+        hideBottomNavigation()
+        
         // 启用菜单
         setHasOptionsMenu(true)
         
@@ -72,6 +74,8 @@ class ItemCalendarFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         android.util.Log.d("CalendarFragment", "=== onResume() 开始 ===")
+        
+        hideBottomNavigation()
         
         // Fragment恢复时，检查并恢复选中日期的状态
         val selectedDate = viewModel.selectedDate.value
@@ -356,6 +360,21 @@ class ItemCalendarFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         android.util.Log.d("CalendarFragment", "=== onDestroyView() ===")
+        showBottomNavigation()
         _binding = null
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 } 

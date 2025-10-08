@@ -8,7 +8,7 @@
     android:background="?attr/colorSurface"
     tools:context=".ui.profile.recycle.RecycleBinFragment">
 
-    <!-- 顶部搜索栏 -->
+    <!-- 顶部搜索栏（可展开/收起） -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/searchContainer"
         android:layout_width="match_parent"
@@ -16,11 +16,13 @@
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
+        android:visibility="gone"
         app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="22dp"
         app:cardElevation="1dp"
         app:strokeColor="#E0E0E0"
-        app:strokeWidth="1dp">
+        app:strokeWidth="1dp"
+        tools:visibility="visible">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -56,38 +58,90 @@
                 android:paddingEnd="8dp"
                 android:gravity="center_vertical" />
 
-            <!-- 清除搜索图标 -->
+            <!-- 关闭搜索图标 -->
             <ImageView
-                android:id="@+id/clearSearchIcon"
+                android:id="@+id/closeSearchIcon"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
                 android:padding="10dp"
                 android:src="@drawable/ic_clear"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:visibility="gone"
-                android:contentDescription="清除搜索"
+                android:contentDescription="关闭搜索"
                 app:tint="#757575" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- 操作按钮栏 -->
+    <!-- 排序和筛选栏 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp"
+        android:gravity="center_vertical">
 
+        <!-- 排序按钮 -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSelectMode"
-            style="@style/Widget.Material3.Button.TextButton"
+            android:id="@+id/btnSort"
+            style="@style/Widget.Material3.Button.TextButton.Icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="选择"
-            android:textColor="?attr/colorPrimary"
-            app:icon="@drawable/ic_check"
-            app:iconTint="?attr/colorPrimary" />
+            android:minHeight="36dp"
+            android:text="删除时间"
+            android:textSize="14sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:icon="@drawable/ic_arrow_downward_24dp"
+            app:iconSize="18dp"
+            app:iconTint="?attr/colorOnSurfaceVariant"
+            app:iconGravity="end"
+            app:iconPadding="2dp"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:contentDescription="排序" />
+
+        <!-- 来源筛选 Chips -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/sourceChipGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            app:singleSelection="false"
+            app:chipSpacingHorizontal="8dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipInventory"
+                style="@style/Widget.Material3.Chip.Suggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="库存物品"
+                android:checkable="true"
+                app:chipMinTouchTargetSize="0dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipShopping"
+                style="@style/Widget.Material3.Chip.Suggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="购物清单"
+                android:checkable="true"
+                app:chipMinTouchTargetSize="0dp" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
     </LinearLayout>
 
@@ -97,37 +151,106 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:background="?attr/colorSecondary"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
         android:visibility="gone"
+        android:gravity="center_vertical"
         tools:visibility="visible">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSelectAll"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:text="全选"
+            android:textSize="14sp"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:textColor="?attr/colorPrimary" />
 
         <TextView
             android:id="@+id/tvSelectedCount"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical"
-            android:textColor="?attr/colorOnSecondary"
+            android:layout_marginStart="12dp"
+            android:textColor="?attr/colorOnSurface"
             android:textStyle="bold"
+            android:textSize="14sp"
             tools:text="已选择 3 项" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBatchRestore"
-            style="@style/Widget.App.Button.Secondary"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="36dp"
             android:layout_marginEnd="8dp"
             android:text="恢复"
-            android:backgroundTint="?attr/colorSuccess" />
+            android:textSize="14sp"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:textColor="?attr/colorPrimary" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBatchDelete"
-            style="@style/Widget.App.Button.Secondary"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:layout_marginEnd="8dp"
             android:text="删除"
-            android:backgroundTint="?attr/colorError" />
+            android:textSize="14sp"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:textColor="?attr/colorError" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelSelect"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:text="取消"
+            android:textSize="14sp"
+            android:minWidth="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:textColor="?attr/colorOnSurface" />
 
     </LinearLayout>
 
@@ -142,8 +265,11 @@
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="0dp"
             android:clipToPadding="false"
-            android:paddingBottom="16dp"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:listitem="@layout/item_deleted_item" />
 

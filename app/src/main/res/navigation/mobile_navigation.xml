@@ -416,6 +416,6 @@
     <fragment
         android:id="@+id/navigation_donation"
         android:name="com.example.itemmanagement.ui.profile.donation.DonationM3Fragment"
-        android:label="打赏支持" />
+        android:label="联系我们" />
 
 </navigation> 

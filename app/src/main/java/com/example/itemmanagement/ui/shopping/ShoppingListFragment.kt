@@ -48,6 +48,7 @@ class ShoppingListFragment : Fragment() {
     private var currentSearchQuery: String = ""
     private var currentSortType: SortType = SortType.COMPREHENSIVE
     private var currentSortDirection: SortDirection = SortDirection.DESC
+    private var searchTextWatcher: TextWatcher? = null
     
     enum class SortType {
         COMPREHENSIVE,  // 综合
@@ -69,8 +70,8 @@ class ShoppingListFragment : Fragment() {
 
     override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_clear_purchased -> {
-                showClearPurchasedDialog()
+            R.id.action_search -> {
+                toggleSearchBar()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -88,6 +89,9 @@ class ShoppingListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        
+        // 启用菜单
+        setHasOptionsMenu(true)
         
         // 获取传入的参数
         arguments?.let { args ->
@@ -202,25 +206,84 @@ class ShoppingListFragment : Fragment() {
         }
     }
     
+    private fun toggleSearchBar() {
+        // 获取MainActivity的toolbar和搜索框
+        val activity = requireActivity() as? androidx.appcompat.app.AppCompatActivity
+        val toolbar = activity?.findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        val searchBarContainer = activity?.findViewById<android.view.ViewGroup>(R.id.searchBarContainer)
+        val searchBar = activity?.findViewById<android.widget.EditText>(R.id.toolbarSearchBar)
+        val btnClearSearch = activity?.findViewById<android.widget.ImageButton>(R.id.btnClearSearch)
+        
+        if (searchBarContainer == null || searchBar == null || toolbar == null) {
+            return
+        }
+        
+        if (searchBarContainer.visibility == View.VISIBLE) {
+            // 隐藏搜索栏 - 恢复toolbar标题
+            searchBarContainer.visibility = View.GONE
+            searchBar.setText("")
+            toolbar.title = listName
+            currentSearchQuery = ""
+            applySearchAndSort(viewModel.shoppingItems.value ?: emptyList())
+            
+            // 移除文本监听器
+            searchTextWatcher?.let { searchBar.removeTextChangedListener(it) }
+            searchTextWatcher = null
+            
+            // 隐藏键盘
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.hideSoftInputFromWindow(searchBar.windowToken, 0)
+        } else {
+            // 显示搜索栏 - 隐藏toolbar标题，显示搜索框（保留返回按钮和菜单）
+            toolbar.title = ""
+            searchBarContainer.visibility = View.VISIBLE
+            searchBar.requestFocus()
+            
+            // 清除搜索按钮点击
+            btnClearSearch?.setOnClickListener {
+                searchBar.setText("")
+                btnClearSearch.visibility = View.GONE
+            }
+            
+            // 显示键盘
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            imm.showSoftInput(searchBar, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            
+            // 监听搜索框文本变化
+            searchTextWatcher = object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    val query = s?.toString()?.trim() ?: ""
+                    
+                    // 控制清除按钮的显示
+                    btnClearSearch?.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+                    
+                    currentSearchQuery = query
+                    applySearchAndSort(viewModel.shoppingItems.value ?: emptyList())
+                }
+                override fun afterTextChanged(s: Editable?) {}
+            }
+            searchBar.addTextChangedListener(searchTextWatcher)
+            
+            // 处理搜索按钮点击（键盘上的搜索按钮）
+            searchBar.setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                    // 隐藏键盘
+                    imm.hideSoftInputFromWindow(searchBar.windowToken, 0)
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
+    
     /**
      * 设置搜索和排序功能
      */
     private fun setupSearchAndSort() {
-        // 搜索框监听
-        binding.searchEditText.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                currentSearchQuery = s?.toString() ?: ""
-                binding.clearSearchIcon.visibility = if (currentSearchQuery.isEmpty()) View.GONE else View.VISIBLE
-                applySearchAndSort(viewModel.shoppingItems.value ?: emptyList())
-            }
-        })
-        
-        // 清除搜索按钮
-        binding.clearSearchIcon.setOnClickListener {
-            binding.searchEditText.text.clear()
-        }
+        // 隐藏Fragment中的搜索框（改用toolbar搜索）
+        binding.searchContainer.visibility = View.GONE
         
         // 排序按钮点击事件
         binding.sortComprehensive.setOnClickListener {
@@ -538,20 +601,21 @@ class ShoppingListFragment : Fragment() {
             }
         }
     }
-    
-    private fun showClearPurchasedDialog() {
-        androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            .setTitle("清除已购买物品")
-            .setMessage("确定要清除所有已购买的物品吗？")
-            .setPositiveButton("确定") { _, _ ->
-                viewModel.clearPurchasedItems()
-            }
-            .setNegativeButton("取消", null)
-            .show()
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        
+        // 清理搜索栏状态
+        val activity = requireActivity() as? androidx.appcompat.app.AppCompatActivity
+        val toolbar = activity?.findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)
+        val searchBarContainer = activity?.findViewById<android.view.ViewGroup>(R.id.searchBarContainer)
+        val searchBar = activity?.findViewById<android.widget.EditText>(R.id.toolbarSearchBar)
+        
+        searchTextWatcher?.let { searchBar?.removeTextChangedListener(it) }
+        searchTextWatcher = null
+        searchBarContainer?.visibility = View.GONE
+        toolbar?.title = listName
+        
         // 恢复底部导航栏
         showBottomNavigation()
         _binding = null

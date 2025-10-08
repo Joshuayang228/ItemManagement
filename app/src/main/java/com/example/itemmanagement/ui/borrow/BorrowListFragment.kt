@@ -49,15 +49,36 @@ class BorrowListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        hideBottomNavigation()
         setupRecyclerView()
         setupStatusChips()
         setupButtons()
         observeViewModel()
     }
 
+    override fun onResume() {
+        super.onResume()
+        hideBottomNavigation()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        showBottomNavigation()
         _binding = null
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 
     /**

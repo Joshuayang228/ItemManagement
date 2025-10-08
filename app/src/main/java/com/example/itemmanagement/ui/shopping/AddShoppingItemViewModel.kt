@@ -227,20 +227,23 @@ class AddShoppingItemViewModel(
 
     /**
      * 初始化购物清单专用的默认字段
+     * 购物模式默认选中10个字段：名称、数量、分类、预估价格、购买渠道、购买商店、紧急程度、截止日期、购买原因、备注
      */
     private fun initializeDefaultShoppingFields() {
         val defaultFields = listOf(
-            Field("基础信息", "名称", true),
-            Field("基础信息", "数量", false),
-            Field("分类", "分类", false),
-            Field("价格", "预估价格", false),
-            Field("价格", "预算上限", false),
-            Field("购买信息", "购买渠道", false),
-            Field("购买信息", "购买商店", false),  // ✅ 统一为"购买商店"
-            Field("购买计划", "重要程度", false),  // ✅ 优化：优先级 -> 重要程度
-            Field("购买计划", "紧急程度", false),  // ✅ 优化：分组名称调整
-            Field("时间", "截止日期", false),
-            Field("基础信息", "备注", false)
+            // 基础信息（4个）
+            Field("基础信息", "名称", true),       // 必填
+            Field("基础信息", "数量", true),       // 购买数量
+            Field("基础信息", "分类", true),       // 物品分类
+            Field("基础信息", "备注", true),       // 补充说明
+            
+            // 购物管理（6个）- 购物清单专有默认字段
+            Field("购物管理", "预估价格", true),   // 价格预期 ⭐
+            Field("购物管理", "购买渠道", true),   // 购买渠道 ⭐
+            Field("购物管理", "购买商店", true),   // 购买地点 ⭐
+            Field("购物管理", "紧急程度", true),   // 紧急程度 ⭐
+            Field("购物管理", "截止日期", true),   // DDL ⭐
+            Field("购物管理", "购买原因", true)    // 购买原因 ⭐
         )
         
         _selectedFields.value = defaultFields.toSet()
@@ -305,9 +308,10 @@ class AddShoppingItemViewModel(
             defaultDate = false
         ))
         
-        setFieldProperties("推荐原因", FieldProperties(
+        // ⭐ 更改为"购买原因"（合并推荐原因）
+        setFieldProperties("购买原因", FieldProperties(
             validationType = ValidationType.TEXT,
-            hint = "推荐原因",
+            hint = "为什么需要购买这个物品？",
             isMultiline = true,
             maxLines = 3
         ))
@@ -367,7 +371,7 @@ class AddShoppingItemViewModel(
                         saveFieldValue("标签", tagNames)
                     }
                     
-                    saveFieldValue("推荐原因", "基于库存物品：${it.name}")
+                    saveFieldValue("购买原因", "库存不足，需要补货")
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "从库存物品预填充数据失败: ${e.message}"

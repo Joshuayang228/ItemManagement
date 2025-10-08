@@ -115,7 +115,6 @@ class TransferToInventoryFullScreenFragment : BaseItemFragment<TransferToInvento
             Field("日期类", "购买日期", true),
             Field("日期类", "生产日期", false),
             Field("日期类", "保质过期时间", false),
-            Field("日期类", "开封时间", false),
             
             // 保修信息
             Field("保修", "保修期", false),

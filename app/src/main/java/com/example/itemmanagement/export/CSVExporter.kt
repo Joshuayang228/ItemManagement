@@ -3,6 +3,9 @@ package com.example.itemmanagement.export
 import com.example.itemmanagement.data.dao.BorrowWithItemInfo
 import com.example.itemmanagement.data.dao.WarrantyWithItemInfo
 import com.example.itemmanagement.data.relation.ItemWithDetails
+import com.example.itemmanagement.data.entity.LocationEntity
+import com.example.itemmanagement.data.entity.unified.ShoppingDetailEntity
+import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -18,20 +21,28 @@ object CSVExporter {
     /**
      * 导出物品数据到CSV
      */
-    fun exportItems(items: List<ItemWithDetails>): String {
+    fun exportItems(
+        items: List<ItemWithDetails>, 
+        locationsMap: Map<Long, LocationEntity> = emptyMap()
+    ): String {
         if (items.isEmpty()) return "没有物品数据可导出"
         
         val csv = StringBuilder()
         
         // CSV表头
-        csv.appendLine("物品名称,分类,品牌,型号,数量,单位,单价,总价值,购买日期,过期日期,位置区域,位置详情,保修到期,备注,标签,添加日期")
+        csv.appendLine("物品名称,分类,品牌,型号,数量,单位,单价,总价值,购买日期,过期日期,位置区域,位置容器,位置详情,备注,标签,添加日期")
         
         // 数据行
         items.forEach { itemDetail ->
             val unifiedItem = itemDetail.unifiedItem
             val inventoryDetail = itemDetail.inventoryDetail
-            val location = null // TODO: 需要从inventoryDetail.locationId查询LocationEntity
             val tags = itemDetail.tags.joinToString(";") { it.name }
+            
+            // 查询位置信息
+            val location = inventoryDetail?.locationId?.let { locationsMap[it] }
+            val locationArea = location?.area ?: ""
+            val locationContainer = location?.container ?: ""
+            val locationSublocation = location?.sublocation ?: ""
             
             csv.appendLine(
                 "${escapeCsvField(unifiedItem.name)}," +
@@ -44,10 +55,9 @@ object CSVExporter {
                 "${calculateTotalValue(inventoryDetail?.quantity, inventoryDetail?.price)}," +
                 "${formatDate(inventoryDetail?.purchaseDate)}," +
                 "${formatDate(inventoryDetail?.expirationDate)}," +
-                "${escapeCsvField("")}," + // TODO: 需要从inventoryDetail.locationId查询LocationEntity
-                "${escapeCsvField("")}," + // TODO: 需要从LocationEntity获取container
-                // 保修信息已移至 WarrantyEntity，通过单独的保修CSV导出
-                "${""}," +
+                "${escapeCsvField(locationArea)}," +
+                "${escapeCsvField(locationContainer)}," +
+                "${escapeCsvField(locationSublocation)}," +
                 "${escapeCsvField(unifiedItem.customNote ?: "")}," +
                 "${escapeCsvField(tags)}," +
                 "${formatDateTime(unifiedItem.createdDate)}"
@@ -132,12 +142,66 @@ object CSVExporter {
     }
     
     /**
+     * 导出购物清单到CSV
+     */
+    fun exportShoppingList(
+        shoppingItems: List<Pair<ShoppingDetailEntity, UnifiedItemEntity>>
+    ): String {
+        if (shoppingItems.isEmpty()) return "没有购物清单数据可导出"
+        
+        val csv = StringBuilder()
+        
+        // CSV表头
+        csv.appendLine("物品名称,分类,品牌,型号,数量,单位,预估价格,实际价格,总价,购买渠道,商店,优先级,是否已购买,购买日期,截止日期,备注,添加日期")
+        
+        // 数据行
+        shoppingItems.forEach { (shoppingDetail, unifiedItem) ->
+            val priorityText = when(shoppingDetail.priority.name) {
+                "HIGH" -> "高"
+                "NORMAL" -> "普通"
+                "LOW" -> "低"
+                else -> shoppingDetail.priority.name
+            }
+            
+            val urgencyText = when(shoppingDetail.urgencyLevel.name) {
+                "URGENT" -> "紧急"
+                "NORMAL" -> "普通"
+                "LOW" -> "不急"
+                else -> shoppingDetail.urgencyLevel.name
+            }
+            
+            csv.appendLine(
+                "${escapeCsvField(unifiedItem.name)}," +
+                "${escapeCsvField(unifiedItem.category)}," +
+                "${escapeCsvField(unifiedItem.brand ?: "")}," +
+                "${escapeCsvField(unifiedItem.specification ?: "")}," +
+                "${shoppingDetail.quantity}," +
+                "${escapeCsvField(shoppingDetail.quantityUnit)}," +
+                "${shoppingDetail.estimatedPrice ?: ""}," +
+                "${shoppingDetail.actualPrice ?: ""}," +
+                "${shoppingDetail.totalPrice ?: ""}," +
+                "${escapeCsvField(shoppingDetail.purchaseChannel ?: "")}," +
+                "${escapeCsvField(shoppingDetail.storeName ?: "")}," +
+                "${escapeCsvField(priorityText)} / ${escapeCsvField(urgencyText)}," +
+                "${if (shoppingDetail.isPurchased) "是" else "否"}," +
+                "${formatDate(shoppingDetail.purchaseDate)}," +
+                "${formatDate(shoppingDetail.deadline)}," +
+                "${escapeCsvField(unifiedItem.customNote ?: "")}," +
+                "${formatDateTime(shoppingDetail.addDate)}"
+            )
+        }
+        
+        return csv.toString()
+    }
+    
+    /**
      * 导出完整数据摘要
      */
     fun exportSummary(
         itemCount: Int,
         warrantyCount: Int, 
         borrowCount: Int,
+        shoppingCount: Int = 0,
         exportDate: Date = Date()
     ): String {
         val csv = StringBuilder()
@@ -147,6 +211,7 @@ object CSVExporter {
         csv.appendLine("物品总数,${itemCount}")
         csv.appendLine("保修记录数,${warrantyCount}")
         csv.appendLine("借还记录数,${borrowCount}")
+        csv.appendLine("购物清单数,${shoppingCount}")
         csv.appendLine("")
         csv.appendLine("注意：详细数据请查看对应的CSV文件")
         

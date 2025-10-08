@@ -65,6 +65,7 @@ class AddEditWarrantyFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        hideBottomNavigation()
         setupUI()
         setupImageRecyclerView()
         setupObservers()
@@ -79,6 +80,11 @@ class AddEditWarrantyFragment : Fragment() {
             val preSelectedItemId = getPreSelectedItemId()
             viewModel.initializeForAdd(if (preSelectedItemId > 0) preSelectedItemId else null)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        hideBottomNavigation()
     }
 
     /**
@@ -569,6 +575,21 @@ class AddEditWarrantyFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        showBottomNavigation()
         _binding = null
+    }
+
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+    }
+
+    /**
+     * 显示底部导航栏
+     */
+    private fun showBottomNavigation() {
+        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 }
