@@ -693,6 +693,7 @@ class WarehouseViewModel(private val repository: UnifiedItemRepository) : ViewMo
                 val seasons = repository.getAllSeasons()
                 _availableSeasons.value = seasons
             } catch (e: Exception) {
+                android.util.Log.e("WarehouseViewModel", "❌ 加载筛选选项失败", e)
                 _errorMessage.value = "加载筛选选项失败：${e.message}"
             }
         }

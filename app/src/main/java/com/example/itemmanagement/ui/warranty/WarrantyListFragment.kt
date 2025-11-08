@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,6 +14,7 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.data.dao.WarrantyWithItemInfo
 import com.example.itemmanagement.data.entity.WarrantyStatus
 import com.example.itemmanagement.databinding.FragmentWarrantyListBinding
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -212,7 +212,7 @@ class WarrantyListFragment : Fragment() {
         // 观察错误消息
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             message?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                SnackbarHelper.showError(requireView(), it)
                 viewModel.clearErrorMessage()
             }
         }
@@ -220,9 +220,9 @@ class WarrantyListFragment : Fragment() {
         // 观察删除结果
         viewModel.deleteResult.observe(viewLifecycleOwner) { success ->
             if (success) {
-                Toast.makeText(requireContext(), "删除成功", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showSuccess(requireView(), "删除成功")
             } else {
-                Toast.makeText(requireContext(), "删除失败", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showError(requireView(), "删除失败")
             }
         }
         

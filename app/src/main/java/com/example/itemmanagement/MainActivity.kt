@@ -15,6 +15,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -49,6 +51,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        android.util.Log.d("MainActivity", "📍 onCreate called, savedInstanceState=${savedInstanceState != null}")
+        
         // 启用 Material You 动态颜色（Android 12+）
         DynamicColors.applyToActivityIfAvailable(this)
         
@@ -67,9 +71,10 @@ class MainActivity : AppCompatActivity() {
         // 🎯 恢复或初始化TopBar状态
         isTopBarVisible = savedInstanceState?.getBoolean("isTopBarVisible", true) ?: true
         isTopBarTitleEnabled = savedInstanceState?.getBoolean("isTopBarTitleEnabled", true) ?: true
+        android.util.Log.d("MainActivity", "🔧 初始TopBar状态: visible=$isTopBarVisible, titleEnabled=$isTopBarTitleEnabled")
 
         // 初始化导航组件
-        setupNavigation()
+        setupNavigation(savedInstanceState)
         
         // 处理通知点击导航
         handleNotificationNavigation()
@@ -77,6 +82,8 @@ class MainActivity : AppCompatActivity() {
         // 检查并申请通知权限
         checkAndRequestNotificationPermission()
         
+        // 检查并显示版本更新日志
+        checkAndShowUpdateLog()
         
         // 设置现代返回键处理
         setupBackPressedCallback()
@@ -143,7 +150,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * 设置导航组件
      */
-    private fun setupNavigation() {
+    private fun setupNavigation(savedInstanceState: Bundle?) {
         drawerLayout = binding.drawerLayout
         navController = findNavController(R.id.nav_host_fragment)
         
@@ -168,6 +175,34 @@ class MainActivity : AppCompatActivity() {
         
         // 设置导航监听器，动态显示/隐藏TopBar
         setupNavigationListener()
+        
+        // 🔧 修复主题切换后ActionBar消失的问题：手动触发当前目的地的ActionBar状态
+        navController.currentDestination?.let { destination ->
+            android.util.Log.d("MainActivity", "🎯 setupNavigation: 当前目的地=${resources.getResourceEntryName(destination.id)}")
+            // 检测是否是Activity重建（从savedInstanceState恢复）
+            val isRecreated = savedInstanceState != null
+            android.util.Log.d("MainActivity", "🎯 setupNavigation: isRecreated=$isRecreated")
+            
+            // 根据当前目的地设置ActionBar状态
+            when (destination.id) {
+                R.id.navigation_home,
+                R.id.navigation_warehouse,
+                R.id.navigation_profile,
+                R.id.navigation_function -> {
+                    android.util.Log.d("MainActivity", "📍 setupNavigation: 主页面，隐藏TopBar")
+                    hideTopBar()
+                }
+                R.id.addItemFragment -> {
+                    android.util.Log.d("MainActivity", "📍 setupNavigation: 添加页面，显示TopBar无标题")
+                    showTopBarWithoutTitle()
+                }
+                else -> {
+                    android.util.Log.d("MainActivity", "📍 setupNavigation: 其他页面，显示TopBar")
+                    // 🔧 Activity重建时强制刷新，确保ActionBar正确显示
+                    showTopBar(forceRefresh = isRecreated)
+                }
+            }
+        }
         
         // 保留侧边栏设置代码但不激活
         // binding.navDrawerView.setupWithNavController(navController)
@@ -262,23 +297,34 @@ class MainActivity : AppCompatActivity() {
      */
     private fun setupNavigationListener() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
+            val destName = try { 
+                resources.getResourceEntryName(destination.id) 
+            } catch (e: Exception) { 
+                "unknown_${destination.id}" 
+            }
+            android.util.Log.d("MainActivity", "🧭 导航到: $destName")
+            
             when (destination.id) {
                 // 主要导航页面 - 隐藏TopBar
                 R.id.navigation_home,
                 R.id.navigation_warehouse,
                 R.id.navigation_profile -> {
+                    android.util.Log.d("MainActivity", "  ➡️ 主页面，隐藏TopBar")
                     hideTopBar()
                 }
                 // 功能页面 - 隐藏TopBar（像首页一样）
                 R.id.navigation_function -> {
+                    android.util.Log.d("MainActivity", "  ➡️ 功能页面，隐藏TopBar")
                     hideTopBar()
                 }
                 // 添加物品页面 - 显示TopBar但禁用标题
                 R.id.addItemFragment -> {
+                    android.util.Log.d("MainActivity", "  ➡️ 添加页面，显示TopBar无标题")
                     showTopBarWithoutTitle()
                 }
                 // 其他页面 - 显示TopBar
                 else -> {
+                    android.util.Log.d("MainActivity", "  ➡️ 其他页面，显示TopBar")
                     showTopBar()
                 }
             }
@@ -288,16 +334,28 @@ class MainActivity : AppCompatActivity() {
     /**
      * 显示TopBar
      */
-    private fun showTopBar() {
+    private fun showTopBar(forceRefresh: Boolean = false) {
+        android.util.Log.d("MainActivity", "👁️ showTopBar called, 当前状态: visible=$isTopBarVisible, forceRefresh=$forceRefresh")
         // ✅ 只在状态发生变化时才执行操作，避免重复导致的闪现
-        if (!isTopBarVisible) {
+        if (!isTopBarVisible || forceRefresh) {
+            if (forceRefresh) {
+                android.util.Log.d("MainActivity", "  🔄 强制刷新TopBar状态")
+            } else {
+                android.util.Log.d("MainActivity", "  ✅ TopBar从隐藏变为可见")
+            }
             binding.appBarLayout.visibility = android.view.View.VISIBLE
             isTopBarVisible = true
             updateFragmentConstraints(true)
+            
+            // 🔧 强制显示ActionBar（修复Activity重建后ActionBar消失的问题）
+            supportActionBar?.show()
+        } else {
+            android.util.Log.d("MainActivity", "  ⏭️ TopBar已经可见，跳过")
         }
         
         // 标题状态单独管理
-        if (!isTopBarTitleEnabled) {
+        if (!isTopBarTitleEnabled || forceRefresh) {
+            android.util.Log.d("MainActivity", "  📝 启用TopBar标题")
             supportActionBar?.setDisplayShowTitleEnabled(true)
             isTopBarTitleEnabled = true
         }
@@ -391,8 +449,10 @@ class MainActivity : AppCompatActivity() {
      * 隐藏TopBar
      */
     private fun hideTopBar() {
+        android.util.Log.d("MainActivity", "🙈 hideTopBar called, 当前状态: visible=$isTopBarVisible")
         // ✅ 只在TopBar可见时才隐藏，避免重复操作导致的闪现
         if (isTopBarVisible) {
+            android.util.Log.d("MainActivity", "  ✅ TopBar从可见变为隐藏")
             // 立即清空标题，防止隐藏过程中的闪现
             supportActionBar?.title = ""
             supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -404,6 +464,8 @@ class MainActivity : AppCompatActivity() {
             
             // 重新调整Fragment约束
             updateFragmentConstraints(false)
+        } else {
+            android.util.Log.d("MainActivity", "  ⏭️ TopBar已经隐藏，跳过")
         }
     }
     
@@ -462,6 +524,47 @@ class MainActivity : AppCompatActivity() {
                     // 申请权限
                     notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
+            }
+        }
+    }
+    
+    /**
+     * 检查并显示版本更新日志
+     */
+    private fun checkAndShowUpdateLog() {
+        // 延迟1秒显示，确保界面已完全加载
+        binding.root.postDelayed({
+            if (!isFinishing && !isDestroyed) {
+                // 先检查在线更新
+                checkOnlineUpdate()
+                
+                // 然后检查本地更新日志（首次安装或更新后）
+                val shouldShow = com.example.itemmanagement.utils.VersionUpdateManager.shouldShowUpdateDialog(this)
+                if (shouldShow) {
+                    val dialog = com.example.itemmanagement.ui.dialog.UpdateLogDialog.newInstance(isFirstLaunch = true)
+                    dialog.show(supportFragmentManager, "UpdateLogDialog")
+                }
+            }
+        }, 1000)
+    }
+    
+    /**
+     * 检查在线更新
+     */
+    private fun checkOnlineUpdate() {
+        lifecycleScope.launch {
+            try {
+                val updateInfo = com.example.itemmanagement.utils.OnlineUpdateChecker.checkForUpdate(this@MainActivity)
+                if (updateInfo != null) {
+                    if (!isFinishing && !isDestroyed) {
+                        // 发现新版本，显示更新对话框
+                        val dialog = com.example.itemmanagement.ui.dialog.OnlineUpdateDialog.newInstance(updateInfo)
+                        dialog.show(supportFragmentManager, "OnlineUpdateDialog")
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "检查在线更新失败", e)
+                // 静默失败，不影响用户体验
             }
         }
     }

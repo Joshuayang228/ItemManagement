@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -16,6 +15,7 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.data.dao.BorrowWithItemInfo
 import com.example.itemmanagement.data.entity.BorrowStatus
 import com.example.itemmanagement.databinding.FragmentBorrowListBinding
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -252,7 +252,7 @@ class BorrowListFragment : Fragment() {
         // 观察错误消息
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             if (message != null) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                SnackbarHelper.showError(requireView(), message)
                 viewModel.clearErrorMessage()
             }
         }
@@ -260,7 +260,7 @@ class BorrowListFragment : Fragment() {
         // 观察成功消息
         viewModel.successMessage.observe(viewLifecycleOwner) { message ->
             if (message != null) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showSuccess(requireView(), message)
                 viewModel.clearSuccessMessage()
             }
         }

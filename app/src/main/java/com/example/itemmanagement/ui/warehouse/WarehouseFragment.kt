@@ -48,6 +48,16 @@ class WarehouseFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        android.util.Log.d("WarehouseFragment", "🔧 onViewCreated被调用")
+        
+        // 🔧 清理残留的FilterBottomSheet，防止自动弹出
+        android.util.Log.d("WarehouseFragment", "🧹 检查并清理残留的FilterBottomSheet")
+        val existingFilterSheet = childFragmentManager.findFragmentByTag("FilterBottomSheetFragmentV2")
+        if (existingFilterSheet is FilterBottomSheetFragmentV2) {
+            android.util.Log.d("WarehouseFragment", "🗑️ 发现残留的FilterBottomSheet，正在移除...")
+            existingFilterSheet.dismissAllowingStateLoss()
+        }
+        
         setupRecyclerView()
         setupSortBar()
         setupFilterButton()
@@ -57,6 +67,7 @@ class WarehouseFragment : Fragment() {
         observeDeleteResult()
         observeFilterState()
         
+        android.util.Log.d("WarehouseFragment", "✅ onViewCreated完成")
     }
 
     private fun setupRecyclerView() {
@@ -617,6 +628,16 @@ class WarehouseFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        
+        // 🔧 清理所有子Fragment（特别是FilterBottomSheet），防止状态被保留
+        android.util.Log.d("WarehouseFragment", "🧹 onDestroyView - 清理子Fragment")
+        childFragmentManager.fragments.forEach { fragment ->
+            if (fragment is FilterBottomSheetFragmentV2) {
+                android.util.Log.d("WarehouseFragment", "🗑️ 移除FilterBottomSheet: ${fragment.tag}")
+                fragment.dismissAllowingStateLoss()
+            }
+        }
+        
         _binding = null
     }
 }

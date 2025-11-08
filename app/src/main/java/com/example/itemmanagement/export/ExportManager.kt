@@ -25,7 +25,7 @@ class ExportManager(private val context: Context) {
     
     companion object {
         private const val EXPORT_FOLDER = "ItemManagement_Export"
-        private const val FILE_PROVIDER_AUTHORITY = "com.example.itemmanagement.provider"
+        private const val FILE_PROVIDER_AUTHORITY = "com.jiwanwu.app.provider"
     }
     
     private val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())

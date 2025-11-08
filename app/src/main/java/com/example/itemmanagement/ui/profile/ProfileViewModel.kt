@@ -201,8 +201,9 @@ class ProfileViewModel(
             // 第二个间隔
             add(ProfileItem.MenuSpacer)
             
-            // 联系我们（独立卡片）
-            add(ProfileItem.MenuItem("donation", "联系我们", R.drawable.ic_favorite_colorful, showDivider = false))
+            // 联系我们和关于应用（合并卡片）
+            add(ProfileItem.MenuItem("donation", "联系我们", R.drawable.ic_favorite_colorful))
+            add(ProfileItem.MenuItem("about_app", "关于应用", R.drawable.ic_info_colorful, showDivider = false))
         }
         _profileItems.value = items
     }

@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
-import android.widget.Toast
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -15,6 +14,7 @@ import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.data.relation.ItemWithDetails
 import com.example.itemmanagement.databinding.FragmentAddBorrowBinding
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -123,7 +123,7 @@ class AddBorrowFragment : Fragment() {
     private fun showItemSelectionDialog() {
         val items = viewModel.availableItems.value ?: emptyList()
         if (items.isEmpty()) {
-            Toast.makeText(requireContext(), "暂无可借出的物品", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "暂无可借出的物品")
             return
         }
         
@@ -239,7 +239,7 @@ class AddBorrowFragment : Fragment() {
         viewModel.saveResult.observe(viewLifecycleOwner) { result ->
             when (result) {
                 true -> {
-                    Toast.makeText(requireContext(), "借出记录创建成功", Toast.LENGTH_SHORT).show()
+                    SnackbarHelper.showSuccess(requireView(), "借出记录创建成功")
                     findNavController().navigateUp()
                 }
                 false -> {
@@ -254,7 +254,7 @@ class AddBorrowFragment : Fragment() {
         // 观察错误消息
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             if (message != null) {
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                SnackbarHelper.showError(requireView(), message)
                 viewModel.clearErrorMessage()
             }
         }
@@ -292,7 +292,7 @@ class AddBorrowFragment : Fragment() {
         val expectedDate = viewModel.expectedReturnDate.value
         
         if (selectedItem == null || borrowerName.isNullOrBlank() || expectedDate == null) {
-            Toast.makeText(requireContext(), "请填写完整信息", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "请填写完整信息")
             return
         }
         

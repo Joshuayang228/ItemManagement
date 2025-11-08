@@ -12,7 +12,6 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -30,6 +29,7 @@ import com.example.itemmanagement.ui.add.Field
 import com.example.itemmanagement.ui.add.FieldViewFactory
 import com.example.itemmanagement.ui.add.FieldValueManager
 import com.example.itemmanagement.ui.add.PhotoAdapter
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -360,7 +360,7 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
     private fun observeErrorMessages() {
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             if (!message.isNullOrEmpty()) {
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                view?.let { SnackbarHelper.showError(it, message) }
             }
         }
     }
@@ -505,31 +505,53 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
             
             val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
                 putExtra(MediaStore.EXTRA_OUTPUT, currentPhotoUri)
+                // 🔧 添加权限标志，确保Release版本能访问URI
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             }
             cameraLauncher.launch(intent)
         } catch (e: Exception) {
-            Toast.makeText(context, "无法启动相机：${e.message}", Toast.LENGTH_SHORT).show()
+            android.util.Log.e("BaseItemFragment", "❌ 启动相机失败", e)
+            view?.let { SnackbarHelper.showError(it, "无法启动相机：${e.message}") }
         }
     }
 
     private fun openGallery() {
-        val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-        galleryLauncher.launch(intent)
+        try {
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+                type = "image/*"
+                // 🔧 添加权限标志，确保Release版本能读取图片
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            }
+            galleryLauncher.launch(intent)
+        } catch (e: Exception) {
+            android.util.Log.e("BaseItemFragment", "❌ 打开相册失败", e)
+            view?.let { SnackbarHelper.showError(it, "无法打开相册：${e.message}") }
+        }
     }
 
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             currentPhotoUri?.let { uri ->
                 lifecycleScope.launch {
-                    val compressedUri = withContext(Dispatchers.IO) {
-                        compressImage(uri)
-                    }
-                    compressedUri?.let {
-                        photoAdapter.addPhoto(it)
-                        viewModel.addPhotoUri(it)
+                    try {
+                        val compressedUri = withContext(Dispatchers.IO) {
+                            compressImage(uri)
+                        }
+                        if (compressedUri != null) {
+                            photoAdapter.addPhoto(compressedUri)
+                            viewModel.addPhotoUri(compressedUri)
+                            view?.let { SnackbarHelper.showSuccess(it, "照片已添加") }
+                        } else {
+                            view?.let { SnackbarHelper.showError(it, "图片处理失败") }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("BaseItemFragment", "处理相机照片失败", e)
+                        view?.let { SnackbarHelper.showError(it, "处理照片失败：${e.message}") }
                     }
                 }
-            }
+            } ?: view?.let { SnackbarHelper.showError(it, "照片获取失败") }
         }
     }
 
@@ -537,15 +559,23 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
                 lifecycleScope.launch {
-                    val compressedUri = withContext(Dispatchers.IO) {
-                        compressImage(uri)
-                    }
-                    compressedUri?.let {
-                        photoAdapter.addPhoto(it)
-                        viewModel.addPhotoUri(it)
+                    try {
+                        val compressedUri = withContext(Dispatchers.IO) {
+                            compressImage(uri)
+                        }
+                        if (compressedUri != null) {
+                            photoAdapter.addPhoto(compressedUri)
+                            viewModel.addPhotoUri(compressedUri)
+                            view?.let { SnackbarHelper.showSuccess(it, "照片已添加") }
+                        } else {
+                            view?.let { SnackbarHelper.showError(it, "图片处理失败") }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("BaseItemFragment", "处理相册照片失败", e)
+                        view?.let { SnackbarHelper.showError(it, "处理照片失败：${e.message}") }
                     }
                 }
-            }
+            } ?: view?.let { SnackbarHelper.showError(it, "未选择照片") }
         }
     }
 
@@ -654,7 +684,7 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
      * 保存成功回调
      */
     protected open fun onSaveSuccess() {
-        Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()
+        view?.let { SnackbarHelper.showSuccess(it, "保存成功") }
         // 默认行为：返回上一页
         activity?.onBackPressed()
     }

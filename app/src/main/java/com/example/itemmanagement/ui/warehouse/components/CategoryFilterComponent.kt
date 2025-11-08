@@ -151,13 +151,13 @@ class CategoryFilterComponent(
     private fun observeViewModelData() {
         // 观察分类列表变化
         viewModel.categories.observe(lifecycleOwner) { categories ->
-            availableCategories = categories
-            updateCategoriesChipGroup(categories)
+            availableCategories = categories ?: emptyList()
+            updateCategoriesChipGroup(categories ?: emptyList())
         }
         
         // 观察品牌列表变化
         viewModel.brands.observe(lifecycleOwner) { brands ->
-            updateBrandAdapter(brands)
+            updateBrandAdapter(brands ?: emptyList())
         }
     }
     

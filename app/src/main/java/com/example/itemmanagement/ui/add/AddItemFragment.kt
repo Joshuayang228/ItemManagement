@@ -18,6 +18,7 @@ import com.example.itemmanagement.R
 
 import com.example.itemmanagement.ui.add.Field
 import com.example.itemmanagement.ui.base.BaseItemFragment
+import com.example.itemmanagement.utils.SnackbarHelper
 
 /**
  * 新的添加物品 Fragment
@@ -301,11 +302,11 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
                 findNavController().navigateUp()
                 true
             }
-            R.id.action_test_fill -> {
-                // 处理测试填充
-                handleTestFill()
-                true
-            }
+            // 🧪 测试填充功能（已隐藏）
+            // R.id.action_test_fill -> {
+            //     handleTestFill()
+            //     true
+            // }
             R.id.action_scan -> {
                 // 处理扫描条码
                 handleScanBarcode()
@@ -443,13 +444,13 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
             android.util.Log.w("AddItemFragment", "导航失败，使用清空页面方式: ${e.message}")
             if (isAdded && _binding != null) {
                 // 先显示"正在准备新的添加页面"的提示
-                android.widget.Toast.makeText(requireContext(), "正在准备新的添加页面...", android.widget.Toast.LENGTH_SHORT).show()
+                SnackbarHelper.show(requireView(), "正在准备新的添加页面...")
                 
                 // 延迟一下再清空，给用户更好的反馈
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     if (isAdded && _binding != null) {
                         clearAllFields()
-                        android.widget.Toast.makeText(requireContext(), "已准备好新的添加页面", android.widget.Toast.LENGTH_SHORT).show()
+                        SnackbarHelper.show(requireView(), "已准备好新的添加页面")
                     }
                 }, 500)
             }

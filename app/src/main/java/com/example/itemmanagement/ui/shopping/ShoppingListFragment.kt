@@ -17,6 +17,7 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.ShoppingListAdapter
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.databinding.FragmentShoppingListBinding
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.snackbar.Snackbar
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
@@ -99,6 +100,13 @@ class ShoppingListFragment : Fragment() {
             listName = args.getString("listName", "购物清单")
         }
         
+        // 🔧 设置标题和返回按钮
+        (activity as? androidx.appcompat.app.AppCompatActivity)?.supportActionBar?.apply {
+            title = listName
+            setDisplayHomeAsUpEnabled(true)
+            setDisplayShowHomeEnabled(true)
+        }
+        
         setupRecyclerView()
         setupSearchAndSort()
         setupObservers()
@@ -136,11 +144,7 @@ class ShoppingListFragment : Fragment() {
                     findNavController().navigate(action)
                 } catch (e: Exception) {
                     android.util.Log.e("ShoppingList", "导航到详情页失败", e)
-                    android.widget.Toast.makeText(
-                        requireContext(),
-                        "打开详情页失败",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
+                    SnackbarHelper.showError(requireView(), "打开详情页失败")
                 }
             },
             onRecordPrice = { item ->
@@ -597,7 +601,7 @@ class ShoppingListFragment : Fragment() {
                 findNavController().navigate(action)
             } catch (e: Exception) {
                 android.util.Log.e("ShoppingList", "添加购物物品导航失败: listId=$listId", e)
-                android.widget.Toast.makeText(requireContext(), "打开添加页面失败", android.widget.Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showError(requireView(), "打开添加页面失败")
             }
         }
     }

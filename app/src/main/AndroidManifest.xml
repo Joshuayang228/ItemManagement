@@ -19,11 +19,13 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ItemManagement">
+        android:theme="@style/Theme.ItemManagement"
+        android:requestLegacyExternalStorage="true"
+        tools:targetApi="29">
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.example.itemmanagement.provider"
+            android:authorities="com.jiwanwu.app.provider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

@@ -14,7 +14,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.EditText
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -27,6 +26,7 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.data.entity.WarrantyStatus
 import com.example.itemmanagement.data.relation.ItemWithDetails
 import com.example.itemmanagement.databinding.FragmentAddEditWarrantyBinding
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.SimpleDateFormat
 import java.util.*
@@ -282,7 +282,7 @@ class AddEditWarrantyFragment : Fragment() {
         // 观察保存结果
         viewModel.saveResult.observe(viewLifecycleOwner) { success ->
             if (success) {
-                Toast.makeText(requireContext(), "保存成功", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showSuccess(requireView(), "保存成功")
                 findNavController().navigateUp()
             }
         }
@@ -290,7 +290,7 @@ class AddEditWarrantyFragment : Fragment() {
         // 观察错误消息
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             message?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                SnackbarHelper.showError(requireView(), it)
                 viewModel.clearErrorMessage()
             }
         }
@@ -374,10 +374,10 @@ class AddEditWarrantyFragment : Fragment() {
                         if (months > 0) {
                             viewModel.setWarrantyPeriodMonths(months)
                         } else {
-                            Toast.makeText(requireContext(), "保修期必须大于0", Toast.LENGTH_SHORT).show()
+                            SnackbarHelper.show(requireView(), "保修期必须大于0")
                         }
                     } catch (e: NumberFormatException) {
-                        Toast.makeText(requireContext(), "请输入有效的数字", Toast.LENGTH_SHORT).show()
+                        SnackbarHelper.show(requireView(), "请输入有效的数字")
                     }
                 }
             }
@@ -458,8 +458,8 @@ class AddEditWarrantyFragment : Fragment() {
      */
     private fun showImageViewDialog(uri: Uri) {
         // 这里可以创建一个全屏的图片查看器
-        // 暂时使用简单的Toast提示
-        Toast.makeText(requireContext(), "查看图片: ${uri.lastPathSegment}", Toast.LENGTH_SHORT).show()
+        // 暂时使用简单的Snackbar提示
+        SnackbarHelper.show(requireView(), "查看图片: ${uri.lastPathSegment}")
     }
 
     /**
@@ -529,7 +529,7 @@ class AddEditWarrantyFragment : Fragment() {
         if (isGranted) {
             launchCamera()
         } else {
-            Toast.makeText(requireContext(), "需要相机权限才能拍照", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "需要相机权限才能拍照")
         }
     }
 
@@ -539,7 +539,7 @@ class AddEditWarrantyFragment : Fragment() {
         if (isGranted) {
             openGallery()
         } else {
-            Toast.makeText(requireContext(), "需要存储权限才能选择图片", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "需要存储权限才能选择图片")
         }
     }
 
@@ -559,7 +559,7 @@ class AddEditWarrantyFragment : Fragment() {
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             // 这里需要处理相机拍照的结果
             // 暂时使用模拟数据
-            Toast.makeText(requireContext(), "拍照功能待完善", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "拍照功能待完善")
         }
     }
 

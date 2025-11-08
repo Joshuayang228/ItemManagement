@@ -21,8 +21,8 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import java.text.SimpleDateFormat
 import java.util.*
-import android.widget.Toast
 import android.widget.Switch
+import com.example.itemmanagement.utils.SnackbarHelper
 import androidx.fragment.app.FragmentManager
 import com.example.itemmanagement.ui.utils.Material3DatePicker
 import com.example.itemmanagement.ui.utils.Material3DialogFactory
@@ -319,8 +319,8 @@ class FieldViewFactory(
                 if (fieldName == "子分类") {
                     // 检查分类是否已选择
                     if (!viewModel.isCategorySelected()) {
-                        // 显示Toast提示用户先选择分类
-                        Toast.makeText(context, "请先选择分类", Toast.LENGTH_SHORT).show()
+                        // 显示Snackbar提示用户先选择分类
+                        SnackbarHelper.show(this, "请先选择分类")
                         return@setOnClickListener
                     }
                     

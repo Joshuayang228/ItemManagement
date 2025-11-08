@@ -10,7 +10,6 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -21,6 +20,7 @@ import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentEditProfileBinding
 import com.example.itemmanagement.utils.ImageCompressor
+import com.example.itemmanagement.utils.SnackbarHelper
 import kotlinx.coroutines.launch
 import androidx.lifecycle.lifecycleScope
 import androidx.core.content.FileProvider
@@ -48,7 +48,7 @@ class EditProfileFragment : Fragment() {
         if (isGranted) {
             showImagePickerDialog()
         } else {
-            Toast.makeText(context, "需要相册权限才能选择头像", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "需要相册权限才能选择头像")
         }
     }
 
@@ -119,14 +119,14 @@ class EditProfileFragment : Fragment() {
 
         viewModel.message.observe(viewLifecycleOwner) { message ->
             message?.let {
-                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                SnackbarHelper.show(requireView(), it)
                 viewModel.clearMessage()
             }
         }
 
         viewModel.saveSuccess.observe(viewLifecycleOwner) { success ->
             if (success) {
-                Toast.makeText(context, "个人资料已保存", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showSuccess(requireView(), "个人资料已保存")
                 findNavController().navigateUp()
             }
         }
@@ -234,7 +234,7 @@ class EditProfileFragment : Fragment() {
             )
             takePictureLauncher.launch(currentAvatarUri)
         } catch (e: Exception) {
-            Toast.makeText(context, "拍照功能暂时不可用", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "拍照功能暂时不可用")
         }
     }
 
@@ -255,9 +255,9 @@ class EditProfileFragment : Fragment() {
                 // 保存URI
                 viewModel.updateAvatarUri(compressedUri.toString())
                 
-                Toast.makeText(context, "头像已更新", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showSuccess(requireView(), "头像已更新")
             } catch (e: Exception) {
-                Toast.makeText(context, "处理图片失败: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showError(requireView(), "处理图片失败: ${e.localizedMessage}")
             }
         }
     }
@@ -271,7 +271,7 @@ class EditProfileFragment : Fragment() {
         // 触觉反馈
         binding.layoutUserId.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
         
-        Toast.makeText(context, "用户ID已复制: $userId", Toast.LENGTH_SHORT).show()
+        SnackbarHelper.show(requireView(), "用户ID已复制: $userId")
     }
     
     private fun saveProfile() {
@@ -279,17 +279,17 @@ class EditProfileFragment : Fragment() {
         val signature = binding.etSignature.text.toString().trim()
         
         if (nickname.isEmpty()) {
-            Toast.makeText(context, "请输入昵称", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "请输入昵称")
             return
         }
 
         if (nickname.length > 20) {
-            Toast.makeText(context, "昵称不能超过20个字符", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "昵称不能超过20个字符")
             return
         }
         
         if (signature.length > 50) {
-            Toast.makeText(context, "个性签名不能超过50个字符", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "个性签名不能超过50个字符")
             return
         }
 

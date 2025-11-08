@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
@@ -16,6 +15,7 @@ import com.example.itemmanagement.R
 import com.example.itemmanagement.adapter.ProfileAdapter
 import com.example.itemmanagement.databinding.FragmentProfileBinding
 import com.example.itemmanagement.ui.utils.Material3Feedback
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.example.itemmanagement.data.entity.UserProfileEntity
 
 /**
@@ -129,6 +129,7 @@ class ProfileFragment : Fragment() {
             "data_export" -> navigateToDataExport()
             "app_settings" -> navigateToAppSettings()
             "donation" -> navigateToDonation()
+            "about_app" -> navigateToAboutApp()
         }
     }
 
@@ -139,7 +140,7 @@ class ProfileFragment : Fragment() {
         try {
             findNavController().navigate(R.id.action_profile_to_app_settings)
         } catch (e: Exception) {
-            Toast.makeText(context, "设置页面开发中", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "设置页面开发中")
         }
     }
 
@@ -150,7 +151,7 @@ class ProfileFragment : Fragment() {
         try {
             findNavController().navigate(R.id.action_profile_to_edit_profile)
         } catch (e: Exception) {
-            Toast.makeText(context, "个人资料编辑功能开发中", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "个人资料编辑功能开发中")
         }
     }
 
@@ -161,7 +162,7 @@ class ProfileFragment : Fragment() {
         try {
             findNavController().navigate(R.id.action_profile_to_recycle_bin)
         } catch (e: Exception) {
-            Toast.makeText(context, "回收站功能开发中", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "回收站功能开发中")
         }
     }
 
@@ -172,7 +173,7 @@ class ProfileFragment : Fragment() {
         try {
             findNavController().navigate(R.id.action_profile_to_data_export)
         } catch (e: Exception) {
-            Toast.makeText(context, "数据导出功能开发中", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "数据导出功能开发中")
         }
     }
 
@@ -183,7 +184,18 @@ class ProfileFragment : Fragment() {
         try {
             findNavController().navigate(R.id.action_profile_to_donation)
         } catch (e: Exception) {
-            Toast.makeText(context, "打赏页面开发中", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "打赏页面开发中")
+        }
+    }
+
+    /**
+     * 导航到关于应用页面
+     */
+    private fun navigateToAboutApp() {
+        try {
+            findNavController().navigate(R.id.action_profile_to_about_app)
+        } catch (e: Exception) {
+            SnackbarHelper.show(requireView(), "关于应用页面开发中")
         }
     }
 

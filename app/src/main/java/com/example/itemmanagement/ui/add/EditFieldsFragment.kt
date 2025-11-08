@@ -12,6 +12,7 @@ import com.example.itemmanagement.ui.base.BaseItemViewModel
 import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.tabs.TabLayoutMediator
+import com.example.itemmanagement.utils.SnackbarHelper
 import android.util.Log
 
 /**
@@ -500,11 +501,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             
             if (currentTabFields.isEmpty()) {
                 Log.w("EditFieldsFragment", "当前tab没有可选择的字段")
-                android.widget.Toast.makeText(
-                    requireContext(), 
-                    "当前tab没有可选字段", 
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                SnackbarHelper.show(requireView(), "当前tab没有可选字段")
                 return
             }
             
@@ -560,11 +557,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
                     binding.selectAllButton.text = "全选"
                     
                     // 显示完成提示
-                    android.widget.Toast.makeText(
-                        requireContext(), 
-                        "已全选「$currentTabName」的 ${fieldsToSelect.size} 个字段", 
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
+                    SnackbarHelper.showSuccess(requireView(), "已全选「$currentTabName」的 ${fieldsToSelect.size} 个字段")
                     
                     Log.d("EditFieldsFragment", "全选当前tab完成，UI已刷新")
                 } catch (e: Exception) {
@@ -581,11 +574,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             binding.selectAllButton.isEnabled = true
             binding.selectAllButton.text = "全选"
             
-            android.widget.Toast.makeText(
-                requireContext(), 
-                "全选失败: ${e.message}", 
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+            SnackbarHelper.showError(requireView(), "全选失败: ${e.message}")
         }
     }
 

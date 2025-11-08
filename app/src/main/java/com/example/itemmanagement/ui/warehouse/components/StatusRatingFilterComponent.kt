@@ -185,14 +185,14 @@ class StatusRatingFilterComponent(
     private fun observeViewModelData() {
         // 观察季节列表变化
         viewModel.availableSeasons.observe(lifecycleOwner) { seasons ->
-            availableSeasons = seasons
-            updateSeasonsChipGroup(seasons)
+            availableSeasons = seasons ?: emptyList()
+            updateSeasonsChipGroup(seasons ?: emptyList())
         }
         
         // 观察标签列表变化
         viewModel.availableTags.observe(lifecycleOwner) { tags ->
-            availableTags = tags
-            updateTagsChipGroup(tags)
+            availableTags = tags ?: emptyList()
+            updateTagsChipGroup(tags ?: emptyList())
         }
     }
     

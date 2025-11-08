@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -28,6 +27,7 @@ import com.example.itemmanagement.ui.utils.Material3Performance
 // import com.example.itemmanagement.ui.utils.fadeIn
 // import com.example.itemmanagement.ui.utils.showWithAnimation
 import com.example.itemmanagement.ui.animation.SearchBoxAnimator
+import com.example.itemmanagement.utils.SnackbarHelper
 
 class HomeFragment : Fragment() {
 
@@ -309,10 +309,10 @@ class HomeFragment : Fragment() {
      * 插入库存测试数据
      */
     private fun insertInventoryTestData() {
-        Toast.makeText(context, "正在生成库存测试数据...", Toast.LENGTH_SHORT).show()
+        SnackbarHelper.show(requireView(), "正在生成库存测试数据...")
         
         TestDataInserter.insertTestData(requireContext()) { success, message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            SnackbarHelper.showError(requireView(), message)
             if (success) {
                 // 刷新数据显示
                 viewModel.refreshData()
@@ -325,7 +325,7 @@ class HomeFragment : Fragment() {
      * 插入组合测试数据
      */
     private fun insertCombinedTestData() {
-        Toast.makeText(context, "组合测试数据功能暂不可用", Toast.LENGTH_SHORT).show()
+        SnackbarHelper.show(requireView(), "组合测试数据功能暂不可用")
         
         // TODO: 实现基于统一架构的组合测试数据插入
     }

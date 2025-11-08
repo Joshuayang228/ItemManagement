@@ -159,14 +159,14 @@ class LocationFilterComponent(
     private fun observeViewModelData() {
         // 观察位置区域列表变化
         viewModel.locationAreas.observe(lifecycleOwner) { areas ->
-            availableLocationAreas = areas
-            updateLocationAreasChipGroup(areas)
+            availableLocationAreas = areas ?: emptyList()
+            updateLocationAreasChipGroup(areas ?: emptyList())
         }
         
         // 观察容器列表变化
         viewModel.containers.observe(lifecycleOwner) { containers ->
-            availableContainers = containers
-            updateContainersChipGroup(containers)
+            availableContainers = containers ?: emptyList()
+            updateContainersChipGroup(containers ?: emptyList())
         }
     }
     

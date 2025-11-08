@@ -52,7 +52,10 @@ class FilterNavigationAdapterV2(
             val textColor = if (isSelected) {
                 itemView.context.getColor(R.color.primary)
             } else {
-                itemView.context.getColor(android.R.color.black)
+                // 🎨 使用主题颜色，支持深色模式
+                val typedValue = android.util.TypedValue()
+                itemView.context.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, typedValue, true)
+                typedValue.data
             }
             titleText.setTextColor(textColor)
             

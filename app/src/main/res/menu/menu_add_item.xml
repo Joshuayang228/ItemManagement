@@ -2,12 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     
+    <!-- 🧪 测试填充按钮（已隐藏，用于开发测试）
     <item
         android:id="@+id/action_test_fill"
         android:icon="@drawable/ic_star"
         android:title="测试填充"
         app:iconTint="?attr/colorOnSurface"
         app:showAsAction="always"/>
+    -->
     
     <item
         android:id="@+id/action_scan"

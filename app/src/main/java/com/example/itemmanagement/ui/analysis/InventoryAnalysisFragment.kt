@@ -51,9 +51,43 @@ class InventoryAnalysisFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         hideBottomNavigation()
+        
+        // 延迟显示内容，避免与导航动画冲突
+        setupDelayedContentDisplay()
+        
         setupObservers()
         setupRefreshListener()
         setupChartToggleListeners() // 添加图表切换监听器
+    }
+    
+    /**
+     * 延迟显示内容，避免Fragment切换时的视觉重叠
+     */
+    private fun setupDelayedContentDisplay() {
+        // 先将内容设为透明
+        binding.contentContainer.alpha = 0f
+        binding.progressBar.alpha = 0f
+        binding.errorText.alpha = 0f
+        
+        // 延迟80ms后淡入显示
+        binding.root.postDelayed({
+            if (_binding != null) {
+                binding.contentContainer.animate()
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
+                    
+                binding.progressBar.animate()
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
+                    
+                binding.errorText.animate()
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
+            }
+        }, 80)
     }
 
     override fun onResume() {

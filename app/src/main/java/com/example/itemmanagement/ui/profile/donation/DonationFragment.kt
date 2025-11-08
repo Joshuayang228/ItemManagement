@@ -13,7 +13,6 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.itemmanagement.ui.utils.Material3Feedback
 import androidx.navigation.fragment.findNavController
@@ -22,6 +21,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentDonationM3Binding
+import com.example.itemmanagement.utils.SnackbarHelper
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
@@ -113,11 +113,7 @@ class DonationFragment : Fragment() {
                     }
                 })
         } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "保存失败，请重试",
-                Toast.LENGTH_SHORT
-            ).show()
+            SnackbarHelper.showError(requireView(), "保存失败，请重试")
         }
     }
     
@@ -169,18 +165,10 @@ class DonationFragment : Fragment() {
             }
             
             // 通知用户保存成功
-            Toast.makeText(
-                requireContext(),
-                "${description}已保存到相册",
-                Toast.LENGTH_SHORT
-            ).show()
+            SnackbarHelper.showSuccess(requireView(), "${description}已保存到相册")
             
         } catch (e: Exception) {
-            Toast.makeText(
-                requireContext(),
-                "保存失败：${e.localizedMessage}",
-                Toast.LENGTH_SHORT
-            ).show()
+            SnackbarHelper.showError(requireView(), "保存失败：${e.localizedMessage}")
         }
     }
     
@@ -190,7 +178,7 @@ class DonationFragment : Fragment() {
     private fun copyWechatInfo() {
         val wechatInfo = "微信请喝咖啡\n感谢您的支持！"
         copyToClipboard("微信请喝咖啡", wechatInfo)
-        Toast.makeText(requireContext(), "微信信息已复制", Toast.LENGTH_SHORT).show()
+        SnackbarHelper.showSuccess(requireView(), "微信信息已复制")
     }
     
     /**
@@ -199,7 +187,7 @@ class DonationFragment : Fragment() {
     private fun copyAlipayInfo() {
         val alipayInfo = "支付宝请喝咖啡\n感谢您的支持！"
         copyToClipboard("支付宝请喝咖啡", alipayInfo)
-        Toast.makeText(requireContext(), "支付宝信息已复制", Toast.LENGTH_SHORT).show()
+        SnackbarHelper.showSuccess(requireView(), "支付宝信息已复制")
     }
     
     /**

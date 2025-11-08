@@ -7,6 +7,7 @@ import com.example.itemmanagement.ui.warehouse.FilterState
 import com.example.itemmanagement.ui.warehouse.WarehouseViewModel
 import com.example.itemmanagement.ui.warehouse.components.base.BaseFilterComponent
 import com.example.itemmanagement.ui.warehouse.components.base.DateRangeFilterComponent
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.example.itemmanagement.ui.utils.showMaterial3DatePicker
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -191,11 +192,7 @@ class DateRangeFilterComponent(
      */
     private fun showDateRangeError(message: String) {
         // 可以显示Toast或其他形式的错误提示
-        android.widget.Toast.makeText(
-            binding.root.context,
-            message,
-            android.widget.Toast.LENGTH_SHORT
-        ).show()
+        SnackbarHelper.show(binding.root, message)
     }
     
     /**

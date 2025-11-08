@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">物品管理</string>
+    <string name="app_name">记万物</string>
     <string name="title_home">首页</string>
     <string name="title_warehouse">仓库</string>
     <string name="title_function">功能</string>

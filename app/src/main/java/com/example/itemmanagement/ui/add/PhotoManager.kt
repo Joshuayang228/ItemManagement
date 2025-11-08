@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
@@ -13,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.example.itemmanagement.ui.base.BaseItemViewModel
+import com.example.itemmanagement.utils.SnackbarHelper
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -105,7 +105,7 @@ class PhotoManager(
                         onPhotoAdded(compressedPath)
                         
                         withContext(Dispatchers.Main) {
-                            Toast.makeText(fragment.requireContext(), "照片已添加", Toast.LENGTH_SHORT).show()
+                            SnackbarHelper.showSuccess(fragment.requireView(), "照片已添加")
                         }
                     }
                 }
@@ -139,7 +139,7 @@ class PhotoManager(
                     onPhotoAdded(compressedPath)
                     
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(fragment.requireContext(), "照片已添加", Toast.LENGTH_SHORT).show()
+                        SnackbarHelper.showSuccess(fragment.requireView(), "照片已添加")
                     }
                 }
                 
@@ -148,7 +148,7 @@ class PhotoManager(
                 
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(fragment.requireContext(), "处理照片失败", Toast.LENGTH_SHORT).show()
+                    SnackbarHelper.showError(fragment.requireView(), "处理照片失败")
                 }
             }
         }
@@ -230,7 +230,7 @@ class PhotoManager(
                 }
                 
                 onPhotoDeleted()
-                Toast.makeText(fragment.requireContext(), "照片已删除", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showSuccess(fragment.requireView(), "照片已删除")
             }
             .setNegativeButton("取消", null)
             .show()

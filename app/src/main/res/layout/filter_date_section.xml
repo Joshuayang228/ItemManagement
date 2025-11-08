@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="日期筛选"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="16sp"
         android:textStyle="bold"
         android:paddingBottom="8dp" />
@@ -22,7 +22,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="4dp"
         android:text="过期日期范围"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="14sp" />
 
     <LinearLayout
@@ -95,7 +95,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:text="添加日期范围"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="14sp" />
 
     <LinearLayout
@@ -168,7 +168,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:text="购买日期范围"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="14sp" />
 
     <LinearLayout
@@ -241,7 +241,7 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
         android:text="生产日期范围"
-        android:textColor="@android:color/black"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="14sp" />
 
     <LinearLayout

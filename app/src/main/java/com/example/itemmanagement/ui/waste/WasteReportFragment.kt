@@ -58,11 +58,36 @@ class WasteReportFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         hideBottomNavigation()
+        
+        // 延迟显示内容，避免与导航动画冲突
+        setupDelayedContentDisplay()
+        
         setupUI()
         setupObservers()
         
         // 先检查并更新过期物品状态，然后加载报告
         viewModel.checkExpiredItemsAndGenerateReport(ReportPeriodType.LAST_MONTH)
+    }
+    
+    /**
+     * 延迟显示内容，避免Fragment切换时的视觉重叠
+     */
+    private fun setupDelayedContentDisplay() {
+        // 找到NestedScrollView（整个内容区域）
+        val contentView = binding.root.getChildAt(0)
+        
+        // 先将内容设为透明
+        contentView.alpha = 0f
+        
+        // 延迟80ms后淡入显示
+        binding.root.postDelayed({
+            if (_binding != null) {
+                contentView.animate()
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
+            }
+        }, 80)
     }
 
     override fun onResume() {

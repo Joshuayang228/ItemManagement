@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RadioGroup
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -21,6 +20,7 @@ import com.example.itemmanagement.data.repository.ReminderSettingsRepository
 import com.example.itemmanagement.ui.reminder.ReminderSettingsViewModel
 import com.example.itemmanagement.ui.reminder.ReminderSettingsViewModelFactory
 import com.example.itemmanagement.ui.reminder.CategoryThresholdAdapter
+import com.example.itemmanagement.utils.SnackbarHelper
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -72,6 +72,8 @@ class AppSettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        android.util.Log.d("AppSettings", "📍 onViewCreated: savedInstanceState=${savedInstanceState != null}")
+        
         hideBottomNavigation()
         
         val isRecreated = savedInstanceState != null
@@ -88,6 +90,7 @@ class AppSettingsFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        android.util.Log.d("AppSettings", "📍 onResume called")
         hideBottomNavigation()
     }
     
@@ -170,11 +173,14 @@ class AppSettingsFragment : Fragment() {
             // 标记初始化完成
             isInitializing = false
             
-            // 只在非重建时应用主题
-            // Activity因主题切换而重建时，系统已经应用了新主题，无需重复应用
-            if (!isRecreated) {
-                applyTheme(theme)
-            }
+            // 🔧 修复TopBar消失问题：移除自动应用主题的逻辑
+            // 原因：进入Fragment时不应该重新应用主题，这会导致不必要的Activity重建
+            // 主题应该只在用户主动切换时才应用（通过RadioButton的监听器）
+            // if (!isRecreated) {
+            //     applyTheme(theme)
+            // }
+            
+            android.util.Log.d("AppSettings", "✅ initializeUI完成，当前主题: $theme, isRecreated: $isRecreated")
         }
     }
     
@@ -226,17 +232,20 @@ class AppSettingsFragment : Fragment() {
             R.id.rbThemeDark -> "DARK"
             else -> "AUTO"
         }
+        android.util.Log.d("AppSettings", "🔄 主题RadioButton changed: 用户切换主题到 $theme")
         
         // 在协程中保存并应用主题
         lifecycleScope.launch {
             // 先同步保存到数据库（确保保存完成）
+            android.util.Log.d("AppSettings", "💾 开始保存主题到数据库")
             viewModel.saveThemeSync(theme)
+            android.util.Log.d("AppSettings", "💾 主题保存完成")
             
             // 再应用主题（会触发Activity重建）
             applyTheme(theme)
             
             // 显示提示
-            Toast.makeText(context, "主题已切换", Toast.LENGTH_SHORT).show()
+            view?.let { SnackbarHelper.showSuccess(it, "主题已切换") }
         }
     }
     
@@ -333,12 +342,17 @@ class AppSettingsFragment : Fragment() {
      * 应用主题到系统
      */
     private fun applyTheme(theme: String) {
+        android.util.Log.d("AppSettings", "🎨 applyTheme called: theme=$theme")
         val mode = when (theme) {
             "LIGHT" -> AppCompatDelegate.MODE_NIGHT_NO
             "DARK" -> AppCompatDelegate.MODE_NIGHT_YES
             else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         }
+        android.util.Log.d("AppSettings", "🎨 设置夜间模式: mode=$mode")
+        android.util.Log.d("AppSettings", "🎨 当前Activity: ${activity?.javaClass?.simpleName}")
+        android.util.Log.d("AppSettings", "🎨 当前TopBar可见性: ${activity?.findViewById<View>(com.example.itemmanagement.R.id.appBarLayout)?.visibility}")
         AppCompatDelegate.setDefaultNightMode(mode)
+        android.util.Log.d("AppSettings", "🎨 setDefaultNightMode完成，Activity即将重建")
     }
     
     /**
@@ -354,7 +368,7 @@ class AppSettingsFragment : Fragment() {
                     viewModel.resetSettings()
                     setThemeRadioButton("AUTO")
                     applyTheme("AUTO")
-                    Toast.makeText(context, "设置已重置", Toast.LENGTH_SHORT).show()
+                    view?.let { SnackbarHelper.showSuccess(it, "设置已重置") }
                 }
             }
             .setNegativeButton("取消", null)

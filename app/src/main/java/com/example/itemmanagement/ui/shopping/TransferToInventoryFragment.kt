@@ -9,7 +9,6 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -27,6 +26,7 @@ import com.example.itemmanagement.ui.add.DialogFactory
 import com.example.itemmanagement.ui.add.Field
 import com.example.itemmanagement.ui.add.FieldViewFactory
 import com.example.itemmanagement.ui.add.FieldValueManager
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.example.itemmanagement.ui.add.PhotoAdapter
 import com.example.itemmanagement.ui.base.ItemStateCacheViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -99,7 +99,7 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
         itemId = arguments?.getLong(ARG_ITEM_ID) ?: -1L
         if (itemId == -1L) {
             android.util.Log.e("TransferToInventory", "未接收到有效的物品ID")
-            Toast.makeText(requireContext(), "物品信息加载失败", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.showError(requireView(), "物品信息加载失败")
             dismiss()
             return
         }
@@ -335,10 +335,10 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
             success?.let {
                 android.util.Log.d("TransferToInventory", "💾 保存结果: ${if (it) "成功" else "失败"}")
                 if (it) {
-                    Toast.makeText(context, "已成功转入库存", Toast.LENGTH_SHORT).show()
+                    SnackbarHelper.showSuccess(requireView(), "已成功转入库存")
                     dismiss()
                 } else {
-                    Toast.makeText(context, "转入失败，请检查必填字段", Toast.LENGTH_SHORT).show()
+                    SnackbarHelper.showError(requireView(), "转入失败，请检查必填字段")
                 }
                 viewModel.onSaveResultConsumed()
             }
@@ -348,7 +348,7 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
         viewModel.errorMessage.observe(viewLifecycleOwner) { message ->
             if (!message.isNullOrEmpty()) {
                 android.util.Log.e("TransferToInventory", "❌ 错误消息: $message")
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                SnackbarHelper.showError(requireView(), message)
             }
         }
         
@@ -532,12 +532,12 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
                     )
                 }, 100)
             } else {
-                Toast.makeText(context, "导航失败，请重试", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showError(requireView(), "导航失败，请重试")
                 android.util.Log.e("TransferToInventory", "无法获取 NavController")
             }
         } catch (e: Exception) {
             android.util.Log.e("TransferToInventory", "导航到全屏模式失败", e)
-            Toast.makeText(context, "跳转失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.showError(requireView(), "跳转失败: ${e.message}")
         }
     }
 
@@ -562,7 +562,7 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
      */
     private fun showPhotoViewDialog(uri: Uri) {
         // TODO: 实现照片查看功能（可以使用DialogFactory显示大图）
-        Toast.makeText(context, "查看: ${uri.lastPathSegment}", Toast.LENGTH_SHORT).show()
+        SnackbarHelper.show(requireView(), "查看: ${uri.lastPathSegment}")
     }
 
     // ===== 权限和照片相关方法 =====
@@ -609,7 +609,7 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
         if (isGranted) {
             takePhoto()
         } else {
-            Toast.makeText(context, "需要相机权限才能拍照", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "需要相机权限才能拍照")
         }
     }
 

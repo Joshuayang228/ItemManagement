@@ -214,10 +214,10 @@ class EditItemFragment : BaseItemFragment<EditItemViewModel>() {
         /*
         viewModel.deleteItem { success ->
             if (success) {
-                Toast.makeText(context, "物品已删除", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showSuccess(requireView(), "物品已删除")
                 activity?.onBackPressed()
             } else {
-                Toast.makeText(context, "删除失败", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.showError(requireView(), "删除失败")
             }
         }
         */

@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import com.example.itemmanagement.R
 import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 import com.example.itemmanagement.ui.utils.Material3DialogFactory
+import com.example.itemmanagement.utils.SnackbarHelper
 
 /**
  * 自定义位置选择器视图
@@ -179,7 +180,7 @@ class LocationSelectorView @JvmOverloads constructor(
         dialog.setOnShowListener {
             // 如果是第一次显示对话框，显示提示
             if (!hasShownAreaDialog) {
-                Toast.makeText(context, "长按选项可编辑或删除", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.show(this, "长按选项可编辑或删除")
                 hasShownAreaDialog = true
             }
 
@@ -214,7 +215,7 @@ class LocationSelectorView @JvmOverloads constructor(
      */
     private fun showContainerSelectionDialog() {
         if (selectedArea.isNullOrEmpty()) {
-            Toast.makeText(context, "请先选择区域", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(this, "请先选择区域")
             showAreaSelectionDialog()
             return
         }
@@ -247,7 +248,7 @@ class LocationSelectorView @JvmOverloads constructor(
         dialog.setOnShowListener {
             // 如果是第一次显示对话框，显示提示
             if (!hasShownContainerDialog) {
-                Toast.makeText(context, "长按选项可编辑或删除", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.show(this, "长按选项可编辑或删除")
                 hasShownContainerDialog = true
             }
 
@@ -282,7 +283,7 @@ class LocationSelectorView @JvmOverloads constructor(
      */
     private fun showSublocationSelectionDialog() {
         if (selectedContainer.isNullOrEmpty()) {
-            Toast.makeText(context, "请先选择容器", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(this, "请先选择容器")
             showContainerSelectionDialog()
             return
         }
@@ -316,7 +317,7 @@ class LocationSelectorView @JvmOverloads constructor(
         dialog.setOnShowListener {
             // 如果是第一次显示对话框，显示提示
             if (!hasShownSublocationDialog) {
-                Toast.makeText(context, "长按选项可编辑或删除", Toast.LENGTH_SHORT).show()
+                SnackbarHelper.show(this, "长按选项可编辑或删除")
                 hasShownSublocationDialog = true
             }
 
@@ -372,7 +373,7 @@ class LocationSelectorView @JvmOverloads constructor(
      */
     private fun showAddCustomContainerDialog() {
         if (selectedArea.isNullOrEmpty()) {
-            Toast.makeText(context, "请先选择区域", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(this, "请先选择区域")
             return
         }
 
@@ -398,7 +399,7 @@ class LocationSelectorView @JvmOverloads constructor(
      */
     private fun showAddCustomSublocationDialog() {
         if (selectedContainer.isNullOrEmpty()) {
-            Toast.makeText(context, "请先选择容器", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(this, "请先选择容器")
             return
         }
 

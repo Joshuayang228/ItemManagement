@@ -9,6 +9,7 @@ import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.ui.add.Field
 import com.example.itemmanagement.ui.base.BaseItemFragment
+import com.example.itemmanagement.utils.SnackbarHelper
 
 /**
  * 添加购物清单物品Fragment
@@ -148,11 +149,10 @@ class AddShoppingItemFragment : BaseItemFragment<AddShoppingItemViewModel>() {
         viewModel.saveShoppingItem { success, message ->
             if (success) {
                 // 显示成功消息并返回
-                android.widget.Toast.makeText(
-                    requireContext(),
-                    message ?: "物品已添加到购物清单",
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                SnackbarHelper.showSuccess(
+                    requireView(),
+                    message ?: "物品已添加到购物清单"
+                )
                 
                 // 延迟一下再返回，让用户看到消息
                 view?.postDelayed({
@@ -160,11 +160,10 @@ class AddShoppingItemFragment : BaseItemFragment<AddShoppingItemViewModel>() {
                 }, 500)
             } else {
                 // 显示错误消息
-                android.widget.Toast.makeText(
-                    requireContext(),
-                    message ?: "添加物品失败，请重试",
-                    android.widget.Toast.LENGTH_LONG
-                ).show()
+                SnackbarHelper.showError(
+                    requireView(),
+                    message ?: "添加物品失败，请重试"
+                )
             }
         }
     }

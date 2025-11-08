@@ -17,6 +17,7 @@ import com.example.itemmanagement.data.entity.ShoppingListEntity
 import com.example.itemmanagement.data.entity.ShoppingListStatus
 import com.example.itemmanagement.data.entity.ShoppingListType
 import com.example.itemmanagement.databinding.FragmentShoppingListManagementM3Binding
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
@@ -174,7 +175,8 @@ class ShoppingListManagementM3Fragment : Fragment() {
                 viewModel.getShoppingListById(listId)?.let { list ->
                     navigateToListDetail(listId, list.name)
                 }
-                // viewModel.onNavigationComplete() // TODO: 添加此方法
+                // 🔧 清除导航状态，防止返回时自动重新导航
+                viewModel.navigateToListDetailComplete()
             }
         }
     }
@@ -187,7 +189,7 @@ class ShoppingListManagementM3Fragment : Fragment() {
             findNavController().navigate(action)
         } catch (e: Exception) {
             android.util.Log.e("ShoppingManagement", "导航失败: listId=$listId, name=$listName", e)
-            android.widget.Toast.makeText(requireContext(), "打开购物清单失败", android.widget.Toast.LENGTH_SHORT).show()
+            SnackbarHelper.showError(requireView(), "打开购物清单失败")
         }
     }
 

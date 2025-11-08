@@ -39,7 +39,7 @@
                     android:layout_height="wrap_content"
                     android:text="感谢您的支持"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/colorOnPrimary"
                     android:gravity="center"
                     android:layout_marginBottom="12dp" />
 
@@ -48,7 +48,7 @@
                     android:layout_height="wrap_content"
                     android:text="如果这款应用对您有帮助，欢迎请开发者喝杯咖啡。\n每一份支持都是我持续优化的动力！"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/colorOnPrimary"
                     android:gravity="center"
                     android:lineSpacingExtra="4dp"
                     android:alpha="0.95" />
@@ -75,7 +75,7 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
             app:strokeWidth="1dp"
-            app:strokeColor="#E0E0E0"
+            app:strokeColor="?attr/colorOutlineVariant"
             android:foreground="?android:attr/selectableItemBackground">
 
             <LinearLayout
@@ -123,13 +123,10 @@
 
                     <!-- 推荐标签 -->
                     <com.google.android.material.chip.Chip
-                        style="@style/Widget.Material3.Chip.Suggestion"
+                        style="@style/Widget.Material3.Chip.Assist"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="推荐"
-                        android:textColor="@color/white"
-                        app:chipBackgroundColor="#00C851"
-                        app:chipStrokeWidth="0dp"
                         app:chipMinHeight="24dp" />
 
                 </LinearLayout>
@@ -142,7 +139,7 @@
                     app:cardCornerRadius="12dp"
                     app:cardElevation="2dp"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#E0E0E0">
+                    app:strokeColor="?attr/colorOutlineVariant">
 
                     <ImageView
                         android:id="@+id/ivWechatQR"
@@ -177,7 +174,7 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
             app:strokeWidth="1dp"
-            app:strokeColor="#E0E0E0"
+            app:strokeColor="?attr/colorOutlineVariant"
             android:foreground="?android:attr/selectableItemBackground">
 
             <LinearLayout
@@ -233,7 +230,7 @@
                     app:cardCornerRadius="12dp"
                     app:cardElevation="2dp"
                     app:strokeWidth="1dp"
-                    app:strokeColor="#E0E0E0">
+                    app:strokeColor="?attr/colorOutlineVariant">
 
                     <ImageView
                         android:id="@+id/ivAlipayQR"
@@ -266,7 +263,7 @@
             app:cardCornerRadius="16dp"
             app:cardElevation="2dp"
             app:strokeWidth="1dp"
-            app:strokeColor="#E0E0E0">
+            app:strokeColor="?attr/colorOutlineVariant">
 
             <LinearLayout
                 android:layout_width="match_parent"

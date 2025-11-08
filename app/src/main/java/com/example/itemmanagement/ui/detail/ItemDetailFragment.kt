@@ -5,7 +5,6 @@ import android.view.*
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -20,6 +19,7 @@ import com.example.itemmanagement.ui.detail.adapter.PhotoAdapter
 import com.example.itemmanagement.ui.detail.adapter.TagAdapter
 import com.example.itemmanagement.adapter.PriceRecordAdapter
 import com.example.itemmanagement.data.model.OpenStatus
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.chip.Chip
 import com.github.aachartmodel.aainfographics.aachartcreator.AAChartModel
 import com.github.aachartmodel.aainfographics.aachartcreator.AAChartType
@@ -107,7 +107,7 @@ class ItemDetailFragment : Fragment() {
             )
             findNavController().navigate(action)
         } catch (e: Exception) {
-            Toast.makeText(context, "编辑功能暂时不可用", Toast.LENGTH_SHORT).show()
+            SnackbarHelper.show(requireView(), "编辑功能暂时不可用")
         }
     }
 
@@ -514,7 +514,7 @@ class ItemDetailFragment : Fragment() {
     private fun observeError() {
         viewModel.errorMessage.observe(viewLifecycleOwner) { errorMessage ->
             if (!errorMessage.isNullOrEmpty()) {
-                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                SnackbarHelper.showError(requireView(), errorMessage)
             }
         }
     }

@@ -14,7 +14,7 @@ import com.bumptech.glide.request.target.Target
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.ItemPhotoBinding
 import com.example.itemmanagement.databinding.ItemAddPhotoBinding
-import android.widget.Toast
+import com.example.itemmanagement.utils.SnackbarHelper
 import android.view.View
 
 /**
@@ -121,7 +121,7 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                                 isFirstResource: Boolean
                             ): Boolean {
                                 holder.binding.root.post {
-                                    Toast.makeText(holder.binding.root.context, "无法加载图片", Toast.LENGTH_SHORT).show()
+                                    SnackbarHelper.showError(holder.binding.root, "无法加载图片")
                                 }
                                 return false
                             }
@@ -141,7 +141,7 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                 } catch (e: Exception) {
                     holder.binding.photoImageView.setImageResource(R.drawable.ic_image_error)
                     holder.binding.root.post {
-                        Toast.makeText(holder.binding.root.context, "加载图片时出错", Toast.LENGTH_SHORT).show()
+                        SnackbarHelper.showError(holder.binding.root, "加载图片时出错")
                     }
                 }
 
@@ -164,7 +164,7 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
                     if (photos.size < MAX_PHOTOS) {
                         onAddPhotoClickListener?.invoke()
                     } else {
-                        Toast.makeText(holder.binding.root.context, "最多只能添加${MAX_PHOTOS}张照片", Toast.LENGTH_SHORT).show()
+                        SnackbarHelper.show(holder.binding.root, "最多只能添加${MAX_PHOTOS}张照片")
                     }
                 }
             }

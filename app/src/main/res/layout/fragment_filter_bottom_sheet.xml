@@ -45,7 +45,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
                 android:text="筛选"
-                android:textColor="@android:color/black"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -71,7 +71,7 @@
                 android:layout_alignParentBottom="true"
                 android:layout_marginStart="-16dp"
                 android:layout_marginEnd="-16dp"
-                android:background="#E3E8ED" />
+                android:background="?attr/colorOutlineVariant" />
         </RelativeLayout>
 
     </LinearLayout>
@@ -91,7 +91,7 @@
         <LinearLayout
             android:layout_width="120dp"
             android:layout_height="match_parent"
-            android:background="#F8F9FA"
+            android:background="?attr/colorSurfaceContainerLow"
             android:orientation="vertical"
             android:paddingTop="8dp">
 
@@ -107,7 +107,7 @@
         <View
             android:layout_width="1dp"
             android:layout_height="match_parent"
-            android:background="#E3E8ED" />
+            android:background="?attr/colorOutlineVariant" />
 
         <!-- 右侧内容区域 - 统一显示所有字段 -->
         <androidx.core.widget.NestedScrollView
@@ -142,7 +142,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginHorizontal="16dp"
-                    android:background="#E0E0E0" />
+                    android:background="?attr/colorOutlineVariant" />
 
                 <!-- 位置筛选字段区域 -->
                                 <include 
@@ -154,7 +154,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginHorizontal="16dp"
-                    android:background="#E0E0E0" />
+                    android:background="?attr/colorOutlineVariant" />
 
                 <!-- 状态与评级字段区域 -->
                                 <include 
@@ -166,7 +166,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginHorizontal="16dp"
-                    android:background="#E0E0E0" />
+                    android:background="?attr/colorOutlineVariant" />
 
                 <!-- 数值范围字段区域 -->
                                 <include 
@@ -178,7 +178,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginHorizontal="16dp"
-                    android:background="#E0E0E0" />
+                    android:background="?attr/colorOutlineVariant" />
 
                                 <!-- 日期筛选字段区域 -->
                                 <include 
@@ -198,13 +198,13 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                                         android:text="「 精准筛选，如人生选择，重要的不是拥有所有选项，而是找到真正适合的那一个 」"
-                                        android:textColor="#B0BEC5"
+                                        android:textColor="?attr/colorOnSurfaceVariant"
                                         android:textSize="12sp"
                                         android:textStyle="italic"
                                         android:gravity="center"
                                         android:lineSpacingExtra="4dp"
                                         android:paddingHorizontal="32dp"
-                                        android:alpha="0.8" />
+                                        android:alpha="0.6" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>

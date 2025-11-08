@@ -16,6 +16,7 @@ import com.example.itemmanagement.ui.warehouse.WarehouseViewModel
 import com.example.itemmanagement.ui.warehouse.WarehouseViewModelFactory
 import com.example.itemmanagement.ui.warehouse.components.*
 import com.example.itemmanagement.ui.warehouse.managers.*
+import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
@@ -71,6 +72,9 @@ class FilterBottomSheetFragmentV2 : BottomSheetDialogFragment() {
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        
+        // 🔄 强制重新加载筛选选项（确保数据最新）
+        viewModel.loadFilterOptions()
         
         // 按顺序初始化各个模块
         initializeManagers()
@@ -312,11 +316,7 @@ class FilterBottomSheetFragmentV2 : BottomSheetDialogFragment() {
         }
         
         if (!isValid) {
-            android.widget.Toast.makeText(
-                requireContext(),
-                "请检查输入内容",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+            SnackbarHelper.show(requireView(), "请检查输入内容")
         }
         
         return isValid
