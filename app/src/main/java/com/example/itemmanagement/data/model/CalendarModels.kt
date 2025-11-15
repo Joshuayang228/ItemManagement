@@ -22,7 +22,11 @@ enum class EventType(val displayName: String, val icon: String) {
     WARRANTY("保修到期", "🔧"),
     MAINTENANCE("定期维护", "🛠️"),
     ANNIVERSARY("购买纪念", "🎉"),
-    CUSTOM("自定义", "📝")
+    CUSTOM("自定义", "📝"),
+    // 操作记录事件
+    ITEM_ADDED("添加物品", "📦"),
+    ITEM_DELETED("删除物品", "🗑️"),
+    SHOPPING_TRANSFERRED("购物入库", "🛒")
 }
 
 enum class Priority(val displayName: String, val color: String) {

@@ -49,7 +49,7 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="80dp">
+                android:layout_marginBottom="@dimen/fab_content_bottom_spacing">
 
                 <!-- 加载进度条 -->
                 <ProgressBar
@@ -125,7 +125,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="72dp"
+        android:layout_marginBottom="@dimen/fab_margin_bottom_hidden_nav"
         android:contentDescription="快速创建购物清单"
         android:src="@drawable/ic_add"
         app:fabSize="normal"

@@ -24,6 +24,8 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url = uri("https://www.jitpack.io") }
+        // 高德地图 Maven 仓库
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
     }
 }
 

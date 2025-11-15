@@ -385,20 +385,32 @@ class FieldValueManager(
                 // 清除单位选择
                 if (properties.unitOptions != null) {
                     findTextViewInView(view, UNIT_TAG_PREFIX, fieldName)?.let { unitTextView ->
-                        unitTextView.text = "选择单位"
-                        unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                        val defaultUnit = properties.unit
+                        if (!defaultUnit.isNullOrBlank()) {
+                            unitTextView.text = defaultUnit
+                            unitTextView.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+                        } else {
+                            unitTextView.text = "选择单位"
+                            unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                        }
                     }
                 }
 
                 // 清除周期选择器
-                if (fieldName == "保质期" || fieldName == "保修期") {
+                if (properties.displayStyle == DisplayStyle.PERIOD_SELECTOR) {
                     findTextViewInView(view, PERIOD_NUMBER_TAG_PREFIX, fieldName)?.let { numberText ->
                         numberText.text = ""
                         numberText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                     }
                     findTextViewInView(view, PERIOD_UNIT_TAG_PREFIX, fieldName)?.let { unitText ->
-                        unitText.text = "选择单位"
-                        unitText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                        val defaultUnit = properties.unit
+                        if (!defaultUnit.isNullOrBlank()) {
+                            unitText.text = defaultUnit
+                            unitText.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+                        } else {
+                            unitText.text = "选择单位"
+                            unitText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                        }
                     }
                 }
                 

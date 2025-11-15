@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -23,6 +24,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 /**
  * 购物清单Fragment
@@ -114,6 +117,16 @@ class ShoppingListFragment : Fragment() {
         
         // 隐藏底部导航栏
         hideBottomNavigation()
+
+        binding.root.post {
+            val layoutParams = binding.fabAddItem.layoutParams
+            if (layoutParams is androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) {
+                Log.d("FabDebugShoppingDetail", "fabMarginBottom=${layoutParams.bottomMargin}")
+            }
+            Log.d("FabDebugShoppingDetail", "recyclerPaddingBottom=${binding.recyclerView.paddingBottom}")
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(WindowInsetsCompat.Type.systemBars())
+            Log.d("FabDebugShoppingDetail", "systemBarsBottom=${insets?.bottom ?: -1}")
+        }
     }
     
     override fun onResume() {

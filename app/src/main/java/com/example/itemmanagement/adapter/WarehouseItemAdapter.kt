@@ -85,13 +85,39 @@ class WarehouseItemAdapter(
             setupPriceAndOpenStatus(item)
             
             // 加载图片
+            android.util.Log.d("WarehouseItemAdapter", "  🖼️ 开始加载图片...")
             if (!item.primaryPhotoUri.isNullOrBlank()) {
+                android.util.Log.d("WarehouseItemAdapter", "  ✅ 照片URI不为空，使用Glide加载: uri='${item.primaryPhotoUri}'")
                 Glide.with(itemView.context)
                     .load(item.primaryPhotoUri)
                     .placeholder(R.drawable.ic_image_placeholder)
                     .error(R.drawable.ic_image_error)
+                    .listener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
+                        override fun onLoadFailed(
+                            e: com.bumptech.glide.load.engine.GlideException?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            android.util.Log.e("WarehouseItemAdapter", "  ❌ Glide加载失败: ${e?.message}")
+                            e?.logRootCauses("WarehouseItemAdapter")
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: android.graphics.drawable.Drawable,
+                            model: Any,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
+                            dataSource: com.bumptech.glide.load.DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            android.util.Log.d("WarehouseItemAdapter", "  ✅ Glide加载成功!")
+                            return false
+                        }
+                    })
                     .into(binding.itemImage)
             } else {
+                android.util.Log.w("WarehouseItemAdapter", "  ⚠️ 照片URI为空，使用占位图")
                 binding.itemImage.setImageResource(R.drawable.ic_image_placeholder)
             }
             

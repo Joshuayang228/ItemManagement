@@ -5,11 +5,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupMenu
+import android.util.Log
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.data.dao.BorrowWithItemInfo
@@ -54,6 +57,16 @@ class BorrowListFragment : Fragment() {
         setupStatusChips()
         setupButtons()
         observeViewModel()
+
+        binding.root.post {
+            val layoutParams = binding.fabAddBorrow.layoutParams
+            if (layoutParams is androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) {
+                Log.d("FabDebugBorrow", "fabMarginBottom=${layoutParams.bottomMargin}")
+            }
+            Log.d("FabDebugBorrow", "recyclerPaddingBottom=${binding.rvBorrowList.paddingBottom}")
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(WindowInsetsCompat.Type.systemBars())
+            Log.d("FabDebugBorrow", "systemBarsBottom=${insets?.bottom ?: -1}")
+        }
     }
 
     override fun onResume() {

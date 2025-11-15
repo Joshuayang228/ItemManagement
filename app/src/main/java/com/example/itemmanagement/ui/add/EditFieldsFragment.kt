@@ -211,7 +211,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
         // === 通用字段（两种模式都需要）===
         val commonFieldNames = setOf(
             // 基础信息
-            "名称", "数量", "分类", "子分类", "品牌", "标签", "季节", "备注",
+            "名称", "数量", "分类", "子分类", "品牌", "标签", "季节", "备注", "地点",
             // 数字类
             "单价", "总价", "容量", "规格", "评分",
             // 日期类（通用）
@@ -258,6 +258,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             put("季节", "基础信息")
             put("单价", "基础信息")
             put("备注", "基础信息")
+            put("地点", "基础信息")
             
             // 数字类
             put("总价", "数字类")
@@ -361,6 +362,7 @@ class EditFieldsFragment : BottomSheetDialogFragment() {
             Field("基础信息", "标签", selectedFields.any { it.name == "标签" }),
             Field("基础信息", "季节", selectedFields.any { it.name == "季节" }),
             Field("基础信息", "单价", selectedFields.any { it.name == "单价" }),
+            Field("基础信息", "地点", selectedFields.any { it.name == "地点" }),
             Field("基础信息", "备注", selectedFields.any { it.name == "备注" })
         )
     }

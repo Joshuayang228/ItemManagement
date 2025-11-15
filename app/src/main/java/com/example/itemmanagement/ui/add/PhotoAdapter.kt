@@ -1,5 +1,6 @@
 package com.example.itemmanagement.ui.add
 
+import android.content.Context
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.view.LayoutInflater
@@ -21,7 +22,7 @@ import android.view.View
  * 新架构的照片适配器
  * 为新架构设计，功能与旧版本完全一致，但更加简洁和独立
  */
-class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class PhotoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     companion object {
         private const val MAX_PHOTOS = 9 // 最大照片数量限制
         private const val VIEW_TYPE_PHOTO = 0
@@ -31,8 +32,22 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private val photos = mutableListOf<Uri>()
     private var onDeleteClickListener: ((Int) -> Unit)? = null
     private var onAddPhotoClickListener: (() -> Unit)? = null
-    private var onPhotoClickListener: ((Uri) -> Unit)? = null
-    private var itemSize: Int = 0
+    private var onPhotoClickListener: ((Uri, Int) -> Unit)? = null
+    private var itemSize: Int = calculateInitialSize(context)
+    
+    /**
+     * 计算初始照片尺寸，避免加载时的闪烁
+     */
+    private fun calculateInitialSize(context: Context): Int {
+        val screenWidth = context.resources.displayMetrics.widthPixels
+        // 实际padding: 外层16dp + card内8dp + recycler 8dp = 32dp，两边 = 64dp
+        // 再加上一点点余量让初始尺寸稍微小一点
+        val horizontalPadding = (32 * 2 + 3) * context.resources.displayMetrics.density.toInt() // 64dp + 3dp余量
+        val spanCount = 3
+        val spacing = context.resources.getDimensionPixelSize(R.dimen.photo_grid_spacing)
+        val totalSpacing = (spanCount - 1) * spacing
+        return (screenWidth - horizontalPadding - totalSpacing) / spanCount
+    }
 
     fun setItemSize(size: Int) {
         itemSize = size
@@ -155,7 +170,10 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
                 // 设置照片点击事件
                 holder.binding.root.setOnClickListener {
-                    onPhotoClickListener?.invoke(uri)
+                    val adapterPosition = holder.adapterPosition
+                    if (adapterPosition != RecyclerView.NO_POSITION) {
+                        onPhotoClickListener?.invoke(uri, adapterPosition)
+                    }
                 }
             }
             is AddPhotoViewHolder -> {
@@ -183,7 +201,7 @@ class PhotoAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         onAddPhotoClickListener = listener
     }
 
-    fun setOnPhotoClickListener(listener: (Uri) -> Unit) {
+    fun setOnPhotoClickListener(listener: (Uri, Int) -> Unit) {
         onPhotoClickListener = listener
     }
 

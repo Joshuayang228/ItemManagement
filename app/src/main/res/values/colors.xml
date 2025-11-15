@@ -44,7 +44,7 @@ Material 3主颜色文件 - 清洁版本
     
     <!-- 分割线颜色 -->
     <color name="divider_gray">#CCCCCC</color>                   <!-- 灰色分割线 -->
-    
+
     <!-- 搜索框颜色 - 浅色模式固定白色 -->
     <color name="search_bar_background">#FFFFFF</color>          <!-- 搜索框背景：白色 -->
     <color name="search_bar_stroke">#E0E0E0</color>              <!-- 搜索框边框：浅灰 -->

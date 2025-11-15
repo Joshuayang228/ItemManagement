@@ -150,6 +150,10 @@ class FieldViewFactory(
                 android.util.Log.d("FieldViewFactory", "   ⚪ 创建 RadioGroup (开封状态)")
                 createRadioGroup()
             }
+            field.name == "地点" -> {
+                android.util.Log.d("FieldViewFactory", "   📍 创建 LocationField (地点)")
+                createLocationField()
+            }
             properties.displayStyle == DisplayStyle.TAG -> {
                 android.util.Log.d("FieldViewFactory", "   🏷️ 创建 TagSelector (DisplayStyle.TAG)")
                 createTagSelector(field.name, properties)
@@ -786,9 +790,6 @@ class FieldViewFactory(
 
             // 设置唯一标识
             tag = "unit_textview_${fieldName}"  // 使用字段名创建唯一tag
-
-            // 设置默认值
-            text = ""
             hint = "选择单位"
 
             // 添加下拉箭头图标
@@ -846,6 +847,16 @@ class FieldViewFactory(
                     }
                 )
             }
+        }
+
+        // 设置默认单位
+        val defaultNumberUnit = properties.unit
+        if (!defaultNumberUnit.isNullOrBlank()) {
+            unitTextView.text = defaultNumberUnit
+            unitTextView.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+        } else {
+            unitTextView.text = "选择单位"
+            unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
         }
 
         container.addView(input)
@@ -928,9 +939,6 @@ class FieldViewFactory(
 
             // 设置唯一标识，包含字段名
             tag = "period_unit_textview_${fieldName}"
-
-            // 设置默认值为空
-            text = ""
             hint = "选择单位"
 
             // 添加下拉箭头图标
@@ -988,6 +996,16 @@ class FieldViewFactory(
                     }
                 )
             }
+        }
+
+        // 设置默认周期单位
+        val defaultPeriodUnit = properties.unit
+        if (!defaultPeriodUnit.isNullOrBlank()) {
+            periodUnitTextView.text = defaultPeriodUnit
+            periodUnitTextView.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+        } else {
+            periodUnitTextView.text = "选择单位"
+            periodUnitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
         }
 
         container.addView(numberSelector)
@@ -1197,5 +1215,63 @@ class FieldViewFactory(
             textSize = 14f
             setPadding(8, 8, 8, 8)
         }
+    }
+    
+    /**
+     * 创建地点字段（支持GPS定位和地图选点）
+     */
+    private fun createLocationField(): View {
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        
+        // 输入框
+        val editText = EditText(context).apply {
+            id = R.id.editTextLocation
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+            hint = "点右侧按钮定位，长按打开地图"
+            textSize = 14f
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            background = ContextCompat.getDrawable(context, R.drawable.bg_input_borderless)
+            setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
+            setHintTextColor(ContextCompat.getColor(context, R.color.text_color_hint))
+        }
+        
+        // 定位按钮（小图标）
+        val locationButton = ImageView(context).apply {
+            id = R.id.btnGetLocation
+            val iconSize = (24 * resources.displayMetrics.density).toInt()
+            layoutParams = LinearLayout.LayoutParams(iconSize, iconSize).apply {
+                setMargins((8 * resources.displayMetrics.density).toInt(), 0, 0, 0)
+            }
+            setImageResource(R.drawable.ic_location)
+            imageTintList = android.content.res.ColorStateList.valueOf(
+                com.google.android.material.color.MaterialColors.getColor(
+                    this,
+                    com.google.android.material.R.attr.colorPrimary
+                )
+            )
+            isClickable = true
+            isFocusable = true
+            isLongClickable = true
+            val typedValue = android.util.TypedValue()
+            context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, typedValue, true)
+            background = ContextCompat.getDrawable(context, typedValue.resourceId)
+            contentDescription = "获取当前位置"
+        }
+        
+        container.addView(editText)
+        container.addView(locationButton)
+        
+        return container
     }
 }

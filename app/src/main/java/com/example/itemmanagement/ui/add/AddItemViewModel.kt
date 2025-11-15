@@ -57,9 +57,9 @@ class AddItemViewModel(
             Log.d("AddItemViewModel", "发现添加缓存，从缓存恢复数据")
             loadFromCache()
         } else {
-            Log.d("AddItemViewModel", "没有添加缓存，初始化默认字段")
-            // 如果没有缓存，初始化默认字段
-            initializeDefaultFields()
+            Log.d("AddItemViewModel", "没有添加缓存，字段将通过模板初始化")
+            // 字段初始化现在由Fragment通过applyTemplate()完成
+            // 不再在ViewModel的init中自动初始化默认字段
         }
         
         Log.d("AddItemViewModel", "添加ViewModel初始化完成，当前fieldValues: $fieldValues")
@@ -346,6 +346,9 @@ class AddItemViewModel(
                 
                 // 保存保修信息（如果有）
                 saveWarrantyInfoIfNeeded(itemId)
+                
+                // 📦 添加日历事件：记录添加物品操作
+                addCalendarEventForItemAdded(itemId, unifiedItem.name, unifiedItem.category)
             }
             
             // 物品保存成功
@@ -390,6 +393,17 @@ class AddItemViewModel(
         val season = if (seasonSet.isNotEmpty()) seasonSet.joinToString(",") else null
         val serialNumber = fieldValues["序列号"] as? String
         
+        // GPS地点信息
+        val locationAddress = (fieldValues["地点"] as? String).also {
+            android.util.Log.d("AddItemViewModel", "📍 保存地点地址: $it")
+        }
+        val locationLatitude = (fieldValues["地点_纬度"] as? String)?.toDoubleOrNull().also {
+            android.util.Log.d("AddItemViewModel", "📍 保存地点纬度: $it")
+        }
+        val locationLongitude = (fieldValues["地点_经度"] as? String)?.toDoubleOrNull().also {
+            android.util.Log.d("AddItemViewModel", "📍 保存地点经度: $it")
+        }
+        
         return UnifiedItemEntity(
             id = 0, // 新物品，ID为0
             name = name,
@@ -403,9 +417,14 @@ class AddItemViewModel(
             rating = rating,
             season = season,
             serialNumber = serialNumber,
+            locationAddress = locationAddress,
+            locationLatitude = locationLatitude,
+            locationLongitude = locationLongitude,
             createdDate = Date(),
             updatedDate = Date()
-        )
+        ).also {
+            android.util.Log.d("AddItemViewModel", "📍 构建的UnifiedItemEntity - 地点: ${it.locationAddress}, 纬度: ${it.locationLatitude}, 经度: ${it.locationLongitude}")
+        }
     }
 
     /**
@@ -576,8 +595,8 @@ class AddItemViewModel(
     private fun buildItemFromFields(): Item {
         // 基础字段
         val name = (fieldValues["名称"] as? String)?.trim() ?: ""
-        val quantityStr = (fieldValues["数量"] as? String)?.trim() ?: "1"
-        val quantity = quantityStr.toDoubleOrNull() ?: 1.0
+        val quantityStr = (fieldValues["数量"] as? String)?.trim()
+        val quantity = quantityStr?.toDoubleOrNull() ?: 0.0  // 如果没有输入数量，默认0
         
         // 位置信息构建
         val location = buildLocationFromFields()
@@ -601,8 +620,12 @@ class AddItemViewModel(
         // 标签信息
         val tags = buildTagsFromSelectedTags()
         
-        // 获取数量单位
-        val quantityUnit = fieldValues["数量_unit"] as? String ?: "个"
+        // 获取数量单位 - 只有当用户输入了数量时才使用单位，否则为null
+        val quantityUnit = if (quantityStr != null && quantity > 0) {
+            fieldValues["数量_unit"] as? String ?: "个"
+        } else {
+            null
+        }
         
         // 获取布尔字段
         
@@ -659,9 +682,9 @@ class AddItemViewModel(
             id = 0, // 新物品，ID为0
             name = name,
             quantity = quantity,
-            unit = quantityUnit,
+            unit = quantityUnit ?: "",  // 如果为null，使用空字符串
             location = location,
-            category = fieldValues["分类"] as? String ?: "未指定",
+            category = (fieldValues["分类"] as? String)?.takeIf { it.isNotBlank() } ?: "",  // 如果为null或空，使用空字符串
             productionDate = productionDate,
             expirationDate = expirationDate,
             openStatus = openStatus,
@@ -687,10 +710,21 @@ class AddItemViewModel(
             warrantyPeriod = null,
             warrantyEndDate = null,
             serialNumber = fieldValues["序列号"] as? String,
+            locationAddress = (fieldValues["地点"] as? String).also { 
+                android.util.Log.d("AddItemViewModel", "📍 保存地点地址: $it")
+            },
+            locationLatitude = (fieldValues["地点_纬度"] as? String)?.toDoubleOrNull().also {
+                android.util.Log.d("AddItemViewModel", "📍 保存地点纬度: $it")
+            },
+            locationLongitude = (fieldValues["地点_经度"] as? String)?.toDoubleOrNull().also {
+                android.util.Log.d("AddItemViewModel", "📍 保存地点经度: $it")
+            },
             addDate = addDate,
             isHighTurnover = false,
             tags = tags
-        )
+        ).also {
+            android.util.Log.d("AddItemViewModel", "📍 构建的UnifiedItemEntity - 地点: ${it.locationAddress}, 纬度: ${it.locationLatitude}, 经度: ${it.locationLongitude}")
+        }
     }
     
     /**
@@ -761,34 +795,11 @@ class AddItemViewModel(
     private fun validateItem(item: Item): Pair<Boolean, String?> {
         return when {
             item.name.isBlank() -> Pair(false, "物品名称不能为空")
-            item.quantity <= 0.0 -> Pair(false, "数量必须大于0")
+            item.quantity < 0.0 -> Pair(false, "数量不能为负数")
             else -> Pair(true, null)
         }
     }
 
-    /**
-     * 初始化默认字段
-     */
-    private fun initializeDefaultFields() {
-        val defaultFields = listOf(
-            Field("基础信息", "名称", true),
-            Field("基础信息", "数量", true),
-            Field("基础信息", "位置", true),
-            Field("基础信息", "单价", true),  // 添加单价为默认选中
-            Field("其他", "备注", true),
-            Field("分类", "分类", true),
-            Field("分类", "标签", true),  // 添加标签为默认选中
-            Field("日期类", "添加日期", true)
-        )
-        
-        _selectedFields.value = defaultFields.toSet()
-        
-        // 为添加日期字段设置默认值为当前日期
-        initializeDefaultDateValues()
-        
-        saveToCache() // 保存到缓存
-    }
-    
     /**
      * 初始化默认日期值
      */
@@ -1060,5 +1071,28 @@ class AddItemViewModel(
     fun prepareFormFromShoppingItem(shoppingItemEntity: Any?) {
         // TODO: 使用统一架构重新实现此功能
         return
+    }
+    
+    /**
+     * 📦 添加日历事件：记录添加物品操作
+     */
+    private suspend fun addCalendarEventForItemAdded(itemId: Long, itemName: String, category: String) {
+        try {
+            val event = com.example.itemmanagement.data.entity.CalendarEventEntity(
+                itemId = itemId,
+                eventType = com.example.itemmanagement.data.model.EventType.ITEM_ADDED,
+                title = "添加物品：$itemName",
+                description = "分类：$category",
+                eventDate = java.util.Date(),
+                reminderDays = emptyList(), // 操作记录不需要提醒
+                priority = com.example.itemmanagement.data.model.Priority.LOW,
+                isCompleted = true, // 操作记录默认为已完成
+                recurrenceType = null
+            )
+            repository.addCalendarEvent(event)
+            android.util.Log.d("AddItemViewModel", "📅 已添加日历事件：添加物品 - $itemName")
+        } catch (e: Exception) {
+            android.util.Log.e("AddItemViewModel", "添加日历事件失败", e)
+        }
     }
 } 

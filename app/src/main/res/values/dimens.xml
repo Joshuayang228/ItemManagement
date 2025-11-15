@@ -14,6 +14,10 @@
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
     
+    <!-- Floating Action Button spacing -->
+    <dimen name="fab_margin_bottom_hidden_nav">72dp</dimen>
+    <dimen name="fab_content_bottom_spacing">80dp</dimen>
+    
     <!-- 物品详情页尺寸规范 -->
     <!-- 顶部信息区 -->
     <dimen name="detail_header_image_height">220dp</dimen>

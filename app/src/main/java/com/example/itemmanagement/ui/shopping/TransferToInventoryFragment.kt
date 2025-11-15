@@ -29,6 +29,7 @@ import com.example.itemmanagement.ui.add.FieldValueManager
 import com.example.itemmanagement.utils.SnackbarHelper
 import com.example.itemmanagement.ui.add.PhotoAdapter
 import com.example.itemmanagement.ui.base.ItemStateCacheViewModel
+import com.example.itemmanagement.ui.photo.FullscreenPhotoActivity
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -240,15 +241,15 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
      * 设置照片RecyclerView（完全复用 BaseItemFragment 的逻辑）
      */
     private fun setupPhotoRecyclerView() {
-        photoAdapter = PhotoAdapter().apply {
+        photoAdapter = PhotoAdapter(requireContext()).apply {
             setOnDeleteClickListener { position ->
                 viewModel.removePhotoUri(position)
             }
             setOnAddPhotoClickListener {
                 showPhotoSelectionDialog()
             }
-            setOnPhotoClickListener { uri ->
-                showPhotoViewDialog(uri)
+            setOnPhotoClickListener { uri, position ->
+                showPhotoViewDialog(uri, position)
             }
         }
 
@@ -560,9 +561,21 @@ class TransferToInventoryFragment : BottomSheetDialogFragment() {
     /**
      * 显示照片查看对话框
      */
-    private fun showPhotoViewDialog(uri: Uri) {
-        // TODO: 实现照片查看功能（可以使用DialogFactory显示大图）
-        SnackbarHelper.show(requireView(), "查看: ${uri.lastPathSegment}")
+    private fun showPhotoViewDialog(uri: Uri, position: Int? = null) {
+        val photos = photoAdapter.getPhotos()
+        if (photos.isEmpty()) {
+            return
+        }
+
+        val resolvedPosition = position?.takeIf { it in photos.indices }
+            ?: photos.indexOf(uri).takeIf { it >= 0 } ?: 0
+
+        val intent = FullscreenPhotoActivity.createIntent(
+            requireContext(),
+            photos.map { it.toString() },
+            resolvedPosition
+        )
+        startActivity(intent)
     }
 
     // ===== 权限和照片相关方法 =====

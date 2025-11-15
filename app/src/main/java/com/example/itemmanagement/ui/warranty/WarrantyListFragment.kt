@@ -4,11 +4,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.util.Log
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.data.dao.WarrantyWithItemInfo
@@ -56,6 +59,16 @@ class WarrantyListFragment : Fragment() {
         
         // 初始加载数据
         viewModel.loadWarrantyOverview()
+
+        binding.root.post {
+            val layoutParams = binding.addWarrantyFab.layoutParams
+            if (layoutParams is androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) {
+                Log.d("FabDebugWarranty", "fabMarginBottom=${layoutParams.bottomMargin}")
+            }
+            Log.d("FabDebugWarranty", "recyclerPaddingBottom=${binding.warrantyRecyclerView.paddingBottom}")
+            val insets = ViewCompat.getRootWindowInsets(binding.root)?.getInsets(WindowInsetsCompat.Type.systemBars())
+            Log.d("FabDebugWarranty", "systemBarsBottom=${insets?.bottom ?: -1}")
+        }
     }
 
     /**

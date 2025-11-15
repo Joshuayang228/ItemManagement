@@ -33,16 +33,20 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent" />
 
-                <!-- 照片指示器 -->
-                <LinearLayout
-                    android:id="@+id/photoIndicator"
+                <!-- 照片计数文本 (如 "1/5") -->
+                <TextView
+                    android:id="@+id/photoCountText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="bottom|center_horizontal"
-                    android:layout_marginBottom="16dp"
-                    android:orientation="horizontal"
+                    android:layout_gravity="top|end"
+                    android:layout_margin="16dp"
                     android:background="@drawable/rounded_background_semi_transparent"
-                    android:padding="8dp" />
+                    android:padding="8dp"
+                    android:text="1/1"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
                 <!-- 状态标签（临期、过期等） -->
             </FrameLayout>
@@ -278,6 +282,77 @@
                             android:textColor="?attr/colorOnSurface"
                             android:gravity="end"
                             tools:text="书房 > 桌面" />
+                    </LinearLayout>
+                    
+                    <!-- 地点（GPS地址） - 可展开/折叠 -->
+                    <LinearLayout
+                        android:id="@+id/gpsLocationContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+                        
+                        <!-- 地点标题行（可点击展开/折叠） -->
+                        <LinearLayout
+                            android:id="@+id/gpsLocationHeader"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="16dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp">
+                            
+                            <TextView
+                                android:layout_width="120dp"
+                                android:layout_height="wrap_content"
+                                android:text="地点"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                            
+                            <TextView
+                                android:id="@+id/gpsLocationAddressTextView"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurface"
+                                android:gravity="end"
+                                android:maxLines="2"
+                                android:ellipsize="end"
+                                tools:text="坐标: 37.421998, -122.084000" />
+                            
+                            <ImageView
+                                android:id="@+id/gpsLocationExpandIcon"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:layout_marginStart="8dp"
+                                android:src="@drawable/ic_expand_more"
+                                android:contentDescription="展开地图"
+                                app:tint="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+                        
+                        <!-- 地图 Surface 容器（折叠时隐藏） -->
+                        <!-- Material 3: 使用 surfaceVariant 背景色 + 圆角 12dp -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="@drawable/bg_map_surface"
+                            android:padding="12dp"
+                            android:layout_marginBottom="16dp"
+                            android:visibility="gone"
+                            android:id="@+id/mapSurfaceContainer">
+                            
+                            <!-- 地图容器 -->
+                            <FrameLayout
+                                android:id="@+id/mapCardContainer"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_map_rounded" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

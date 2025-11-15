@@ -1,6 +1,9 @@
 package com.example.itemmanagement
 
 import android.app.Application
+import android.content.pm.PackageManager
+import android.util.Log
+import com.amap.api.location.AMapLocationClient
 import com.example.itemmanagement.data.AppDatabase
 import com.example.itemmanagement.data.repository.UnifiedItemRepository
 import com.example.itemmanagement.data.repository.ReminderSettingsRepository
@@ -33,7 +36,7 @@ class ItemManagementApplication : Application() {
             database.photoDao(),
             database.priceRecordDao(),
             database.warrantyDao(),
-            database.borrowDao()  // ✅ 添加BorrowDao
+            database.borrowDao()  // 新添加BorrowDao
         )
     }
     
@@ -69,6 +72,12 @@ class ItemManagementApplication : Application() {
     
     override fun onCreate() {
         super.onCreate()
+        
+        // 🌟 初始化高德定位SDK（隐私合规）
+        // 必须在使用定位功能前调用
+        AMapLocationClient.updatePrivacyShow(this, true, true)
+        AMapLocationClient.updatePrivacyAgree(this, true)
+        
         // 初始化增强版通知渠道
         notificationManager.createNotificationChannels()
         

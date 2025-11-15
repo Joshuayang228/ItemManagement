@@ -30,6 +30,9 @@
         <action
             android:id="@+id/action_navigation_home_to_shopping_list"
             app:destination="@id/navigation_shopping_list" />
+        <action
+            android:id="@+id/action_home_to_template_management"
+            app:destination="@id/navigation_template_management" />
     </fragment>
 
     <fragment
@@ -357,6 +360,47 @@
                 app:argType="string"
                 android:defaultValue="edit" />
         </action>
+        <action
+            android:id="@+id/action_navigation_item_detail_to_mapViewer"
+            app:destination="@id/navigation_map_viewer"
+            app:enterAnim="@anim/fade_in_material"
+            app:exitAnim="@anim/fade_out_material"
+            app:popEnterAnim="@anim/fade_in_material"
+            app:popExitAnim="@anim/fade_out_material" />
+    </fragment>
+    
+    <!-- 地图查看器 -->
+    <fragment
+        android:id="@+id/navigation_map_viewer"
+        android:name="com.example.itemmanagement.ui.map.MapViewerFragment"
+        android:label="地图查看">
+        <argument
+            android:name="latitude"
+            app:argType="float" />
+        <argument
+            android:name="longitude"
+            app:argType="float" />
+        <argument
+            android:name="itemName"
+            app:argType="string" />
+        <argument
+            android:name="address"
+            app:argType="string" />
+    </fragment>
+    
+    <!-- 地图选点器 -->
+    <fragment
+        android:id="@+id/navigation_map_picker"
+        android:name="com.example.itemmanagement.ui.map.MapPickerFragment"
+        android:label="选择位置">
+        <argument
+            android:name="initialLatitude"
+            app:argType="float"
+            android:defaultValue="0.0" />
+        <argument
+            android:name="initialLongitude"
+            app:argType="float"
+            android:defaultValue="0.0" />
     </fragment>
 
     <!-- 购物清单转入库存全屏Fragment -->
@@ -425,5 +469,25 @@
         android:id="@+id/navigation_about_app"
         android:name="com.example.itemmanagement.ui.profile.about.AboutAppFragment"
         android:label="关于应用" />
+    
+    <!-- 模板管理相关页面 -->
+    <fragment
+        android:id="@+id/navigation_template_management"
+        android:name="com.example.itemmanagement.ui.template.TemplateManagementFragment"
+        android:label="模板管理">
+        <action
+            android:id="@+id/action_template_management_to_add_edit_template"
+            app:destination="@id/navigation_add_edit_template" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/navigation_add_edit_template"
+        android:name="com.example.itemmanagement.ui.template.AddEditTemplateFragment"
+        android:label="编辑模板">
+        <argument
+            android:name="templateId"
+            android:defaultValue="-1L"
+            app:argType="long" />
+    </fragment>
 
 </navigation> 

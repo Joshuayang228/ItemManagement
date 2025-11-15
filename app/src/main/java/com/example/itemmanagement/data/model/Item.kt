@@ -40,6 +40,9 @@ data class Item(
     val warrantyPeriod: Int?,           // 保修期（天数）
     val warrantyEndDate: Date?,         // 保修到期时间
     val serialNumber: String?,          // 序列号
+    val locationAddress: String?,       // GPS地址
+    val locationLatitude: Double?,      // GPS纬度
+    val locationLongitude: Double?,     // GPS经度
     val isHighTurnover: Boolean = false, // 是否高周转
     val photos: List<Photo> = emptyList(),
     val tags: List<Tag> = emptyList(),

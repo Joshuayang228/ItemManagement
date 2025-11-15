@@ -8,8 +8,22 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- 通知权限 (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
+    <!-- 高德定位所需权限 -->
+    <!-- 用于访问GPS定位 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- 用于访问网络定位 -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- 用于访问wifi网络信息 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- 用于获取wifi的获取权限 -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- 用于读取手机当前的状态 -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
@@ -23,6 +37,12 @@
         android:requestLegacyExternalStorage="true"
         tools:targetApi="29">
 
+        <!-- 高德定位API Key -->
+        <!-- Debug 和 Release 使用不同的 Key，通过 build.gradle 配置 -->
+        <meta-data
+            android:name="com.amap.api.v2.apikey"
+            android:value="${AMAP_KEY}" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.jiwanwu.app.provider"
@@ -32,6 +52,11 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <activity
+            android:name=".ui.photo.FullscreenPhotoActivity"
+            android:exported="false"
+            android:theme="@style/Theme.ItemManagement.FullscreenPhoto" />
 
         <activity
             android:name=".MainActivity"

@@ -47,6 +47,15 @@ data class UnifiedItemEntity(
     /** 序列号/SKU */
     val serialNumber: String? = null,
     
+    /** 地点地址 */
+    val locationAddress: String? = null,
+    
+    /** 地点纬度 */
+    val locationLatitude: Double? = null,
+    
+    /** 地点经度 */
+    val locationLongitude: Double? = null,
+    
     /** 创建时间 */
     val createdDate: Date = Date(),
     

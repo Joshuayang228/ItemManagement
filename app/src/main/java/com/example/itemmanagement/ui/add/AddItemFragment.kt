@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.OnLifecycleEvent
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -15,6 +16,10 @@ import android.os.Bundle
 import android.view.View
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
+import com.example.itemmanagement.data.model.template.TemplateFieldDefaults
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 import com.example.itemmanagement.ui.add.Field
 import com.example.itemmanagement.ui.base.BaseItemFragment
@@ -37,16 +42,35 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
         val warrantyRepository = app.warrantyRepository
         AddItemViewModelFactory(repository, cacheViewModel, warrantyRepository)
     }
+    
+    // 用于标记是否应该应用模板（只在首次或保存后继续添加时为true）
+    private var shouldApplyTemplate = true
+    private var currentTemplateId: Long = -1L
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // 🎨 设置关闭图标替代默认的返回箭头，并确保没有标题显示
+        // 🎨 设置关闭图标替代默认的返回箭头，并显示标题
         (requireActivity() as? AppCompatActivity)?.supportActionBar?.let { actionBar ->
             actionBar.setDisplayHomeAsUpEnabled(true)
             actionBar.setHomeAsUpIndicator(R.drawable.ic_close)
-            // 立即设置空标题，避免闪现"添加物品"文字
-            actionBar.title = ""
+            actionBar.title = "添加物品"
+        }
+        
+        // 检查是否从模板进入（默认使用通用模板，ID为-1）
+        currentTemplateId = arguments?.getLong("templateId", -1L) ?: -1L
+        
+        // 检查是否有缓存数据
+        val cache = cacheViewModel.getAddItemCache()
+        val hasCache = cache.fieldValues.isNotEmpty() || 
+                      cache.selectedFields.isNotEmpty() || 
+                      cache.photoUris.isNotEmpty()
+        
+        // 只在没有缓存时应用模板（首次进入）
+        if (!hasCache) {
+            applyTemplate(currentTemplateId)
+        } else {
+            shouldApplyTemplate = false
         }
         
         // 隐藏底部导航栏
@@ -61,38 +85,15 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
 
     override fun onViewModelReady() {
         // ViewModel 已准备就绪，可以进行初始化
-        // 初始化默认字段
-        initializeDefaultFields()
+        // 字段初始化已在 onViewCreated 中通过模板完成
         
         // 启用菜单
         setHasOptionsMenu(true)
     }
 
-    /**
-     * 初始化默认字段
-     */
-    private fun initializeDefaultFields() {
-        // 创建默认的字段集合 - 增加位置和备注为默认选中
-        // 使用Field类的默认order，不手动指定order，保持一致性
-        val defaultFields = setOf(
-            Field("基础信息", "名称", true),
-            Field("基础信息", "数量", true),
-            Field("基础信息", "位置", true),
-            Field("其他", "备注", true),
-            Field("分类", "分类", true),
-            Field("分类", "标签", true),  // 添加标签为默认选中
-            Field("日期类", "添加日期", true)
-        )
-        
-        // 设置默认字段
-        defaultFields.forEach { field ->
-            viewModel.updateFieldSelection(field, field.isSelected)
-        }
-    }
-
     override fun setupTitleAndButtons() {
-        // 设置空标题，避免显示"添加物品"文字
-        activity?.title = ""
+        // 设置标题
+        activity?.title = "添加物品"
         
         // 设置按钮文本
         binding.saveButton.text = "保存物品"
@@ -173,6 +174,7 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
             Field("基础信息", "名称", true),
             Field("基础信息", "数量", false),
             Field("基础信息", "位置", false),
+            Field("基础信息", "地点", false),
             Field("基础信息", "备注", false),
             Field("分类", "分类", false),
             Field("分类", "子分类", false),
@@ -236,6 +238,32 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
         viewModel.saveFieldValue("添加日期", currentDate)
     }
 
+    private fun applyTemplateDefaultValues(fieldDefaultsJson: String?) {
+        val defaults = TemplateFieldDefaults.fromJson(fieldDefaultsJson) ?: return
+        var applied = false
+        
+        defaults.singleValues.forEach { (field, value) ->
+            viewModel.saveFieldValue(field, value)
+            if (field == "分类") {
+                viewModel.updateSubCategoryOptions(value)
+            }
+            applied = true
+        }
+        
+        defaults.multiValues["标签"]?.let { tags ->
+            val tagSet = tags.filter { it.isNotBlank() }.toSet()
+            if (tagSet.isNotEmpty()) {
+                viewModel.updateSelectedTags("标签", tagSet)
+                viewModel.saveFieldValue("标签", tagSet)
+                applied = true
+            }
+        }
+        
+        if (applied) {
+            recreateFieldViews()
+        }
+    }
+
     /**
      * 重新创建字段视图
      */
@@ -258,7 +286,9 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
     }
 
     override fun onSaveSuccess() {
-        super.onSaveSuccess()
+        // 不调用 super.onSaveSuccess()，因为我们要自定义行为
+        // super.onSaveSuccess() 会立即返回上一页，这不是我们想要的
+        
         // 添加物品成功后，可以选择清空表单继续添加，或者返回
         dialogFactory.createConfirmDialog(
             title = "添加成功",
@@ -268,7 +298,7 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
             onPositiveClick = {
                 // 检查Fragment是否还存活，避免内存泄漏和崩溃
                 if (isAdded && activity != null) {
-                    // 导航到新的添加物品页面
+                    // 不返回，直接在当前页面清空表单
                     navigateToNewAddItem()
                 }
             },
@@ -276,7 +306,7 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
                 // 检查Activity是否还存活
                 if (isAdded && activity != null) {
                     // 返回上一页
-                    activity?.onBackPressed()
+                    findNavController().navigateUp()
                 }
             }
         )
@@ -435,24 +465,71 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
      * 导航到新的添加物品页面
      */
     private fun navigateToNewAddItem() {
-        try {
-            // 方法1：尝试重新创建Fragment - 返回主页面再进入添加页面
-            findNavController().popBackStack()
-            
-        } catch (e: Exception) {
-            // 方法2：如果导航失败，回退到清空当前页面的方式，但提供更好的用户体验
-            android.util.Log.w("AddItemFragment", "导航失败，使用清空页面方式: ${e.message}")
-            if (isAdded && _binding != null) {
-                // 先显示"正在准备新的添加页面"的提示
-                SnackbarHelper.show(requireView(), "正在准备新的添加页面...")
+        // 获取当前使用的模板ID
+        val currentTemplateId = arguments?.getLong("templateId", -1L) ?: -1L
+        
+        // 清空所有字段的值（但保持字段选择状态）
+        clearAllFields()
+        
+        // 重新应用相同的模板（只影响字段选择，不填充预设值）
+        applyTemplate(currentTemplateId)
+        
+        // 提示用户
+        SnackbarHelper.showSuccess(requireView(), "✨ 已准备好添加下一个物品")
+    }
+    
+    /**
+     * 应用模板
+     */
+    private fun applyTemplate(templateId: Long) {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val database = com.example.itemmanagement.data.AppDatabase.getDatabase(requireContext())
+                val repository = com.example.itemmanagement.data.repository.ItemTemplateRepository(database.itemTemplateDao())
+                val template = repository.getTemplateById(templateId)
                 
-                // 延迟一下再清空，给用户更好的反馈
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    if (isAdded && _binding != null) {
-                        clearAllFields()
-                        SnackbarHelper.show(requireView(), "已准备好新的添加页面")
+                template?.let {
+                    // 增加使用次数
+                    repository.useTemplate(templateId)
+                    
+                    // 在主线程中应用字段选择
+                    withContext(Dispatchers.Main) {
+                        // 步骤1: 先取消所有字段的选中状态（隐藏所有字段）
+                        val allFields = getAvailableFields()
+                        allFields.forEach { field ->
+                            viewModel.updateFieldSelection(field, false)
+                        }
+                        
+                        // 步骤2: 只选中模板中指定的字段
+                        val templateFieldNames = it.selectedFields.split(",").filter { field -> field.isNotEmpty() }
+                        templateFieldNames.forEach { fieldName ->
+                            // 根据字段名创建Field对象（group可以是空的，因为只用于选择状态）
+                            val field = Field("", fieldName, true)
+                            viewModel.updateFieldSelection(field, true)
+                        }
+                        
+                        // 步骤3: 为"添加日期"字段设置默认值为当前日期（如果被选中）
+                        if (templateFieldNames.contains("添加日期")) {
+                            initializeDefaultValues()
+                        }
+                        
+                        applyTemplateDefaultValues(it.fieldDefaultValues)
+                        
+                        // 显示提示
+                        SnackbarHelper.showSuccess(
+                            requireView(),
+                            "✨ 已应用模板：${it.templateName}"
+                        )
                     }
-                }, 500)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AddItemFragment", "应用模板失败", e)
+                withContext(Dispatchers.Main) {
+                    SnackbarHelper.showError(
+                        requireView(),
+                        "应用模板失败"
+                    )
+                }
             }
         }
     }

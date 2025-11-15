@@ -304,6 +304,9 @@ class UnifiedItemRepository(
 
     suspend fun softDeleteItem(itemId: Long, reason: String) {
         appDatabase.withTransaction {
+            // 获取物品信息用于日历事件
+            val unifiedItem = unifiedItemDao.getById(itemId)
+            
             // 停用所有现有状态
             itemStateDao.deactivateAllStates(itemId)
 
@@ -315,6 +318,27 @@ class UnifiedItemRepository(
                 metadata = reason, // 将原因存储在metadata中
                 activatedDate = Date()
             ))
+            
+            // 🗑️ 添加日历事件：记录删除物品操作
+            if (unifiedItem != null) {
+                try {
+                    val event = com.example.itemmanagement.data.entity.CalendarEventEntity(
+                        itemId = itemId,
+                        eventType = com.example.itemmanagement.data.model.EventType.ITEM_DELETED,
+                        title = "删除物品：${unifiedItem.name}",
+                        description = "原因：$reason",
+                        eventDate = Date(),
+                        reminderDays = emptyList(),
+                        priority = com.example.itemmanagement.data.model.Priority.LOW,
+                        isCompleted = true,
+                        recurrenceType = null
+                    )
+                    appDatabase.calendarEventDao().insertEvent(event)
+                    android.util.Log.d("UnifiedItemRepository", "📅 已添加日历事件：删除物品 - ${unifiedItem.name}")
+                } catch (e: Exception) {
+                    android.util.Log.e("UnifiedItemRepository", "添加删除物品日历事件失败", e)
+                }
+            }
         }
     }
 
@@ -322,10 +346,22 @@ class UnifiedItemRepository(
 
     /**
      * 获取所有库存物品（兼容方法）
+     * 只返回状态为INVENTORY且isActive=true的物品
      */
     fun getAllItems(): Flow<List<Item>> {
         return inventoryDetailDao.getAllDetails().map { inventoryItems ->
+            // 获取所有激活的库存状态
+            val activeInventoryStates = runBlocking {
+                itemStateDao.getActiveStatesByType(ItemStateType.INVENTORY).first()
+            }
+            val activeItemIds = activeInventoryStates.map { it.itemId }.toSet()
+            
             inventoryItems.mapNotNull { inventoryDetail ->
+                // 只处理激活的库存物品
+                if (!activeItemIds.contains(inventoryDetail.itemId)) {
+                    return@mapNotNull null
+                }
+                
                 unifiedItemDao.getById(inventoryDetail.itemId)?.let { unifiedItem ->
                     // 查询照片信息
                     val photos = runBlocking {
@@ -397,6 +433,9 @@ class UnifiedItemRepository(
                         warrantyPeriod = null,
                         warrantyEndDate = null,
                         serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
+                        locationAddress = unifiedItem.locationAddress, // GPS地址
+                        locationLatitude = unifiedItem.locationLatitude, // GPS纬度
+                        locationLongitude = unifiedItem.locationLongitude, // GPS经度
                         isHighTurnover = inventoryDetail.isHighTurnover,
                         photos = photos, // ✅ 照片数据 (UI显示)
                         tags = tags // ✅ 现在查询真实的标签数据 (算法使用，UI不显示)
@@ -515,6 +554,9 @@ class UnifiedItemRepository(
             warrantyPeriod = null,
             warrantyEndDate = null,
             serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
+            locationAddress = unifiedItem.locationAddress, // GPS地址
+            locationLatitude = unifiedItem.locationLatitude, // GPS纬度
+            locationLongitude = unifiedItem.locationLongitude, // GPS经度
             isHighTurnover = inventoryDetail?.isHighTurnover ?: false,
             photos = photos,
             tags = tags,
@@ -714,15 +756,16 @@ class UnifiedItemRepository(
                     val tags = tagDao.getTagsByItemId(unifiedItem.id)
                     android.util.Log.d("UnifiedItemRepository", "    🏷️ 标签结果: ${tags.size}个标签 - ${tags.map { "'${it.name}'" }}")
                     
-                    // 获取主照片
-                    android.util.Log.d("UnifiedItemRepository", "    📸 查询主照片: itemId=${unifiedItem.id}")
-                    val primaryPhoto = photoDao.getPrimaryPhotoByItemId(unifiedItem.id)
-                    android.util.Log.d("UnifiedItemRepository", "    📸 主照片结果: ${if (primaryPhoto != null) "uri='${primaryPhoto.uri}'" else "null"}")
+                    // 获取封面照片（第一张照片）
+                    android.util.Log.d("UnifiedItemRepository", "    📸 查询封面照片: itemId=${unifiedItem.id}")
+                    
+                    val coverPhoto = photoDao.getFirstPhotoByItemId(unifiedItem.id)
+                    android.util.Log.d("UnifiedItemRepository", "    📸 封面照片结果: ${if (coverPhoto != null) "id=${coverPhoto.id}, uri='${coverPhoto.uri}', displayOrder=${coverPhoto.displayOrder}" else "null"}")
                     
                     val warehouseItem = WarehouseItem(
                         id = unifiedItem.id,
                         name = unifiedItem.name,
-                        primaryPhotoUri = primaryPhoto?.uri,
+                        primaryPhotoUri = coverPhoto?.uri,
                         quantity = inventoryDetail.quantity.toInt(),
                         expirationDate = inventoryDetail.expirationDate?.time,
                         locationArea = location?.area,
@@ -862,6 +905,7 @@ class UnifiedItemRepository(
      */
     suspend fun updateItemWithDetails(itemWithDetails: ItemWithDetails) {
         android.util.Log.d("UnifiedItemRepository", "🔄 开始更新物品详细信息: itemId=${itemWithDetails.unifiedItem.id}")
+        android.util.Log.d("UnifiedItemRepository", "📍 UnifiedItem地点信息 - 地址: ${itemWithDetails.unifiedItem.locationAddress}, 纬度: ${itemWithDetails.unifiedItem.locationLatitude}, 经度: ${itemWithDetails.unifiedItem.locationLongitude}")
         
         appDatabase.withTransaction {
             // 1. 更新UnifiedItem
@@ -1394,6 +1438,9 @@ class UnifiedItemRepository(
                 warrantyPeriod = null,
                 warrantyEndDate = null,
                 serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
+                locationAddress = unifiedItem.locationAddress, // GPS地址
+                locationLatitude = unifiedItem.locationLatitude, // GPS纬度
+                locationLongitude = unifiedItem.locationLongitude, // GPS经度
                 isHighTurnover = false,
                 photos = photos,
                 tags = tags,
@@ -1547,6 +1594,9 @@ class UnifiedItemRepository(
             warrantyPeriod = null,
             warrantyEndDate = null,
             serialNumber = unifiedItem.serialNumber,
+            locationAddress = unifiedItem.locationAddress, // GPS地址
+            locationLatitude = unifiedItem.locationLatitude, // GPS纬度
+            locationLongitude = unifiedItem.locationLongitude, // GPS经度
             isHighTurnover = false,
             photos = photos,
             tags = tags,
@@ -1626,6 +1676,28 @@ class UnifiedItemRepository(
             // - 可以分析预算准确性（预估价格 vs 实际价格）
             // - 可以追溯采购决策
             android.util.Log.d("StateTransfer", "✓ 步骤4: 购物详情已归档保留（ID: ${shoppingDetail.id}）")
+            
+            // 5. 🛒 添加日历事件：记录购物入库操作
+            try {
+                val unifiedItem = unifiedItemDao.getById(itemId)
+                if (unifiedItem != null) {
+                    val event = com.example.itemmanagement.data.entity.CalendarEventEntity(
+                        itemId = itemId,
+                        eventType = com.example.itemmanagement.data.model.EventType.SHOPPING_TRANSFERRED,
+                        title = "购物入库：${unifiedItem.name}",
+                        description = "分类：${unifiedItem.category}",
+                        eventDate = java.util.Date(),
+                        reminderDays = emptyList(),
+                        priority = com.example.itemmanagement.data.model.Priority.LOW,
+                        isCompleted = true,
+                        recurrenceType = null
+                    )
+                    appDatabase.calendarEventDao().insertEvent(event)
+                    android.util.Log.d("StateTransfer", "📅 已添加日历事件：购物入库 - ${unifiedItem.name}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("StateTransfer", "添加购物入库日历事件失败", e)
+            }
             
             android.util.Log.d("StateTransfer", "========== 状态转换事务完成 ==========")
         }
@@ -1974,6 +2046,22 @@ class UnifiedItemRepository(
             android.util.Log.e("UnifiedItemRepository", "获取购物清单物品失败", e)
             emptyList()
         }
+    }
+    
+    // ==================== 日历事件操作 ====================
+    
+    /**
+     * 添加日历事件
+     */
+    suspend fun addCalendarEvent(event: com.example.itemmanagement.data.entity.CalendarEventEntity): Long {
+        return appDatabase.calendarEventDao().insertEvent(event)
+    }
+    
+    /**
+     * 删除物品的所有日历事件
+     */
+    suspend fun deleteCalendarEventsByItemId(itemId: Long) {
+        appDatabase.calendarEventDao().deleteEventsByItem(itemId)
     }
 }
 

@@ -24,10 +24,12 @@ import com.example.itemmanagement.data.dao.UserProfileDao
 // import com.example.itemmanagement.data.dao.wishlist.WishlistDao // 已归档
 // import com.example.itemmanagement.data.dao.wishlist.WishlistPriceHistoryDao // 已删除
 import com.example.itemmanagement.data.dao.PriceRecordDao
+import com.example.itemmanagement.data.dao.template.ItemTemplateDao
 import com.example.itemmanagement.data.entity.*
 // import com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity // 已归档
 // import com.example.itemmanagement.data.entity.wishlist.WishlistPriceHistoryEntity // 已删除
 import com.example.itemmanagement.data.entity.unified.*
+import com.example.itemmanagement.data.entity.template.ItemTemplateEntity
 import com.example.itemmanagement.data.dao.unified.*
 import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
 
@@ -54,13 +56,16 @@ import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
         UserProfileEntity::class,
         PriceRecord::class,
         
+        // === 物品模板 ===
+        ItemTemplateEntity::class,
+        
         // === 旧表（已归档到archived文件夹） ===
         // ItemEntity::class,
         // ShoppingItemEntity::class,
         // DeletedItemEntity::class,
         // WishlistItemEntity::class
     ],
-    version = 43,
+    version = 49,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -85,6 +90,9 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun userProfileDao(): UserProfileDao
     abstract fun priceRecordDao(): PriceRecordDao
     
+    // === 物品模板Dao ===
+    abstract fun itemTemplateDao(): ItemTemplateDao
+    
     // === 旧Dao（已归档到archived文件夹） ===
     // abstract fun itemDao(): ItemDao
     // abstract fun shoppingDao(): ShoppingDao
@@ -102,7 +110,49 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43, MIGRATION_43_44, MIGRATION_44_45, MIGRATION_45_46, MIGRATION_46_47, MIGRATION_47_48, MIGRATION_48_49)
+                .addCallback(object : RoomDatabase.Callback() {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        super.onCreate(db)
+                        android.util.Log.e("TemplateDB", "========================================")
+                        android.util.Log.e("TemplateDB", "🆕 数据库首次创建回调")
+                        android.util.Log.e("TemplateDB", "========================================")
+                        
+                        try {
+                            // 插入默认的通用模板
+                            android.util.Log.e("TemplateDB", "步骤1: 插入通用模板...")
+                            val currentTime = System.currentTimeMillis()
+                            db.execSQL("""
+                                INSERT INTO item_templates (
+                                    id, templateName, icon, description, 
+                                    selectedFields,
+                                    usageCount, lastUsedAt, createdAt, updatedAt, isVisible
+                                ) VALUES (
+                                    -1, '通用模板', '📦', '包含常用的基础字段，适合大多数物品',
+                                    '名称,数量,位置,备注,分类,标签,单价,添加日期',
+                                    0, NULL, $currentTime, $currentTime, 1
+                                )
+                            """)
+                            android.util.Log.e("TemplateDB", "✓✓✓ 通用模板已插入！")
+                            
+                            // 验证插入
+                            val verifyCursor = db.query("SELECT * FROM item_templates WHERE id = -1")
+                            if (verifyCursor.moveToFirst()) {
+                                val name = verifyCursor.getString(verifyCursor.getColumnIndexOrThrow("templateName"))
+                                android.util.Log.e("TemplateDB", "验证成功！模板名称: $name")
+                            } else {
+                                android.util.Log.e("TemplateDB", "❌ 验证失败！未找到通用模板")
+                            }
+                            verifyCursor.close()
+                            
+                            android.util.Log.e("TemplateDB", "========================================")
+                            android.util.Log.e("TemplateDB", "✅ 数据库创建回调完成！")
+                            android.util.Log.e("TemplateDB", "========================================")
+                        } catch (e: Exception) {
+                            android.util.Log.e("TemplateDB", "❌❌❌ 插入默认模板失败: ${e.message}", e)
+                        }
+                    }
+                })
                 .fallbackToDestructiveMigration()
                 .build()
                 INSTANCE = instance
@@ -2345,6 +2395,264 @@ abstract class AppDatabase : RoomDatabase() {
                 
                 android.util.Log.d("Migration", "✓ user_profile 表已添加 userId 字段，默认值: $userId")
                 android.util.Log.d("Migration", "✅ 迁移 42 → 43 完成")
+            }
+        }
+        
+        private val MIGRATION_43_44 = object : Migration(43, 44) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 43 → 44: 创建物品模板表")
+                
+                // 创建物品模板表（不使用DEFAULT，让Kotlin代码处理默认值；不创建索引，让Room自动管理）
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS item_templates (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        templateName TEXT NOT NULL,
+                        icon TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        defaultCategory TEXT,
+                        defaultSubcategory TEXT,
+                        defaultBrand TEXT,
+                        selectedFields TEXT NOT NULL,
+                        fieldDefaultValues TEXT,
+                        usageCount INTEGER NOT NULL,
+                        lastUsedAt INTEGER,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        isVisible INTEGER NOT NULL
+                    )
+                """)
+                
+                android.util.Log.d("Migration", "✓ item_templates 表已创建")
+                android.util.Log.d("Migration", "✅ 迁移 43 → 44 完成")
+            }
+        }
+        
+        private val MIGRATION_44_45 = object : Migration(44, 45) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 44 → 45: 删除item_templates表的索引")
+                
+                // 删除可能存在的索引（如果表是通过旧版本迁移创建的）
+                try {
+                    database.execSQL("DROP INDEX IF EXISTS index_item_templates_usageCount")
+                    android.util.Log.d("Migration", "✓ 删除索引 index_item_templates_usageCount")
+                } catch (e: Exception) {
+                    android.util.Log.w("Migration", "索引 index_item_templates_usageCount 不存在或已删除")
+                }
+                
+                try {
+                    database.execSQL("DROP INDEX IF EXISTS index_item_templates_createdAt")
+                    android.util.Log.d("Migration", "✓ 删除索引 index_item_templates_createdAt")
+                } catch (e: Exception) {
+                    android.util.Log.w("Migration", "索引 index_item_templates_createdAt 不存在或已删除")
+                }
+                
+                android.util.Log.d("Migration", "✅ 迁移 44 → 45 完成")
+            }
+        }
+        
+        private val MIGRATION_45_46 = object : Migration(45, 46) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.d("Migration", "开始迁移 45 → 46: 插入通用模板")
+                
+                // 检查通用模板是否已存在
+                val cursor = database.query("SELECT COUNT(*) FROM item_templates WHERE id = -1")
+                cursor.moveToFirst()
+                val count = cursor.getInt(0)
+                cursor.close()
+                
+                if (count == 0) {
+                    // 插入通用模板（ID固定为-1）
+                    val currentTime = System.currentTimeMillis()
+                    database.execSQL("""
+                        INSERT INTO item_templates (
+                            id, templateName, icon, description, 
+                            defaultCategory, defaultSubcategory, defaultBrand,
+                            selectedFields, fieldDefaultValues,
+                            usageCount, lastUsedAt, createdAt, updatedAt, isVisible
+                        ) VALUES (
+                            -1, '通用模板', '📦', '包含常用的基础字段，适合大多数物品',
+                            NULL, NULL, NULL,
+                            '名称,数量,位置,备注,分类,标签,单价,添加日期', NULL,
+                            0, NULL, $currentTime, $currentTime, 1
+                        )
+                    """)
+                    android.util.Log.d("Migration", "✓ 通用模板已插入")
+                } else {
+                    android.util.Log.d("Migration", "⏭️ 通用模板已存在，跳过插入")
+                }
+                
+                android.util.Log.d("Migration", "✅ 迁移 45 → 46 完成")
+            }
+        }
+        
+        private val MIGRATION_46_47 = object : Migration(46, 47) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.e("TemplateDB", "========================================")
+                android.util.Log.e("TemplateDB", "🔧 开始迁移 46 → 47")
+                android.util.Log.e("TemplateDB", "========================================")
+                
+                try {
+                    // 检查旧表是否存在（如果是全新安装，则旧表不存在）
+                    android.util.Log.e("TemplateDB", "步骤1: 检查旧表是否存在...")
+                    val cursor = database.query("SELECT name FROM sqlite_master WHERE type='table' AND name='item_templates'")
+                    val tableExists = cursor.count > 0
+                    cursor.close()
+                    android.util.Log.e("TemplateDB", "旧表存在: $tableExists")
+                    
+                    if (tableExists) {
+                        android.util.Log.e("TemplateDB", "步骤2: 检测到旧表，执行数据迁移...")
+                        
+                        // 查询旧表记录数
+                        val countCursor = database.query("SELECT COUNT(*) FROM item_templates")
+                        countCursor.moveToFirst()
+                        val oldCount = countCursor.getInt(0)
+                        countCursor.close()
+                        android.util.Log.e("TemplateDB", "旧表记录数: $oldCount")
+                        
+                        // SQLite 不支持直接删除列，需要重建表
+                        android.util.Log.e("TemplateDB", "步骤3: 创建新表...")
+                        database.execSQL("""
+                            CREATE TABLE item_templates_new (
+                                id INTEGER PRIMARY KEY NOT NULL,
+                                templateName TEXT NOT NULL,
+                                icon TEXT NOT NULL,
+                                description TEXT NOT NULL,
+                                selectedFields TEXT NOT NULL,
+                                usageCount INTEGER NOT NULL,
+                                lastUsedAt INTEGER,
+                                createdAt INTEGER NOT NULL,
+                                updatedAt INTEGER NOT NULL,
+                                isVisible INTEGER NOT NULL
+                            )
+                        """)
+                        android.util.Log.e("TemplateDB", "✓ 新表已创建")
+                        
+                        // 复制数据到新表
+                        android.util.Log.e("TemplateDB", "步骤4: 复制数据...")
+                        database.execSQL("""
+                            INSERT INTO item_templates_new (
+                                id, templateName, icon, description, selectedFields,
+                                usageCount, lastUsedAt, createdAt, updatedAt, isVisible
+                            )
+                            SELECT 
+                                id, templateName, icon, description, selectedFields,
+                                usageCount, lastUsedAt, createdAt, updatedAt, isVisible
+                            FROM item_templates
+                        """)
+                        android.util.Log.e("TemplateDB", "✓ 数据已复制")
+                        
+                        // 删除旧表
+                        android.util.Log.e("TemplateDB", "步骤5: 删除旧表...")
+                        database.execSQL("DROP TABLE item_templates")
+                        android.util.Log.e("TemplateDB", "✓ 旧表已删除")
+                        
+                        // 重命名新表
+                        android.util.Log.e("TemplateDB", "步骤6: 重命名新表...")
+                        database.execSQL("ALTER TABLE item_templates_new RENAME TO item_templates")
+                        android.util.Log.e("TemplateDB", "✓ 新表已重命名")
+                    } else {
+                        android.util.Log.e("TemplateDB", "步骤2: 全新安装，直接创建新表...")
+                        
+                        // 全新安装，直接创建新表
+                        database.execSQL("""
+                            CREATE TABLE item_templates (
+                                id INTEGER PRIMARY KEY NOT NULL,
+                                templateName TEXT NOT NULL,
+                                icon TEXT NOT NULL,
+                                description TEXT NOT NULL,
+                                selectedFields TEXT NOT NULL,
+                                usageCount INTEGER NOT NULL,
+                                lastUsedAt INTEGER,
+                                createdAt INTEGER NOT NULL,
+                                updatedAt INTEGER NOT NULL,
+                                isVisible INTEGER NOT NULL
+                            )
+                        """)
+                        android.util.Log.e("TemplateDB", "✓ 新表已创建")
+                    }
+                    
+                    // 确保通用模板存在
+                    android.util.Log.e("TemplateDB", "步骤7: 检查通用模板...")
+                    val templateCursor = database.query("SELECT COUNT(*) FROM item_templates WHERE id = -1")
+                    templateCursor.moveToFirst()
+                    val count = templateCursor.getInt(0)
+                    templateCursor.close()
+                    android.util.Log.e("TemplateDB", "通用模板数量: $count")
+                    
+                    if (count == 0) {
+                        android.util.Log.e("TemplateDB", "步骤8: 插入通用模板...")
+                        val currentTime = System.currentTimeMillis()
+                        database.execSQL("""
+                            INSERT INTO item_templates (
+                                id, templateName, icon, description, 
+                                selectedFields,
+                                usageCount, lastUsedAt, createdAt, updatedAt, isVisible
+                            ) VALUES (
+                                -1, '通用模板', '📦', '包含常用的基础字段，适合大多数物品',
+                                '名称,数量,位置,备注,分类,标签,单价,添加日期',
+                                0, NULL, $currentTime, $currentTime, 1
+                            )
+                        """)
+                        android.util.Log.e("TemplateDB", "✓✓✓ 通用模板已插入！")
+                        
+                        // 验证插入
+                        val verifyCursor = database.query("SELECT * FROM item_templates WHERE id = -1")
+                        if (verifyCursor.moveToFirst()) {
+                            val name = verifyCursor.getString(verifyCursor.getColumnIndexOrThrow("templateName"))
+                            android.util.Log.e("TemplateDB", "验证成功！模板名称: $name")
+                        } else {
+                            android.util.Log.e("TemplateDB", "❌ 验证失败！未找到通用模板")
+                        }
+                        verifyCursor.close()
+                    } else {
+                        android.util.Log.e("TemplateDB", "⏭️ 通用模板已存在,跳过插入")
+                    }
+                    
+                    // 查询最终记录数
+                    val finalCursor = database.query("SELECT COUNT(*) FROM item_templates")
+                    finalCursor.moveToFirst()
+                    val finalCount = finalCursor.getInt(0)
+                    finalCursor.close()
+                    android.util.Log.e("TemplateDB", "========================================")
+                    android.util.Log.e("TemplateDB", "✅ 迁移完成！最终记录数: $finalCount")
+                    android.util.Log.e("TemplateDB", "========================================")
+                    
+                } catch (e: Exception) {
+                    android.util.Log.e("TemplateDB", "❌❌❌ 迁移失败: ${e.message}", e)
+                    throw e
+                }
+            }
+        }
+        
+        /**
+         * 迁移 47 -> 48: 为 unified_items 表添加地点相关字段
+         */
+        private val MIGRATION_47_48 = object : Migration(47, 48) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                android.util.Log.i("LocationDB", "🔧 开始迁移 47 → 48: 添加地点字段")
+                
+                try {
+                    // 为 unified_items 表添加地点字段
+                    database.execSQL("ALTER TABLE unified_items ADD COLUMN locationAddress TEXT")
+                    database.execSQL("ALTER TABLE unified_items ADD COLUMN locationLatitude REAL")
+                    database.execSQL("ALTER TABLE unified_items ADD COLUMN locationLongitude REAL")
+                    
+                    android.util.Log.i("LocationDB", "✅ 迁移完成：地点字段已添加")
+                } catch (e: Exception) {
+                    android.util.Log.e("LocationDB", "❌ 迁移失败: ${e.message}", e)
+                    throw e
+                }
+            }
+        }
+
+        /**
+         * 迁移 48 -> 49: 为 item_templates 表增加 fieldDefaultValues 字段
+         */
+        private val MIGRATION_48_49 = object : Migration(48, 49) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE item_templates ADD COLUMN fieldDefaultValues TEXT"
+                )
             }
         }
     }

@@ -186,7 +186,10 @@
                 android:id="@+id/rvBorrowList"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="8dp"
+                android:paddingStart="8dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="@dimen/fab_content_bottom_spacing"
                 android:clipToPadding="false"
                 tools:listitem="@layout/item_borrow" />
 
@@ -249,7 +252,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="72dp"
+        android:layout_marginBottom="@dimen/fab_margin_bottom_hidden_nav"
         android:contentDescription="添加借出记录"
         style="@style/Widget.App.FloatingActionButton"
         app:srcCompat="@drawable/ic_add_24dp" />

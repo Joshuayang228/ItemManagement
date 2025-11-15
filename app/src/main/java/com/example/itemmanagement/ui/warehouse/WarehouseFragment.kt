@@ -626,6 +626,12 @@ class WarehouseFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 当Fragment重新可见时刷新数据（例如从添加物品页面返回）
+        viewModel.refreshWarehouseItems()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         

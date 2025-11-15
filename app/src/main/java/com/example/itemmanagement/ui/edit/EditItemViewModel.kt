@@ -458,6 +458,25 @@ class EditItemViewModel(
             fieldsToShow.add(Field("分类", "标签", true, getEditModeOrder("标签")))
         }
         
+        // GPS地点字段处理
+        item.locationAddress?.let { address ->
+            if (address.isNotBlank()) {
+                saveFieldValue("地点", address)
+                fieldsToShow.add(Field("位置", "地点", true, getEditModeOrder("地点")))
+                android.util.Log.d("EditItemViewModel", "📍 加载地点地址: $address")
+                
+                // 保存经纬度（隐藏字段）
+                item.locationLatitude?.let { 
+                    saveFieldValue("地点_纬度", it.toString())
+                    android.util.Log.d("EditItemViewModel", "📍 加载地点纬度: $it")
+                }
+                item.locationLongitude?.let { 
+                    saveFieldValue("地点_经度", it.toString())
+                    android.util.Log.d("EditItemViewModel", "📍 加载地点经度: $it")
+                }
+            }
+        }
+        
         // 设置字段选择状态
         Log.d("EditItemViewModel", "设置字段选择状态，总共 ${fieldsToShow.size} 个字段")
         fieldsToShow.forEach { field ->
@@ -636,8 +655,19 @@ class EditItemViewModel(
             warrantyPeriod = null,
             warrantyEndDate = null,
             serialNumber = getFieldValue("序列号")?.toString(),
+            locationAddress = getFieldValue("地点")?.toString().also {
+                android.util.Log.d("EditItemViewModel", "📍 读取地点地址: $it")
+            },
+            locationLatitude = getFieldValue("地点_纬度")?.toString()?.toDoubleOrNull().also {
+                android.util.Log.d("EditItemViewModel", "📍 读取地点纬度: $it")
+            },
+            locationLongitude = getFieldValue("地点_经度")?.toString()?.toDoubleOrNull().also {
+                android.util.Log.d("EditItemViewModel", "📍 读取地点经度: $it")
+            },
             isHighTurnover = false
-        )
+        ).also {
+            android.util.Log.d("EditItemViewModel", "📍 构建的Item - 地点: ${it.locationAddress}, 纬度: ${it.locationLatitude}, 经度: ${it.locationLongitude}")
+        }
     }
     
     /**
@@ -691,8 +721,8 @@ class EditItemViewModel(
         }
         
         val quantity = quantityStr.toDoubleOrNull()
-        if (quantity == null || quantity <= 0) {
-            return ValidationResult(false, "数量必须是大于0的数字")
+        if (quantity == null || quantity < 0) {
+            return ValidationResult(false, "数量不能为负数")
         }
         
         return ValidationResult(true, "")

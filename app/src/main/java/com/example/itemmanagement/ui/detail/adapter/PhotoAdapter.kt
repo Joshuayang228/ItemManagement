@@ -14,7 +14,9 @@ import com.example.itemmanagement.data.entity.PhotoEntity
 /**
  * 简化版照片适配器
  */
-class PhotoAdapter : ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(PhotoDiffCallback) {
+class PhotoAdapter(
+    private val onPhotoClick: ((photoUri: String, position: Int) -> Unit)? = null
+) : ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(PhotoDiffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -29,20 +31,28 @@ class PhotoAdapter : ListAdapter<PhotoEntity, PhotoAdapter.PhotoViewHolder>(Phot
             scaleType = ImageView.ScaleType.CENTER_CROP
         }
         
-        return PhotoViewHolder(imageView)
+        return PhotoViewHolder(imageView, onPhotoClick)
     }
 
     override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), position)
     }
 
-    class PhotoViewHolder(private val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
-        fun bind(photo: PhotoEntity) {
+    class PhotoViewHolder(
+        private val imageView: ImageView,
+        private val onPhotoClick: ((photoUri: String, position: Int) -> Unit)?
+    ) : RecyclerView.ViewHolder(imageView) {
+        fun bind(photo: PhotoEntity, position: Int) {
             Glide.with(imageView.context)
                 .load(photo.uri)
                 .placeholder(R.drawable.ic_launcher_background)
                 .error(R.drawable.ic_launcher_background)
                 .into(imageView)
+            
+            // 设置点击事件
+            imageView.setOnClickListener {
+                onPhotoClick?.invoke(photo.uri, position)
+            }
         }
     }
 

@@ -218,7 +218,7 @@ class AddShoppingItemViewModel(
     private fun validateShoppingItem(unifiedItem: UnifiedItemEntity, shoppingDetail: ShoppingDetailEntity): Pair<Boolean, String?> {
         return when {
             unifiedItem.name.isBlank() -> Pair(false, "物品名称不能为空")
-            shoppingDetail.quantity <= 0.0 -> Pair(false, "数量必须大于0")
+            shoppingDetail.quantity < 0.0 -> Pair(false, "数量不能为负数")
             shoppingDetail.budgetLimit != null && shoppingDetail.estimatedPrice != null && 
                 shoppingDetail.estimatedPrice > shoppingDetail.budgetLimit -> Pair(false, "预估价格不能超过预算上限")
             else -> Pair(true, null)

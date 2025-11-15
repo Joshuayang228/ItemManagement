@@ -493,7 +493,8 @@ abstract class BaseItemViewModel(
             min = 0,
             hint = "请输入数量",
             unitOptions = listOf("个", "件", "包", "盒", "瓶", "袋", "箱"),
-            isCustomizable = true
+            isCustomizable = true,
+            unit = "个"
         ))
 
         // 位置字段
@@ -536,7 +537,8 @@ abstract class BaseItemViewModel(
             min = 0,
             hint = "请输入单价",
             unitOptions = listOf("元", "美元", "日元", "欧元"),
-            isCustomizable = true
+            isCustomizable = true,
+            unit = "元"  // 默认单位为元
         ))
 
         // 总价字段
@@ -545,7 +547,8 @@ abstract class BaseItemViewModel(
             min = 0,
             hint = "请输入总价",
             unitOptions = listOf("元", "美元", "日元", "欧元"),
-            isCustomizable = true
+            isCustomizable = true,
+            unit = "元"
         ))
 
         // 容量字段 - 包含重量和体积单位
@@ -609,14 +612,16 @@ abstract class BaseItemViewModel(
             displayStyle = DisplayStyle.PERIOD_SELECTOR,
             periodRange = 1..120,
             periodUnits = listOf("年", "月", "日"),
-            hint = "请选择保修期"
+            hint = "请选择保修期",
+            unit = "月"
         ))
 
         setFieldProperties("保质期", FieldProperties(
             displayStyle = DisplayStyle.PERIOD_SELECTOR,
             periodRange = 1..3650,
             periodUnits = listOf("年", "月", "日"),
-            hint = "请选择保质期"
+            hint = "请选择保质期",
+            unit = "月"
         ))
 
         // 购买渠道字段

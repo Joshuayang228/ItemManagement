@@ -12,13 +12,18 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.itemmanagement.ItemManagementApplication
@@ -33,8 +38,7 @@ import com.example.itemmanagement.utils.SnackbarHelper
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import android.widget.ImageView
-import android.widget.LinearLayout
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +46,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.itemmanagement.ui.photo.FullscreenPhotoActivity
+import com.example.itemmanagement.util.LocationHelper
+import com.example.itemmanagement.util.LocationData
 
 /**
  * 新的物品管理基础Fragment
@@ -81,6 +88,9 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
     // 照片相关
     protected var currentPhotoUri: Uri? = null
     protected var currentPhotoFile: File? = null
+    
+    // 地点相关
+    protected var locationHelper: LocationHelper? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +117,9 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
         
         // 初始化UI工厂专用的AddItemViewModel（使用简单工厂避免SavedState冲突）
         val repository = (requireActivity().application as ItemManagementApplication).repository
+        
+        // 初始化LocationHelper
+        locationHelper = LocationHelper(requireContext())
         
         // 初始化UI工厂组件（现在直接使用viewModel，它实现了FieldInteractionViewModel接口）
         fieldViewFactory = FieldViewFactory(requireContext(), viewModel, dialogFactory, resources, parentFragmentManager)
@@ -142,7 +155,7 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
      * 设置照片RecyclerView
      */
     protected fun setupPhotoRecyclerView() {
-        photoAdapter = PhotoAdapter().apply {
+        photoAdapter = PhotoAdapter(requireContext()).apply {
             setOnDeleteClickListener { position ->
                 removePhoto(position)
                 viewModel.removePhotoUri(position)
@@ -150,8 +163,8 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
             setOnAddPhotoClickListener {
                 showPhotoSelectionDialog()
             }
-            setOnPhotoClickListener { uri ->
-                showPhotoViewDialog(uri)
+            setOnPhotoClickListener { uri, position ->
+                showPhotoViewDialog(uri, position)
             }
         }
 
@@ -243,6 +256,11 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
             binding.fieldsContainer.addView(fieldView)
             fieldViews[field.name] = fieldView
             android.util.Log.d("BaseItemFragment", "字段 ${field.name} 已添加到容器和fieldViews映射")
+            
+            // 特殊处理地点字段 - 设置定位按钮点击监听
+            if (field.name == "地点") {
+                setupLocationFieldListeners(fieldView)
+            }
         }
         
         // 恢复已保存的字段值（现在直接使用viewModel，不需要同步）
@@ -399,22 +417,21 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
     /**
      * 显示照片查看对话框
      */
-    protected fun showPhotoViewDialog(uri: Uri) {
-        // 创建图片查看对话框
-        val imageView = ImageView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-            scaleType = ImageView.ScaleType.FIT_CENTER
-            adjustViewBounds = true
-            setImageURI(uri)
+    protected fun showPhotoViewDialog(uri: Uri, position: Int? = null) {
+        val photos = photoAdapter.getPhotos()
+        if (photos.isEmpty()) {
+            return
         }
-        
-        MaterialAlertDialogBuilder(requireContext())
-            .setView(imageView)
-            .setNegativeButton("关闭") { dialog, _ -> dialog.dismiss() }
-            .show()
+
+        val resolvedPosition = position?.takeIf { it in photos.indices }
+            ?: photos.indexOf(uri).takeIf { it >= 0 } ?: 0
+
+        val intent = FullscreenPhotoActivity.createIntent(
+            requireContext(),
+            photos.map { it.toString() },
+            resolvedPosition
+        )
+        startActivity(intent)
     }
 
     // === 权限相关方法 ===
@@ -481,6 +498,16 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
             openGallery()
         } else {
             showPermissionDeniedDialog("存储")
+        }
+    }
+    
+    // 定位权限请求
+    private val requestLocationPermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+        if (permissions.values.any { it }) {
+            // 至少一个定位权限被授予
+            requestCurrentLocation()
+        } else {
+            SnackbarHelper.showError(binding.root, "需要定位权限才能获取当前位置")
         }
     }
 
@@ -639,6 +666,12 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
         activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 确保底部导航栏保持隐藏
+        hideBottomNavigation()
+    }
+
     override fun onPause() {
         super.onPause()
         // 保存当前字段值（使用原有的精美逻辑）
@@ -662,6 +695,165 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
      */
 
 
+    // === 地点定位相关方法 ===
+    
+    /**
+     * 设置地点字段的监听器
+     */
+    private fun setupLocationFieldListeners(fieldView: View) {
+        val btnGetLocation = fieldView.findViewById<ImageView>(R.id.btnGetLocation)
+        // 定位按钮
+        btnGetLocation?.setOnClickListener {
+            if (LocationHelper.hasLocationPermission(requireContext())) {
+                requestCurrentLocation()
+            } else {
+                // 请求定位权限
+                requestLocationPermissions.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
+            }
+        }
+        
+        // 长按定位按钮打开地图选点
+        btnGetLocation?.setOnLongClickListener {
+            openMapPicker()
+            true
+        }
+        
+        // 监听地图选点结果
+        setupMapPickerResultListener()
+    }
+    
+    /**
+     * 打开地图选点页面
+     */
+    private fun openMapPicker() {
+        try {
+            hideBottomNavigation()
+            // 获取当前已保存的位置（如果有）
+            val currentLat = (viewModel.getFieldValue("地点_纬度") as? String)?.toDoubleOrNull() ?: 0.0
+            val currentLng = (viewModel.getFieldValue("地点_经度") as? String)?.toDoubleOrNull() ?: 0.0
+            
+            // 使用 Safe Args 传递参数
+            val bundle = Bundle().apply {
+                putFloat("initialLatitude", currentLat.toFloat())
+                putFloat("initialLongitude", currentLng.toFloat())
+            }
+            
+            findNavController().navigate(R.id.navigation_map_picker, bundle)
+        } catch (e: Exception) {
+            android.util.Log.e("BaseItemFragment", "打开地图选点失败", e)
+            SnackbarHelper.show(binding.root, "打开地图失败")
+        }
+    }
+    
+    /**
+     * 设置地图选点结果监听
+     */
+    private fun setupMapPickerResultListener() {
+        setFragmentResultListener("map_picker_result") { _, bundle ->
+            val latitude = bundle.getDouble("latitude")
+            val longitude = bundle.getDouble("longitude")
+            val address = bundle.getString("address") ?: ""
+            
+            android.util.Log.d("BaseItemFragment", "📍 地图选点成功")
+            android.util.Log.d("BaseItemFragment", "📍 地址: $address")
+            android.util.Log.d("BaseItemFragment", "📍 纬度: $latitude")
+            android.util.Log.d("BaseItemFragment", "📍 经度: $longitude")
+            
+            // 更新UI
+            val locationFieldView = fieldViews["地点"]
+            val editTextLocation = locationFieldView?.findViewById<EditText>(R.id.editTextLocation)
+            editTextLocation?.setText(address)
+            
+            // 保存到 ViewModel
+            viewModel.saveFieldValue("地点", address)
+            viewModel.saveFieldValue("地点_纬度", latitude.toString())
+            viewModel.saveFieldValue("地点_经度", longitude.toString())
+            
+            SnackbarHelper.showSuccess(binding.root, "位置选择成功")
+        }
+    }
+    
+    /**
+     * 请求当前位置
+     */
+    private fun requestCurrentLocation() {
+        // 找到"地点"字段的视图
+        val locationFieldView = fieldViews["地点"] ?: run {
+            SnackbarHelper.show(binding.root, "未找到地点字段")
+            return
+        }
+        
+        // 检查网络连接
+        if (!LocationHelper.isNetworkAvailable(requireContext())) {
+            SnackbarHelper.show(binding.root, "网络未连接，请检查网络设置")
+            return
+        }
+        
+        // 检查位置服务是否开启
+        if (!LocationHelper.isLocationServiceEnabled(requireContext())) {
+            dialogFactory.createConfirmDialog(
+                title = "需要开启位置服务",
+                message = "定位功能需要开启设备的位置服务（GPS）。\n是否前往设置开启？",
+                positiveButtonText = "前往设置",
+                negativeButtonText = "取消",
+                onPositiveClick = {
+                    LocationHelper.openLocationSettings(requireContext())
+                }
+            )
+            return
+        }
+        
+        val btnGetLocation = locationFieldView.findViewById<ImageView>(R.id.btnGetLocation)
+        val editTextLocation = locationFieldView.findViewById<EditText>(R.id.editTextLocation)
+        
+        // 显示加载状态（改变图标透明度）
+        btnGetLocation?.isEnabled = false
+        btnGetLocation?.alpha = 0.5f
+        
+        // 使用协程进行定位
+        lifecycleScope.launch {
+            try {
+                val locationHelper = LocationHelper(requireContext())
+                val locationData = withContext(Dispatchers.IO) {
+                    locationHelper.getCurrentLocation()
+                }
+                
+                // 定位成功，更新UI
+                editTextLocation?.setText(locationData.address)
+                
+                // 保存地点数据到 ViewModel
+                android.util.Log.d("BaseItemFragment", "📍 定位成功，保存数据到ViewModel")
+                android.util.Log.d("BaseItemFragment", "📍 地址: ${locationData.address}")
+                android.util.Log.d("BaseItemFragment", "📍 纬度: ${locationData.latitude}")
+                android.util.Log.d("BaseItemFragment", "📍 经度: ${locationData.longitude}")
+                
+                viewModel.saveFieldValue("地点", locationData.address)
+                viewModel.saveFieldValue("地点_纬度", locationData.latitude.toString())
+                viewModel.saveFieldValue("地点_经度", locationData.longitude.toString())
+                
+                android.util.Log.d("BaseItemFragment", "📍 ViewModel中的值: 地点=${viewModel.getFieldValue("地点")}, 纬度=${viewModel.getFieldValue("地点_纬度")}, 经度=${viewModel.getFieldValue("地点_经度")}")
+                
+                SnackbarHelper.showSuccess(binding.root, "定位成功")
+        
+                // 清理资源
+                locationHelper.destroy()
+                
+            } catch (e: SecurityException) {
+                SnackbarHelper.show(binding.root, "缺少定位权限，请授予权限后重试")
+            } catch (e: Exception) {
+                SnackbarHelper.show(binding.root, "定位失败: ${e.message}")
+            } finally {
+                // 恢复按钮状态
+                btnGetLocation?.isEnabled = true
+                btnGetLocation?.alpha = 1.0f
+            }
+        }
+    }
 
     // === 抽象方法，由子类实现 ===
 

@@ -68,12 +68,12 @@ interface PhotoDao {
     suspend fun getPrimaryPhotoByItemId(itemId: Long): PhotoEntity?
     
     /**
-     * 获取指定物品的第一张照片（如果没有主照片，则返回第一张）
+     * 获取指定物品的第一张照片（用作封面）
      */
     @Query("""
         SELECT * FROM photos 
         WHERE itemId = :itemId 
-        ORDER BY isMain DESC, displayOrder ASC
+        ORDER BY displayOrder ASC
         LIMIT 1
     """)
     suspend fun getFirstPhotoByItemId(itemId: Long): PhotoEntity?

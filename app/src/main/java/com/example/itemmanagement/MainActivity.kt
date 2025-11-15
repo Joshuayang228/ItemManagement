@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -193,8 +194,8 @@ class MainActivity : AppCompatActivity() {
                     hideTopBar()
                 }
                 R.id.addItemFragment -> {
-                    android.util.Log.d("MainActivity", "📍 setupNavigation: 添加页面，显示TopBar无标题")
-                    showTopBarWithoutTitle()
+                    android.util.Log.d("MainActivity", "📍 setupNavigation: 添加页面，显示TopBar")
+                    showTopBar()
                 }
                 else -> {
                     android.util.Log.d("MainActivity", "📍 setupNavigation: 其他页面，显示TopBar")
@@ -229,8 +230,10 @@ class MainActivity : AppCompatActivity() {
             setOnItemSelectedListener { item ->
                 when (item.itemId) {
                     R.id.navigation_add_item -> {
-                        // 点击加号按钮，导航到添加物品页面
-                        navController.navigate(R.id.addItemFragment)
+                        // 点击加号按钮，使用默认模板导航到添加物品页面
+                        val defaultTemplateId = com.example.itemmanagement.utils.TemplatePreferences.getDefaultTemplateId(this@MainActivity)
+                        val bundle = androidx.core.os.bundleOf("templateId" to defaultTemplateId)
+                        navController.navigate(R.id.addItemFragment, bundle)
                         // 返回false，不让底部导航栏切换选中状态
                         false
                     }
@@ -240,6 +243,9 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+            
+            // 首次使用时显示气泡提示
+            showFirstTimeTipIfNeeded()
             
             // 启用项目重选监听（点击当前选中项的行为）
             setOnItemReselectedListener { item ->
@@ -265,6 +271,9 @@ class MainActivity : AppCompatActivity() {
                     R.id.navigation_add_item -> { }
                 }
             }
+            
+            // 🎯 为"添加"按钮添加长按支持
+            setupAddButtonLongPress()
             
             // Material 3 动画优化
             itemRippleColor = androidx.core.content.ContextCompat.getColorStateList(
@@ -296,13 +305,38 @@ class MainActivity : AppCompatActivity() {
      * 设置导航监听器，动态显示/隐藏TopBar
      */
     private fun setupNavigationListener() {
+        // 追踪上一个目的地，用于检测是否从添加/编辑页面返回
+        var previousDestinationId: Int? = null
+        
         navController.addOnDestinationChangedListener { _, destination, _ ->
             val destName = try { 
                 resources.getResourceEntryName(destination.id) 
             } catch (e: Exception) { 
                 "unknown_${destination.id}" 
             }
-            android.util.Log.d("MainActivity", "🧭 导航到: $destName")
+            android.util.Log.d("MainActivity", "════════════════════════════════════════")
+            android.util.Log.d("MainActivity", "🧭 导航监听器触发 - 导航到: $destName")
+            
+            // 检查底部导航栏状态
+            val navView = binding.navView
+            android.util.Log.d("MainActivity", "   📊 底部导航栏当前状态: ${visibilityToString(navView.visibility)}")
+            
+            // 检查是否从添加/编辑/详情页面返回到首页，如果是则刷新首页
+            if (destination.id == R.id.navigation_home && previousDestinationId != null) {
+                when (previousDestinationId) {
+                    R.id.addItemFragment,
+                    R.id.editItemFragment,
+                    R.id.navigation_item_detail -> {
+                        android.util.Log.d("MainActivity", "  🔄 从物品操作页面返回首页，触发刷新")
+                        // 获取HomeFragment并刷新数据
+                        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+                        val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
+                        if (currentFragment is com.example.itemmanagement.ui.home.HomeFragment) {
+                            currentFragment.refreshData()
+                        }
+                    }
+                }
+            }
             
             when (destination.id) {
                 // 主要导航页面 - 隐藏TopBar
@@ -317,17 +351,51 @@ class MainActivity : AppCompatActivity() {
                     android.util.Log.d("MainActivity", "  ➡️ 功能页面，隐藏TopBar")
                     hideTopBar()
                 }
-                // 添加物品页面 - 显示TopBar但禁用标题
+                // 添加物品页面 - 显示TopBar
                 R.id.addItemFragment -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 添加页面，显示TopBar无标题")
-                    showTopBarWithoutTitle()
+                    android.util.Log.d("MainActivity", "  ➡️ 添加页面，显示TopBar")
+                    showTopBar()
+                }
+                // 地图查看页面 - 显示TopBar，Fragment自己会隐藏底部导航
+                R.id.navigation_map_viewer -> {
+                    android.util.Log.d("MainActivity", "  ➡️ 地图查看页面，显示TopBar")
+                    android.util.Log.d("MainActivity", "     （底部导航栏由 MapViewerFragment 自行控制）")
+                    showTopBar()
+                }
+                // 地图选点页面 - 显示TopBar，Fragment自己会隐藏底部导航
+                R.id.navigation_map_picker -> {
+                    android.util.Log.d("MainActivity", "  ➡️ 地图选点页面，显示TopBar")
+                    android.util.Log.d("MainActivity", "     （底部导航栏由 MapPickerFragment 自行控制）")
+                    showTopBar()
                 }
                 // 其他页面 - 显示TopBar
                 else -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 其他页面，显示TopBar")
+                    android.util.Log.d("MainActivity", "  ➡️ 其他页面($destName)，显示TopBar")
                     showTopBar()
                 }
             }
+            
+            // 延迟检查底部导航栏状态
+            binding.navView.postDelayed({
+                android.util.Log.d("MainActivity", "   🔍 [100ms后检查] 底部导航栏状态: ${visibilityToString(binding.navView.visibility)}")
+            }, 100)
+            
+            binding.navView.postDelayed({
+                android.util.Log.d("MainActivity", "   🔍 [300ms后检查] 底部导航栏状态: ${visibilityToString(binding.navView.visibility)}")
+            }, 300)
+            
+            // 记录当前目的地，作为下次的previous
+            previousDestinationId = destination.id
+            android.util.Log.d("MainActivity", "════════════════════════════════════════")
+        }
+    }
+    
+    private fun visibilityToString(visibility: Int): String {
+        return when (visibility) {
+            android.view.View.VISIBLE -> "VISIBLE"
+            android.view.View.INVISIBLE -> "INVISIBLE"
+            android.view.View.GONE -> "GONE"
+            else -> "UNKNOWN($visibility)"
         }
     }
     
@@ -580,6 +648,241 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         } else {
             true // Android 13以下版本不需要权限
+        }
+    }
+    
+    /**
+     * 为底部导航栏的"添加"按钮添加长按支持
+     */
+    private fun setupAddButtonLongPress() {
+        binding.navView.post {
+            // BottomNavigationView内部结构：
+            // BottomNavigationView -> BottomNavigationMenuView -> BottomNavigationItemView[]
+            val menuView = binding.navView.getChildAt(0) as? android.view.ViewGroup
+            
+            menuView?.let { menu ->
+                // 遍历所有item，找到"添加"按钮（第3个item，索引为2）
+                if (menu.childCount >= 3) {
+                    val addItemView = menu.getChildAt(2) as? android.view.ViewGroup
+                    
+                    // 设置长按监听
+                    addItemView?.setOnLongClickListener {
+                        // 震动反馈
+                        vibrateDevice(50)
+                        
+                        // 显示模板选择对话框
+                        showTemplateSelectionDialog()
+                        true
+                    }
+                    
+                    // 🎯 放大"添加"按钮的图标（2倍大小）
+                    addItemView?.let { itemView ->
+                        // BottomNavigationItemView 内部结构：包含 ImageView (图标)
+                        for (i in 0 until itemView.childCount) {
+                            val child = itemView.getChildAt(i)
+                            if (child is android.widget.ImageView) {
+                                // 找到图标，放大2倍
+                                child.scaleX = 2.0f
+                                child.scaleY = 2.0f
+                                android.util.Log.d("MainActivity", "✅ 成功放大添加按钮图标 (2倍)")
+                                break
+                            }
+                        }
+                    }
+                    
+                    android.util.Log.d("MainActivity", "✅ 成功为添加按钮设置长按监听")
+                } else {
+                    android.util.Log.w("MainActivity", "⚠️ 无法找到添加按钮，childCount=${menu.childCount}")
+                }
+            } ?: android.util.Log.w("MainActivity", "⚠️ 无法获取BottomNavigationMenuView")
+        }
+    }
+    
+    /**
+     * 震动反馈
+     */
+    private fun vibrateDevice(milliseconds: Long) {
+        try {
+            val vibrator = getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(
+                    android.os.VibrationEffect.createOneShot(
+                        milliseconds,
+                        android.os.VibrationEffect.DEFAULT_AMPLITUDE
+                    )
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(milliseconds)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "震动失败", e)
+        }
+    }
+    
+    /**
+     * 显示模板选择对话框
+     */
+    private fun showTemplateSelectionDialog() {
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
+        val currentFragment = navHostFragment?.childFragmentManager?.fragments?.firstOrNull()
+        
+        // 创建模板选择对话框
+        val dialog = com.example.itemmanagement.ui.template.TemplateSelectionBottomSheet(
+            onTemplateSelected = { template ->
+                // 用户选择了模板，跳转到添加界面并传递模板ID
+                val bundle = androidx.core.os.bundleOf("templateId" to template.id)
+                navController.navigate(R.id.addItemFragment, bundle)
+            },
+            onManageTemplates = {
+                // 跳转到模板管理界面
+                try {
+                    navController.navigate(R.id.action_home_to_template_management)
+                } catch (e: Exception) {
+                    // 如果当前不在home，直接导航到模板管理
+                    navController.navigate(R.id.navigation_template_management)
+                }
+            }
+        )
+        
+        // 显示对话框
+        currentFragment?.childFragmentManager?.let {
+            dialog.show(it, "TemplateSelection")
+        } ?: run {
+            // 如果无法获取当前Fragment，使用Activity的FragmentManager
+            dialog.show(supportFragmentManager, "TemplateSelection")
+        }
+    }
+    
+    /**
+     * 每次打开APP显示气泡提示（除非用户点击了"不再显示"）
+     */
+    private fun showFirstTimeTipIfNeeded() {
+        val prefs = getSharedPreferences("app_tips", MODE_PRIVATE)
+        val neverShowAgain = prefs.getBoolean("never_show_add_button_tip", false)
+        
+        if (!neverShowAgain) {
+            // 延迟显示，等待权限请求完成
+            binding.navView.postDelayed({
+                try {
+                    // 查找添加按钮
+                    var addItemView: View? = null
+                    val menuView = binding.navView.getChildAt(0) as? android.view.ViewGroup
+                    if (menuView != null) {
+                        for (i in 0 until menuView.childCount) {
+                            val itemView = menuView.getChildAt(i)
+                            if (itemView.id == R.id.navigation_add_item) {
+                                addItemView = itemView
+                                break
+                            }
+                        }
+                    }
+                    
+                    if (addItemView != null) {
+                        showTooltipPopover(addItemView)
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("MainActivity", "显示气泡提示失败", e)
+                }
+            }, 3000) // 延迟3秒，等待权限请求完成
+        }
+    }
+    
+    /**
+     * 显示气泡提示框（带"不再显示"按钮）
+     */
+    private fun showTooltipPopover(anchorView: View) {
+        // 创建自定义气泡视图（使用LinearLayout容纳文本和按钮）
+        val tooltipView = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            setPadding(48, 32, 48, 32)
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            
+            // 设置圆角背景
+            background = resources.getDrawable(R.drawable.bg_dialog_rounded, theme).apply {
+                setTint(getColor(com.google.android.material.R.color.material_blue_grey_900))
+            }
+            elevation = 16f
+            
+            // 提示文本
+            addView(android.widget.TextView(this@MainActivity).apply {
+                text = "💡 长按「+」可编辑添加物品模板"
+                setTextColor(getColor(android.R.color.white))
+                textSize = 14f
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    0,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                )
+            })
+            
+            // 不再显示按钮
+            addView(android.widget.TextView(this@MainActivity).apply {
+                text = "不再显示"
+                setTextColor(getColor(com.google.android.material.R.color.design_default_color_secondary))
+                textSize = 12f
+                setPadding(32, 0, 0, 0)
+                gravity = android.view.Gravity.CENTER
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                // 添加点击效果
+                isClickable = true
+                isFocusable = true
+                background = android.graphics.drawable.RippleDrawable(
+                    android.content.res.ColorStateList.valueOf(getColor(android.R.color.white)),
+                    null,
+                    null
+                )
+            })
+        }
+        
+        // 创建 PopupWindow
+        val popupWindow = android.widget.PopupWindow(
+            tooltipView,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+            true
+        ).apply {
+            elevation = 16f
+            isOutsideTouchable = true
+            isFocusable = false // 不抢焦点，允许用户继续操作
+        }
+        
+        // 设置"不再显示"按钮点击事件
+        tooltipView.getChildAt(1).setOnClickListener {
+            // 保存"不再显示"设置
+            val prefs = getSharedPreferences("app_tips", MODE_PRIVATE)
+            prefs.edit().putBoolean("never_show_add_button_tip", true).apply()
+            android.util.Log.d("MainActivity", "用户选择不再显示模板提示")
+            
+            // 关闭气泡
+            popupWindow.dismiss()
+        }
+        
+        // 计算显示位置（在按钮上方）
+        anchorView.post {
+            val location = IntArray(2)
+            anchorView.getLocationOnScreen(location)
+            
+            // 测量 tooltip 大小
+            tooltipView.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            
+            val xOffset = (anchorView.width - tooltipView.measuredWidth) / 2
+            val yOffset = -tooltipView.measuredHeight - anchorView.height - 48 // 在按钮上方更高的位置
+            
+            popupWindow.showAsDropDown(anchorView, xOffset, yOffset)
+            
+            // 5秒后自动消失
+            anchorView.postDelayed({
+                if (popupWindow.isShowing) {
+                    popupWindow.dismiss()
+                }
+            }, 5000)
         }
     }
     

@@ -16,6 +16,7 @@ import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentItemDetailBinding
 import com.example.itemmanagement.ui.detail.adapter.PhotoAdapter
+import com.example.itemmanagement.ui.photo.FullscreenPhotoActivity
 import com.example.itemmanagement.ui.detail.adapter.TagAdapter
 import com.example.itemmanagement.adapter.PriceRecordAdapter
 import com.example.itemmanagement.data.model.OpenStatus
@@ -122,7 +123,13 @@ class ItemDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
+        android.util.Log.d("ItemDetailFragment", "📍 onViewCreated() 被调用")
+        logBottomNavState("onViewCreated-开始")
+        
+        android.util.Log.d("ItemDetailFragment", "   ⏩ 调用 hideBottomNavigation()")
         hideBottomNavigation()
+        
         setupAdapters()
         setupNoteExpandButton()
         setupSourceExpandButton()
@@ -131,17 +138,101 @@ class ItemDetailFragment : Fragment() {
         observeError()
         observeNavigation()
         observeSourceInfo()
+        
+        logBottomNavState("onViewCreated-结束")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        android.util.Log.d("ItemDetailFragment", "📍 onStart() 被调用")
+        logBottomNavState("onStart")
     }
 
     override fun onResume() {
         super.onResume()
+        android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
+        android.util.Log.d("ItemDetailFragment", "📍 onResume() 被调用")
+        logBottomNavState("onResume-开始")
+        
+        android.util.Log.d("ItemDetailFragment", "   ⏩ 第1次调用 hideBottomNavigation()")
         hideBottomNavigation()
+        
+        // 延迟检查并强制隐藏（防止被其他机制恢复）
+        binding.root.postDelayed({
+            android.util.Log.d("ItemDetailFragment", "   🔍 [100ms后检查并强制隐藏]")
+            val navView = activity?.findViewById<View>(R.id.nav_view)
+            android.util.Log.d("ItemDetailFragment", "      当前状态: ${visibilityToString(navView?.visibility)}")
+            if (navView?.visibility == View.VISIBLE) {
+                android.util.Log.d("ItemDetailFragment", "      ⚠️ 检测到底部导航栏被恢复为 VISIBLE，强制隐藏！")
+                navView.visibility = View.GONE
+                android.util.Log.d("ItemDetailFragment", "      ✅ 已强制设置为 GONE")
+            } else {
+                android.util.Log.d("ItemDetailFragment", "      ✓ 状态正常，无需处理")
+            }
+        }, 100)
+        
+        binding.root.postDelayed({
+            android.util.Log.d("ItemDetailFragment", "   🔍 [250ms后检查并强制隐藏]")
+            val navView = activity?.findViewById<View>(R.id.nav_view)
+            android.util.Log.d("ItemDetailFragment", "      当前状态: ${visibilityToString(navView?.visibility)}")
+            if (navView?.visibility == View.VISIBLE) {
+                android.util.Log.d("ItemDetailFragment", "      ⚠️ 检测到底部导航栏被恢复为 VISIBLE，强制隐藏！")
+                navView.visibility = View.GONE
+                android.util.Log.d("ItemDetailFragment", "      ✅ 已强制设置为 GONE")
+            } else {
+                android.util.Log.d("ItemDetailFragment", "      ✓ 状态正常，无需处理")
+            }
+        }, 250)
+        
+        binding.root.postDelayed({
+            android.util.Log.d("ItemDetailFragment", "   🔍 [400ms后最后检查]")
+            val navView = activity?.findViewById<View>(R.id.nav_view)
+            android.util.Log.d("ItemDetailFragment", "      当前状态: ${visibilityToString(navView?.visibility)}")
+            if (navView?.visibility == View.VISIBLE) {
+                android.util.Log.d("ItemDetailFragment", "      ⚠️ 检测到底部导航栏被恢复为 VISIBLE，强制隐藏！")
+                navView.visibility = View.GONE
+                android.util.Log.d("ItemDetailFragment", "      ✅ 已强制设置为 GONE")
+            } else {
+                android.util.Log.d("ItemDetailFragment", "      ✓ 状态正常，无需处理")
+            }
+            android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
+        }, 400)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        android.util.Log.d("ItemDetailFragment", "📍 onPause() 被调用")
+        logBottomNavState("onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        android.util.Log.d("ItemDetailFragment", "📍 onStop() 被调用")
+        logBottomNavState("onStop")
     }
 
     private fun setupAdapters() {
         // 设置照片适配器
-        photoAdapter = PhotoAdapter()
+        photoAdapter = PhotoAdapter { photoUri, position ->
+            // 点击照片时显示大图
+            showFullScreenPhoto(photoUri, position)
+        }
         binding.photoViewPager.adapter = photoAdapter
+        
+        // 添加页面变化监听器，更新照片计数文本
+        binding.photoViewPager.registerOnPageChangeCallback(object : androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                // 更新照片计数文本 (例如: "1/5")
+                val totalPhotos = photoAdapter.itemCount
+                if (totalPhotos > 0) {
+                    binding.photoCountText.text = "${position + 1}/$totalPhotos"
+                    binding.photoCountText.visibility = View.VISIBLE
+                } else {
+                    binding.photoCountText.visibility = View.GONE
+                }
+            }
+        })
 
         // 标签现在使用HorizontalScrollView中的LinearLayout，不需要RecyclerView设置
     }
@@ -231,6 +322,26 @@ class ItemDetailFragment : Fragment() {
                 nameTextView.text = item.name
                 quantityTextView.text = "${formatNumber(item.quantity)} ${item.unit ?: "个"}"
                 locationTextView.text = item.location?.getFullLocationString() ?: "未设置"
+                
+                // GPS地点信息
+                android.util.Log.d("ItemDetailFragment", "📍 物品地点信息 - 地址: ${item.locationAddress}")
+                if (!item.locationAddress.isNullOrBlank()) {
+                    android.util.Log.d("ItemDetailFragment", "📍 显示地点信息")
+                    gpsLocationContainer.visibility = View.VISIBLE
+                    gpsLocationAddressTextView.text = item.locationAddress
+                    
+                    // 显示地图卡片（如果有GPS坐标）
+                    if (item.locationLatitude != null && item.locationLongitude != null) {
+                        setupMapToggle(item.name, item.locationAddress ?: "", item.locationLatitude!!, item.locationLongitude!!)
+                    } else {
+                        hideMapCard()
+                    }
+                } else {
+                    android.util.Log.d("ItemDetailFragment", "📍 地点信息为空，隐藏地点容器")
+                    gpsLocationContainer.visibility = View.GONE
+                    hideMapCard()
+                }
+                
                 ratingBar.rating = item.rating?.toFloat() ?: 0f
 
                 // 分类 - 使用Material Design 3 Chips
@@ -365,20 +476,33 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun updatePhotoIndicator(photoCount: Int) {
-        binding.photoIndicator.removeAllViews()
-        
-        for (i in 0 until photoCount) {
-            val dot = View(context).apply {
-                layoutParams = LinearLayout.LayoutParams(16, 16).apply {
-                    setMargins(4, 0, 4, 0)
-                }
-                setBackgroundColor(
-                    if (i == 0) ContextCompat.getColor(requireContext(), android.R.color.white)
-                    else ContextCompat.getColor(requireContext(), android.R.color.darker_gray)
-                )
-            }
-            binding.photoIndicator.addView(dot)
+        // 只更新照片计数文本
+        if (photoCount > 0) {
+            binding.photoCountText.text = "1/$photoCount"
+            binding.photoCountText.visibility = View.VISIBLE
+        } else {
+            binding.photoCountText.visibility = View.GONE
         }
+    }
+    
+    /**
+     * 显示全屏照片对话框
+     */
+    private fun showFullScreenPhoto(photoUri: String, initialPosition: Int) {
+        val photos = photoAdapter.currentList
+        if (photos.isEmpty()) {
+            return
+        }
+
+        val resolvedPosition = initialPosition.coerceIn(0, photos.lastIndex)
+        val uriList = photos.map { it.uri }
+
+        val intent = FullscreenPhotoActivity.createIntent(
+            requireContext(),
+            uriList,
+            resolvedPosition
+        )
+        startActivity(intent)
     }
 
     private fun updateStatusTag(item: com.example.itemmanagement.data.model.Item) {
@@ -521,8 +645,33 @@ class ItemDetailFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        android.util.Log.d("ItemDetailFragment", "📍 onDestroyView() 被调用")
+        logBottomNavState("onDestroyView-开始")
+        
+        android.util.Log.d("ItemDetailFragment", "   ⏩ 准备恢复底部导航栏")
         showBottomNavigation()
+        
         _binding = null
+        android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
+    }
+
+    private fun logBottomNavState(location: String) {
+        val navView = activity?.findViewById<View>(R.id.nav_view)
+        if (navView != null) {
+            android.util.Log.d("ItemDetailFragment", "   📊 [$location] 底部导航栏状态: ${visibilityToString(navView.visibility)}")
+        } else {
+            android.util.Log.d("ItemDetailFragment", "   📊 [$location] 底部导航栏: NULL（Activity未就绪）")
+        }
+    }
+
+    private fun visibilityToString(visibility: Int?): String {
+        return when (visibility) {
+            View.VISIBLE -> "VISIBLE"
+            View.INVISIBLE -> "INVISIBLE"
+            View.GONE -> "GONE"
+            null -> "NULL"
+            else -> "UNKNOWN($visibility)"
+        }
     }
 
     /**
@@ -873,13 +1022,223 @@ class ItemDetailFragment : Fragment() {
      * 隐藏底部导航栏
      */
     private fun hideBottomNavigation() {
-        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
+        android.util.Log.d("ItemDetailFragment", "🔽 hideBottomNavigation() 被调用")
+        val navView = activity?.findViewById<View>(R.id.nav_view)
+        
+        if (navView == null) {
+            android.util.Log.e("ItemDetailFragment", "   ❌ 错误：找不到 nav_view！")
+            return
+        }
+        
+        android.util.Log.d("ItemDetailFragment", "   ✓ 找到 nav_view，当前状态: ${visibilityToString(navView.visibility)}")
+        android.util.Log.d("ItemDetailFragment", "   ⏩ 调用 post() 延迟隐藏")
+        
+        navView.post {
+            android.util.Log.d("ItemDetailFragment", "   📌 post() 回调执行中...")
+            android.util.Log.d("ItemDetailFragment", "      隐藏前状态: ${visibilityToString(navView.visibility)}")
+            navView.visibility = View.GONE
+            android.util.Log.d("ItemDetailFragment", "      ✅ 已设置为 GONE")
+            android.util.Log.d("ItemDetailFragment", "      隐藏后状态: ${visibilityToString(navView.visibility)}")
+        }
     }
 
     /**
      * 显示底部导航栏
      */
     private fun showBottomNavigation() {
-        activity?.findViewById<View>(R.id.nav_view)?.visibility = View.VISIBLE
+        android.util.Log.d("ItemDetailFragment", "🔼 showBottomNavigation() 被调用")
+        val navView = activity?.findViewById<View>(R.id.nav_view)
+        
+        if (navView == null) {
+            android.util.Log.e("ItemDetailFragment", "   ❌ 错误：找不到 nav_view！")
+            return
+        }
+        
+        android.util.Log.d("ItemDetailFragment", "   ✓ 找到 nav_view，当前状态: ${visibilityToString(navView.visibility)}")
+        android.util.Log.d("ItemDetailFragment", "   ⏩ 调用 post() 延迟显示")
+        
+        navView.post {
+            android.util.Log.d("ItemDetailFragment", "   📌 post() 回调执行中...")
+            android.util.Log.d("ItemDetailFragment", "      显示前状态: ${visibilityToString(navView.visibility)}")
+            navView.visibility = View.VISIBLE
+            android.util.Log.d("ItemDetailFragment", "      ✅ 已设置为 VISIBLE")
+            android.util.Log.d("ItemDetailFragment", "      显示后状态: ${visibilityToString(navView.visibility)}")
+        }
+    }
+    
+    // ==================== 地图相关方法 ====================
+    
+    /**
+     * 设置地图折叠/展开功能
+     */
+    private fun setupMapToggle(itemName: String, address: String, latitude: Double, longitude: Double) {
+        var isMapExpanded = false
+        
+        // 初始状态：地图折叠
+        hideMapCard()
+        
+        // 设置点击监听
+        binding.gpsLocationHeader.setOnClickListener {
+            isMapExpanded = !isMapExpanded
+            
+            if (isMapExpanded) {
+                // 展开地图
+                showMapCard(itemName, address, latitude, longitude)
+                binding.gpsLocationExpandIcon.rotation = 180f
+            } else {
+                // 折叠地图
+                hideMapCard()
+                binding.gpsLocationExpandIcon.rotation = 0f
+            }
+        }
+    }
+    
+    /**
+     * 显示地图卡片
+     */
+    private fun showMapCard(itemName: String, address: String, latitude: Double, longitude: Double) {
+        try {
+            // 显示地图 Surface 容器
+            binding.mapSurfaceContainer.visibility = View.VISIBLE
+            
+            // 动态加载地图嵌入式布局（无卡片版本）
+            val mapCardContainer = binding.mapCardContainer
+            mapCardContainer.removeAllViews()
+            
+            val mapCardView = layoutInflater.inflate(R.layout.card_location_map_embedded, mapCardContainer, false)
+            mapCardContainer.addView(mapCardView)
+            
+            // 初始化地图
+            val mapView = mapCardView.findViewById<com.amap.api.maps.MapView>(R.id.mapView)
+            mapView.onCreate(null)
+            
+            val aMap = mapView.map
+            
+            // 设置地图为2D普通地图
+            aMap.mapType = com.amap.api.maps.AMap.MAP_TYPE_NORMAL
+            
+            // 禁用所有交互（地图上方有遮罩层）
+            aMap.uiSettings.apply {
+                isZoomControlsEnabled = false
+                isCompassEnabled = false
+                isScaleControlsEnabled = false
+                isScrollGesturesEnabled = false
+                isZoomGesturesEnabled = false
+                isRotateGesturesEnabled = false
+                isTiltGesturesEnabled = false
+            }
+            
+            // 设置为2D视角（俯视角度）
+            aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.changeTilt(0f))
+            
+            // 添加标记
+            val position = com.amap.api.maps.model.LatLng(latitude, longitude)
+            aMap.addMarker(
+                com.amap.api.maps.model.MarkerOptions()
+                    .position(position)
+                    .title(itemName)
+                    .icon(com.amap.api.maps.model.BitmapDescriptorFactory.defaultMarker(
+                        com.amap.api.maps.model.BitmapDescriptorFactory.HUE_RED
+                    ))
+            )
+            
+            // 移动相机到标记位置
+            aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(position, 15f))
+            
+            // 点击地图进入全屏大图
+            mapCardView.findViewById<View>(R.id.mapOverlay).setOnClickListener {
+                openFullScreenMap(itemName, address, latitude, longitude)
+            }
+            
+            android.util.Log.d("ItemDetailFragment", "🗺️ 地图卡片显示成功")
+        } catch (e: Exception) {
+            android.util.Log.e("ItemDetailFragment", "显示地图卡片失败", e)
+            hideMapCard()
+        }
+    }
+    
+    /**
+     * 隐藏地图卡片
+     */
+    private fun hideMapCard() {
+        binding.mapSurfaceContainer.visibility = View.GONE
+        binding.mapCardContainer.removeAllViews()
+    }
+    
+    /**
+     * 打开全屏地图
+     */
+    private fun openFullScreenMap(itemName: String, address: String, latitude: Double, longitude: Double) {
+        try {
+            android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
+            android.util.Log.d("ItemDetailFragment", "🗺️ openFullScreenMap() 被调用")
+            android.util.Log.d("ItemDetailFragment", "   参数: itemName=$itemName")
+            android.util.Log.d("ItemDetailFragment", "   参数: latitude=$latitude")
+            android.util.Log.d("ItemDetailFragment", "   参数: longitude=$longitude")
+            android.util.Log.d("ItemDetailFragment", "   参数: address=$address")
+            
+            // 检查底部导航栏状态
+            val navView = activity?.findViewById<View>(R.id.nav_view)
+            android.util.Log.d("ItemDetailFragment", "   📊 导航前底部导航栏状态: ${if (navView != null) visibilityToString(navView.visibility) else "NULL"}")
+            
+            val action = ItemDetailFragmentDirections.actionNavigationItemDetailToMapViewer(
+                latitude = latitude.toFloat(),
+                longitude = longitude.toFloat(),
+                itemName = itemName,
+                address = address
+            )
+            
+            android.util.Log.d("ItemDetailFragment", "   ⏩ 准备导航到 MapViewerFragment...")
+            findNavController().navigate(action)
+            android.util.Log.d("ItemDetailFragment", "   ✅ navigate() 调用完成")
+            
+            // 导航后立即检查状态
+            navView?.let {
+                android.util.Log.d("ItemDetailFragment", "   📊 导航后立即检查底部导航栏状态: ${visibilityToString(it.visibility)}")
+                
+                // 延迟100ms后再次检查
+                it.postDelayed({
+                    android.util.Log.d("ItemDetailFragment", "   🔍 [100ms后] 底部导航栏状态: ${visibilityToString(it.visibility)}")
+                }, 100)
+            }
+            
+            android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
+        } catch (e: Exception) {
+            android.util.Log.e("ItemDetailFragment", "❌ 打开全屏地图失败", e)
+        }
+    }
+    
+    private fun visibilityToString(visibility: Int): String {
+        return when (visibility) {
+            View.VISIBLE -> "VISIBLE"
+            View.INVISIBLE -> "INVISIBLE"
+            View.GONE -> "GONE"
+            else -> "UNKNOWN($visibility)"
+        }
+    }
+    
+    /**
+     * 调用高德地图APP进行导航
+     */
+    private fun navigateToLocation(latitude: Double, longitude: Double, name: String) {
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                addCategory(android.content.Intent.CATEGORY_DEFAULT)
+                data = android.net.Uri.parse("amapuri://route/plan/?dlat=$latitude&dlon=$longitude&dname=$name&dev=0&t=0")
+            }
+            
+            if (intent.resolveActivity(requireActivity().packageManager) != null) {
+                startActivity(intent)
+            } else {
+                // 没有安装高德地图，使用浏览器打开网页版
+                val webIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                    data = android.net.Uri.parse("https://uri.amap.com/navigation?to=$longitude,$latitude,$name&mode=car&policy=1&src=myapp&coordinate=gaode&callnative=0")
+                }
+                startActivity(webIntent)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("ItemDetailFragment", "导航失败", e)
+            android.widget.Toast.makeText(requireContext(), "导航失败", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 }

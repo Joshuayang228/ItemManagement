@@ -52,4 +52,11 @@
     <string name="unmark_as_purchased">取消购买标记</string>
     <string name="transfer_to_inventory">转入库存</string>
     <string name="delete">删除</string>
+
+    <!-- 地图查看 -->
+    <string name="map_viewer_title">地图查看</string>
+    <string name="map_viewer_item_name_placeholder">物品名称</string>
+    <string name="map_viewer_address_placeholder">地址信息</string>
+    <string name="map_viewer_navigate_button">导航到此地</string>
+    <string name="map_viewer_coordinate_format">坐标：%1$.6f, %2$.6f</string>
 </resources> 

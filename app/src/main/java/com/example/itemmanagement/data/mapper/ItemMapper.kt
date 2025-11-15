@@ -46,6 +46,9 @@ fun UnifiedItemEntity.toItem(): Item {
         warrantyPeriod = null,
         warrantyEndDate = null,
         serialNumber = serialNumber, // 从UnifiedItemEntity读取
+        locationAddress = locationAddress, // GPS地址
+        locationLatitude = locationLatitude, // GPS纬度
+        locationLongitude = locationLongitude, // GPS经度
         isHighTurnover = false,
         photos = emptyList(),
         tags = emptyList()
@@ -72,6 +75,10 @@ fun Item.toItemEntity(locationId: Long? = null): UnifiedItemEntity {
         rating = rating,
         season = season,
         serialNumber = serialNumber,
+        // GPS地点信息
+        locationAddress = locationAddress,
+        locationLatitude = locationLatitude,
+        locationLongitude = locationLongitude,
         createdDate = addDate,
         updatedDate = Date()
     )
@@ -137,6 +144,9 @@ fun ItemWithDetails.toItem(): Item {
         warrantyPeriod = null,
         warrantyEndDate = null,
         serialNumber = unifiedItem.serialNumber, // 从UnifiedItemEntity读取
+        locationAddress = unifiedItem.locationAddress, // GPS地址
+        locationLatitude = unifiedItem.locationLatitude, // GPS纬度
+        locationLongitude = unifiedItem.locationLongitude, // GPS经度
         isHighTurnover = inventoryDetail?.isHighTurnover ?: false,
         photos = photos?.map { 
             android.util.Log.d("ItemMapper", "📸 转换照片: ${it.uri}")

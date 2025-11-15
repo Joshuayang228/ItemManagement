@@ -448,7 +448,19 @@ class HomeFragment : Fragment() {
         }
     }
     
-
+    override fun onResume() {
+        super.onResume()
+        // 不再自动刷新，改为通过MainActivity的事件通知刷新
+        // viewModel.refreshData()
+    }
+    
+    /**
+     * 刷新首页数据
+     * 由MainActivity在从添加/编辑/详情页面返回时调用
+     */
+    fun refreshData() {
+        viewModel.refreshData()
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()

@@ -89,7 +89,6 @@ Material 3 Components Styles System
 
     <!-- 浮动操作按钮 -->
     <style name="Widget.App.FloatingActionButton" parent="Widget.Material3.FloatingActionButton.Primary">
-        <item name="android:layout_margin">16dp</item>
         <item name="fabSize">normal</item>
         <item name="elevation">3dp</item>
         <item name="pressedTranslationZ">6dp</item>
@@ -175,9 +174,10 @@ Material 3 Components Styles System
     
     <!-- Material 3 紧凑活动指示器样式 -->
     <style name="Widget.App.BottomNavigationView.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
-        <item name="android:color">?attr/colorSecondaryContainer</item>
-        <item name="android:width">56dp</item>
-        <item name="android:height">28dp</item>
+        <item name="android:color">?attr/colorPrimary</item>
+        <item name="android:alpha">0.22</item>
+        <item name="android:width">54dp</item>
+        <item name="android:height">26dp</item>
         <item name="shapeAppearanceOverlay">@style/ShapeAppearance.Material3.Corner.Full</item>
     </style>
 

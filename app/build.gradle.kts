@@ -24,6 +24,9 @@ android {
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
         }
+        
+        // 高德地图 API Key - Debug 版本（临时使用，等你申请新 Key 后替换）
+        manifestPlaceholders["AMAP_KEY"] = "261b800a2472bcff727928a42854dd32"
     }
 
     signingConfigs {
@@ -36,6 +39,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Debug 版本使用调试 Key（只绑定 debug.keystore 的 SHA1）
+            manifestPlaceholders["AMAP_KEY"] = "261b800a2472bcff727928a42854dd32"
+        }
+        
         release {
             isMinifyEnabled = false
             isShrinkResources = false
@@ -44,6 +52,10 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
+            
+            // Release 版本使用发布 Key（只绑定 release-key.jks 的 SHA1）
+            // 等你申请新 Key 后替换这里
+            manifestPlaceholders["AMAP_KEY"] = "261b800a2472bcff727928a42854dd32"
         }
     }
     compileOptions {
@@ -121,6 +133,14 @@ dependencies {
 
     // Google Flexbox
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+    
+    // PhotoView for zoomable images
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
+    
+    // 高德3D地图SDK - 指定版本 9.7.0（与搜索SDK版本匹配）
+    implementation("com.amap.api:3dmap:9.7.0")
+    // 高德地图搜索服务SDK - 指定版本 9.7.0
+    implementation("com.amap.api:search:9.7.0")
     
     // AAInfographics (AAChartCore-Kotlin) for charts - 本地依赖
     implementation(project(":charts"))

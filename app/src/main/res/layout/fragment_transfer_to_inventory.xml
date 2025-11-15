@@ -76,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="8dp"
-                app:cardBackgroundColor="#F5F5F5">
+                app:cardBackgroundColor="?attr/colorSurfaceVariant">
 
                 <LinearLayout
                     android:layout_width="match_parent"

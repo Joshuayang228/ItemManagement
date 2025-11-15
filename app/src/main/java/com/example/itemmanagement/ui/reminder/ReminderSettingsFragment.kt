@@ -72,10 +72,28 @@ class ReminderSettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        // 隐藏底部导航栏
+        hideBottomNavigation()
+        
         initViews(view)
         setupRecyclerView()
         setupClickListeners()
         observeViewModel()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // 确保底部导航栏隐藏
+        hideBottomNavigation()
+    }
+    
+    /**
+     * 隐藏底部导航栏
+     */
+    private fun hideBottomNavigation() {
+        activity?.findViewById<com.google.android.material.bottomnavigation.BottomNavigationView>(
+            R.id.nav_view
+        )?.visibility = View.GONE
     }
     
     private fun initViews(view: View) {

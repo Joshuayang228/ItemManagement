@@ -95,4 +95,15 @@ Material 3 Theme System
         <item name="colorInfoContainer">@color/md_theme_light_info_container</item>
         <item name="colorOnInfoContainer">@color/md_theme_light_on_info_container</item>
     </style>
+
+    <style name="Theme.ItemManagement.FullscreenPhoto" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources> 
