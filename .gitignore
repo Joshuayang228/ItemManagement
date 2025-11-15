@@ -1,15 +1,72 @@
+# ===== Gradle =====
 *.iml
 .gradle
 /local.properties
+/build
+/buildSrc/build
+
+# ===== Android Studio =====
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
-.DS_Store
-/build
+/.idea/shelf
+/.idea/deploymentTargetSelector.xml
+*.iws
+*.ipr
+*~
+*.swp
+
+# ===== Android =====
 /captures
 .externalNativeBuild
 .cxx
+*.apk
+*.ap_
+*.aab
+
+# ===== Build Outputs =====
+*/build/
+*/out/
+app/release/
+app/debug/
+
+# ===== Keystore (重要：不要提交签名密钥！) =====
+keystore/
+*.jks
+*.keystore
+
+# ===== Local Configuration =====
 local.properties
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+
+# ===== Database =====
+*.db
+*.db-shm
+*.db-wal
+
+# ===== Temporary Files =====
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+
+# ===== Documentation (临时文件) =====
+compile_output.txt
+打包完成-请查看.txt
+
+# ===== AMap Documentation (可选：如果不想提交文档) =====
+# AMap_Android_Doc/
+
+# ===== Version Control =====
+.svn/
+.hg/
