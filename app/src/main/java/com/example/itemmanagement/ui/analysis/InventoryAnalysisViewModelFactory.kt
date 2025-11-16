@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.itemmanagement.data.repository.UnifiedItemRepository
 
 /**
- * 库存分析ViewModel工厂类（基于统一架构）
+ * 万物分析ViewModel工厂类（基于统一架构）
  */
 class InventoryAnalysisViewModelFactory(private val repository: UnifiedItemRepository) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

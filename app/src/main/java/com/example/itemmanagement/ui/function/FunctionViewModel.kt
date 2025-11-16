@@ -32,14 +32,14 @@ class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewMod
         val dataInsightsFunctions = listOf(
             FunctionCard(
                 id = "inventory_analysis",
-                title = "库存分析",
+                title = "万物分析",
                 description = "查看物品统计、分类分布、价值分析",
                 iconResId = com.example.itemmanagement.R.drawable.ic_statistics,
                 type = FunctionCard.Type.ANALYTICS
             ),
             FunctionCard(
                 id = "item_calendar",
-                title = "物品日历",
+                title = "事件日历",
                 description = "查看过期日期、保修期、重要时间节点",
                 iconResId = com.example.itemmanagement.R.drawable.ic_calendar,
                 type = FunctionCard.Type.CALENDAR
@@ -129,11 +129,11 @@ class FunctionViewModel(private val repository: UnifiedItemRepository) : ViewMod
         when (functionType) {
             // 数据洞察类
             "inventory_analysis" -> {
-                // 导航到库存分析详细页面，显示图表和深度分析
+                // 导航到万物分析详细页面，显示图表和深度分析
                 _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_inventory_analysis
             }
             "item_calendar" -> {
-                // 导航到物品日历页面，显示时间轴视图
+                // 导航到事件日历页面，显示时间轴视图
                 _navigationEvent.value = com.example.itemmanagement.R.id.action_function_to_item_calendar
             }
             "waste_report" -> {

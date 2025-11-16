@@ -571,7 +571,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleNotificationNavigation() {
         val navigateTo = intent.getStringExtra("navigate_to")
         if (navigateTo == "expiration_reminder") {
-            // 导航到物品日历页面
+            // 导航到事件日历页面
             navController.navigate(R.id.navigation_item_calendar)
         }
     }

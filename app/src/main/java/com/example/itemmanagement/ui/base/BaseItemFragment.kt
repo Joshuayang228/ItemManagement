@@ -25,6 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
@@ -202,6 +203,15 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
             })
             
             adapter = photoAdapter
+            
+            // 启用拖动排序
+            val dragCallback = com.example.itemmanagement.ui.add.PhotoDragCallback(photoAdapter) {
+                // 拖动完成后，同步更新 ViewModel 中的照片URI列表
+                val reorderedPhotos = photoAdapter.getPhotos()
+                viewModel.setPhotoUris(reorderedPhotos)
+            }
+            val itemTouchHelper = ItemTouchHelper(dragCallback)
+            itemTouchHelper.attachToRecyclerView(this)
             
             // 关键：设置item的宽度（与原有BaseItemFragment完全一致）
             post {

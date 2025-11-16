@@ -122,7 +122,7 @@ class InventoryAnalysisFragment : Fragment() {
     }
 
     private fun bindData(data: InventoryAnalysisData) {
-        // 绑定库存概览统计
+        // 绑定万物概览统计
         bindInventoryStats(data.inventoryStats)
         
         // 显示默认图表

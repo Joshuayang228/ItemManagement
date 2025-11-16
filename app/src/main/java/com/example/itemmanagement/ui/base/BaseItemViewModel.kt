@@ -341,6 +341,14 @@ abstract class BaseItemViewModel(
         _photoUris.value = emptyList()
         saveToCache()
     }
+    
+    /**
+     * 设置照片URI列表（用于拖动排序后更新）
+     */
+    fun setPhotoUris(uris: List<Uri>) {
+        _photoUris.value = uris
+        saveToCache() // 自动保存到缓存
+    }
 
     // --- 自定义选项管理 ---
 

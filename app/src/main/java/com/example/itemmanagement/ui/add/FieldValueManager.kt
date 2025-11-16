@@ -390,8 +390,8 @@ class FieldValueManager(
                             unitTextView.text = defaultUnit
                             unitTextView.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                         } else {
-                            unitTextView.text = "选择单位"
-                            unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                        unitTextView.text = "选择单位"
+                        unitTextView.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                         }
                     }
                 }
@@ -408,8 +408,8 @@ class FieldValueManager(
                             unitText.text = defaultUnit
                             unitText.setTextColor(ContextCompat.getColor(context, R.color.text_color_primary))
                         } else {
-                            unitText.text = "选择单位"
-                            unitText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
+                        unitText.text = "选择单位"
+                        unitText.setTextColor(ContextCompat.getColor(context, R.color.hint_text_color))
                         }
                     }
                 }

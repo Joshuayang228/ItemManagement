@@ -115,12 +115,12 @@
     <fragment
         android:id="@+id/navigation_inventory_analysis"
         android:name="com.example.itemmanagement.ui.analysis.InventoryAnalysisFragment"
-        android:label="库存分析" />
+        android:label="万物分析" />
 
     <fragment
         android:id="@+id/navigation_item_calendar"
         android:name="com.example.itemmanagement.ui.calendar.ItemCalendarFragment"
-        android:label="物品日历">
+        android:label="事件日历">
         <action
             android:id="@+id/action_item_calendar_to_item_detail"
             app:destination="@id/navigation_item_detail"

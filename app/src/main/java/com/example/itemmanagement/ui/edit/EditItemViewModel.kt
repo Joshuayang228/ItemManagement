@@ -144,6 +144,9 @@ class EditItemViewModel(
             Log.d("EditItemViewModel", "准备更新物品: itemId=$itemId, inventoryDetail=${inventoryDetail != null}, photos=${photoEntities.size}, tags=${tagEntities.size}, location=${locationEntity != null}")
             repository.updateItemWithDetails(itemWithDetails)
             
+            // ✏️ 添加日历事件：记录编辑物品操作
+            addCalendarEventForItemEdited(itemId, item.name, item.category)
+            
             // 保存或更新保修信息（如果有）
             saveOrUpdateWarrantyInfo()
             
@@ -960,6 +963,29 @@ class EditItemViewModel(
             else -> {
                 Pair(days.toString(), "日")
             }
+        }
+    }
+    
+    /**
+     * ✏️ 添加日历事件：记录编辑物品操作
+     */
+    private suspend fun addCalendarEventForItemEdited(itemId: Long, itemName: String, category: String) {
+        try {
+            val event = com.example.itemmanagement.data.entity.CalendarEventEntity(
+                itemId = itemId,
+                eventType = com.example.itemmanagement.data.model.EventType.ITEM_EDITED,
+                title = "编辑物品：$itemName",
+                description = "分类：$category",
+                eventDate = java.util.Date(),
+                reminderDays = emptyList(), // 操作记录不需要提醒
+                priority = com.example.itemmanagement.data.model.Priority.LOW,
+                isCompleted = true, // 操作记录默认为已完成
+                recurrenceType = null
+            )
+            repository.addCalendarEvent(event)
+            android.util.Log.d("EditItemViewModel", "📅 已添加日历事件：编辑物品 - $itemName")
+        } catch (e: Exception) {
+            android.util.Log.e("EditItemViewModel", "添加日历事件失败", e)
         }
     }
 }

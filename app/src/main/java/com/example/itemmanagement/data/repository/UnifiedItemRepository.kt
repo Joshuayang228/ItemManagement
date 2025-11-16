@@ -1069,11 +1069,11 @@ class UnifiedItemRepository(
     }
 
     /**
-     * 获取库存分析数据（统一架构版本）
+     * 获取万物分析数据（统一架构版本）
      */
     suspend fun getInventoryAnalysisData(): com.example.itemmanagement.data.model.InventoryAnalysisData {
         try {
-            android.util.Log.d("AnalysisData", "🔍 开始获取库存分析数据")
+            android.util.Log.d("AnalysisData", "🔍 开始获取万物分析数据")
             
             // 获取所有活跃的库存物品
             val inventoryStates = itemStateDao.getActiveStatesByType(ItemStateType.INVENTORY).first()
@@ -1225,7 +1225,7 @@ class UnifiedItemRepository(
             
             android.util.Log.d("AnalysisData", "📅 月度趋势: ${monthlyTrends.size}个月份")
             
-            android.util.Log.d("AnalysisData", "✅ 库存分析数据获取成功")
+            android.util.Log.d("AnalysisData", "✅ 万物分析数据获取成功")
             
         return com.example.itemmanagement.data.model.InventoryAnalysisData(
                 inventoryStats = inventoryStats,
@@ -1236,7 +1236,7 @@ class UnifiedItemRepository(
             )
             
         } catch (e: Exception) {
-            android.util.Log.e("AnalysisData", "❌ 获取库存分析数据失败", e)
+            android.util.Log.e("AnalysisData", "❌ 获取万物分析数据失败", e)
             // 返回空数据而不是抛出异常
             return com.example.itemmanagement.data.model.InventoryAnalysisData(
                 inventoryStats = com.example.itemmanagement.data.model.InventoryStats(
@@ -1258,44 +1258,42 @@ class UnifiedItemRepository(
      * 获取所有日历事件（兼容方法）
      */
     fun getAllCalendarEvents(): Flow<List<com.example.itemmanagement.data.entity.CalendarEventEntity>> {
-        // TODO: 实现日历事件查询
-        return flowOf(emptyList())
+        return appDatabase.calendarEventDao().getAllEvents()
     }
 
     /**
      * 根据日期范围获取日历事件（兼容方法）
      */
     fun getCalendarEventsBetweenDates(startDate: java.util.Date, endDate: java.util.Date): Flow<List<com.example.itemmanagement.data.entity.CalendarEventEntity>> {
-        // TODO: 实现日期范围日历事件查询
-        return flowOf(emptyList())
+        return appDatabase.calendarEventDao().getEventsBetweenDates(startDate, endDate)
     }
 
     /**
      * 插入日历事件（兼容方法）
      */
     suspend fun insertCalendarEvent(event: com.example.itemmanagement.data.entity.CalendarEventEntity) {
-        // TODO: 实现日历事件插入
+        appDatabase.calendarEventDao().insertEvent(event)
     }
 
     /**
      * 插入多个日历事件（兼容方法）
      */
     suspend fun insertCalendarEvents(events: List<com.example.itemmanagement.data.entity.CalendarEventEntity>) {
-        // TODO: 实现批量日历事件插入
+        appDatabase.calendarEventDao().insertEvents(events)
     }
 
     /**
      * 删除日历事件（兼容方法）
      */
     suspend fun deleteCalendarEvent(eventId: Long) {
-        // TODO: 实现日历事件删除
+        appDatabase.calendarEventDao().deleteEventById(eventId)
     }
 
     /**
      * 标记日历事件完成（兼容方法）
      */
     suspend fun markCalendarEventCompleted(eventId: Long) {
-        // TODO: 实现日历事件完成标记
+        appDatabase.calendarEventDao().markEventCompleted(eventId)
     }
 
     /**

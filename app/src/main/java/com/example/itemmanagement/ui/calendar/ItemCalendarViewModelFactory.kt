@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.itemmanagement.data.repository.UnifiedItemRepository
 
 /**
- * 物品日历ViewModel工厂类（基于统一架构）
+ * 事件日历ViewModel工厂类（基于统一架构）
  */
 class ItemCalendarViewModelFactory(
     private val repository: UnifiedItemRepository

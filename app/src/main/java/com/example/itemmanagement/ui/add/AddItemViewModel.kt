@@ -317,6 +317,9 @@ class AddItemViewModel(
                     inventoryDetail = inventoryDetail
                 )
                 
+                // 🛒 添加日历事件：记录购物清单转入库存操作
+                addCalendarEventForShoppingTransferred(sourceItemId!!, updatedUnifiedItem.name, updatedUnifiedItem.category)
+                
                 Log.d("AddItemViewModel", "购物清单转入成功")
             } else {
                 // 正常添加新物品
@@ -1093,6 +1096,29 @@ class AddItemViewModel(
             android.util.Log.d("AddItemViewModel", "📅 已添加日历事件：添加物品 - $itemName")
         } catch (e: Exception) {
             android.util.Log.e("AddItemViewModel", "添加日历事件失败", e)
+        }
+    }
+    
+    /**
+     * 🛒 添加日历事件：记录购物清单转入库存操作
+     */
+    private suspend fun addCalendarEventForShoppingTransferred(itemId: Long, itemName: String, category: String) {
+        try {
+            val event = com.example.itemmanagement.data.entity.CalendarEventEntity(
+                itemId = itemId,
+                eventType = com.example.itemmanagement.data.model.EventType.SHOPPING_TRANSFERRED,
+                title = "购物入库：$itemName",
+                description = "分类：$category",
+                eventDate = java.util.Date(),
+                reminderDays = emptyList(), // 操作记录不需要提醒
+                priority = com.example.itemmanagement.data.model.Priority.LOW,
+                isCompleted = true, // 操作记录默认为已完成
+                recurrenceType = null
+            )
+            repository.addCalendarEvent(event)
+            android.util.Log.d("AddItemViewModel", "📅 已添加日历事件：购物入库 - $itemName")
+        } catch (e: Exception) {
+            android.util.Log.e("AddItemViewModel", "添加购物入库日历事件失败", e)
         }
     }
 } 

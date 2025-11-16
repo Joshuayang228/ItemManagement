@@ -74,6 +74,17 @@ class PhotoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHol
             notifyDataSetChanged()
         }
     }
+    
+    /**
+     * 移动照片位置（用于拖动排序）
+     */
+    fun movePhoto(fromPosition: Int, toPosition: Int) {
+        if (fromPosition in 0 until photos.size && toPosition in 0 until photos.size) {
+            val photo = photos.removeAt(fromPosition)
+            photos.add(toPosition, photo)
+            notifyItemMoved(fromPosition, toPosition)
+        }
+    }
 
     fun getPhotos(): List<Uri> = photos.toList()
 

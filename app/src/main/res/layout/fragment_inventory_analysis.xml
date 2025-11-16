@@ -41,7 +41,7 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <!-- 卡片一：库存概览 -->
+            <!-- 卡片一：万物概览 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -59,13 +59,13 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="库存概览"
+                        android:text="万物概览"
                         android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- 第一行：总物品数和总价值 -->
+                    <!-- 第一行：总记录数和总价值 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -100,7 +100,7 @@
                                 <TextView
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="总物品数"
+                                    android:text="总记录数"
                                     android:textSize="12sp"
                                     android:textColor="?attr/colorOnSurfaceVariant" />
 
