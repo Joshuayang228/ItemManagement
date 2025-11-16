@@ -116,6 +116,9 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        // 立即隐藏底部导航栏（在任何UI初始化之前）
+        hideBottomNavigation()
+        
         // 初始化UI工厂专用的AddItemViewModel（使用简单工厂避免SavedState冲突）
         val repository = (requireActivity().application as ItemManagementApplication).repository
         
@@ -129,7 +132,6 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
         setupUI()
         setupObservers()
         setupButtons()
-        hideBottomNavigation()
     }
 
     /**
