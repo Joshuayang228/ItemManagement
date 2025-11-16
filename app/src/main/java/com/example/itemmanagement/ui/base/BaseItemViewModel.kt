@@ -341,7 +341,7 @@ abstract class BaseItemViewModel(
         _photoUris.value = emptyList()
         saveToCache()
     }
-    
+
     /**
      * 设置照片URI列表（用于拖动排序后更新）
      */

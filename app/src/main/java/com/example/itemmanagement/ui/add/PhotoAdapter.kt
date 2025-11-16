@@ -74,7 +74,7 @@ class PhotoAdapter(context: Context) : RecyclerView.Adapter<RecyclerView.ViewHol
             notifyDataSetChanged()
         }
     }
-    
+
     /**
      * 移动照片位置（用于拖动排序）
      */
