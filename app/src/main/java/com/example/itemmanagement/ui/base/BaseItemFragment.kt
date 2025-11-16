@@ -682,6 +682,19 @@ abstract class BaseItemFragment<T : BaseItemViewModel> : Fragment() {
         super.onResume()
         // 确保底部导航栏保持隐藏
         hideBottomNavigation()
+        
+        // 延迟隐藏，防止在状态恢复后重新显示
+        binding.root.postDelayed({
+            if (isAdded && _binding != null) {
+                hideBottomNavigation()
+            }
+        }, 100)
+        
+        binding.root.postDelayed({
+            if (isAdded && _binding != null) {
+                hideBottomNavigation()
+            }
+        }, 250)
     }
 
     override fun onPause() {
