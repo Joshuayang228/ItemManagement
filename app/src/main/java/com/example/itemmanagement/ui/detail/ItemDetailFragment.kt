@@ -61,6 +61,9 @@ class ItemDetailFragment : Fragment() {
     
     // 来源信息展开状态
     private var isSourceExpanded = false
+    
+    // 嵌入式地图 MapView（需要缓存以避免重复创建导致闪退）
+    private var embeddedMapView: com.amap.api.maps.MapView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -648,6 +651,10 @@ class ItemDetailFragment : Fragment() {
         android.util.Log.d("ItemDetailFragment", "📍 onDestroyView() 被调用")
         logBottomNavState("onDestroyView-开始")
         
+        // 销毁嵌入式地图（避免内存泄漏）
+        embeddedMapView?.onDestroy()
+        embeddedMapView = null
+        
         android.util.Log.d("ItemDetailFragment", "   ⏩ 准备恢复底部导航栏")
         showBottomNavigation()
         
@@ -1108,17 +1115,21 @@ class ItemDetailFragment : Fragment() {
             val mapCardView = layoutInflater.inflate(R.layout.card_location_map_embedded, mapCardContainer, false)
             mapCardContainer.addView(mapCardView)
             
-            // 初始化地图
-            val mapView = mapCardView.findViewById<com.amap.api.maps.MapView>(R.id.mapView)
-            mapView.onCreate(null)
+            // 销毁旧的 MapView（如果存在）
+            embeddedMapView?.onDestroy()
+            embeddedMapView = null
             
-            val aMap = mapView.map
+            // 初始化新的地图
+            embeddedMapView = mapCardView.findViewById<com.amap.api.maps.MapView>(R.id.mapView)
+            embeddedMapView?.onCreate(null)
+            
+            val aMap = embeddedMapView?.map
             
             // 设置地图为2D普通地图
-            aMap.mapType = com.amap.api.maps.AMap.MAP_TYPE_NORMAL
+            aMap?.mapType = com.amap.api.maps.AMap.MAP_TYPE_NORMAL
             
             // 禁用所有交互（地图上方有遮罩层）
-            aMap.uiSettings.apply {
+            aMap?.uiSettings?.apply {
                 isZoomControlsEnabled = false
                 isCompassEnabled = false
                 isScaleControlsEnabled = false
@@ -1129,11 +1140,11 @@ class ItemDetailFragment : Fragment() {
             }
             
             // 设置为2D视角（俯视角度）
-            aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.changeTilt(0f))
+            aMap?.moveCamera(com.amap.api.maps.CameraUpdateFactory.changeTilt(0f))
             
             // 添加标记
             val position = com.amap.api.maps.model.LatLng(latitude, longitude)
-            aMap.addMarker(
+            aMap?.addMarker(
                 com.amap.api.maps.model.MarkerOptions()
                     .position(position)
                     .title(itemName)
@@ -1143,7 +1154,7 @@ class ItemDetailFragment : Fragment() {
             )
             
             // 移动相机到标记位置
-            aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(position, 15f))
+            aMap?.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(position, 15f))
             
             // 点击地图进入全屏大图
             mapCardView.findViewById<View>(R.id.mapOverlay).setOnClickListener {
@@ -1161,6 +1172,10 @@ class ItemDetailFragment : Fragment() {
      * 隐藏地图卡片
      */
     private fun hideMapCard() {
+        // 销毁嵌入式地图（避免内存泄漏）
+        embeddedMapView?.onDestroy()
+        embeddedMapView = null
+        
         binding.mapSurfaceContainer.visibility = View.GONE
         binding.mapCardContainer.removeAllViews()
     }
