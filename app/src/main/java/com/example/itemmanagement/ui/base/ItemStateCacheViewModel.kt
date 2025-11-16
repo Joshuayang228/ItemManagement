@@ -28,7 +28,8 @@ class ItemStateCacheViewModel : ViewModel() {
         var selectedTags: Map<String, Set<String>> = mapOf(),
         var customOptions: MutableMap<String, MutableList<String>> = mutableMapOf(),
         var customUnits: MutableMap<String, MutableList<String>> = mutableMapOf(),
-        var customTags: MutableMap<String, MutableList<String>> = mutableMapOf()
+        var customTags: MutableMap<String, MutableList<String>> = mutableMapOf(),
+        var lastTemplateSignature: String? = null
     )
 
     /**
@@ -140,6 +141,7 @@ class ItemStateCacheViewModel : ViewModel() {
         _addItemCache.customOptions.clear()
         _addItemCache.customUnits.clear()
         _addItemCache.customTags.clear()
+        _addItemCache.lastTemplateSignature = null
     }
 
     /**

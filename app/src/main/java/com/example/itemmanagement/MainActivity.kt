@@ -52,8 +52,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        android.util.Log.d("MainActivity", "📍 onCreate called, savedInstanceState=${savedInstanceState != null}")
-        
         // 启用 Material You 动态颜色（Android 12+）
         DynamicColors.applyToActivityIfAvailable(this)
         
@@ -69,10 +67,9 @@ class MainActivity : AppCompatActivity() {
         // 设置 Material 3 工具栏
         setSupportActionBar(binding.toolbar)
         
-        // 🎯 恢复或初始化TopBar状态
+        // 恢复或初始化TopBar状态
         isTopBarVisible = savedInstanceState?.getBoolean("isTopBarVisible", true) ?: true
         isTopBarTitleEnabled = savedInstanceState?.getBoolean("isTopBarTitleEnabled", true) ?: true
-        android.util.Log.d("MainActivity", "🔧 初始TopBar状态: visible=$isTopBarVisible, titleEnabled=$isTopBarTitleEnabled")
 
         // 初始化导航组件
         setupNavigation(savedInstanceState)
@@ -309,25 +306,12 @@ class MainActivity : AppCompatActivity() {
         var previousDestinationId: Int? = null
         
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            val destName = try { 
-                resources.getResourceEntryName(destination.id) 
-            } catch (e: Exception) { 
-                "unknown_${destination.id}" 
-            }
-            android.util.Log.d("MainActivity", "════════════════════════════════════════")
-            android.util.Log.d("MainActivity", "🧭 导航监听器触发 - 导航到: $destName")
-            
-            // 检查底部导航栏状态
-            val navView = binding.navView
-            android.util.Log.d("MainActivity", "   📊 底部导航栏当前状态: ${visibilityToString(navView.visibility)}")
-            
             // 检查是否从添加/编辑/详情页面返回到首页，如果是则刷新首页
             if (destination.id == R.id.navigation_home && previousDestinationId != null) {
                 when (previousDestinationId) {
                     R.id.addItemFragment,
                     R.id.editItemFragment,
                     R.id.navigation_item_detail -> {
-                        android.util.Log.d("MainActivity", "  🔄 从物品操作页面返回首页，触发刷新")
                         // 获取HomeFragment并刷新数据
                         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment)
                         val currentFragment = navHostFragment?.childFragmentManager?.primaryNavigationFragment
@@ -343,50 +327,32 @@ class MainActivity : AppCompatActivity() {
                 R.id.navigation_home,
                 R.id.navigation_warehouse,
                 R.id.navigation_profile -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 主页面，隐藏TopBar")
                     hideTopBar()
                 }
                 // 功能页面 - 隐藏TopBar（像首页一样）
                 R.id.navigation_function -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 功能页面，隐藏TopBar")
                     hideTopBar()
                 }
                 // 添加物品页面 - 显示TopBar
                 R.id.addItemFragment -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 添加页面，显示TopBar")
                     showTopBar()
                 }
                 // 地图查看页面 - 显示TopBar，Fragment自己会隐藏底部导航
                 R.id.navigation_map_viewer -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 地图查看页面，显示TopBar")
-                    android.util.Log.d("MainActivity", "     （底部导航栏由 MapViewerFragment 自行控制）")
                     showTopBar()
                 }
                 // 地图选点页面 - 显示TopBar，Fragment自己会隐藏底部导航
                 R.id.navigation_map_picker -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 地图选点页面，显示TopBar")
-                    android.util.Log.d("MainActivity", "     （底部导航栏由 MapPickerFragment 自行控制）")
                     showTopBar()
                 }
                 // 其他页面 - 显示TopBar
                 else -> {
-                    android.util.Log.d("MainActivity", "  ➡️ 其他页面($destName)，显示TopBar")
                     showTopBar()
                 }
             }
             
-            // 延迟检查底部导航栏状态
-            binding.navView.postDelayed({
-                android.util.Log.d("MainActivity", "   🔍 [100ms后检查] 底部导航栏状态: ${visibilityToString(binding.navView.visibility)}")
-            }, 100)
-            
-            binding.navView.postDelayed({
-                android.util.Log.d("MainActivity", "   🔍 [300ms后检查] 底部导航栏状态: ${visibilityToString(binding.navView.visibility)}")
-            }, 300)
-            
             // 记录当前目的地，作为下次的previous
             previousDestinationId = destination.id
-            android.util.Log.d("MainActivity", "════════════════════════════════════════")
         }
     }
     

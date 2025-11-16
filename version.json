@@ -2,5 +2,5 @@
   "versionCode": 3,
   "versionName": "1.0.2",
   "downloadUrl": "https://github.com/Joshuayang228/ItemManagement/releases/download/v1.0.2/jiwanwu-v1.0.2.apk",
-  "updateLog": "✨ 新功能\n- 长按保存图片到相册\n- 图片拖动排序\n- Apple 风格底部菜单\n\n🐛 修复\n- 日历事件显示问题\n- 编辑物品日历记录\n\n🎨 优化\n- M3 主题色自动适配\n- 菜单交互优化"
+  "updateLog": "✨ 新功能\n- 全屏查看图片时长按保存到相册\n- 添加/编辑物品时图片拖动排序\n- Apple 风格底部菜单设计\n\n🐛 重要修复\n- 修复地图查看/选点返回时闪退问题\n- 修复日历事件显示问题\n- 修复编辑物品未记录到日历\n- 修复模板字段选择不生效问题\n\n🎨 优化改进\n- M3 主题色自动适配深色模式\n- 底部菜单交互优化\n- 代码性能优化，移除调试日志"
 }

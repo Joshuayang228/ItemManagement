@@ -61,9 +61,6 @@ class ItemDetailFragment : Fragment() {
     
     // 来源信息展开状态
     private var isSourceExpanded = false
-    
-    // 嵌入式地图 MapView（需要缓存以避免重复创建导致闪退）
-    private var embeddedMapView: com.amap.api.maps.MapView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,11 +123,7 @@ class ItemDetailFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
-        android.util.Log.d("ItemDetailFragment", "📍 onViewCreated() 被调用")
-        logBottomNavState("onViewCreated-开始")
         
-        android.util.Log.d("ItemDetailFragment", "   ⏩ 调用 hideBottomNavigation()")
         hideBottomNavigation()
         
         setupAdapters()
@@ -141,77 +134,36 @@ class ItemDetailFragment : Fragment() {
         observeError()
         observeNavigation()
         observeSourceInfo()
-        
-        logBottomNavState("onViewCreated-结束")
     }
 
     override fun onStart() {
         super.onStart()
-        android.util.Log.d("ItemDetailFragment", "📍 onStart() 被调用")
-        logBottomNavState("onStart")
     }
 
     override fun onResume() {
         super.onResume()
-        android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
-        android.util.Log.d("ItemDetailFragment", "📍 onResume() 被调用")
-        logBottomNavState("onResume-开始")
-        
-        android.util.Log.d("ItemDetailFragment", "   ⏩ 第1次调用 hideBottomNavigation()")
         hideBottomNavigation()
         
         // 延迟检查并强制隐藏（防止被其他机制恢复）
         binding.root.postDelayed({
-            android.util.Log.d("ItemDetailFragment", "   🔍 [100ms后检查并强制隐藏]")
-            val navView = activity?.findViewById<View>(R.id.nav_view)
-            android.util.Log.d("ItemDetailFragment", "      当前状态: ${visibilityToString(navView?.visibility)}")
-            if (navView?.visibility == View.VISIBLE) {
-                android.util.Log.d("ItemDetailFragment", "      ⚠️ 检测到底部导航栏被恢复为 VISIBLE，强制隐藏！")
-                navView.visibility = View.GONE
-                android.util.Log.d("ItemDetailFragment", "      ✅ 已强制设置为 GONE")
-            } else {
-                android.util.Log.d("ItemDetailFragment", "      ✓ 状态正常，无需处理")
-            }
+            activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
         }, 100)
         
         binding.root.postDelayed({
-            android.util.Log.d("ItemDetailFragment", "   🔍 [250ms后检查并强制隐藏]")
-            val navView = activity?.findViewById<View>(R.id.nav_view)
-            android.util.Log.d("ItemDetailFragment", "      当前状态: ${visibilityToString(navView?.visibility)}")
-            if (navView?.visibility == View.VISIBLE) {
-                android.util.Log.d("ItemDetailFragment", "      ⚠️ 检测到底部导航栏被恢复为 VISIBLE，强制隐藏！")
-                navView.visibility = View.GONE
-                android.util.Log.d("ItemDetailFragment", "      ✅ 已强制设置为 GONE")
-            } else {
-                android.util.Log.d("ItemDetailFragment", "      ✓ 状态正常，无需处理")
-            }
+            activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
         }, 250)
         
         binding.root.postDelayed({
-            android.util.Log.d("ItemDetailFragment", "   🔍 [400ms后最后检查]")
-            val navView = activity?.findViewById<View>(R.id.nav_view)
-            android.util.Log.d("ItemDetailFragment", "      当前状态: ${visibilityToString(navView?.visibility)}")
-            if (navView?.visibility == View.VISIBLE) {
-                android.util.Log.d("ItemDetailFragment", "      ⚠️ 检测到底部导航栏被恢复为 VISIBLE，强制隐藏！")
-                navView.visibility = View.GONE
-                android.util.Log.d("ItemDetailFragment", "      ✅ 已强制设置为 GONE")
-            } else {
-                android.util.Log.d("ItemDetailFragment", "      ✓ 状态正常，无需处理")
-            }
-            android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
+            activity?.findViewById<View>(R.id.nav_view)?.visibility = View.GONE
         }, 400)
     }
 
     override fun onPause() {
         super.onPause()
-        android.util.Log.d("ItemDetailFragment", "📍 onPause() 被调用")
-        logBottomNavState("onPause")
     }
 
     override fun onStop() {
         super.onStop()
-        android.util.Log.d("ItemDetailFragment", "📍 onStop() 被调用")
-        logBottomNavState("onStop")
     }
 
     private fun setupAdapters() {
@@ -648,37 +600,8 @@ class ItemDetailFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        android.util.Log.d("ItemDetailFragment", "📍 onDestroyView() 被调用")
-        logBottomNavState("onDestroyView-开始")
-        
-        // 销毁嵌入式地图（避免内存泄漏）
-        embeddedMapView?.onDestroy()
-        embeddedMapView = null
-        
-        android.util.Log.d("ItemDetailFragment", "   ⏩ 准备恢复底部导航栏")
         showBottomNavigation()
-        
         _binding = null
-        android.util.Log.d("ItemDetailFragment", "════════════════════════════════════════")
-    }
-
-    private fun logBottomNavState(location: String) {
-        val navView = activity?.findViewById<View>(R.id.nav_view)
-        if (navView != null) {
-            android.util.Log.d("ItemDetailFragment", "   📊 [$location] 底部导航栏状态: ${visibilityToString(navView.visibility)}")
-        } else {
-            android.util.Log.d("ItemDetailFragment", "   📊 [$location] 底部导航栏: NULL（Activity未就绪）")
-        }
-    }
-
-    private fun visibilityToString(visibility: Int?): String {
-        return when (visibility) {
-            View.VISIBLE -> "VISIBLE"
-            View.INVISIBLE -> "INVISIBLE"
-            View.GONE -> "GONE"
-            null -> "NULL"
-            else -> "UNKNOWN($visibility)"
-        }
     }
 
     /**
@@ -1115,21 +1038,17 @@ class ItemDetailFragment : Fragment() {
             val mapCardView = layoutInflater.inflate(R.layout.card_location_map_embedded, mapCardContainer, false)
             mapCardContainer.addView(mapCardView)
             
-            // 销毁旧的 MapView（如果存在）
-            embeddedMapView?.onDestroy()
-            embeddedMapView = null
+            // 初始化地图
+            val mapView = mapCardView.findViewById<com.amap.api.maps.MapView>(R.id.mapView)
+            mapView.onCreate(null)
             
-            // 初始化新的地图
-            embeddedMapView = mapCardView.findViewById<com.amap.api.maps.MapView>(R.id.mapView)
-            embeddedMapView?.onCreate(null)
-            
-            val aMap = embeddedMapView?.map
+            val aMap = mapView.map
             
             // 设置地图为2D普通地图
-            aMap?.mapType = com.amap.api.maps.AMap.MAP_TYPE_NORMAL
+            aMap.mapType = com.amap.api.maps.AMap.MAP_TYPE_NORMAL
             
             // 禁用所有交互（地图上方有遮罩层）
-            aMap?.uiSettings?.apply {
+            aMap.uiSettings.apply {
                 isZoomControlsEnabled = false
                 isCompassEnabled = false
                 isScaleControlsEnabled = false
@@ -1140,11 +1059,11 @@ class ItemDetailFragment : Fragment() {
             }
             
             // 设置为2D视角（俯视角度）
-            aMap?.moveCamera(com.amap.api.maps.CameraUpdateFactory.changeTilt(0f))
+            aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.changeTilt(0f))
             
             // 添加标记
             val position = com.amap.api.maps.model.LatLng(latitude, longitude)
-            aMap?.addMarker(
+            aMap.addMarker(
                 com.amap.api.maps.model.MarkerOptions()
                     .position(position)
                     .title(itemName)
@@ -1154,7 +1073,7 @@ class ItemDetailFragment : Fragment() {
             )
             
             // 移动相机到标记位置
-            aMap?.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(position, 15f))
+            aMap.moveCamera(com.amap.api.maps.CameraUpdateFactory.newLatLngZoom(position, 15f))
             
             // 点击地图进入全屏大图
             mapCardView.findViewById<View>(R.id.mapOverlay).setOnClickListener {
@@ -1172,10 +1091,6 @@ class ItemDetailFragment : Fragment() {
      * 隐藏地图卡片
      */
     private fun hideMapCard() {
-        // 销毁嵌入式地图（避免内存泄漏）
-        embeddedMapView?.onDestroy()
-        embeddedMapView = null
-        
         binding.mapSurfaceContainer.visibility = View.GONE
         binding.mapCardContainer.removeAllViews()
     }

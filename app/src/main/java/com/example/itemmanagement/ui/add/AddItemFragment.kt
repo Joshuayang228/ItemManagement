@@ -16,9 +16,11 @@ import android.os.Bundle
 import android.view.View
 import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
+import com.example.itemmanagement.data.entity.template.ItemTemplateEntity
 import com.example.itemmanagement.data.model.template.TemplateFieldDefaults
-import kotlinx.coroutines.launch
+import com.example.itemmanagement.ui.base.ItemStateCacheViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 import com.example.itemmanagement.ui.add.Field
@@ -50,7 +52,7 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // 🎨 设置关闭图标替代默认的返回箭头，并显示标题
+        // 设置关闭图标替代默认的返回箭头，并显示标题
         (requireActivity() as? AppCompatActivity)?.supportActionBar?.let { actionBar ->
             actionBar.setDisplayHomeAsUpEnabled(true)
             actionBar.setHomeAsUpIndicator(R.drawable.ic_close)
@@ -66,12 +68,7 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
                       cache.selectedFields.isNotEmpty() || 
                       cache.photoUris.isNotEmpty()
         
-        // 只在没有缓存时应用模板（首次进入）
-        if (!hasCache) {
-            applyTemplate(currentTemplateId)
-        } else {
-            shouldApplyTemplate = false
-        }
+        evaluateTemplateApplication(cache, hasCache)
         
         // 隐藏底部导航栏
         hideBottomNavigation()
@@ -81,6 +78,14 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
         super.onResume()
         // 确保底部导航栏隐藏
         hideBottomNavigation()
+    }
+    
+    override fun onPause() {
+        super.onPause()
+    }
+    
+    override fun onDestroyView() {
+        super.onDestroyView()
     }
 
     override fun onViewModelReady() {
@@ -470,6 +475,7 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
         
         // 清空所有字段的值（但保持字段选择状态）
         clearAllFields()
+        cacheViewModel.clearAddItemCache()
         
         // 重新应用相同的模板（只影响字段选择，不填充预设值）
         applyTemplate(currentTemplateId)
@@ -481,12 +487,66 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
     /**
      * 应用模板
      */
-    private fun applyTemplate(templateId: Long) {
+    private fun evaluateTemplateApplication(
+        cache: ItemStateCacheViewModel.AddItemCache,
+        hasCache: Boolean
+    ) {
+        if (currentTemplateId == -1L) {
+            if (!hasCache) {
+                applyTemplate(currentTemplateId)
+            } else {
+                shouldApplyTemplate = false
+            }
+            return
+        }
+
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val database = com.example.itemmanagement.data.AppDatabase.getDatabase(requireContext())
                 val repository = com.example.itemmanagement.data.repository.ItemTemplateRepository(database.itemTemplateDao())
-                val template = repository.getTemplateById(templateId)
+                val template = repository.getTemplateById(currentTemplateId)
+                if (template == null) {
+                    withContext(Dispatchers.Main) {
+                        if (!hasCache) {
+                            SnackbarHelper.showError(requireView(), "无法找到所选模板")
+                        }
+                        shouldApplyTemplate = false
+                    }
+                    return@launch
+                }
+
+                val templateSignature = buildTemplateSignature(template)
+                val shouldReapply = !hasCache || cache.lastTemplateSignature != templateSignature
+
+                withContext(Dispatchers.Main) {
+                    if (shouldReapply) {
+                        cacheViewModel.clearAddItemCache()
+                        applyTemplate(currentTemplateId, template, templateSignature)
+                    } else {
+                        shouldApplyTemplate = false
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("AddItemFragment", "检查模板更新状态失败", e)
+                withContext(Dispatchers.Main) {
+                    if (!hasCache) {
+                        SnackbarHelper.showError(requireView(), "加载模板失败，请稍后重试")
+                    }
+                }
+            }
+        }
+    }
+
+    private fun applyTemplate(
+        templateId: Long,
+        preloadedTemplate: ItemTemplateEntity? = null,
+        preloadedSignature: String? = null
+    ) {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val database = com.example.itemmanagement.data.AppDatabase.getDatabase(requireContext())
+                val repository = com.example.itemmanagement.data.repository.ItemTemplateRepository(database.itemTemplateDao())
+                val template = preloadedTemplate ?: repository.getTemplateById(templateId)
                 
                 template?.let {
                     // 增加使用次数
@@ -514,6 +574,8 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
                         }
                         
                         applyTemplateDefaultValues(it.fieldDefaultValues)
+                        cacheViewModel.getAddItemCache().lastTemplateSignature =
+                            preloadedSignature ?: buildTemplateSignature(it)
                         
                         // 显示提示
                         SnackbarHelper.showSuccess(
@@ -534,14 +596,9 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
         }
     }
 
-    /**
-     * 重写 onDestroyView，恢复导航栏显示
-     * 
-     * 注意：购物清单转入库存现在由专用的AddFromShoppingListFragment处理，
-     * 此Fragment只用于从主页添加物品，因此返回时恢复导航栏显示即可。
-     */
-    override fun onDestroyView() {
-        // 从主页添加物品，返回时恢复导航栏（使用父类的默认行为）
-        super.onDestroyView()
+    private fun buildTemplateSignature(template: ItemTemplateEntity): String {
+        val defaults = template.fieldDefaultValues ?: ""
+        return "${template.id}:${template.selectedFields}:$defaults:${template.updatedAt}"
     }
+
 } 
