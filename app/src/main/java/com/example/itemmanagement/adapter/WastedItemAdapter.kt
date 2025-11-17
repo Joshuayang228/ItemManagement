@@ -53,7 +53,12 @@ class WastedItemAdapter(
                 textViewItemName.text = item.name
 
                 // 设置物品详情（类别 + 数量单位）
-                val detailText = "${item.category} • ${item.quantity}${item.unit}"
+                // 只有当用户输入过数量时才显示数量
+                val detailText = if (item.isQuantityUserInput) {
+                    "${item.category} • ${item.quantity}${item.unit}"
+                } else {
+                    item.category
+                }
                 textViewItemDetails.text = detailText
 
                 // 设置浪费原因

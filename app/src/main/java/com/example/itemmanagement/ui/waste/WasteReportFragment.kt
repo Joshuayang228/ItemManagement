@@ -312,6 +312,7 @@ class WasteReportFragment : Fragment() {
                 originalValue = info.value,
                 quantity = info.quantity,
                 unit = info.unit,
+                isQuantityUserInput = info.isQuantityUserInput,
                 photoUri = info.photoUri
             )
         }

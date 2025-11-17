@@ -80,6 +80,7 @@ data class WastedItemData(
     val originalValue: Double,
     val quantity: Double,
     val unit: String,
+    val isQuantityUserInput: Boolean,
     val photoUri: String?
 )
 
@@ -153,6 +154,7 @@ data class WastedItemInfo(
     val value: Double,
     val quantity: Double,
     val unit: String,
+    val isQuantityUserInput: Boolean = false,
     val status: String? = null,
     val totalPrice: Double = value,
     val photoUri: String? = null

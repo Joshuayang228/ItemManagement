@@ -12,6 +12,7 @@ data class Item(
     val name: String,
     val quantity: Double,
     val unit: String,
+    val isQuantityUserInput: Boolean = false,
     val location: Location?,
     val category: String,
     val addDate: Date = Date(),

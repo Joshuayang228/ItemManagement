@@ -49,6 +49,7 @@ data class InventoryDetailEntity(
     // === 数量和位置 ===
     val quantity: Double,                        // 库存数量
     val unit: String,                           // 数量单位
+    val isQuantityUserInput: Boolean = false,   // 数量是否由用户输入（用于区分默认值）
     val locationId: Long? = null,               // 存储位置ID
     
     // === 时间相关 ===

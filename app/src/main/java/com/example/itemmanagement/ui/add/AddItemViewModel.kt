@@ -436,10 +436,25 @@ class AddItemViewModel(
     private suspend fun buildInventoryDetailFromFields(): InventoryDetailEntity {
         android.util.Log.d("AddItemViewModel", "🔧 开始构建InventoryDetailEntity")
         
-        // 基础字段
-        val quantityStr = (fieldValues["数量"] as? String)?.trim() ?: "1"
-        val quantity = quantityStr.toDoubleOrNull() ?: 1.0
-        val quantityUnit = fieldValues["数量_unit"] as? String ?: "个"
+        // 基础字段 - 处理数量
+        val rawQuantityStr = (fieldValues["数量"] as? String)?.trim()
+        val quantityStr = rawQuantityStr?.takeIf { it.isNotEmpty() }
+        
+        val quantity: Double
+        val quantityUnit: String
+        val isQuantityUserInput: Boolean
+        
+        if (quantityStr != null) {
+            // 用户填写了数量
+            quantity = quantityStr.toDoubleOrNull() ?: 1.0
+            quantityUnit = (fieldValues["数量_unit"] as? String)?.takeIf { it.isNotBlank() } ?: "个"
+            isQuantityUserInput = true
+        } else {
+            // 用户没有填写数量，使用默认值
+            quantity = 1.0
+            quantityUnit = "个"
+            isQuantityUserInput = false
+        }
         
         // 位置信息
         android.util.Log.d("AddItemViewModel", "📍 开始提取位置信息...")
@@ -489,6 +504,7 @@ class AddItemViewModel(
             itemId = 0, // 将由Repository设置
             quantity = quantity,
             unit = quantityUnit,
+            isQuantityUserInput = isQuantityUserInput,
             locationId = locationId,
             productionDate = productionDate,
             expirationDate = expirationDate,

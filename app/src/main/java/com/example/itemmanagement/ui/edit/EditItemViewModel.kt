@@ -268,17 +268,19 @@ class EditItemViewModel(
         fieldsToShow.add(Field("基础信息", "名称", true, getEditModeOrder("名称")))
         Log.d("EditItemViewModel", "设置名称: ${item.name}")
         
-        // 处理数量字段 - 如果是整数，去掉小数点后的.0
-        val quantityStr = if (item.quantity == item.quantity.toInt().toDouble()) {
-            item.quantity.toInt().toString()
-        } else {
-            item.quantity.toString()
+        // 处理数量字段 - 只有当用户输入过数量时才加载
+        if (item.isQuantityUserInput) {
+            val quantityStr = if (item.quantity == item.quantity.toInt().toDouble()) {
+                item.quantity.toInt().toString()
+            } else {
+                item.quantity.toString()
+            }
+            saveFieldValue("数量", quantityStr)
+            fieldsToShow.add(Field("基础信息", "数量", true, getEditModeOrder("数量")))
+            
+            // 保存数量单位
+            item.unit?.let { if (it.isNotBlank()) saveFieldValue("数量_unit", it) }
         }
-        saveFieldValue("数量", quantityStr)
-        fieldsToShow.add(Field("基础信息", "数量", true, getEditModeOrder("数量")))
-        
-        // 保存数量单位（包括"个"）
-        item.unit?.let { if (it.isNotBlank()) saveFieldValue("数量_unit", it) }
         
         // 只有当分类不是"未指定"时才保存分类字段
         if (!item.category.isNullOrBlank() && item.category != "未指定") {
@@ -512,10 +514,25 @@ class EditItemViewModel(
     private suspend fun buildInventoryDetailFromFields(itemId: Long): com.example.itemmanagement.data.entity.unified.InventoryDetailEntity {
         Log.d("EditItemViewModel", "🔧 开始构建InventoryDetailEntity for itemId: $itemId")
         
-        // 基础字段
-        val quantityStr = getFieldValue("数量")?.toString()?.trim() ?: "1"
-        val quantity = quantityStr.toDoubleOrNull() ?: 1.0
-        val quantityUnit = getFieldValue("数量_unit")?.toString() ?: "个"
+        // 基础字段 - 处理数量
+        val rawQuantityStr = getFieldValue("数量")?.toString()?.trim()
+        val quantityStr = rawQuantityStr?.takeIf { it.isNotEmpty() }
+        
+        val quantity: Double
+        val quantityUnit: String
+        val isQuantityUserInput: Boolean
+        
+        if (quantityStr != null) {
+            // 用户填写了数量
+            quantity = quantityStr.toDoubleOrNull() ?: 1.0
+            quantityUnit = getFieldValue("数量_unit")?.toString()?.takeIf { it.isNotBlank() } ?: "个"
+            isQuantityUserInput = true
+        } else {
+            // 用户没有填写数量，使用默认值
+            quantity = 1.0
+            quantityUnit = "个"
+            isQuantityUserInput = false
+        }
         
         // 位置信息 - 暂时设为null，通过locationEntity传递
         val locationId: Long? = null
@@ -572,6 +589,7 @@ class EditItemViewModel(
             itemId = itemId,
             quantity = quantity,
             unit = quantityUnit,
+            isQuantityUserInput = isQuantityUserInput,
             locationId = locationId,
             productionDate = productionDate,
             expirationDate = expirationDate,
@@ -718,14 +736,13 @@ class EditItemViewModel(
             return ValidationResult(false, "物品名称不能为空")
         }
         
-        val quantityStr = getFieldValue("数量")?.toString()
-        if (quantityStr.isNullOrBlank()) {
-            return ValidationResult(false, "数量不能为空")
-        }
-        
-        val quantity = quantityStr.toDoubleOrNull()
-        if (quantity == null || quantity < 0) {
-            return ValidationResult(false, "数量不能为负数")
+        // 数量字段可以为空（会使用默认值1），但如果填写了则必须是有效数字
+        val quantityStr = getFieldValue("数量")?.toString()?.trim()
+        if (!quantityStr.isNullOrBlank()) {
+            val quantity = quantityStr.toDoubleOrNull()
+            if (quantity == null || quantity < 0) {
+                return ValidationResult(false, "数量必须是有效的非负数")
+            }
         }
         
         return ValidationResult(true, "")

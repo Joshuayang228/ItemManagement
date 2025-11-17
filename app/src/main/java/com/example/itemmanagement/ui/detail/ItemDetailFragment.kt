@@ -91,7 +91,7 @@ class ItemDetailFragment : Fragment() {
     }
 
     private fun showDeleteConfirmationDialog() {
-        AlertDialog.Builder(requireContext())
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
             .setTitle("删除物品")
             .setMessage("确定要删除此物品吗？")
             .setPositiveButton("删除") { _, _ ->
@@ -275,7 +275,12 @@ class ItemDetailFragment : Fragment() {
             binding.apply {
                 // 基本信息
                 nameTextView.text = item.name
-                quantityTextView.text = "${formatNumber(item.quantity)} ${item.unit ?: "个"}"
+                
+                // 数量信息 - 只有当用户输入过数量时才显示
+                if (item.isQuantityUserInput) {
+                    quantityTextView.text = "${formatNumber(item.quantity)} ${item.unit ?: "个"}"
+                }
+                
                 locationTextView.text = item.location?.getFullLocationString() ?: "未设置"
                 
                 // GPS地点信息
@@ -559,6 +564,8 @@ class ItemDetailFragment : Fragment() {
             noteCard.visibility = if (item.customNote != null) View.VISIBLE else View.GONE
 
             // 具体字段的可见性 - 基本信息卡片
+            // 只有当用户输入过数量时才显示
+            quantityContainer.visibility = if (item.isQuantityUserInput) View.VISIBLE else View.GONE
             capacityContainer.visibility = if (item.capacity != null) View.VISIBLE else View.GONE
             priceContainer.visibility = if (item.price != null) View.VISIBLE else View.GONE
             totalPriceContainer.visibility = if (item.totalPrice != null) View.VISIBLE else View.GONE

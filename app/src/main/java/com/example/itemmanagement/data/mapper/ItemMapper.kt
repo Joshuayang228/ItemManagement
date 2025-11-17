@@ -115,6 +115,7 @@ fun ItemWithDetails.toItem(): Item {
         name = unifiedItem.name,
         quantity = inventoryDetail?.quantity ?: 0.0,
         unit = inventoryDetail?.unit ?: "",
+        isQuantityUserInput = inventoryDetail?.isQuantityUserInput ?: false,
         location = location, // 修复：使用构建的位置信息
         category = unifiedItem.category,
         addDate = unifiedItem.createdDate,

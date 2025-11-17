@@ -49,8 +49,8 @@ object CSVExporter {
                 "${escapeCsvField(unifiedItem.category)}," +
                 "${escapeCsvField(unifiedItem.brand ?: "")}," +
                 "${escapeCsvField(unifiedItem.specification ?: "")}," +
-                "${inventoryDetail?.quantity ?: ""}," +
-                "${escapeCsvField(inventoryDetail?.unit ?: "")}," +
+                "${if (inventoryDetail?.isQuantityUserInput == true) inventoryDetail.quantity else ""}," +
+                "${if (inventoryDetail?.isQuantityUserInput == true) escapeCsvField(inventoryDetail.unit) else ""}," +
                 "${inventoryDetail?.price ?: ""}," +
                 "${calculateTotalValue(inventoryDetail?.quantity, inventoryDetail?.price)}," +
                 "${formatDate(inventoryDetail?.purchaseDate)}," +

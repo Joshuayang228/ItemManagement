@@ -252,6 +252,7 @@ class WasteReportViewModel(
                 originalValue = item.totalPrice,
                 quantity = item.quantity,
                 unit = item.unit,
+                isQuantityUserInput = item.isQuantityUserInput,
                 photoUri = item.photoUri
             )
         }

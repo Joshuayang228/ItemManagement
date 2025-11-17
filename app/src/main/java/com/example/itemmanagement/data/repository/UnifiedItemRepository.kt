@@ -1787,6 +1787,7 @@ class UnifiedItemRepository(
                 value = value,
                 quantity = detail.quantity,
                 unit = detail.unit,
+                isQuantityUserInput = detail.isQuantityUserInput,
                 status = detail.status.name,
                 totalPrice = value,
                 photoUri = photoUri
@@ -1849,6 +1850,7 @@ class UnifiedItemRepository(
                 value = value,
                 quantity = detail.quantity,
                 unit = detail.unit,
+                isQuantityUserInput = detail.isQuantityUserInput,
                 status = detail.status.name,
                 totalPrice = value,
                 photoUri = photoUri
