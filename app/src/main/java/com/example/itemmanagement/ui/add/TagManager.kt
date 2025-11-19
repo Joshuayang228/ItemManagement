@@ -24,6 +24,104 @@ class TagManager(
     // 标签集合
     private val selectedTags = mutableSetOf<String>()
     private val defaultTags = mutableListOf<String>()
+    private val deletedPrefix = "DELETED:"
+    private val editPrefix = "EDIT:"
+
+    private fun rawOptionsSnapshot(): List<String> {
+        return viewModel.getCustomOptions(fieldName).toList()
+    }
+
+    private inline fun updateRawOptions(block: (MutableList<String>) -> Unit) {
+        val raw = viewModel.getCustomOptions(fieldName).toMutableList()
+        block(raw)
+        viewModel.setCustomOptions(fieldName, raw)
+    }
+
+    private fun parseDeletedTags(raw: List<String>): Set<String> {
+        return raw.filter { it.startsWith(deletedPrefix) }
+            .map { it.removePrefix(deletedPrefix) }
+            .toSet()
+    }
+
+    private fun parseEditMappings(raw: List<String>): Map<String, String> {
+        return raw.filter { it.startsWith(editPrefix) }
+            .mapNotNull { marker ->
+                val payload = marker.removePrefix(editPrefix)
+                val parts = payload.split("->", limit = 2)
+                if (parts.size == 2) parts[0] to parts[1] else null
+            }
+            .toMap()
+    }
+
+    private fun pureCustomTags(raw: List<String>): List<String> {
+        return raw.filter { !it.startsWith(deletedPrefix) && !it.startsWith(editPrefix) }
+    }
+
+    private fun displayDefaultTags(raw: List<String>): List<String> {
+        val deleted = parseDeletedTags(raw)
+        val edits = parseEditMappings(raw)
+        return defaultTags
+            .filter { !deleted.contains(it) }
+            .map { original -> edits[original] ?: original }
+    }
+
+    private fun findOriginalDefaultTag(displayName: String, raw: List<String> = rawOptionsSnapshot()): String? {
+        val edits = parseEditMappings(raw)
+        return defaultTags.firstOrNull { original ->
+            val current = edits[original] ?: original
+            current == displayName
+        }
+    }
+
+    private fun markDefaultTagEdited(original: String, newValue: String) {
+        updateRawOptions { raw ->
+            raw.removeAll { it.startsWith("$editPrefix$original->") }
+            raw.remove("$deletedPrefix$original")
+            raw.add("$editPrefix$original->$newValue")
+        }
+    }
+
+    private fun markDefaultTagDeleted(original: String) {
+        updateRawOptions { raw ->
+            raw.removeAll { it.startsWith("$editPrefix$original->") }
+            val marker = "$deletedPrefix$original"
+            if (!raw.contains(marker)) {
+                raw.add(marker)
+            }
+        }
+    }
+
+    private fun addCustomTagValue(tagName: String): Boolean {
+        if (getAllTags().contains(tagName)) {
+            return false
+        }
+        updateRawOptions { raw ->
+            if (!raw.contains(tagName)) {
+                raw.add(tagName)
+            }
+        }
+        return true
+    }
+
+    private fun editCustomTagValue(oldTag: String, newTag: String): Boolean {
+        if (oldTag == newTag) return true
+        if (getAllTags().contains(newTag)) {
+            return false
+        }
+        updateRawOptions { raw ->
+            val index = raw.indexOf(oldTag)
+            if (index >= 0) {
+                raw[index] = newTag
+            }
+        }
+        return true
+    }
+
+    private fun removeCustomTagValue(tagName: String) {
+        updateRawOptions { raw ->
+            raw.remove(tagName)
+        }
+    }
 
     /**
      * 初始化标签管理器
@@ -39,14 +137,15 @@ class TagManager(
      * 获取自定义标签
      */
     private fun getCustomTags(): List<String> {
-        return viewModel.getCustomOptions(fieldName)
+        return pureCustomTags(rawOptionsSnapshot())
     }
 
     /**
      * 获取所有标签
      */
     private fun getAllTags(): List<String> {
-        return defaultTags + getCustomTags()
+        val raw = rawOptionsSnapshot()
+        return displayDefaultTags(raw) + pureCustomTags(raw)
     }
 
     /**
@@ -119,13 +218,14 @@ class TagManager(
      */
     private fun showTagActionDialog(tagName: String, chip: Chip) {
         val options = arrayOf("编辑标签", "删除标签")
+        val originalDefault = findOriginalDefaultTag(tagName)
         
         AlertDialog.Builder(context)
             .setTitle(tagName)
             .setItems(options) { _, which ->
                 when (which) {
-                    0 -> showEditTagDialog(tagName, chip)
-                    1 -> showDeleteTagDialog(tagName, chip)
+                    0 -> showEditTagDialog(tagName, chip, originalDefault)
+                    1 -> showDeleteTagDialog(tagName, chip, originalDefault)
                 }
             }
             .show()
@@ -134,9 +234,9 @@ class TagManager(
     /**
      * 显示编辑标签对话框
      */
-    private fun showEditTagDialog(oldTagName: String, chip: Chip) {
+    private fun showEditTagDialog(displayTagName: String, chip: Chip, originalDefault: String?) {
         val editText = android.widget.EditText(context).apply {
-            setText(oldTagName)
+            setText(displayTagName)
             selectAll()
         }
         
@@ -145,20 +245,22 @@ class TagManager(
             .setView(editText)
             .setPositiveButton("确定") { _, _ ->
                 val newTagName = editText.text.toString().trim()
-                if (newTagName.isNotEmpty() && newTagName != oldTagName) {
-                    // 更新标签
-                    selectedTags.remove(oldTagName)
-                    selectedTags.add(newTagName)
-                    chip.text = newTagName
-                    
-                    // 如果是自定义标签，更新自定义标签列表
-                    if (!defaultTags.contains(oldTagName)) {
-                        viewModel.removeCustomOption(fieldName, oldTagName)
-                        viewModel.addCustomOption(fieldName, newTagName)
+                if (newTagName.isNotEmpty() && newTagName != displayTagName) {
+                    val success = if (originalDefault != null) {
+                        markDefaultTagEdited(originalDefault, newTagName)
+                        true
+                    } else {
+                        editCustomTagValue(displayTagName, newTagName)
                     }
                     
-                    // 保存到ViewModel
-                    viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+                    if (success) {
+                        selectedTags.remove(displayTagName)
+                        selectedTags.add(newTagName)
+                        chip.text = newTagName
+                        viewModel.saveFieldValue(fieldName, selectedTags.toSet())
+                    } else {
+                        android.widget.Toast.makeText(context, "标签名称已存在", android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             .setNegativeButton("取消", null)
@@ -168,7 +270,7 @@ class TagManager(
     /**
      * 显示删除标签确认对话框
      */
-    private fun showDeleteTagDialog(tagName: String, chip: Chip) {
+    private fun showDeleteTagDialog(tagName: String, chip: Chip, originalDefault: String?) {
         AlertDialog.Builder(context)
             .setTitle("删除标签")
             .setMessage("确定要删除标签 \"$tagName\" 吗？")
@@ -177,9 +279,10 @@ class TagManager(
                 (chip.parent as? ChipGroup)?.removeView(chip)
                 selectedTags.remove(tagName)
                 
-                // 如果是自定义标签，从自定义标签列表中删除
-                if (!defaultTags.contains(tagName)) {
-                    viewModel.removeCustomOption(fieldName, tagName)
+                if (originalDefault != null) {
+                    markDefaultTagDeleted(originalDefault)
+                } else {
+                    removeCustomTagValue(tagName)
                 }
                 
                 // 保存到ViewModel
@@ -209,8 +312,13 @@ class TagManager(
         // 使用DialogFactory创建完整的标签选择对话框
         val dialogFactory = DialogFactory(context)
         val selectedTagsSet = mutableSetOf<String>()
-        val allTags = mutableListOf<String>()
-        val customTags = viewModel.getCustomOptions(fieldName).toMutableList()
+        val rawOptions = rawOptionsSnapshot()
+        val defaultDisplayTags = displayDefaultTags(rawOptions).toMutableList()
+        val customTags = pureCustomTags(rawOptions).toMutableList()
+        val allTags = mutableListOf<String>().apply {
+            addAll(defaultDisplayTags)
+            addAll(customTags)
+        }
         
         // 添加当前已选中的标签
         for (i in 0 until container.childCount) {
@@ -223,10 +331,24 @@ class TagManager(
         // 同步内存中的选中状态
         selectedTags.clear()
         selectedTags.addAll(selectedTagsSet)
+
+        val tagOptionHandler = DialogFactory.TagOptionHandler(
+            onAddCustomTag = { tagName -> addCustomTagValue(tagName) },
+            onDeleteTags = { tags ->
+                tags.forEach { tag ->
+                    val original = findOriginalDefaultTag(tag)
+                    if (original != null) {
+                        markDefaultTagDeleted(original)
+                    } else {
+                        removeCustomTagValue(tag)
+                    }
+                }
+            }
+        )
         
         dialogFactory.showTagSelectionDialog(
             selectedTags = selectedTagsSet,
-            defaultTags = defaultTags,
+            defaultTags = defaultDisplayTags,
             customTags = customTags,
             allTags = allTags,
             selectedTagsContainer = container,
@@ -235,7 +357,8 @@ class TagManager(
                 selectedTagsSet.add(tagName)
             },
             viewModel = viewModel,
-            fieldName = fieldName
+            fieldName = fieldName,
+            tagOptionHandler = tagOptionHandler
         )
     }
     

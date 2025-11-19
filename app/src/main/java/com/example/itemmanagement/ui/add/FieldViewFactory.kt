@@ -293,7 +293,14 @@ class FieldViewFactory(
 
             // 获取默认选项和自定义选项
             val defaultOptions = properties.options?.toMutableList() ?: mutableListOf()
-            val customOptions = viewModel.getCustomOptions(fieldName)
+            var customOptions = viewModel.getCustomOptions(fieldName)
+
+            if (fieldName == "子分类") {
+                val initialCategory = viewModel.getFieldValue("分类")?.toString() ?: ""
+                if (initialCategory.isNotBlank() && initialCategory != "选择分类" && initialCategory != "请选择分类") {
+                    customOptions = viewModel.getCustomOptions("子分类", initialCategory)
+                }
+            }
 
             // 根据字段名设置默认提示文本
             spinnerTextView.text = ""
@@ -308,13 +315,33 @@ class FieldViewFactory(
             setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_arrow_drop_down, 0)
             compoundDrawablePadding = resources.getDimensionPixelSize(R.dimen.margin_small)
 
+            fun parseDeletedOptions(): Set<String> {
+                return customOptions.filter { it.startsWith("DELETED:") }
+                    .map { it.removePrefix("DELETED:") }
+                    .toSet()
+            }
+
+            fun parseEditMappings(): Map<String, String> {
+                return customOptions.filter { it.startsWith("EDIT:") }
+                    .mapNotNull { marker ->
+                        val payload = marker.removePrefix("EDIT:")
+                        val parts = payload.split("->", limit = 2)
+                        if (parts.size == 2) parts[0] to parts[1] else null
+                    }.toMap()
+            }
+
+            fun filteredCustomOptions(): List<String> {
+                return customOptions.filter { !it.startsWith("DELETED:") && !it.startsWith("EDIT:") }
+            }
+
             // 更新所有选项列表
             fun updateAllOptions(): List<String> {
-                // 过滤掉删除标记和编辑映射标记的选项
-                val filteredCustomOptions = customOptions.filter { 
-                    !it.startsWith("DELETED:") && !it.startsWith("EDIT:") 
-                }
-                return (defaultOptions + filteredCustomOptions).distinct()
+                val deleted = parseDeletedOptions()
+                val edits = parseEditMappings()
+                val processedDefaults = defaultOptions
+                    .filter { !deleted.contains(it) }
+                    .map { option -> edits[option] ?: option }
+                return (processedDefaults + filteredCustomOptions()).distinct()
             }
 
             // 点击事件处理
@@ -336,7 +363,8 @@ class FieldViewFactory(
                         val originalDefaultSubCategories = viewModel.getOriginalSubCategoriesForCategory(currentCategory)
                         
                         // 2. 获取该字段的自定义选项（包含编辑映射和删除标记）
-                        val allCustomOptions = viewModel.getCustomOptions("子分类")
+                        customOptions = viewModel.getCustomOptions("子分类", currentCategory)
+                        val allCustomOptions = customOptions
                         
                         // 3. 分离出真正的自定义添加选项（不包括系统标记）
                         val pureCustomOptions = allCustomOptions.filter { 
@@ -350,9 +378,8 @@ class FieldViewFactory(
                         defaultOptions.clear()
                         defaultOptions.addAll(originalDefaultSubCategories)
                         
-                        // 6. 更新customOptions - 包含所有自定义信息
-                        customOptions.clear()
-                        customOptions.addAll(allCustomOptions)
+                        // 6. 更新customOptions - 包含当前分类的所有自定义信息
+                        customOptions = allCustomOptions
                     }
                 }
                 
@@ -364,16 +391,14 @@ class FieldViewFactory(
                     }
                     
                     // 为子分类字段设置专用的选项数据
+                    // ✅ 保留所有标记（DELETED:、EDIT:），不要过滤
                     defaultOptions.clear()
                     defaultOptions.addAll(viewModel.getOriginalSubCategoriesForCategory(currentCategory))
-                    customOptions.clear()
-                    customOptions.addAll(viewModel.getCustomOptions("子分类").filter { 
-                        !it.startsWith("DELETED:") && !it.startsWith("EDIT:") 
-                    })
+                    customOptions = viewModel.getCustomOptions("子分类", currentCategory)  // 保留所有内容，包括标记
                     
                     dialogFactory.showOptionSelectionDialog(
                         "选择选项",
-                        viewModel.getSubCategoriesForCategory(currentCategory),
+                        viewModel.getSubCategoriesForCategory(currentCategory),  // 这里会自动过滤和应用编辑
                         defaultOptions,
                         customOptions,
                         true,
@@ -386,7 +411,7 @@ class FieldViewFactory(
                         { oldOption, newOption ->
                             // 子分类编辑逻辑 - 使用与其他字段相同的方式更新选项
                             val originalDefaults = viewModel.getOriginalSubCategoriesForCategory(currentCategory)
-                            val allCustomOptions = viewModel.getCustomOptions("子分类").toMutableList()
+                            val allCustomOptions = viewModel.getCustomOptions("子分类", currentCategory).toMutableList()
                             
                             if (originalDefaults.contains(oldOption)) {
                                 // 编辑默认选项 - 添加编辑映射
@@ -395,7 +420,8 @@ class FieldViewFactory(
                                 }
                                 allCustomOptions.removeAll(existingMappings)
                                 allCustomOptions.add("EDIT:$oldOption->$newOption")
-                                viewModel.setCustomOptions(fieldName, allCustomOptions)
+                                viewModel.setCustomOptions(fieldName, allCustomOptions, currentCategory)
+                                customOptions = viewModel.getCustomOptions("子分类", currentCategory)
                                 
                                 // 更新本地defaultOptions中的显示（模拟编辑效果）
                                 val index = defaultOptions.indexOf(oldOption)
@@ -415,7 +441,8 @@ class FieldViewFactory(
                                     }
                                     allCustomOptions.clear()
                                     allCustomOptions.addAll(systemMarkers + pureCustomOptions)
-                                    viewModel.setCustomOptions(fieldName, allCustomOptions)
+                                    viewModel.setCustomOptions(fieldName, allCustomOptions, currentCategory)
+                                    customOptions = viewModel.getCustomOptions("子分类", currentCategory)
                                     
                                     // 更新本地customOptions中的显示
                                     val localIndex = customOptions.indexOf(oldOption)
@@ -433,14 +460,15 @@ class FieldViewFactory(
                         { option ->
                             // 子分类删除逻辑 - 使用与其他字段相同的方式更新选项
                             val originalDefaults = viewModel.getOriginalSubCategoriesForCategory(currentCategory)
-                            val allCustomOptions = viewModel.getCustomOptions("子分类").toMutableList()
+                            val allCustomOptions = viewModel.getCustomOptions("子分类", currentCategory).toMutableList()
                             
                             if (originalDefaults.contains(option)) {
                                 // 删除默认选项 - 添加删除标记
                                 val deletedOption = "DELETED:$option"
                                 if (!allCustomOptions.contains(deletedOption)) {
                                     allCustomOptions.add(deletedOption)
-                                    viewModel.setCustomOptions(fieldName, allCustomOptions)
+                                    viewModel.setCustomOptions(fieldName, allCustomOptions, currentCategory)
+                                    customOptions = viewModel.getCustomOptions("子分类", currentCategory)
                                     
                                     // 从本地defaultOptions中移除（模拟删除效果）
                                     defaultOptions.remove(option)
@@ -456,7 +484,8 @@ class FieldViewFactory(
                                 }
                                 allCustomOptions.clear()
                                 allCustomOptions.addAll(systemMarkers + pureCustomOptions)
-                                viewModel.setCustomOptions(fieldName, allCustomOptions)
+                                viewModel.setCustomOptions(fieldName, allCustomOptions, currentCategory)
+                                customOptions = viewModel.getCustomOptions("子分类", currentCategory)
                                 
                                 // 从本地customOptions中移除
                                 customOptions.remove(option)
@@ -478,7 +507,7 @@ class FieldViewFactory(
                         { newOption ->
                             // 子分类添加逻辑 - 使用与其他字段相同的方式
                             val originalDefaults = viewModel.getOriginalSubCategoriesForCategory(currentCategory)
-                            val allCustomOptions = viewModel.getCustomOptions("子分类").toMutableList()
+                            val allCustomOptions = viewModel.getCustomOptions("子分类", currentCategory).toMutableList()
                             val pureCustomOptions = allCustomOptions.filter { 
                                 !it.startsWith("DELETED:") && !it.startsWith("EDIT:") 
                             }.toMutableList()
@@ -490,7 +519,8 @@ class FieldViewFactory(
                                 }
                                 allCustomOptions.clear()
                                 allCustomOptions.addAll(systemMarkers + pureCustomOptions)
-                                viewModel.setCustomOptions(fieldName, allCustomOptions)
+                                viewModel.setCustomOptions(fieldName, allCustomOptions, currentCategory)
+                                customOptions = viewModel.getCustomOptions("子分类", currentCategory)
                                 
                                 // 添加到本地customOptions
                                 if (!customOptions.contains(newOption)) {
@@ -534,7 +564,13 @@ class FieldViewFactory(
                             // 更新选项
                             if (defaultOptions.contains(oldOption)) {
                                 val index = defaultOptions.indexOf(oldOption)
-                                defaultOptions[index] = newOption
+                                if (index >= 0) {
+                                    defaultOptions[index] = newOption
+                                }
+                                val markerPrefix = "EDIT:$oldOption->"
+                                customOptions.removeAll { it.startsWith(markerPrefix) }
+                                customOptions.add("EDIT:$oldOption->$newOption")
+                                viewModel.setCustomOptions(fieldName, customOptions)
                             } else if (customOptions.contains(oldOption)) {
                                 val index = customOptions.indexOf(oldOption)
                                 customOptions[index] = newOption
@@ -551,6 +587,11 @@ class FieldViewFactory(
                             // 删除选项
                             if (defaultOptions.contains(option)) {
                                 defaultOptions.remove(option)
+                                val deletedMarker = "DELETED:$option"
+                                if (!customOptions.contains(deletedMarker)) {
+                                    customOptions.add(deletedMarker)
+                                }
+                                viewModel.setCustomOptions(fieldName, customOptions)
                             } else if (customOptions.contains(option)) {
                                 customOptions.remove(option)
                                 viewModel.setCustomOptions(fieldName, customOptions)
@@ -768,10 +809,34 @@ class FieldViewFactory(
         // 获取默认单位和自定义单位
         val defaultUnits = properties.unitOptions?.toMutableList() ?: mutableListOf()
         val customUnits = viewModel.getCustomUnits(fieldName)
-
+        
+        fun unitDeleted(): Set<String> {
+            return customUnits.filter { it.startsWith("DELETED:") }
+                .map { it.removePrefix("DELETED:") }
+                .toSet()
+        }
+        
+        fun unitEdits(): Map<String, String> {
+            return customUnits.filter { it.startsWith("EDIT:") }
+                .mapNotNull { marker ->
+                    val payload = marker.removePrefix("EDIT:")
+                    val parts = payload.split("->", limit = 2)
+                    if (parts.size == 2) parts[0] to parts[1] else null
+                }.toMap()
+        }
+        
+        fun filteredCustomUnits(): List<String> {
+            return customUnits.filter { !it.startsWith("DELETED:") && !it.startsWith("EDIT:") }
+        }
+        
         // 更新所有单位列表
         fun updateAllUnits(): List<String> {
-            return defaultUnits + customUnits
+            val deleted = unitDeleted()
+            val edits = unitEdits()
+            val processedDefaults = defaultUnits
+                .filter { !deleted.contains(it) }
+                .map { unit -> edits[unit] ?: unit }
+            return (processedDefaults + filteredCustomUnits()).distinct()
         }
 
         // 创建自适应宽度的单位选择器
@@ -814,7 +879,13 @@ class FieldViewFactory(
                         // 更新单位
                         if (defaultUnits.contains(oldUnit)) {
                             val index = defaultUnits.indexOf(oldUnit)
-                            defaultUnits[index] = newUnit
+                            if (index >= 0) {
+                                defaultUnits[index] = newUnit
+                            }
+                            val markerPrefix = "EDIT:$oldUnit->"
+                            customUnits.removeAll { it.startsWith(markerPrefix) }
+                            customUnits.add("EDIT:$oldUnit->$newUnit")
+                            viewModel.setCustomUnits(fieldName, customUnits)
                         } else if (customUnits.contains(oldUnit)) {
                             val index = customUnits.indexOf(oldUnit)
                             customUnits[index] = newUnit
@@ -829,6 +900,11 @@ class FieldViewFactory(
                         // 删除单位
                         if (defaultUnits.contains(unit)) {
                             defaultUnits.remove(unit)
+                            val deletedMarker = "DELETED:$unit"
+                            if (!customUnits.contains(deletedMarker)) {
+                                customUnits.add(deletedMarker)
+                            }
+                            viewModel.setCustomUnits(fieldName, customUnits)
                         } else if (customUnits.contains(unit)) {
                             customUnits.remove(unit)
                             viewModel.setCustomUnits(fieldName, customUnits)

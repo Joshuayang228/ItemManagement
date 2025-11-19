@@ -15,6 +15,8 @@ import com.example.itemmanagement.databinding.ItemHomeFunctionHeaderBinding
 import com.example.itemmanagement.databinding.ItemLoadingFooterBinding
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
+import com.example.itemmanagement.data.model.HomeFunctionConfig
+import androidx.core.view.isVisible
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -61,11 +63,13 @@ class HomeAdapter : ListAdapter<HomeListItem, RecyclerView.ViewHolder>(HomeDiffC
         const val TYPE_HEADER = 0
         const val TYPE_ITEM = 1
         const val TYPE_LOADING_FOOTER = 2
+        private const val PAYLOAD_FUNCTION_VISIBILITY = "payload_function_visibility"
     }
 
     private var onItemClickListener: ((Item) -> Unit)? = null
     private var onDeleteClickListener: ((Item) -> Unit)? = null
     private var onFunctionClickListener: ((String) -> Unit)? = null
+    private var functionVisibility: HomeFunctionConfig = HomeFunctionConfig()
 
     /**
      * 提交新的展示物品列表
@@ -93,6 +97,13 @@ class HomeAdapter : ListAdapter<HomeListItem, RecyclerView.ViewHolder>(HomeDiffC
 
     fun setOnFunctionClickListener(listener: (String) -> Unit) {
         onFunctionClickListener = listener
+    }
+    
+    fun updateFunctionVisibility(config: HomeFunctionConfig) {
+        functionVisibility = config
+        if (currentList.isNotEmpty()) {
+            notifyItemChanged(0, PAYLOAD_FUNCTION_VISIBILITY)
+        }
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -130,7 +141,7 @@ class HomeAdapter : ListAdapter<HomeListItem, RecyclerView.ViewHolder>(HomeDiffC
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (val item = getItem(position)) {
             is HomeListItem.Header -> {
-                // Header不需要绑定数据
+                (holder as FunctionHeaderViewHolder).bind(functionVisibility)
             }
             is HomeListItem.ItemData -> {
                 (holder as ItemViewHolder).bind(item.displayItem)
@@ -138,6 +149,18 @@ class HomeAdapter : ListAdapter<HomeListItem, RecyclerView.ViewHolder>(HomeDiffC
             is HomeListItem.LoadingFooter -> {
                 // LoadingFooter不需要绑定数据，显示固定的loading状态
             }
+        }
+    }
+    
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.contains(PAYLOAD_FUNCTION_VISIBILITY) && holder is FunctionHeaderViewHolder) {
+            holder.bind(functionVisibility)
+        } else {
+            super.onBindViewHolder(holder, position, payloads)
         }
     }
 
@@ -170,6 +193,14 @@ class HomeAdapter : ListAdapter<HomeListItem, RecyclerView.ViewHolder>(HomeDiffC
             binding.shoppingListCard.setOnClickListener {
                 onFunctionClickListener?.invoke("shopping_list")
             }
+        }
+        
+        fun bind(config: HomeFunctionConfig) {
+            binding.expiringItemsCard.isVisible = config.showExpiringEntry
+            binding.expiredItemsCard.isVisible = config.showExpiredEntry
+            binding.lowStockCard.isVisible = config.showLowStockEntry
+            binding.shoppingListCard.isVisible = config.showShoppingListEntry
+            binding.root.isVisible = config.hasAnyVisible()
         }
     }
 

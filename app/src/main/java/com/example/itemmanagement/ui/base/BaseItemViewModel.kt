@@ -8,7 +8,9 @@ import com.example.itemmanagement.ui.base.FieldInteractionViewModel
 import com.example.itemmanagement.ui.common.FieldProperties
 import com.example.itemmanagement.ui.common.ValidationType  
 import com.example.itemmanagement.ui.common.DisplayStyle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -355,11 +357,76 @@ abstract class BaseItemViewModel(
     /**
      * 获取字段的自定义选项
      */
-    override fun getCustomOptions(fieldName: String): MutableList<String> {
-        if (!customOptionsMap.containsKey(fieldName)) {
-            customOptionsMap[fieldName] = mutableListOf()
+    private fun buildCustomOptionKey(fieldName: String, contextKey: String?): String {
+        return if (contextKey.isNullOrBlank()) fieldName else "$fieldName::$contextKey"
+    }
+
+    override fun getCustomOptions(fieldName: String, contextKey: String?): MutableList<String> {
+        val cacheKey = buildCustomOptionKey(fieldName, contextKey)
+        if (!customOptionsMap.containsKey(cacheKey)) {
+            var persisted = runBlocking { repository.getStoredCustomOptions(fieldName, contextKey) }
+            if (persisted.isEmpty() && contextKey != null) {
+                // 兼容旧数据：没有上下文版本时回退到全局key
+                persisted = runBlocking { repository.getStoredCustomOptions(fieldName, null) }
+            }
+            customOptionsMap[cacheKey] = persisted.toMutableList()
         }
-        return customOptionsMap[fieldName]!!
+        return customOptionsMap[cacheKey]!!
+    }
+
+    private fun extractDeletedOptions(options: List<String>): Set<String> {
+        return options.asSequence()
+            .filter { it.startsWith("DELETED:") }
+            .map { it.removePrefix("DELETED:") }
+            .toSet()
+    }
+
+    private fun extractEditMappings(options: List<String>): Map<String, String> {
+        return options.asSequence()
+            .filter { it.startsWith("EDIT:") }
+            .mapNotNull { marker ->
+                val payload = marker.removePrefix("EDIT:")
+                val parts = payload.split("->", limit = 2)
+                if (parts.size == 2) parts[0] to parts[1] else null
+            }
+            .toMap()
+    }
+
+    override fun resolveTemplateSingleValue(
+        fieldName: String,
+        rawValue: String?,
+        contextKey: String?
+    ): String? {
+        val normalizedValue = rawValue?.trim()
+        if (normalizedValue.isNullOrEmpty()) {
+            return null
+        }
+
+        val optionsSnapshot = getCustomOptions(fieldName, contextKey).toList()
+        val deletedOptions = extractDeletedOptions(optionsSnapshot)
+        if (deletedOptions.contains(normalizedValue)) {
+            return null
+        }
+
+        val editMappings = extractEditMappings(optionsSnapshot)
+        return editMappings[normalizedValue] ?: normalizedValue
+    }
+
+    override fun resolveTemplateMultiValues(
+        fieldName: String,
+        rawValues: Collection<String>,
+        contextKey: String?
+    ): List<String> {
+        if (rawValues.isEmpty()) {
+            return emptyList()
+        }
+
+        return rawValues.mapNotNull { raw ->
+            resolveTemplateSingleValue(fieldName, raw, contextKey)
+        }
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
     }
 
     // 子分类与分类的映射关系
@@ -378,7 +445,7 @@ abstract class BaseItemViewModel(
      */
     override fun getSubCategoriesForCategory(category: String): List<String> {
         val defaultSubCategories = subCategoryMap[category] ?: emptyList()
-        val customOptions = getCustomOptions("子分类")
+        val customOptions = getCustomOptions("子分类", category)
         
         // 找出被标记为删除的选项
         val deletedOptions = customOptions.filter { it.startsWith("DELETED:") }
@@ -433,21 +500,26 @@ abstract class BaseItemViewModel(
     /**
      * 添加字段的自定义选项
      */
-    override fun addCustomOption(fieldName: String, option: String) {
-        val options = getCustomOptions(fieldName)
+    override fun setCustomOptions(fieldName: String, options: MutableList<String>, contextKey: String?) {
+        val cacheKey = buildCustomOptionKey(fieldName, contextKey)
+        customOptionsMap[cacheKey] = options
+        saveToCache()
+        persistCustomOptions(fieldName, contextKey)
+    }
+
+    override fun addCustomOption(fieldName: String, option: String, contextKey: String?) {
+        val options = getCustomOptions(fieldName, contextKey)
         if (!options.contains(option)) {
             options.add(option)
-            saveToCache() // 自动保存到缓存
+            setCustomOptions(fieldName, options, contextKey)
         }
     }
 
-    /**
-     * 删除字段的自定义选项
-     */
-    override fun removeCustomOption(fieldName: String, option: String) {
-        val options = getCustomOptions(fieldName)
-        options.remove(option)
-        saveToCache() // 自动保存到缓存
+    override fun removeCustomOption(fieldName: String, option: String, contextKey: String?) {
+        val options = getCustomOptions(fieldName, contextKey)
+        if (options.remove(option)) {
+            setCustomOptions(fieldName, options, contextKey)
+        }
     }
 
     // --- 生命周期管理 ---
@@ -677,37 +749,52 @@ abstract class BaseItemViewModel(
     
     // --- 缺失的接口方法实现 ---
     
-    override fun setCustomOptions(fieldName: String, options: MutableList<String>) {
-        // 通过字段属性设置自定义选项
-        val currentProperties = getFieldProperties(fieldName)
-        setFieldProperties(fieldName, currentProperties.copy(options = options))
-        saveToCache()
-    }
-    
     override fun getCustomUnits(fieldName: String): MutableList<String> {
-        // 返回真正的自定义单位（从持久化存储中获取），而不是字段属性中的默认单位
-        // 这样避免了在 FieldViewFactory 中重复添加默认单位的问题
-        return cacheViewModel.getCustomUnits(fieldName)
+        if (!customUnitsMap.containsKey(fieldName)) {
+            val cachedUnits = cacheViewModel.getCustomUnits(fieldName)
+            val persisted = runBlocking { repository.getStoredCustomUnits(fieldName) }
+            val merged = mutableListOf<String>().apply {
+                addAll(cachedUnits)
+                persisted.forEach { if (!contains(it)) add(it) }
+            }
+            customUnitsMap[fieldName] = merged
+        }
+        return customUnitsMap[fieldName]!!
     }
     
     override fun setCustomUnits(fieldName: String, units: MutableList<String>) {
-        val currentProperties = getFieldProperties(fieldName)
-        setFieldProperties(fieldName, currentProperties.copy(unitOptions = units))
+        customUnitsMap[fieldName] = units
         saveToCache()
+        persistCustomUnits(fieldName)
     }
     
     override fun addCustomUnit(fieldName: String, unit: String) {
         val currentUnits = getCustomUnits(fieldName)
         if (!currentUnits.contains(unit)) {
             currentUnits.add(unit)
-            saveToCache()
+            setCustomUnits(fieldName, currentUnits)
         }
     }
     
     override fun removeCustomUnit(fieldName: String, unit: String) {
         val currentUnits = getCustomUnits(fieldName)
         if (currentUnits.remove(unit)) {
-            saveToCache()
+            setCustomUnits(fieldName, currentUnits)
+        }
+    }
+
+    private fun persistCustomOptions(fieldName: String, contextKey: String?) {
+        val cacheKey = buildCustomOptionKey(fieldName, contextKey)
+        val snapshot = customOptionsMap[cacheKey]?.toList() ?: emptyList()
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.saveStoredCustomOptions(fieldName, snapshot, contextKey)
+        }
+    }
+
+    private fun persistCustomUnits(fieldName: String) {
+        val snapshot = customUnitsMap[fieldName]?.toList() ?: emptyList()
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.saveStoredCustomUnits(fieldName, snapshot)
         }
     }
     

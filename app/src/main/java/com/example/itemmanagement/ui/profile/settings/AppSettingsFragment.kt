@@ -17,6 +17,7 @@ import com.example.itemmanagement.ItemManagementApplication
 import com.example.itemmanagement.R
 import com.example.itemmanagement.databinding.FragmentAppSettingsBinding
 import com.example.itemmanagement.data.repository.ReminderSettingsRepository
+import com.example.itemmanagement.data.model.HomeFunctionConfig
 import com.example.itemmanagement.ui.reminder.ReminderSettingsViewModel
 import com.example.itemmanagement.ui.reminder.ReminderSettingsViewModelFactory
 import com.example.itemmanagement.ui.reminder.CategoryThresholdAdapter
@@ -56,6 +57,8 @@ class AppSettingsFragment : Fragment() {
     
     // 标志位：监听器是否已经设置
     private var isListenerSet = false
+    
+    private var homeFunctionConfig: HomeFunctionConfig = HomeFunctionConfig()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -163,9 +166,11 @@ class AppSettingsFragment : Fragment() {
             isInitializing = true
             
             val theme = viewModel.getTheme()
+            homeFunctionConfig = viewModel.getHomeFunctionConfig()
             
             // 设置UI状态
             setThemeRadioButton(theme)
+            applyHomeFunctionConfigToUI(homeFunctionConfig)
             
             // 初始化完成后，才设置监听器
             setupClickListeners()
@@ -198,6 +203,22 @@ class AppSettingsFragment : Fragment() {
         // 直接check，不用担心触发监听器（因为还没设置）
         if (binding.rgTheme.checkedRadioButtonId != targetId) {
             binding.rgTheme.check(targetId)
+        }
+    }
+    
+    private fun applyHomeFunctionConfigToUI(config: HomeFunctionConfig) {
+        binding.switchHomeExpiring.isChecked = config.showExpiringEntry
+        binding.switchHomeExpired.isChecked = config.showExpiredEntry
+        binding.switchHomeLowStock.isChecked = config.showLowStockEntry
+        binding.switchHomeShopping.isChecked = config.showShoppingListEntry
+    }
+    
+    private fun updateHomeFunctionConfig(transform: (HomeFunctionConfig) -> HomeFunctionConfig) {
+        val newConfig = transform(homeFunctionConfig)
+        if (newConfig == homeFunctionConfig) return
+        homeFunctionConfig = newConfig
+        lifecycleScope.launch {
+            viewModel.saveHomeFunctionConfig(newConfig)
         }
     }
     
@@ -263,6 +284,26 @@ class AppSettingsFragment : Fragment() {
             
             // 主题切换监听器
             rgTheme.setOnCheckedChangeListener(themeChangeListener)
+            
+            switchHomeExpiring.setOnCheckedChangeListener { _, isChecked ->
+                if (isInitializing) return@setOnCheckedChangeListener
+                updateHomeFunctionConfig { it.copy(showExpiringEntry = isChecked) }
+            }
+            
+            switchHomeExpired.setOnCheckedChangeListener { _, isChecked ->
+                if (isInitializing) return@setOnCheckedChangeListener
+                updateHomeFunctionConfig { it.copy(showExpiredEntry = isChecked) }
+            }
+            
+            switchHomeLowStock.setOnCheckedChangeListener { _, isChecked ->
+                if (isInitializing) return@setOnCheckedChangeListener
+                updateHomeFunctionConfig { it.copy(showLowStockEntry = isChecked) }
+            }
+            
+            switchHomeShopping.setOnCheckedChangeListener { _, isChecked ->
+                if (isInitializing) return@setOnCheckedChangeListener
+                updateHomeFunctionConfig { it.copy(showShoppingListEntry = isChecked) }
+            }
             
             // 重置设置按钮
             btnResetSettings.setOnClickListener {
@@ -366,7 +407,11 @@ class AppSettingsFragment : Fragment() {
                 lifecycleScope.launch {
                     // 重置到AUTO模式
                     viewModel.resetSettings()
+                    isInitializing = true
                     setThemeRadioButton("AUTO")
+                    homeFunctionConfig = HomeFunctionConfig()
+                    applyHomeFunctionConfigToUI(homeFunctionConfig)
+                    isInitializing = false
                     applyTheme("AUTO")
                     view?.let { SnackbarHelper.showSuccess(it, "设置已重置") }
                 }
@@ -400,6 +445,7 @@ class AppSettingsFragment : Fragment() {
         showBottomNavigation()
         categoryThresholdAdapter = null
         _binding = null
+        isListenerSet = false
     }
 
     /**

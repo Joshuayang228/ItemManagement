@@ -246,17 +246,25 @@ class AddItemFragment : BaseItemFragment<AddItemViewModel>() {
     private fun applyTemplateDefaultValues(fieldDefaultsJson: String?) {
         val defaults = TemplateFieldDefaults.fromJson(fieldDefaultsJson) ?: return
         var applied = false
+        var resolvedCategoryForContext: String? = null
         
         defaults.singleValues.forEach { (field, value) ->
-            viewModel.saveFieldValue(field, value)
-            if (field == "分类") {
-                viewModel.updateSubCategoryOptions(value)
+            val contextKey = if (field == "子分类") resolvedCategoryForContext else null
+            val resolvedValue = viewModel.resolveTemplateSingleValue(field, value, contextKey)
+            
+            if (!resolvedValue.isNullOrBlank()) {
+                viewModel.saveFieldValue(field, resolvedValue)
+                if (field == "分类") {
+                    resolvedCategoryForContext = resolvedValue
+                    viewModel.updateSubCategoryOptions(resolvedValue)
+                }
+                applied = true
             }
-            applied = true
         }
         
         defaults.multiValues["标签"]?.let { tags ->
-            val tagSet = tags.filter { it.isNotBlank() }.toSet()
+            val resolvedTags = viewModel.resolveTemplateMultiValues("标签", tags)
+            val tagSet = resolvedTags.filter { it.isNotBlank() }.toSet()
             if (tagSet.isNotEmpty()) {
                 viewModel.updateSelectedTags("标签", tagSet)
                 viewModel.saveFieldValue("标签", tagSet)

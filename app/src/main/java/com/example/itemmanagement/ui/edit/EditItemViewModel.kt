@@ -270,16 +270,16 @@ class EditItemViewModel(
         
         // 处理数量字段 - 只有当用户输入过数量时才加载
         if (item.isQuantityUserInput) {
-            val quantityStr = if (item.quantity == item.quantity.toInt().toDouble()) {
-                item.quantity.toInt().toString()
-            } else {
-                item.quantity.toString()
-            }
-            saveFieldValue("数量", quantityStr)
-            fieldsToShow.add(Field("基础信息", "数量", true, getEditModeOrder("数量")))
-            
+        val quantityStr = if (item.quantity == item.quantity.toInt().toDouble()) {
+            item.quantity.toInt().toString()
+        } else {
+            item.quantity.toString()
+        }
+        saveFieldValue("数量", quantityStr)
+        fieldsToShow.add(Field("基础信息", "数量", true, getEditModeOrder("数量")))
+        
             // 保存数量单位
-            item.unit?.let { if (it.isNotBlank()) saveFieldValue("数量_unit", it) }
+        item.unit?.let { if (it.isNotBlank()) saveFieldValue("数量_unit", it) }
         }
         
         // 只有当分类不是"未指定"时才保存分类字段
@@ -739,7 +739,7 @@ class EditItemViewModel(
         // 数量字段可以为空（会使用默认值1），但如果填写了则必须是有效数字
         val quantityStr = getFieldValue("数量")?.toString()?.trim()
         if (!quantityStr.isNullOrBlank()) {
-            val quantity = quantityStr.toDoubleOrNull()
+        val quantity = quantityStr.toDoubleOrNull()
             if (quantity == null || quantity < 0) {
                 return ValidationResult(false, "数量必须是有效的非负数")
             }

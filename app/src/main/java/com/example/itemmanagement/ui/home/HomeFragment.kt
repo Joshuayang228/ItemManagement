@@ -36,8 +36,10 @@ class HomeFragment : Fragment() {
     private val homeAdapter = HomeAdapter()
     
     private val viewModel: HomeViewModel by viewModels {
+        val app = requireActivity().application as ItemManagementApplication
         HomeViewModelFactory(
-            (requireActivity().application as ItemManagementApplication).repository
+            app.repository,
+            app.userProfileRepository
         )
     }
 
@@ -391,6 +393,10 @@ class HomeFragment : Fragment() {
         viewModel.isSearching.observe(viewLifecycleOwner) { _ ->
             // 可以根据搜索状态更新UI，比如显示搜索指示器
             // 这里暂时不做特殊处理，搜索结果会直接显示在列表中
+        }
+        
+        viewModel.functionVisibility.observe(viewLifecycleOwner) { config ->
+            homeAdapter.updateFunctionVisibility(config)
         }
     }
     

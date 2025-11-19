@@ -52,6 +52,10 @@ data class UserProfileEntity(
     val reminderFreq: String = "DAILY",     // 提醒频率: DAILY, WEEKLY, NEVER
     val compactModeEnabled: Boolean = false, // 紧凑模式
     val showTutorialTips: Boolean = true,    // 显示教程提示
+    val showExpiringEntry: Boolean = true,   // 首页是否展示“即将过期”
+    val showExpiredEntry: Boolean = true,    // 首页是否展示“过期物品”
+    val showLowStockEntry: Boolean = true,   // 首页是否展示“库存不足”
+    val showShoppingListEntry: Boolean = true, // 首页是否展示“购物清单”
     
     // ==================== 元数据 ====================
     val createdDate: Date = Date(),

@@ -78,6 +78,73 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 首页功能入口显示 -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.App.Card.Settings">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="首页功能入口"
+                        android:textAppearance="?attr/textAppearanceHeadline6"
+                        android:textStyle="bold"
+                        android:drawableStart="@drawable/ic_view_grid"
+                        android:drawablePadding="8dp"
+                        android:gravity="start|center_vertical"
+                        android:layout_marginBottom="4dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="选择哪些快捷入口显示在首页顶部"
+                        android:textAppearance="?attr/textAppearanceBody2"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:layout_marginBottom="16dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchHomeExpiring"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="显示「即将过期」入口"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchHomeExpired"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="显示「过期物品」入口"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchHomeLowStock"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="显示「库存不足」入口"
+                        android:textAppearance="?attr/textAppearanceBody1"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchHomeShopping"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="显示「购物清单」入口"
+                        android:textAppearance="?attr/textAppearanceBody1" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- 通知方式 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"

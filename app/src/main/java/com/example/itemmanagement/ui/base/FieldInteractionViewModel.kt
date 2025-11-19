@@ -139,28 +139,28 @@ interface FieldInteractionViewModel {
      * @param fieldName 字段名称
      * @return 自定义选项列表
      */
-    fun getCustomOptions(fieldName: String): MutableList<String>
+    fun getCustomOptions(fieldName: String, contextKey: String? = null): MutableList<String>
     
     /**
      * 设置字段的自定义选项
      * @param fieldName 字段名称
      * @param options 选项列表
      */
-    fun setCustomOptions(fieldName: String, options: MutableList<String>)
+    fun setCustomOptions(fieldName: String, options: MutableList<String>, contextKey: String? = null)
     
     /**
      * 添加字段的自定义选项
      * @param fieldName 字段名称
      * @param option 选项内容
      */
-    fun addCustomOption(fieldName: String, option: String)
+    fun addCustomOption(fieldName: String, option: String, contextKey: String? = null)
     
     /**
      * 删除字段的自定义选项
      * @param fieldName 字段名称
      * @param option 要删除的选项内容
      */
-    fun removeCustomOption(fieldName: String, option: String)
+    fun removeCustomOption(fieldName: String, option: String, contextKey: String? = null)
     
     /**
      * 获取字段的自定义单位
@@ -210,6 +210,16 @@ interface FieldInteractionViewModel {
      * @param tag 要删除的标签内容
      */
     fun removeCustomTag(fieldName: String, tag: String)
+
+    /**
+     * 解析模板中存储的原始单值字段，转换为当前可用的显示值
+     */
+    fun resolveTemplateSingleValue(fieldName: String, rawValue: String?, contextKey: String? = null): String?
+
+    /**
+     * 解析模板中存储的多值字段（如标签），转换为当前可用的显示值列表
+     */
+    fun resolveTemplateMultiValues(fieldName: String, rawValues: Collection<String>, contextKey: String? = null): List<String>
 
     // === UI状态的响应式更新 ===
     

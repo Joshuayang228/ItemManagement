@@ -8,18 +8,24 @@ import androidx.lifecycle.asLiveData
 import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import com.example.itemmanagement.data.repository.UnifiedItemRepository
+import com.example.itemmanagement.data.repository.UserProfileRepository
 import com.example.itemmanagement.data.entity.unified.UnifiedItemEntity
 import com.example.itemmanagement.data.mapper.toItem
 import com.example.itemmanagement.data.model.Item
 import com.example.itemmanagement.data.relation.ItemWithDetails
+import com.example.itemmanagement.data.model.HomeFunctionConfig
 import com.example.itemmanagement.ui.feed.SmartFeedAlgorithm
 import com.example.itemmanagement.ui.feed.SmoothScrollManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.collectLatest
 
-class HomeViewModel(private val repository: UnifiedItemRepository) : ViewModel() {
+class HomeViewModel(
+    private val repository: UnifiedItemRepository,
+    private val userProfileRepository: UserProfileRepository
+) : ViewModel() {
     
     /**
      * 展示物品数据类（包含推荐理由信息）
@@ -58,12 +64,16 @@ class HomeViewModel(private val repository: UnifiedItemRepository) : ViewModel()
     private val _isSearching = MutableLiveData<Boolean>(false)
     val isSearching: LiveData<Boolean> = _isSearching
     
+    private val _functionVisibility = MutableLiveData(HomeFunctionConfig())
+    val functionVisibility: LiveData<HomeFunctionConfig> = _functionVisibility
+    
     init {
         // 初始化时显示所有物品
         _searchQuery.value = ""
         
         // 生成初始信息流内容
         refreshData()
+        observeHomeFunctionConfig()
     }
     
     /**
@@ -307,6 +317,26 @@ class HomeViewModel(private val repository: UnifiedItemRepository) : ViewModel()
         refreshData()
     }
     
+    private fun observeHomeFunctionConfig() {
+        viewModelScope.launch {
+            // 确保存在用户资料记录
+            runCatching { userProfileRepository.getUserProfile() }
+            userProfileRepository.getUserProfileFlow().collectLatest { profile ->
+                val config = if (profile != null) {
+                    HomeFunctionConfig(
+                        showExpiringEntry = profile.showExpiringEntry,
+                        showExpiredEntry = profile.showExpiredEntry,
+                        showLowStockEntry = profile.showLowStockEntry,
+                        showShoppingListEntry = profile.showShoppingListEntry
+                    )
+                } else {
+                    HomeFunctionConfig()
+                }
+                _functionVisibility.postValue(config)
+            }
+        }
+    }
+    
     // 删除物品
     fun deleteItem(itemId: Long) {
         viewModelScope.launch {
@@ -320,11 +350,14 @@ class HomeViewModel(private val repository: UnifiedItemRepository) : ViewModel()
     }
 }
 
-class HomeViewModelFactory(private val repository: UnifiedItemRepository) : ViewModelProvider.Factory {
+class HomeViewModelFactory(
+    private val repository: UnifiedItemRepository,
+    private val userProfileRepository: UserProfileRepository
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(HomeViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return HomeViewModel(repository) as T
+            return HomeViewModel(repository, userProfileRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

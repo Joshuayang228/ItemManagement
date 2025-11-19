@@ -41,7 +41,8 @@ object TestDataInserter {
                     database.photoDao(),
                     database.priceRecordDao(),
                     database.warrantyDao(),
-                    database.borrowDao()  // ✅ 添加BorrowDao
+                    database.borrowDao(),  // ✅ 添加BorrowDao
+                    database.fieldCustomValueDao()
                 )
                 
                 // 生成测试数据

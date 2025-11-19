@@ -24,6 +24,11 @@ import java.util.*
  */
 class DialogFactory(private val context: Context) {
 
+    data class TagOptionHandler(
+        val onAddCustomTag: ((String) -> Boolean)? = null,
+        val onDeleteTags: ((Set<String>) -> Unit)? = null
+    )
+
     companion object {
         // 静态变量，用于记录当前应用会话中是否已显示过提示
         private var unitDialogTipShownThisSession = false
@@ -199,7 +204,8 @@ class DialogFactory(private val context: Context) {
         selectedTagsContainer: ChipGroup,
         onTagSelected: (String) -> Unit,
         viewModel: FieldInteractionViewModel,
-        fieldName: String
+        fieldName: String,
+        tagOptionHandler: TagOptionHandler? = null
     ) {
         // 更新所有标签列表
         allTags.clear()
@@ -226,7 +232,8 @@ class DialogFactory(private val context: Context) {
                 onTagSelected,
                 dialog,
                 viewModel,
-                fieldName
+                fieldName,
+                tagOptionHandler
             )
         }
 
@@ -336,7 +343,15 @@ class DialogFactory(private val context: Context) {
                 viewModel.saveFieldValue(fieldName, selectedTags.toSet())
             }
             .setNeutralButton("管理标签") { _, _ ->
-                showManageTagsDialog(defaultTags, customTags, allTags, selectedTags, viewModel, fieldName)
+                showManageTagsDialog(
+                    defaultTags,
+                    customTags,
+                    allTags,
+                    selectedTags,
+                    viewModel,
+                    fieldName,
+                    tagOptionHandler
+                )
             }
             .create()
 
@@ -358,7 +373,8 @@ class DialogFactory(private val context: Context) {
         onTagAdded: (String) -> Unit,
         parentDialog: MaterialAlertDialog? = null,
         viewModel: FieldInteractionViewModel,
-        fieldName: String
+        fieldName: String,
+        tagOptionHandler: TagOptionHandler? = null
     ) {
         val editText = EditText(context).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -376,24 +392,30 @@ class DialogFactory(private val context: Context) {
                 if (tagName.isNotEmpty()) {
                     // 检查标签是否已存在
                     if (!defaultTags.contains(tagName) && !customTags.contains(tagName)) {
-                        customTags.add(tagName)
-                        allTags.add(tagName)
-                        // 关闭所有对话框
-                        dialog.dismiss()
-                        parentDialog?.dismiss()
-                        // 回调添加标签
-                        onTagAdded(tagName)
-                        // 重新显示标签选择对话框
-                        showTagSelectionDialog(
-                            selectedTags,
-                            defaultTags,
-                            customTags,
-                            allTags,
-                            selectedTagsContainer,
-                            onTagAdded,
-                            viewModel,
-                            fieldName
-                        )
+                        val accepted = tagOptionHandler?.onAddCustomTag?.invoke(tagName) ?: true
+                        if (accepted) {
+                            customTags.add(tagName)
+                            allTags.add(tagName)
+                            // 关闭所有对话框
+                            dialog.dismiss()
+                            parentDialog?.dismiss()
+                            // 回调添加标签
+                            onTagAdded(tagName)
+                            // 重新显示标签选择对话框
+                            showTagSelectionDialog(
+                                selectedTags,
+                                defaultTags,
+                                customTags,
+                                allTags,
+                                selectedTagsContainer,
+                                onTagAdded,
+                                viewModel,
+                                fieldName,
+                                tagOptionHandler
+                            )
+                        } else {
+                            Toast.makeText(context, "无法添加标签", Toast.LENGTH_SHORT).show()
+                        }
                     } else if (!selectedTags.contains(tagName)) {
                         // 如果标签已存在但未选中，则选中它
                         // 关闭所有对话框
@@ -409,7 +431,8 @@ class DialogFactory(private val context: Context) {
                             selectedTagsContainer,
                             onTagAdded,
                             viewModel,
-                            fieldName
+                            fieldName,
+                            tagOptionHandler
                         )
                     } else {
                         Toast.makeText(context, "该标签已存在且已选中", Toast.LENGTH_SHORT).show()
@@ -431,7 +454,8 @@ class DialogFactory(private val context: Context) {
         allTags: MutableList<String>,
         selectedTags: MutableSet<String>,
         viewModel: FieldInteractionViewModel,
-        fieldName: String
+        fieldName: String,
+        tagOptionHandler: TagOptionHandler? = null
     ) {
         // 更新所有标签列表
         allTags.clear()
@@ -466,7 +490,8 @@ class DialogFactory(private val context: Context) {
                     { _ -> },            // 空的回调函数
                     null,                // 无父对话框
                     viewModel,           // 添加 ViewModel 参数
-                    fieldName            // 添加字段名参数
+                    fieldName,           // 添加字段名参数
+                    tagOptionHandler
                 )
             }
             .create()
@@ -479,10 +504,11 @@ class DialogFactory(private val context: Context) {
                     Toast.makeText(context, "请先选择要删除的标签", Toast.LENGTH_SHORT).show()
                 } else {
                     // 创建确认删除的对话框
-                    MaterialAlertDialogBuilder(context)
+                        MaterialAlertDialogBuilder(context)
                         .setTitle("批量删除")
                         .setMessage("确定要删除选中的 ${selectedForOperation.size} 个标签吗？")
                         .setPositiveButton("确定") { _, _ ->
+                                tagOptionHandler?.onDeleteTags?.invoke(selectedForOperation.toSet())
                             // 从所有列表中删除选中的标签
                             defaultTags.removeAll(selectedForOperation)
                             customTags.removeAll(selectedForOperation)
@@ -491,10 +517,6 @@ class DialogFactory(private val context: Context) {
                             val tagsToRemove = selectedTags.intersect(selectedForOperation)
                             if (tagsToRemove.isNotEmpty()) {
                                 selectedTags.removeAll(tagsToRemove)
-                                // 通知 ViewModel 删除标签
-                                tagsToRemove.forEach { tag ->
-                                    viewModel.removeCustomTag(fieldName, tag)
-                                }
                             }
 
                             // 更新所有标签列表
@@ -564,11 +586,27 @@ class DialogFactory(private val context: Context) {
                     onEditUnit,
                     onDeleteUnit
                 ) {
-                    // 在操作完成后重新创建对话框
+                    // 在操作完成后重新创建对话框，需要重新过滤单位列表
                     dialog.dismiss()
+                    // 重新计算有效单位列表（过滤掉标记）
+                    val deleted = customUnits.filter { it.startsWith("DELETED:") }
+                        .map { it.removePrefix("DELETED:") }
+                        .toSet()
+                    val edits = customUnits.filter { it.startsWith("EDIT:") }
+                        .mapNotNull { marker ->
+                            val payload = marker.removePrefix("EDIT:")
+                            val parts = payload.split("->", limit = 2)
+                            if (parts.size == 2) parts[0] to parts[1] else null
+                        }.toMap()
+                    val pureCustom = customUnits.filter { !it.startsWith("DELETED:") && !it.startsWith("EDIT:") }
+                    val processedDefaults = defaultUnits
+                        .filter { !deleted.contains(it) }
+                        .map { unit -> edits[unit] ?: unit }
+                    val effectiveUnits = (processedDefaults + pureCustom).distinct()
+                    
                     showUnitSelectionDialog(
                         title,
-                        defaultUnits + customUnits,
+                        effectiveUnits,
                         defaultUnits,
                         customUnits,
                         isCustomizable,
@@ -590,11 +628,27 @@ class DialogFactory(private val context: Context) {
                     dialog
                 ) { newUnit ->
                     onAddUnit(newUnit)
-                    // 关闭当前对话框并重新显示
+                    // 关闭当前对话框并重新显示，需要重新过滤单位列表
                     dialog.dismiss()
+                    // 重新计算有效单位列表（过滤掉标记）
+                    val deleted = customUnits.filter { it.startsWith("DELETED:") }
+                        .map { it.removePrefix("DELETED:") }
+                        .toSet()
+                    val edits = customUnits.filter { it.startsWith("EDIT:") }
+                        .mapNotNull { marker ->
+                            val payload = marker.removePrefix("EDIT:")
+                            val parts = payload.split("->", limit = 2)
+                            if (parts.size == 2) parts[0] to parts[1] else null
+                        }.toMap()
+                    val pureCustom = customUnits.filter { !it.startsWith("DELETED:") && !it.startsWith("EDIT:") }
+                    val processedDefaults = defaultUnits
+                        .filter { !deleted.contains(it) }
+                        .map { unit -> edits[unit] ?: unit }
+                    val effectiveUnits = (processedDefaults + pureCustom).distinct()
+                    
                     showUnitSelectionDialog(
                         title,
-                        defaultUnits + customUnits,
+                        effectiveUnits,
                         defaultUnits,
                         customUnits,
                         isCustomizable,
@@ -807,11 +861,27 @@ class DialogFactory(private val context: Context) {
                     onEditOption,
                     onDeleteOption
                 ) {
-                    // 在操作完成后重新创建对话框
+                    // 在操作完成后重新创建对话框，需要重新过滤选项列表
                     dialog.dismiss()
+                    // 重新计算有效选项列表（过滤掉标记）
+                    val deleted = customOptions.filter { it.startsWith("DELETED:") }
+                        .map { it.removePrefix("DELETED:") }
+                        .toSet()
+                    val edits = customOptions.filter { it.startsWith("EDIT:") }
+                        .mapNotNull { marker ->
+                            val payload = marker.removePrefix("EDIT:")
+                            val parts = payload.split("->", limit = 2)
+                            if (parts.size == 2) parts[0] to parts[1] else null
+                        }.toMap()
+                    val pureCustom = customOptions.filter { !it.startsWith("DELETED:") && !it.startsWith("EDIT:") }
+                    val processedDefaults = defaultOptions
+                        .filter { !deleted.contains(it) }
+                        .map { option -> edits[option] ?: option }
+                    val effectiveOptions = (processedDefaults + pureCustom).distinct()
+                    
                     showOptionSelectionDialog(
                         title,
-                        defaultOptions + customOptions,
+                        effectiveOptions,
                         defaultOptions,
                         customOptions,
                         isCustomizable,
@@ -834,11 +904,27 @@ class DialogFactory(private val context: Context) {
                         dialog
                     ) { newOption ->
                         onAddOption(newOption)
-                        // 关闭当前对话框并重新显示
+                        // 关闭当前对话框并重新显示，需要重新过滤选项列表
                         dialog.dismiss()
+                        // 重新计算有效选项列表（过滤掉标记）
+                        val deleted = customOptions.filter { it.startsWith("DELETED:") }
+                            .map { it.removePrefix("DELETED:") }
+                            .toSet()
+                        val edits = customOptions.filter { it.startsWith("EDIT:") }
+                            .mapNotNull { marker ->
+                                val payload = marker.removePrefix("EDIT:")
+                                val parts = payload.split("->", limit = 2)
+                                if (parts.size == 2) parts[0] to parts[1] else null
+                            }.toMap()
+                        val pureCustom = customOptions.filter { !it.startsWith("DELETED:") && !it.startsWith("EDIT:") }
+                        val processedDefaults = defaultOptions
+                            .filter { !deleted.contains(it) }
+                            .map { option -> edits[option] ?: option }
+                        val effectiveOptions = (processedDefaults + pureCustom).distinct()
+                        
                         showOptionSelectionDialog(
                             title,
-                            defaultOptions + customOptions,
+                            effectiveOptions,
                             defaultOptions,
                             customOptions,
                             isCustomizable,

@@ -19,6 +19,7 @@ import com.example.itemmanagement.data.dao.CategoryThresholdDao
 import com.example.itemmanagement.data.dao.CustomRuleDao
 import com.example.itemmanagement.data.dao.WarrantyDao
 import com.example.itemmanagement.data.dao.BorrowDao
+import com.example.itemmanagement.data.dao.FieldCustomValueDao
 // import com.example.itemmanagement.data.dao.RecycleBinDao // 已归档
 import com.example.itemmanagement.data.dao.UserProfileDao
 // import com.example.itemmanagement.data.dao.wishlist.WishlistDao // 已归档
@@ -26,6 +27,7 @@ import com.example.itemmanagement.data.dao.UserProfileDao
 import com.example.itemmanagement.data.dao.PriceRecordDao
 import com.example.itemmanagement.data.dao.template.ItemTemplateDao
 import com.example.itemmanagement.data.entity.*
+import com.example.itemmanagement.data.entity.FieldCustomValueEntity
 // import com.example.itemmanagement.data.entity.wishlist.WishlistItemEntity // 已归档
 // import com.example.itemmanagement.data.entity.wishlist.WishlistPriceHistoryEntity // 已删除
 import com.example.itemmanagement.data.entity.unified.*
@@ -55,6 +57,7 @@ import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
         BorrowEntity::class,
         UserProfileEntity::class,
         PriceRecord::class,
+        FieldCustomValueEntity::class,
         
         // === 物品模板 ===
         ItemTemplateEntity::class,
@@ -65,7 +68,7 @@ import com.example.itemmanagement.data.migration.UnifiedSchemaMigration
         // DeletedItemEntity::class,
         // WishlistItemEntity::class
     ],
-    version = 50,
+    version = 52,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -89,6 +92,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun borrowDao(): BorrowDao
     abstract fun userProfileDao(): UserProfileDao
     abstract fun priceRecordDao(): PriceRecordDao
+    abstract fun fieldCustomValueDao(): FieldCustomValueDao
     
     // === 物品模板Dao ===
     abstract fun itemTemplateDao(): ItemTemplateDao
@@ -110,7 +114,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "item_database"
                 )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43, MIGRATION_43_44, MIGRATION_44_45, MIGRATION_45_46, MIGRATION_46_47, MIGRATION_47_48, MIGRATION_48_49, MIGRATION_49_50)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_5, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24, MIGRATION_24_25, MIGRATION_25_26, MIGRATION_26_27, MIGRATION_27_28, MIGRATION_28_29, MIGRATION_29_30, MIGRATION_30_31, UnifiedSchemaMigration.MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34, MIGRATION_34_35, MIGRATION_35_36, MIGRATION_36_37, MIGRATION_37_38, MIGRATION_38_39, MIGRATION_39_40, MIGRATION_40_41, MIGRATION_41_42, MIGRATION_42_43, MIGRATION_43_44, MIGRATION_44_45, MIGRATION_45_46, MIGRATION_46_47, MIGRATION_47_48, MIGRATION_48_49, MIGRATION_49_50, MIGRATION_50_51, MIGRATION_51_52)
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
@@ -2680,6 +2684,37 @@ abstract class AppDatabase : RoomDatabase() {
                     SET quantity = 1.0, isQuantityUserInput = 0
                     WHERE quantity = 1.001
                     """
+                )
+            }
+        }
+
+        private val MIGRATION_50_51 = object : Migration(50, 51) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS field_custom_values (
+                        storage_key TEXT NOT NULL PRIMARY KEY,
+                        values_json TEXT NOT NULL,
+                        updated_at INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_51_52 = object : Migration(51, 52) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE user_profile ADD COLUMN showExpiringEntry INTEGER NOT NULL DEFAULT 1"
+                )
+                database.execSQL(
+                    "ALTER TABLE user_profile ADD COLUMN showExpiredEntry INTEGER NOT NULL DEFAULT 1"
+                )
+                database.execSQL(
+                    "ALTER TABLE user_profile ADD COLUMN showLowStockEntry INTEGER NOT NULL DEFAULT 1"
+                )
+                database.execSQL(
+                    "ALTER TABLE user_profile ADD COLUMN showShoppingListEntry INTEGER NOT NULL DEFAULT 1"
                 )
             }
         }

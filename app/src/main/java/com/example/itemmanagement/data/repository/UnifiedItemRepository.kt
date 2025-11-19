@@ -6,6 +6,7 @@ import com.example.itemmanagement.data.dao.TagDao
 import com.example.itemmanagement.data.dao.PhotoDao
 import com.example.itemmanagement.data.dao.PriceRecordDao
 import com.example.itemmanagement.data.dao.BorrowDao
+import com.example.itemmanagement.data.dao.FieldCustomValueDao
 import com.example.itemmanagement.data.dao.unified.InventoryDetailDao
 import com.example.itemmanagement.data.dao.unified.ItemStateDao
 import com.example.itemmanagement.data.dao.unified.ShoppingDetailDao
@@ -15,6 +16,7 @@ import com.example.itemmanagement.data.entity.LocationEntity
 import com.example.itemmanagement.data.entity.TagEntity
 import com.example.itemmanagement.data.entity.PhotoEntity
 import com.example.itemmanagement.data.entity.ItemTagCrossRef
+import com.example.itemmanagement.data.entity.FieldCustomValueEntity
 import com.example.itemmanagement.data.entity.PriceRecord
 import com.example.itemmanagement.data.entity.ShoppingItemPriority
 import com.example.itemmanagement.data.entity.UrgencyLevel
@@ -39,6 +41,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import java.util.Date
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 /**
  * 统一物品管理Repository
@@ -57,8 +61,11 @@ class UnifiedItemRepository(
     private val photoDao: PhotoDao,
     private val priceRecordDao: PriceRecordDao,
     private val warrantyDao: com.example.itemmanagement.data.dao.WarrantyDao,
-    private val borrowDao: BorrowDao  // ✅ 添加BorrowDao
+    private val borrowDao: BorrowDao,  // ✅ 添加BorrowDao
+    private val fieldCustomValueDao: FieldCustomValueDao
 ) {
+
+    private val gson = Gson()
 
     // --- 通用物品操作 ---
     suspend fun insertUnifiedItem(item: UnifiedItemEntity): Long {
@@ -339,6 +346,75 @@ class UnifiedItemRepository(
                     android.util.Log.e("UnifiedItemRepository", "添加删除物品日历事件失败", e)
                 }
             }
+        }
+    }
+
+    // --- 自定义选项持久化 ---
+
+    private fun optionKey(fieldName: String, contextKey: String? = null): String {
+        return if (contextKey.isNullOrBlank()) {
+            "option:$fieldName"
+        } else {
+            "option:$fieldName:$contextKey"
+        }
+    }
+
+    private fun unitKey(fieldName: String, contextKey: String? = null): String {
+        return if (contextKey.isNullOrBlank()) {
+            "unit:$fieldName"
+        } else {
+            "unit:$fieldName:$contextKey"
+        }
+    }
+
+    suspend fun getStoredCustomOptions(fieldName: String, contextKey: String? = null): List<String> {
+        return loadCustomValues(optionKey(fieldName, contextKey))
+    }
+
+    suspend fun saveStoredCustomOptions(fieldName: String, options: List<String>, contextKey: String? = null) {
+        persistCustomValues(optionKey(fieldName, contextKey), options)
+    }
+
+    suspend fun clearStoredCustomOptions(fieldName: String, contextKey: String? = null) {
+        fieldCustomValueDao.deleteByKey(optionKey(fieldName, contextKey))
+    }
+
+    suspend fun getStoredCustomUnits(fieldName: String): List<String> {
+        return loadCustomValues(unitKey(fieldName))
+    }
+
+    suspend fun saveStoredCustomUnits(fieldName: String, units: List<String>) {
+        persistCustomValues(unitKey(fieldName), units)
+    }
+
+    suspend fun clearStoredCustomUnits(fieldName: String) {
+        fieldCustomValueDao.deleteByKey(unitKey(fieldName))
+    }
+
+    private suspend fun loadCustomValues(storageKey: String): List<String> {
+        return try {
+            val entity = fieldCustomValueDao.getByKey(storageKey) ?: return emptyList()
+            val type = object : TypeToken<List<String>>() {}.type
+            gson.fromJson<List<String>>(entity.valuesJson, type) ?: emptyList()
+        } catch (e: Exception) {
+            android.util.Log.e("UnifiedItemRepository", "读取自定义选项失败: key=$storageKey", e)
+            emptyList()
+        }
+    }
+
+    private suspend fun persistCustomValues(storageKey: String, values: List<String>) {
+        try {
+            val json = gson.toJson(values)
+            fieldCustomValueDao.upsert(
+                FieldCustomValueEntity(
+                    storageKey = storageKey,
+                    valuesJson = json,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("UnifiedItemRepository", "保存自定义选项失败: key=$storageKey", e)
+            throw e
         }
     }
 

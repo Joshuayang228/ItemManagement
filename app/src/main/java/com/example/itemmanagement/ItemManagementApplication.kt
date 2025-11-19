@@ -36,7 +36,8 @@ class ItemManagementApplication : Application() {
             database.photoDao(),
             database.priceRecordDao(),
             database.warrantyDao(),
-            database.borrowDao()  // 新添加BorrowDao
+            database.borrowDao(),  // 新添加BorrowDao
+            database.fieldCustomValueDao()
         )
     }
     
